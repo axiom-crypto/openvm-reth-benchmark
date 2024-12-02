@@ -1,25 +1,35 @@
-[workspace.package]
+[workspace]
 [package]
 name = "rsp-client-eth"
 description = ""
 edition = "2021"
 
 [dependencies]
-bincode = "1.3.3"
+bincode = { version = "2.0.0-rc", default-features = false, features = [
+    "derive",
+    "alloc",
+    "serde",
+] }
 
 # workspace
 rsp-client-executor = { path = "../../crates/executor/client" }
 
-# sp1
-sp1-zkvm = "3.0.0"
+# axvm
+axvm = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", features = [
+    "std",
+] }
+axvm-keccak256-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
 
 # Statically turns off logging
 log = { version = "0.4", features = ["max_level_off", "release_max_level_off"] }
-tracing = { version = "0.1", features = ["max_level_off", "release_max_level_off"] }
+tracing = { version = "0.1", features = [
+    "max_level_off",
+    "release_max_level_off",
+] }
 
-[patch.crates-io]
-# Precompile patches
-sha2 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", tag = "sha2-v0.10.8-patch-v1", package = "sha2" }
-ecdsa-core = { git = "https://github.com/sp1-patches/signatures", tag = "ecdsa-v0.16.9-patch-v1", package = "ecdsa" }
-bn = { git = "https://github.com/sp1-patches/bn", tag = "substrate_bn-v0.6.0-patch-v2", package = "substrate-bn" }
-sha3 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", tag = "sha3-v0.10.8-patch-v1" }
+# [patch.crates-io]
+# # Precompile patches
+# sha2 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", tag = "sha2-v0.10.8-patch-v1", package = "sha2" }
+# ecdsa-core = { git = "https://github.com/sp1-patches/signatures", tag = "ecdsa-v0.16.9-patch-v1", package = "ecdsa" }
+# bn = { git = "https://github.com/sp1-patches/bn", tag = "substrate_bn-v0.6.0-patch-v2", package = "substrate-bn" }
+# sha3 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", tag = "sha3-v0.10.8-patch-v1" }

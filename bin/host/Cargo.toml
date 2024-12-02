@@ -21,15 +21,15 @@ rsp-client-executor.workspace = true
 # alloy
 alloy-provider.workspace = true
 
-# reth 
+# reth
 reth-primitives.workspace = true
 
 # sp1
-sp1-sdk = "3.0.0"
+# sp1-sdk = "3.0.0"
 
-[build-dependencies]
-sp1-helper = "3.0.0"
+# [build-dependencies]
+# sp1-helper = "3.0.0"
 
 [features]
 default = []
-cuda = ["sp1-sdk/cuda"]
+# cuda = ["sp1-sdk/cuda"]

@@ -3,7 +3,6 @@ name = "rsp-client-executor"
 description = ""
 version.workspace = true
 edition.workspace = true
-license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
@@ -45,5 +44,8 @@ alloy-rlp.workspace = true
 itertools = "0.13.0"
 url.workspace = true
 futures.workspace = true
+
+[target.'cfg(target_os = "zkvm")'.dependencies]
+alloy-primitives = { workspace = true, features = ["native-keccak"] }
 
 [dev-dependencies]
