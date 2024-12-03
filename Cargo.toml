@@ -114,6 +114,14 @@ alloy-transport-http = { version = "0.3", features = [
 alloy-eips = { version = "0.3", default-features = false }
 alloy-trie = "0.5.0"
 
+# axvm
+axvm-build = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-circuit = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-benchmarks = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+ax-stark-sdk = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+
 [workspace.lints]
 rust.missing_debug_implementations = "warn"
 rust.unreachable_pub = "warn"
