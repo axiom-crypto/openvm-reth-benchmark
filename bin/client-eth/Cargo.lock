@@ -335,9 +335,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.93"
+version = "1.0.94"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c95c10ba0b00a02636238b814946408b1322d5ac4760326e6fb8ec956d85775"
+checksum = "c1fd03a028ef38ba2276dce7e33fcd6369c158a1bca17946c4b1b701891c1ff7"
 
 [[package]]
 name = "ark-ff"
@@ -499,10 +499,8 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 [[package]]
 name = "axvm"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#66619f37c04db00a5ee35834ae9df528db3db7ee"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#5946d12b864e9660817bf1fafafc20da49bdabdc"
 dependencies = [
- "axvm-algebra-moduli-setup",
- "axvm-ecc-sw-setup",
  "axvm-platform",
  "axvm-rv32im-guest",
  "hex-literal",
@@ -512,29 +510,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "axvm-algebra-moduli-setup"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#66619f37c04db00a5ee35834ae9df528db3db7ee"
-dependencies = [
- "axvm-macros-common",
- "quote",
- "syn 2.0.90",
-]
-
-[[package]]
-name = "axvm-ecc-sw-setup"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#66619f37c04db00a5ee35834ae9df528db3db7ee"
-dependencies = [
- "axvm-macros-common",
- "quote",
- "syn 2.0.90",
-]
-
-[[package]]
 name = "axvm-keccak256-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#66619f37c04db00a5ee35834ae9df528db3db7ee"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#5946d12b864e9660817bf1fafafc20da49bdabdc"
 dependencies = [
  "axvm-platform",
  "serde",
@@ -542,19 +520,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "axvm-macros-common"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#66619f37c04db00a5ee35834ae9df528db3db7ee"
-dependencies = [
- "syn 2.0.90",
-]
-
-[[package]]
 name = "axvm-platform"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#66619f37c04db00a5ee35834ae9df528db3db7ee"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#5946d12b864e9660817bf1fafafc20da49bdabdc"
 dependencies = [
- "axvm-algebra-moduli-setup",
  "bincode",
  "critical-section",
  "embedded-alloc",
@@ -567,9 +536,10 @@ dependencies = [
 [[package]]
 name = "axvm-rv32im-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#66619f37c04db00a5ee35834ae9df528db3db7ee"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#5946d12b864e9660817bf1fafafc20da49bdabdc"
 dependencies = [
  "axvm-platform",
+ "strum_macros",
 ]
 
 [[package]]
@@ -2658,8 +2628,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "14.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f719e28cc6fdd086f8bc481429e587740d20ad89729cec3f5f5dd7b655474df"
+source = "git+https://github.com/axiom-crypto/revm?branch=v43-patched#11564d93c8eb8a126921396dbd32e41948e89577"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -2673,8 +2642,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "10.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "959ecbc36802de6126852479844737f20194cf8e6718e0c30697d306a2cca916"
+source = "git+https://github.com/axiom-crypto/revm?branch=v43-patched#11564d93c8eb8a126921396dbd32e41948e89577"
 dependencies = [
  "revm-primitives",
  "serde",
@@ -2683,8 +2651,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "11.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e25f604cb9db593ca3013be8c00f310d6790ccb1b7d8fbbdd4660ec8888043a"
+source = "git+https://github.com/axiom-crypto/revm?branch=v43-patched#11564d93c8eb8a126921396dbd32e41948e89577"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -2701,9 +2668,8 @@ dependencies = [
 
 [[package]]
 name = "revm-primitives"
-version = "9.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7a6bff9dbde3370a5ac9555104117f7e6039b3cc76e8d5d9d01899088beca2a"
+version = "9.0.1"
+source = "git+https://github.com/axiom-crypto/revm?branch=v43-patched#11564d93c8eb8a126921396dbd32e41948e89577"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -3428,9 +3394,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.41.1"
+version = "1.42.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22cfb5bee7a6a52939ca9224d6ac897bb669134078daa8735560897f69de4d33"
+checksum = "5cec9b21b0450273377fc97bd4c33a8acffc8c996c987a7c5b319a0083707551"
 dependencies = [
  "backtrace",
  "pin-project-lite",
