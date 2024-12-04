@@ -37,6 +37,11 @@ thiserror = "1.0.61"
 hex-literal = "0.4.1"
 rayon = "1.10.0"
 rlp = "0.5.2"
+bincode = { version = "2.0.0-rc", default-features = false, features = [
+    "derive",
+    "alloc",
+    "serde",
+] }
 
 # workspace
 rsp-rpc-db = { path = "./crates/storage/rpc-db" }

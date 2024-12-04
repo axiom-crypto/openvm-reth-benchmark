@@ -32,11 +32,12 @@ use reth_trie::AccountProof;
 use revm::primitives::HashMap;
 
 use rlp::{Decodable, DecoderError, Prototype, Rlp};
-use serde::{Deserialize, Serialize};
 use thiserror::Error as ThisError;
 
 use anyhow::{Context, Result};
 use reth_primitives::Address;
+
+use crate::StorageTries;
 
 use super::EthereumState;
 
@@ -93,14 +94,15 @@ pub fn keccak(data: impl AsRef<[u8]>) -> [u8; 32] {
 /// optimizing storage. However, operations targeting a truncated part will fail and
 /// return an error. Another distinction of this implementation is that branches cannot
 /// store values, aligning with the construction of MPTs in Ethereum.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(
+    Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd, bincode::Encode, bincode::Decode,
+)]
 pub struct MptNode {
     /// The type and data of the node.
-    data: MptNodeData,
+    pub data: MptNodeData,
     /// Cache for a previously computed reference of this node. This is skipped during
     /// serialization.
-    #[serde(skip)]
-    cached_reference: RefCell<Option<MptNodeReference>>,
+    pub cached_reference: RefCell<Option<MptNodeReference>>,
 }
 
 /// Represents custom error types for the sparse Merkle Patricia Trie (MPT).
@@ -133,7 +135,9 @@ pub enum Error {
 /// Each node in the trie can be of one of several types, each with its own specific data
 /// structure. This enum provides a clear and type-safe way to represent the data
 /// associated with each node type.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(
+    Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd, bincode::Encode, bincode::Decode,
+)]
 pub enum MptNodeData {
     /// Represents an empty trie node.
     #[default]
@@ -147,7 +151,7 @@ pub enum MptNodeData {
     Extension(Vec<u8>, Box<MptNode>),
     /// Represents a sub-trie by its hash, allowing for efficient storage of large
     /// sub-tries without storing their entire content.
-    Digest(B256),
+    Digest(#[bincode(with_serde)] B256),
 }
 
 /// Represents the ways in which one node can reference another node inside the sparse
@@ -156,14 +160,14 @@ pub enum MptNodeData {
 /// Nodes in the MPT can reference other nodes either directly through their byte
 /// representation or indirectly through a hash of their encoding. This enum provides a
 /// clear and type-safe way to represent these references.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd, bincode::Encode, bincode::Decode)]
 pub enum MptNodeReference {
     /// Represents a direct reference to another node using its byte encoding. Typically
     /// used for short encodings that are less than 32 bytes in length.
     Bytes(Vec<u8>),
     /// Represents an indirect reference to another node using the Keccak hash of its long
     /// encoding. Used for encodings that are not less than 32 bytes in length.
-    Digest(B256),
+    Digest(#[bincode(with_serde)] B256),
 }
 
 /// Provides a conversion from [MptNodeData] to [MptNode].
@@ -182,7 +186,7 @@ impl From<MptNodeData> for MptNode {
 /// This implementation allows for the serialization of an [MptNode] into its RLP-encoded
 /// form. The encoding is done based on the type of node data ([MptNodeData]) it holds.
 impl Encodable for MptNode {
-    /// Encodes the node into the provided `out` buffer.
+    /// bincode::Encodes the node into the provided `out` buffer.
     ///
     /// The encoding is done using the Recursive Length Prefix (RLP) encoding scheme. The
     /// method handles different node data types and encodes them accordingly.
@@ -343,7 +347,7 @@ impl MptNode {
         }
     }
 
-    /// Encodes the [MptNodeReference] of this node into the `out` buffer.
+    /// bincode::Encodes the [MptNodeReference] of this node into the `out` buffer.
     fn reference_encode(&self, out: &mut dyn alloy_rlp::BufMut) {
         match self.cached_reference.borrow_mut().get_or_insert_with(|| self.calc_reference()) {
             // if the reference is an RLP-encoded byte slice, copy it directly
@@ -801,7 +805,7 @@ pub fn to_nibs(slice: &[u8]) -> Vec<u8> {
     result
 }
 
-/// Encodes a slice of nibbles into a vector of bytes, with an additional prefix to
+/// bincode::Encodes a slice of nibbles into a vector of bytes, with an additional prefix to
 /// indicate the type of node (leaf or extension).
 ///
 /// The function starts by determining the type of node based on the `is_leaf` parameter.
@@ -969,7 +973,7 @@ pub fn proofs_to_tries(
     if proofs.is_empty() {
         return Ok(EthereumState {
             state_trie: node_from_digest(state_root),
-            storage_tries: HashMap::new(),
+            storage_tries: Default::default(),
         });
     }
 
@@ -1023,7 +1027,7 @@ pub fn proofs_to_tries(
     let state_trie = resolve_nodes(&state_root_node, &state_nodes);
     assert_eq!(state_trie.hash(), state_root);
 
-    Ok(EthereumState { state_trie, storage_tries: storage })
+    Ok(EthereumState { state_trie, storage_tries: StorageTries(storage) })
 }
 
 pub fn transition_proofs_to_tries(
@@ -1035,7 +1039,7 @@ pub fn transition_proofs_to_tries(
     if parent_proofs.is_empty() {
         return Ok(EthereumState {
             state_trie: node_from_digest(state_root),
-            storage_tries: HashMap::new(),
+            storage_tries: Default::default(),
         });
     }
 
@@ -1098,7 +1102,7 @@ pub fn transition_proofs_to_tries(
     let state_trie = resolve_nodes(&state_root_node, &state_nodes);
     assert_eq!(state_trie.hash(), state_root);
 
-    Ok(EthereumState { state_trie, storage_tries: storage })
+    Ok(EthereumState { state_trie, storage_tries: StorageTries(storage) })
 }
 
 /// Adds all the leaf nodes of non-inclusion proofs to the nodes.

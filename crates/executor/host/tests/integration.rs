@@ -55,9 +55,9 @@ where
     // Execute the client.
     client_executor.execute::<V>(client_input.clone()).expect("failed to execute client");
 
-    // Save the client input to a buffer.
-    let buffer = bincode::serialize(&client_input).unwrap();
+    // // Save the client input to a buffer.
+    // let buffer = bincode::serialize(&client_input).unwrap();
 
-    // Load the client input from a buffer.
-    let _: ClientExecutorInput = bincode::deserialize(&buffer).unwrap();
+    // // Load the client input from a buffer.
+    // let _: ClientExecutorInput = bincode::deserialize(&buffer).unwrap();
 }

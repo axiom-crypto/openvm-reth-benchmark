@@ -14,7 +14,7 @@ eyre.workspace = true
 serde_json.workspace = true
 serde.workspace = true
 tokio.workspace = true
-rkyv = { version = "0.8.8", default-features = false, features = ["alloc", "bytecheck"] }
+bincode.workspace = true
 
 # workspace
 rsp-witness-db.workspace = true

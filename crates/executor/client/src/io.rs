@@ -7,25 +7,28 @@ use reth_trie::TrieAccount;
 use revm_primitives::{keccak256, Bytecode};
 use rsp_mpt::EthereumState;
 use rsp_witness_db::WitnessDb;
-use serde::{Deserialize, Serialize};
 
 /// The input for the client to execute a block and fully verify the STF (state transition
 /// function).
 ///
 /// Instead of passing in the entire state, we only pass in the state roots along with merkle proofs
 /// for the storage slots that were modified and accessed.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, bincode::Encode, bincode::Decode)]
 pub struct ClientExecutorInput {
     /// The current block (which will be executed inside the client).
+    #[bincode(with_serde)]
     pub current_block: Block,
     /// The previous block headers starting from the most recent. There must be at least one header
     /// to provide the parent state root.
+    #[bincode(with_serde)]
     pub ancestor_headers: Vec<Header>,
     /// Network state as of the parent block.
     pub parent_state: EthereumState,
     /// Requests to account state and storage slots.
+    #[bincode(with_serde)]
     pub state_requests: HashMap<Address, Vec<U256>>,
     /// Account bytecodes.
+    #[bincode(with_serde)]
     pub bytecodes: Vec<Bytecode>,
 }
 
@@ -140,6 +143,7 @@ pub trait WitnessInput {
 
                 let storage_trie = state
                     .storage_tries
+                    .0
                     .get(hashed_address)
                     .ok_or_else(|| eyre::eyre!("parent state does not contain storage trie"))?;
 

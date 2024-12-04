@@ -29,15 +29,19 @@ use axvm_transpiler::{axvm_platform::memory::MEM_SIZE, elf::Elf, transpiler::Tra
 use clap::Parser;
 use derive_more::From;
 use metrics::{counter, gauge, Gauge};
+use reth_primitives::{Block, Header};
 use rsp_client_executor::{
-    io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET,
-    CHAIN_ID_OP_MAINNET,
+    io::ClientExecutorInput,
+    rsp_mpt::{mpt::MptNode, EthereumState, StorageTries},
+    ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET, CHAIN_ID_OP_MAINNET,
 };
 use rsp_host_executor::HostExecutor;
 use std::{path::PathBuf, time::Instant};
 use tracing_subscriber::{
     fmt, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt, EnvFilter,
 };
+
+pub use reth_primitives;
 
 mod execute;
 
@@ -151,7 +155,11 @@ async fn main() -> eyre::Result<()> {
                 let input_path = input_folder.join(format!("{}.bin", args.block_number));
                 let mut cache_file = std::fs::File::create(input_path)?;
 
-                bincode::serialize_into(&mut cache_file, &client_input)?;
+                bincode::encode_into_std_write(
+                    &client_input,
+                    &mut cache_file,
+                    bincode::config::standard(),
+                )?;
             }
 
             client_input
@@ -161,20 +169,19 @@ async fn main() -> eyre::Result<()> {
         }
     };
 
-    // Generate the proof.
+    // Try smaller input
+    // let mut test_input = client_input.clone();
+    // test_input.ancestor_headers.clear();
+    // test_input.parent_state.storage_tries.clear();
+    // test_input.parent_state.state_trie.cached_reference.borrow_mut().take();
+    // test_input.state_requests.clear();
+    // test_input.bytecodes.clear();
+    //
+    let test_input = client_input.parent_state.storage_tries.clone();
 
-    // Execute the block inside the zkVM.
-    let input_vec: Vec<u8> = bincode::serialize(&client_input).unwrap();
-    let input_vec2 = input_vec.clone();
-    let decoded = std::thread::Builder::new()
-        .stack_size(1024) // 1kb stack size
-        .spawn(move || {
-            std::hint::black_box(bincode::deserialize::<ClientExecutorInput>(&input_vec2).unwrap())
-        })
-        .unwrap()
-        .join()
-        .unwrap();
-    assert_eq!(decoded, client_input);
+    let input_vec: Vec<u8> = bincode::encode_to_vec(&test_input, bincode::config::standard())?;
+    let (_, _): (StorageTries, usize) =
+        bincode::decode_from_slice(&input_vec, bincode::config::standard())?;
 
     let input_stream = vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
 
@@ -246,7 +253,8 @@ fn try_load_input_from_cache(
         if cache_path.exists() {
             // TODO: prune the cache if invalid instead
             let mut cache_file = std::fs::File::open(cache_path)?;
-            let client_input: ClientExecutorInput = bincode::deserialize_from(&mut cache_file)?;
+            let client_input: ClientExecutorInput =
+                bincode::decode_from_std_read(&mut cache_file, bincode::config::standard())?;
 
             Some(client_input)
         } else {
