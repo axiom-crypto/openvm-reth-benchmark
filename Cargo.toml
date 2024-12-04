@@ -128,3 +128,6 @@ rust.unreachable_pub = "warn"
 rust.unused_must_use = "deny"
 rust.rust_2018_idioms = { level = "deny", priority = -1 }
 rustdoc.all = "warn"
+
+[profile.release]
+debug_assertions = true

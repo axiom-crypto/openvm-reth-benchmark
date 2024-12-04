@@ -25,12 +25,7 @@ use axvm_rv32im_circuit::{
 use axvm_rv32im_transpiler::{
     Rv32ITranspilerExtension, Rv32IoTranspilerExtension, Rv32MTranspilerExtension,
 };
-use axvm_transpiler::{
-    axvm_platform::{bincode, memory::MEM_SIZE},
-    elf::Elf,
-    transpiler::Transpiler,
-    FromElf,
-};
+use axvm_transpiler::{axvm_platform::memory::MEM_SIZE, elf::Elf, transpiler::Transpiler, FromElf};
 use clap::Parser;
 use derive_more::From;
 use metrics::{counter, gauge, Gauge};
@@ -88,7 +83,10 @@ pub struct Rv32RethConfig {
 impl Default for Rv32RethConfig {
     fn default() -> Self {
         Self {
-            system: SystemConfig::default().with_continuations(),
+            system: SystemConfig::default()
+                .with_continuations()
+                .with_public_values(32)
+                .with_max_segment_len(1 << 24),
             base: Rv32I,
             mul: Rv32M::default(),
             io: Rv32Io,
@@ -153,11 +151,7 @@ async fn main() -> eyre::Result<()> {
                 let input_path = input_folder.join(format!("{}.bin", args.block_number));
                 let mut cache_file = std::fs::File::create(input_path)?;
 
-                bincode::serde::encode_into_std_write(
-                    &client_input,
-                    &mut cache_file,
-                    bincode::config::standard(),
-                )?;
+                bincode::serialize_into(&mut cache_file, &client_input)?;
             }
 
             client_input
@@ -170,7 +164,18 @@ async fn main() -> eyre::Result<()> {
     // Generate the proof.
 
     // Execute the block inside the zkVM.
-    let input_vec = bincode::serde::encode_to_vec(&client_input, bincode::config::standard())?;
+    let input_vec: Vec<u8> = bincode::serialize(&client_input).unwrap();
+    let input_vec2 = input_vec.clone();
+    let decoded = std::thread::Builder::new()
+        .stack_size(1024) // 1kb stack size
+        .spawn(move || {
+            std::hint::black_box(bincode::deserialize::<ClientExecutorInput>(&input_vec2).unwrap())
+        })
+        .unwrap()
+        .join()
+        .unwrap();
+    assert_eq!(decoded, client_input);
+
     let input_stream = vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
 
     let elf = Elf::decode(RSP_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
@@ -241,8 +246,7 @@ fn try_load_input_from_cache(
         if cache_path.exists() {
             // TODO: prune the cache if invalid instead
             let mut cache_file = std::fs::File::open(cache_path)?;
-            let client_input: ClientExecutorInput =
-                bincode::serde::decode_from_std_read(&mut cache_file, bincode::config::standard())?;
+            let client_input: ClientExecutorInput = bincode::deserialize_from(&mut cache_file)?;
 
             Some(client_input)
         } else {

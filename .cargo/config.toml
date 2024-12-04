@@ -1,48 +1,48 @@
-# [patch."ssh://git@github.com/axiom-crypto/afs-prototype.git"]
-# axvm-sdk = { path = "../afs-prototype/../afs-prototype/crates/axvm-sdk", default-features = false }
-# cargo-axiom = { path = "../afs-prototype/crates/cargo-axiom", default-features = false }
-# ax-mod-circuit-builder = { path = "../afs-prototype/crates/circuits/mod-builder", default-features = false }
-# ax-poseidon2-air = { path = "../afs-prototype/crates/circuits/poseidon2-air", default-features = false }
-# ax-circuit-primitives = { path = "../afs-prototype/crates/circuits/primitives", default-features = false }
-# ax-circuit-derive = { path = "../afs-prototype/crates/circuits/derive", default-features = false }
-# axvm = { path = "../afs-prototype/crates/toolchain/axvm", default-features = false }
-# axvm-build = { path = "../afs-prototype/crates/toolchain/build", default-features = false }
-# axvm-instructions = { path = "../afs-prototype/crates/toolchain/instructions", default-features = false }
-# axvm-instructions-derive = { path = "../afs-prototype/crates/toolchain/instructions/derive", default-features = false }
-# axvm-macros-common = { path = "../afs-prototype/crates/toolchain/macros", default-features = false }
-# axvm-platform = { path = "../afs-prototype/crates/toolchain/platform", default-features = false }
-# axvm-transpiler = { path = "../afs-prototype/crates/toolchain/transpiler", default-features = false }
-# axvm-circuit = { path = "../afs-prototype/crates/vm", default-features = false }
-# axvm-circuit-derive = { path = "../afs-prototype/crates/vm/derive", default-features = false }
-# ax-stark-backend = { path = "../afs-prototype/crates/stark-backend", default-features = false }
-# ax-stark-sdk = { path = "../afs-prototype/crates/stark-sdk", default-features = false }
+[patch."ssh://git@github.com/axiom-crypto/afs-prototype.git"]
+axvm-sdk = { path = "../afs-prototype/../afs-prototype/crates/axvm-sdk", default-features = false }
+cargo-axiom = { path = "../afs-prototype/crates/cargo-axiom", default-features = false }
+ax-mod-circuit-builder = { path = "../afs-prototype/crates/circuits/mod-builder", default-features = false }
+ax-poseidon2-air = { path = "../afs-prototype/crates/circuits/poseidon2-air", default-features = false }
+ax-circuit-primitives = { path = "../afs-prototype/crates/circuits/primitives", default-features = false }
+ax-circuit-derive = { path = "../afs-prototype/crates/circuits/derive", default-features = false }
+axvm = { path = "../afs-prototype/crates/toolchain/axvm", default-features = false }
+axvm-build = { path = "../afs-prototype/crates/toolchain/build", default-features = false }
+axvm-instructions = { path = "../afs-prototype/crates/toolchain/instructions", default-features = false }
+axvm-instructions-derive = { path = "../afs-prototype/crates/toolchain/instructions/derive", default-features = false }
+axvm-macros-common = { path = "../afs-prototype/crates/toolchain/macros", default-features = false }
+axvm-platform = { path = "../afs-prototype/crates/toolchain/platform", default-features = false }
+axvm-transpiler = { path = "../afs-prototype/crates/toolchain/transpiler", default-features = false }
+axvm-circuit = { path = "../afs-prototype/crates/vm", default-features = false }
+axvm-circuit-derive = { path = "../afs-prototype/crates/vm/derive", default-features = false }
+ax-stark-backend = { path = "../afs-prototype/crates/stark-backend", default-features = false }
+ax-stark-sdk = { path = "../afs-prototype/crates/stark-sdk", default-features = false }
 
-#
-# # Extensions
-# axvm-algebra-circuit = { path = "../afs-prototype/extensions/algebra/circuit", default-features = false }
-# axvm-algebra-transpiler = { path = "../afs-prototype/extensions/algebra/transpiler", default-features = false }
-# axvm-algebra-guest = { path = "../afs-prototype/extensions/algebra/guest", default-features = false }
-# axvm-algebra-moduli-setup = { path = "../afs-prototype/extensions/algebra/moduli-setup", default-features = false }
-# axvm-bigint-circuit = { path = "../afs-prototype/extensions/bigint/circuit", default-features = false }
-# axvm-bigint-transpiler = { path = "../afs-prototype/extensions/bigint/transpiler", default-features = false }
-# axvm-bigint-guest = { path = "../afs-prototype/extensions/bigint/guest", default-features = false }
-# axvm-ecc-circuit = { path = "../afs-prototype/extensions/ecc/circuit", default-features = false }
-# axvm-ecc-transpiler = { path = "../afs-prototype/extensions/ecc/transpiler", default-features = false }
-# axvm-ecc-guest = { path = "../afs-prototype/extensions/ecc/guest", default-features = false }
-# axvm-ecc-constants = { path = "../afs-prototype/extensions/ecc/constants", default-features = false }
-# axvm-ecc-sw-setup = { path = "../afs-prototype/extensions/ecc/sw-setup", default-features = false }
-# ax-ecc-execution = { path = "../afs-prototype/extensions/ecc/execution", default-features = false }
-# axvm-keccak256-circuit = { path = "../afs-prototype/extensions/keccak256/circuit", default-features = false }
-# axvm-keccak256-transpiler = { path = "../afs-prototype/extensions/keccak256/transpiler", default-features = false }
-# axvm-keccak256-guest = { path = "../afs-prototype/extensions/keccak256/guest", default-features = false }
-# axvm-native-circuit = { path = "../afs-prototype/extensions/native/circuit", default-features = false }
-# axvm-native-compiler = { path = "../afs-prototype/extensions/native/compiler", default-features = false }
-# axvm-native-compiler-derive = { path = "../afs-prototype/extensions/native/compiler/derive", default-features = false }
-# axvm-native-recursion = { path = "../afs-prototype/extensions/native/recursion", default-features = false }
-# axvm-pairing-circuit = { path = "../afs-prototype/extensions/pairing/circuit", default-features = false }
-# axvm-pairing-transpiler = { path = "../afs-prototype/extensions/pairing/transpiler", default-features = false }
-# axvm-pairing-guest = { path = "../afs-prototype/extensions/pairing/guest", default-features = false }
-# axvm-rv32-adapters = { path = "../afs-prototype/extensions/rv32-adapters", default-features = false }
-# axvm-rv32im-circuit = { path = "../afs-prototype/extensions/rv32im/circuit", default-features = false }
-# axvm-rv32im-transpiler = { path = "../afs-prototype/extensions/rv32im/transpiler", default-features = false }
-# axvm-rv32im-guest = { path = "../afs-prototype/extensions/rv32im/guest", default-features = false }
+
+# Extensions
+axvm-algebra-circuit = { path = "../afs-prototype/extensions/algebra/circuit", default-features = false }
+axvm-algebra-transpiler = { path = "../afs-prototype/extensions/algebra/transpiler", default-features = false }
+axvm-algebra-guest = { path = "../afs-prototype/extensions/algebra/guest", default-features = false }
+axvm-algebra-moduli-setup = { path = "../afs-prototype/extensions/algebra/moduli-setup", default-features = false }
+axvm-bigint-circuit = { path = "../afs-prototype/extensions/bigint/circuit", default-features = false }
+axvm-bigint-transpiler = { path = "../afs-prototype/extensions/bigint/transpiler", default-features = false }
+axvm-bigint-guest = { path = "../afs-prototype/extensions/bigint/guest", default-features = false }
+axvm-ecc-circuit = { path = "../afs-prototype/extensions/ecc/circuit", default-features = false }
+axvm-ecc-transpiler = { path = "../afs-prototype/extensions/ecc/transpiler", default-features = false }
+axvm-ecc-guest = { path = "../afs-prototype/extensions/ecc/guest", default-features = false }
+axvm-ecc-constants = { path = "../afs-prototype/extensions/ecc/constants", default-features = false }
+axvm-ecc-sw-setup = { path = "../afs-prototype/extensions/ecc/sw-setup", default-features = false }
+ax-ecc-execution = { path = "../afs-prototype/extensions/ecc/execution", default-features = false }
+axvm-keccak256-circuit = { path = "../afs-prototype/extensions/keccak256/circuit", default-features = false }
+axvm-keccak256-transpiler = { path = "../afs-prototype/extensions/keccak256/transpiler", default-features = false }
+axvm-keccak256-guest = { path = "../afs-prototype/extensions/keccak256/guest", default-features = false }
+axvm-native-circuit = { path = "../afs-prototype/extensions/native/circuit", default-features = false }
+axvm-native-compiler = { path = "../afs-prototype/extensions/native/compiler", default-features = false }
+axvm-native-compiler-derive = { path = "../afs-prototype/extensions/native/compiler/derive", default-features = false }
+axvm-native-recursion = { path = "../afs-prototype/extensions/native/recursion", default-features = false }
+axvm-pairing-circuit = { path = "../afs-prototype/extensions/pairing/circuit", default-features = false }
+axvm-pairing-transpiler = { path = "../afs-prototype/extensions/pairing/transpiler", default-features = false }
+axvm-pairing-guest = { path = "../afs-prototype/extensions/pairing/guest", default-features = false }
+axvm-rv32-adapters = { path = "../afs-prototype/extensions/rv32-adapters", default-features = false }
+axvm-rv32im-circuit = { path = "../afs-prototype/extensions/rv32im/circuit", default-features = false }
+axvm-rv32im-transpiler = { path = "../afs-prototype/extensions/rv32im/transpiler", default-features = false }
+axvm-rv32im-guest = { path = "../afs-prototype/extensions/rv32im/guest", default-features = false }
