@@ -9,5 +9,5 @@ cp target/riscv32im-risc0-zkvm-elf/release/rsp-client-eth ../host/elf/
 cd ../..
 
 mkdir -p rpc-cache
-source .env 
-RUSTFLAGS="-Ctarget-cpu=native" RUST_BACKTRACE=1 cargo run --bin rsp --release -- --block-number 20526624 --rpc-url $RPC_1 --cache-dir rpc-cache # --prove 
+source .env
+RUSTFLAGS="-Ctarget-cpu=native" RUST_BACKTRACE=1 cargo run --bin rsp --release -- --block-number 20526624 --rpc-url $RPC_1 --cache-dir rpc-cache # --prove

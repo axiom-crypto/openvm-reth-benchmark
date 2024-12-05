@@ -27,7 +27,7 @@ tracing = { version = "0.1", features = [
     "release_max_level_off",
 ] }
 
-[patch.crates-io]
+# [patch.crates-io]
 # Precompile patches
 # sha2 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", tag = "sha2-v0.10.8-patch-v1", package = "sha2" }
 # ecdsa-core = { git = "https://github.com/sp1-patches/signatures", tag = "ecdsa-v0.16.9-patch-v1", package = "ecdsa" }
@@ -40,6 +40,5 @@ tracing = { version = "0.1", features = [
 # revm-precompile = { git = "https://github.com/axiom-crypto/revm", branch = "v43-patched" }
 
 [profile.release]
-panic = "unwind"
 # lto = "fat"
 # strip = true
