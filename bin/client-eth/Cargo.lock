@@ -2685,6 +2685,7 @@ dependencies = [
  "bincode",
  "log",
  "rsp-client-executor",
+ "rustc-hash",
  "tracing",
 ]
 
@@ -2739,6 +2740,7 @@ dependencies = [
  "revm-primitives",
  "rlp",
  "rsp-primitives",
+ "rustc-hash",
  "serde",
  "thiserror",
 ]

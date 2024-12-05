@@ -17,6 +17,7 @@ serde.workspace = true
 thiserror.workspace = true
 itertools = "0.13.0"
 bincode.workspace = true
+rustc-hash = "2.1.0"
 
 # workspace
 rsp-primitives.workspace = true

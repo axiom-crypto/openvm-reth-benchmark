@@ -3,6 +3,7 @@ use core::mem::transmute;
 use axvm::io::{print, read_vec, reveal};
 // #[allow(unused_imports)]
 // use axvm_keccak256_guest; // trigger extern native-keccak256
+use bincode::de::{read::SliceReader, Decoder, DecoderImpl};
 use rsp_client_executor::{
     io::ClientExecutorInput, rsp_mpt::StorageTries, ClientExecutor, EthereumVariant,
 };
@@ -18,8 +19,9 @@ pub fn main() {
     // print(format!("{:x}", INPUT[INPUT.len() - 2]));
     // print(format!("{:x}", INPUT[INPUT.len() - 1]));
     print("start bincode");
+    let config = bincode::config::legacy();
     let (input, len): (StorageTries, usize) =
-        bincode::decode_from_slice(&input_vec[..], bincode::config::standard()).unwrap();
+        bincode::decode_from_slice(&input_vec[..], config).unwrap();
     print("finished reading input");
     assert_eq!(len, input_vec.len());
 

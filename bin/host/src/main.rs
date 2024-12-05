@@ -26,6 +26,7 @@ use axvm_rv32im_transpiler::{
     Rv32ITranspilerExtension, Rv32IoTranspilerExtension, Rv32MTranspilerExtension,
 };
 use axvm_transpiler::{axvm_platform::memory::MEM_SIZE, elf::Elf, transpiler::Transpiler, FromElf};
+use bincode::de::{read::SliceReader, DecoderImpl};
 use clap::Parser;
 use derive_more::From;
 use metrics::{counter, gauge, Gauge};
@@ -179,9 +180,12 @@ async fn main() -> eyre::Result<()> {
     //
     let test_input = client_input.parent_state.storage_tries.clone();
 
-    let input_vec: Vec<u8> = bincode::encode_to_vec(&test_input, bincode::config::standard())?;
-    let (_, _): (StorageTries, usize) =
-        bincode::decode_from_slice(&input_vec, bincode::config::standard())?;
+    let config = bincode::config::legacy();
+    let input_vec: Vec<u8> = bincode::encode_to_vec(&test_input, config)?;
+    let reader = SliceReader::new(&input_vec[..]);
+    let mut decoder = DecoderImpl::<_, _>::new(reader, config);
+    let result: StorageTries = bincode::Decode::decode(&mut decoder)?;
+    // let (_, _): (StorageTries, usize) = bincode::decode_from_slice(&input_vec, config)?;
 
     let input_stream = vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
 

@@ -8,6 +8,7 @@ edition = "2021"
 bincode = { version = "2.0.0-rc", default-features = false, features = [
     "alloc",
 ] }
+rustc-hash = "2.1.0"
 
 # workspace
 rsp-client-executor = { path = "../../crates/executor/client" }
@@ -38,7 +39,7 @@ tracing = { version = "0.1", features = [
 # revm-interpreter = { git = "https://github.com/axiom-crypto/revm", branch = "v43-patched" }
 # revm-precompile = { git = "https://github.com/axiom-crypto/revm", branch = "v43-patched" }
 
-# [profile.release]
-# panic = "abort"
+[profile.release]
+panic = "unwind"
 # lto = "fat"
 # strip = true

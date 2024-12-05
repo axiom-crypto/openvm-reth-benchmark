@@ -6,6 +6,7 @@ use revm::primitives::{Address, HashMap, B256};
 /// Module containing MPT code adapted from `zeth`.
 pub mod mpt;
 use mpt::{proofs_to_tries, transition_proofs_to_tries, MptNode};
+use rustc_hash::FxBuildHasher;
 
 /// Ethereum state trie and account storage tries.
 #[derive(Debug, Clone, PartialEq, Eq, bincode::Encode, bincode::Decode)]
@@ -15,7 +16,7 @@ pub struct EthereumState {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct StorageTries(pub HashMap<B256, MptNode>);
+pub struct StorageTries(pub HashMap<B256, MptNode, FxBuildHasher>);
 
 impl bincode::Encode for StorageTries {
     fn encode<E: bincode::enc::Encoder>(
@@ -36,22 +37,29 @@ impl bincode::Decode for StorageTries {
     fn decode<D: bincode::de::Decoder>(
         decoder: &mut D,
     ) -> core::result::Result<Self, bincode::error::DecodeError> {
-        let len_u64: u64 = bincode::Decode::decode(decoder)?;
-        println!("{}", len_u64);
+        println!("decode start");
+        let len_u64: u64 = bincode::Decode::decode(decoder).unwrap_or_else(|e| {
+            println!("decode error: {e}");
+            0
+        });
+        println!("decode len: {}", len_u64);
         let len: usize = len_u64
             .try_into()
             .map_err(|_| bincode::error::DecodeError::OutsideUsizeRange(len_u64))?;
         decoder.claim_container_read::<(Compat<B256>, MptNode)>(len)?;
+        println!("here1");
 
         let hash_builder: _ = Default::default();
         let mut map = HashMap::with_capacity_and_hasher(len, hash_builder);
-        for _ in 0..len {
+        println!("here2");
+        for i in 0..len {
             // See the documentation on `unclaim_bytes_read` as to why we're doing this here
             decoder.unclaim_bytes_read(core::mem::size_of::<(Compat<B256>, MptNode)>());
 
             let k = Compat::<B256>::decode(decoder)?;
             let v = bincode::Decode::decode(decoder)?;
             map.insert(k.0, v);
+            println!("finished loop i={i}");
         }
         Ok(Self(map))
     }
@@ -60,22 +68,26 @@ impl<'de> bincode::BorrowDecode<'de> for StorageTries {
     fn borrow_decode<D: bincode::de::BorrowDecoder<'de>>(
         decoder: &mut D,
     ) -> core::result::Result<Self, bincode::error::DecodeError> {
+        println!("borrow_decode start");
         let len_u64: u64 = bincode::Decode::decode(decoder)?;
-        dbg!(len_u64);
+        println!("borrow_decode len: {}", len_u64);
         let len: usize = len_u64
             .try_into()
             .map_err(|_| bincode::error::DecodeError::OutsideUsizeRange(len_u64))?;
         decoder.claim_container_read::<(Compat<B256>, MptNode)>(len)?;
+        println!("here1");
 
         let hash_builder: _ = Default::default();
         let mut map = HashMap::with_capacity_and_hasher(len, hash_builder);
-        for _ in 0..len {
+        println!("here2");
+        for i in 0..len {
             // See the documentation on `unclaim_bytes_read` as to why we're doing this here
             decoder.unclaim_bytes_read(core::mem::size_of::<(Compat<B256>, MptNode)>());
 
             let k = Compat::<B256>::borrow_decode(decoder)?;
             let v = bincode::BorrowDecode::borrow_decode(decoder)?;
             map.insert(k.0, v);
+            println!("finished loop i={i}");
         }
         Ok(Self(map))
     }
@@ -85,15 +97,18 @@ impl EthereumState {
     /// Builds Ethereum state tries from relevant proofs before and after a state transition.
     pub fn from_transition_proofs(
         state_root: B256,
-        parent_proofs: &HashMap<Address, AccountProof>,
-        proofs: &HashMap<Address, AccountProof>,
+        parent_proofs: &HashMap<Address, AccountProof, FxBuildHasher>,
+        proofs: &HashMap<Address, AccountProof, FxBuildHasher>,
     ) -> Result<Self> {
         transition_proofs_to_tries(state_root, parent_proofs, proofs)
             .map_err(|err| eyre::eyre!("{}", err))
     }
 
     /// Builds Ethereum state tries from relevant proofs from a given state.
-    pub fn from_proofs(state_root: B256, proofs: &HashMap<Address, AccountProof>) -> Result<Self> {
+    pub fn from_proofs(
+        state_root: B256,
+        proofs: &HashMap<Address, AccountProof, FxBuildHasher>,
+    ) -> Result<Self> {
         proofs_to_tries(state_root, proofs).map_err(|err| eyre::eyre!("{}", err))
     }
 
