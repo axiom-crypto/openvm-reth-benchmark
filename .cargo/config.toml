@@ -1,3 +1,6 @@
+[net]
+git-fetch-with-cli = true
+
 [patch."ssh://git@github.com/axiom-crypto/afs-prototype.git"]
 axvm-sdk = { path = "../afs-prototype/../afs-prototype/crates/axvm-sdk", default-features = false }
 axvm-benchmarks = { path = "../afs-prototype/../afs-prototype/benchmarks", default-features = false }

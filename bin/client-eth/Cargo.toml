@@ -18,7 +18,10 @@ axvm = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", features =
     "std",
     # "heap-embedded-alloc",
 ] }
-# axvm-keccak256-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
+axvm-keccak256-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
+axvm-algebra-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
+axvm-ecc-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
+axvm-platform = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
 
 # Statically turns off logging
 log = { version = "0.4", features = ["max_level_off", "release_max_level_off"] }
@@ -27,20 +30,20 @@ tracing = { version = "0.1", features = [
     "release_max_level_off",
 ] }
 
-# [patch.crates-io]
+[patch.crates-io]
 # Precompile patches
 # sha2 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", tag = "sha2-v0.10.8-patch-v1", package = "sha2" }
 # ecdsa-core = { git = "https://github.com/sp1-patches/signatures", tag = "ecdsa-v0.16.9-patch-v1", package = "ecdsa" }
 # bn = { git = "https://github.com/sp1-patches/bn", tag = "substrate_bn-v0.6.0-patch-v2", package = "substrate-bn" }
 # sha3 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", tag = "sha3-v0.10.8-patch-v1" }
 #
-# revm = { git = "https://github.com/axiom-crypto/revm", branch = "v43-patched" }
-# revm-primitives = { git = "https://github.com/axiom-crypto/revm", branch = "v43-patched" }
-# revm-interpreter = { git = "https://github.com/axiom-crypto/revm", branch = "v43-patched" }
-# revm-precompile = { git = "https://github.com/axiom-crypto/revm", branch = "v43-patched" }
+revm = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "v43-patched" }
+revm-primitives = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "v43-patched" }
+revm-interpreter = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "v43-patched" }
+revm-precompile = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "v43-patched" }
 
 [profile.release]
 panic = "abort"
 # debug = 2
-# lto = "fat"
+lto = "fat"
 # strip = true

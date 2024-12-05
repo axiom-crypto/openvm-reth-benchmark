@@ -4912,9 +4912,13 @@ version = "0.1.0"
 dependencies = [
  "alloy-provider",
  "ax-stark-sdk",
+ "axvm-algebra-circuit",
+ "axvm-algebra-transpiler",
  "axvm-benchmarks",
  "axvm-build",
  "axvm-circuit",
+ "axvm-ecc-circuit",
+ "axvm-ecc-transpiler",
  "axvm-keccak256-circuit",
  "axvm-keccak256-transpiler",
  "axvm-rv32im-circuit",

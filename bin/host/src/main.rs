@@ -8,6 +8,11 @@ use ax_stark_sdk::{
     config::{baby_bear_poseidon2::BabyBearPoseidon2Engine, FriParameters},
     engine::{StarkFriEngine, VerificationDataWithFriParams},
 };
+use axvm_algebra_circuit::{
+    ModularExtension, ModularExtensionExecutor, ModularExtensionPeriphery, Rv32ModularConfig,
+    Rv32ModularWithFp2Config,
+};
+use axvm_algebra_transpiler::ModularTranspilerExtension;
 use axvm_circuit::{
     arch::{
         instructions::exe::AxVmExe, SystemConfig, SystemExecutor, SystemPeriphery, VirtualMachine,
@@ -16,6 +21,11 @@ use axvm_circuit::{
     circuit_derive::{Chip, ChipUsageGetter},
     derive::{AnyEnum, InstructionExecutor, VmConfig},
 };
+use axvm_ecc_circuit::{
+    CurveConfig, Rv32WeierstrassConfig, WeierstrassExtension, WeierstrassExtensionExecutor,
+    WeierstrassExtensionPeriphery, SECP256K1_CONFIG,
+};
+use axvm_ecc_transpiler::EccTranspilerExtension;
 use axvm_keccak256_circuit::{Keccak256, Keccak256Executor, Keccak256Periphery};
 use axvm_keccak256_transpiler::Keccak256TranspilerExtension;
 use axvm_rv32im_circuit::{
@@ -83,6 +93,10 @@ pub struct Rv32RethConfig {
     pub io: Rv32Io,
     #[extension]
     pub keccak: Keccak256,
+    #[extension]
+    pub modular: ModularExtension,
+    #[extension]
+    pub weierstrass: WeierstrassExtension,
 }
 
 impl Default for Rv32RethConfig {
@@ -96,6 +110,11 @@ impl Default for Rv32RethConfig {
             mul: Rv32M::default(),
             io: Rv32Io,
             keccak: Keccak256,
+            modular: ModularExtension::new(vec![
+                SECP256K1_CONFIG.modulus.clone(),
+                SECP256K1_CONFIG.scalar.clone(),
+            ]),
+            weierstrass: WeierstrassExtension::new(vec![SECP256K1_CONFIG.clone()]),
         }
     }
 }
@@ -195,7 +214,9 @@ async fn main() -> eyre::Result<()> {
             .with_extension(Rv32ITranspilerExtension)
             .with_extension(Rv32MTranspilerExtension)
             .with_extension(Rv32IoTranspilerExtension)
-            .with_extension(Keccak256TranspilerExtension),
+            .with_extension(Keccak256TranspilerExtension)
+            .with_extension(ModularTranspilerExtension)
+            .with_extension(EccTranspilerExtension),
         // add more extensions
     );
     let app_log_blowup = 2;

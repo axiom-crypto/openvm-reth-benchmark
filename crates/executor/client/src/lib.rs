@@ -25,6 +25,7 @@ use revm::{db::CacheDB, Database};
 use revm_primitives::{address, U256};
 #[allow(unused_imports)]
 pub use rsp_mpt;
+use rsp_mpt::state::HashedPostState;
 
 /// Chain ID for Ethereum Mainnet.
 pub const CHAIN_ID_ETH_MAINNET: u64 = 0x1;
@@ -149,7 +150,10 @@ impl ClientExecutor {
 
         // Verify the state root.
         let state_root = profile!("compute state root", {
-            input.parent_state.update(&executor_outcome.hash_state_slow());
+            let post_state = HashedPostState::from_bundle_state(&executor_outcome.bundle.state);
+            // executor_outcome.hash_state_slow());
+            println!("post state from bundle state: done");
+            input.parent_state.update(&post_state);
             input.parent_state.state_root()
         });
 

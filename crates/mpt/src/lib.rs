@@ -1,12 +1,14 @@
 use bincode::serde::Compat;
 use eyre::Result;
-use reth_trie::{AccountProof, HashedPostState, TrieAccount};
+use mpt::{proofs_to_tries, transition_proofs_to_tries, MptNode};
+use reth_trie::{AccountProof, TrieAccount};
 use revm::primitives::{Address, HashMap, B256};
+use rustc_hash::FxBuildHasher;
+use state::HashedPostState;
 
 /// Module containing MPT code adapted from `zeth`.
 pub mod mpt;
-use mpt::{proofs_to_tries, transition_proofs_to_tries, MptNode};
-use rustc_hash::FxBuildHasher;
+pub mod state;
 
 /// Ethereum state trie and account storage tries.
 #[derive(Debug, Clone, PartialEq, Eq, bincode::Encode, bincode::Decode)]
