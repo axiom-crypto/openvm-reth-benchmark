@@ -4,11 +4,8 @@ use core::iter::IntoIterator;
 
 use itertools::Itertools;
 use reth_primitives::{Account, Address, B256, U256};
-use reth_trie::{
-    prefix_set::{PrefixSetMut, TriePrefixSetsMut},
-    Nibbles,
-};
-use revm::db::{states::CacheAccount, AccountStatus, BundleAccount};
+use reth_trie::{prefix_set::PrefixSetMut, Nibbles};
+use revm::db::{AccountStatus, BundleAccount};
 use revm_primitives::{hash_map, keccak256, HashMap, HashSet};
 use std::borrow::Cow;
 
