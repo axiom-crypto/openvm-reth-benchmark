@@ -137,4 +137,4 @@ rustdoc.all = "warn"
 
 [profile.release]
 lto = "thin"
-debug_assertions = true
+debug-assertions = true
