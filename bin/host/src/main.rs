@@ -105,7 +105,7 @@ impl Default for Rv32RethConfig {
             system: SystemConfig::default()
                 .with_continuations()
                 .with_public_values(32)
-                .with_max_segment_len(1 << 24),
+                .with_max_segment_len((1 << 20) - 100),
             base: Rv32I,
             mul: Rv32M::default(),
             io: Rv32Io,
