@@ -40,5 +40,7 @@ tracing = { version = "0.1", features = [
 # revm-precompile = { git = "https://github.com/axiom-crypto/revm", branch = "v43-patched" }
 
 [profile.release]
+panic = "abort"
+# debug = 2
 # lto = "fat"
 # strip = true

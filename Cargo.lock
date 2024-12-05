@@ -2567,6 +2567,7 @@ checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 dependencies = [
  "ahash",
  "allocator-api2",
+ "rayon",
  "serde",
 ]
 
@@ -4946,6 +4947,7 @@ dependencies = [
  "bincode 2.0.0-rc.3",
  "eyre",
  "futures",
+ "hashbrown 0.14.5",
  "itertools 0.13.0",
  "reth-chainspec",
  "reth-errors",
@@ -4964,6 +4966,7 @@ dependencies = [
  "rsp-mpt",
  "rsp-primitives",
  "rsp-witness-db",
+ "rustc-hash",
  "serde",
  "serde_json",
  "tokio",
@@ -5068,6 +5071,7 @@ dependencies = [
  "reth-trie",
  "revm-primitives",
  "rsp-primitives",
+ "rustc-hash",
  "thiserror 1.0.69",
  "tokio",
  "tracing",

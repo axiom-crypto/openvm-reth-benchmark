@@ -178,14 +178,13 @@ async fn main() -> eyre::Result<()> {
     // test_input.state_requests.clear();
     // test_input.bytecodes.clear();
     //
-    let test_input = client_input.parent_state.storage_tries.clone();
+    // let test_input = client_input.parent_state.storage_tries.clone();
 
     let config = bincode::config::legacy();
-    let input_vec: Vec<u8> = bincode::encode_to_vec(&test_input, config)?;
-    let reader = SliceReader::new(&input_vec[..]);
-    let mut decoder = DecoderImpl::<_, _>::new(reader, config);
-    let result: StorageTries = bincode::Decode::decode(&mut decoder)?;
-    // let (_, _): (StorageTries, usize) = bincode::decode_from_slice(&input_vec, config)?;
+    let input_vec: Vec<u8> = bincode::encode_to_vec(&client_input, config)?;
+    let (decoded, _): (ClientExecutorInput, usize) =
+        bincode::decode_from_slice(&input_vec, config)?;
+    assert_eq!(client_input, decoded);
 
     let input_stream = vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
 

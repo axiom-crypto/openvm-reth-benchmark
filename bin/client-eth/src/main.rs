@@ -20,7 +20,7 @@ pub fn main() {
     // print(format!("{:x}", INPUT[INPUT.len() - 1]));
     print("start bincode");
     let config = bincode::config::legacy();
-    let (input, len): (StorageTries, usize) =
+    let (input, len): (ClientExecutorInput, usize) =
         bincode::decode_from_slice(&input_vec[..], config).unwrap();
     print("finished reading input");
     assert_eq!(len, input_vec.len());
@@ -28,7 +28,7 @@ pub fn main() {
     // Execute the block.
     let executor = ClientExecutor;
     let header = executor.execute::<EthereumVariant>(input).expect("failed to execute client");
-    let block_hash = header.hash_slow();
+    // let block_hash = header.hash_slow();
 
     // Commit the block hash.
     // let block_hash = unsafe { transmute::<_, [u32; 8]>(block_hash) };

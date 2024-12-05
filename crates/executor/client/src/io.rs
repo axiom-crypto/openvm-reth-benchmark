@@ -1,12 +1,13 @@
-use std::{collections::HashMap, iter::once};
+use std::iter::once;
 
 use eyre::Result;
 use itertools::Itertools;
-use reth_primitives::{revm_primitives::AccountInfo, Address, Block, Header, B256, U256};
+use reth_primitives::{Block, Header, B256, U256};
 use reth_trie::TrieAccount;
-use revm_primitives::{keccak256, Bytecode};
+use revm_primitives::{keccak256, AccountInfo, Address, Bytecode, HashMap};
 use rsp_mpt::EthereumState;
 use rsp_witness_db::WitnessDb;
+use rustc_hash::FxBuildHasher;
 
 /// The input for the client to execute a block and fully verify the STF (state transition
 /// function).
@@ -26,7 +27,7 @@ pub struct ClientExecutorInput {
     pub parent_state: EthereumState,
     /// Requests to account state and storage slots.
     #[bincode(with_serde)]
-    pub state_requests: HashMap<Address, Vec<U256>>,
+    pub state_requests: HashMap<Address, Vec<U256>, FxBuildHasher>,
     /// Account bytecodes.
     #[bincode(with_serde)]
     pub bytecodes: Vec<Bytecode>,
@@ -159,7 +160,7 @@ pub trait WitnessInput {
         }
 
         // Verify and build block hashes
-        let mut block_hashes: HashMap<u64, B256> = HashMap::new();
+        let mut block_hashes: HashMap<u64, B256, _> = HashMap::new();
         for (child_header, parent_header) in self.headers().tuple_windows() {
             if parent_header.number != child_header.number - 1 {
                 eyre::bail!("non-consecutive blocks");
