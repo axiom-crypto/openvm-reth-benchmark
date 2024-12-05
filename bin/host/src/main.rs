@@ -170,7 +170,7 @@ async fn main() -> eyre::Result<()> {
                 let input_path = input_folder.join(format!("{}.bin", args.block_number));
                 let mut cache_file = std::fs::File::create(input_path)?;
 
-                bincode::encode_into_std_write(
+                bincode::serde::encode_into_std_write(
                     &client_input,
                     &mut cache_file,
                     bincode::config::standard(),
@@ -266,7 +266,7 @@ fn try_load_input_from_cache(
             // TODO: prune the cache if invalid instead
             let mut cache_file = std::fs::File::open(cache_path)?;
             let client_input: ClientExecutorInput =
-                bincode::decode_from_std_read(&mut cache_file, bincode::config::standard())?;
+                bincode::serde::decode_from_std_read(&mut cache_file, bincode::config::standard())?;
 
             Some(client_input)
         } else {
