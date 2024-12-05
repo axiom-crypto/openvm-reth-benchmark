@@ -1,6 +1,6 @@
 use core::mem::transmute;
 
-use axvm::io::{print, read_vec, reveal};
+use axvm::io::{println, read_vec, reveal};
 use axvm_ecc_guest::k256::Secp256k1Coord;
 #[allow(unused_imports)]
 use axvm_keccak256_guest; // trigger extern native-keccak256
@@ -23,11 +23,11 @@ pub fn main() {
 
     // Read the input. Implicitly uses bincode deserialize
     let input_vec = read_vec();
-    print("start bincode");
+    println("start bincode");
     let config = bincode::config::standard();
     let (input, len): (ClientExecutorInput, usize) =
         bincode::serde::decode_from_slice(&input_vec[..], config).unwrap();
-    print("finished reading input");
+    println("finished reading input");
     assert_eq!(len, input_vec.len());
 
     // Execute the block.

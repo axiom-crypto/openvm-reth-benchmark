@@ -50,7 +50,7 @@ impl bincode::Decode for StorageTries {
 
         let hash_builder: _ = Default::default();
         let mut map = HashMap::with_capacity_and_hasher(len, hash_builder);
-        for i in 0..len {
+        for _ in 0..len {
             // See the documentation on `unclaim_bytes_read` as to why we're doing this here
             decoder.unclaim_bytes_read(core::mem::size_of::<(Compat<B256>, MptNode)>());
 
@@ -73,7 +73,7 @@ impl<'de> bincode::BorrowDecode<'de> for StorageTries {
 
         let hash_builder: _ = Default::default();
         let mut map = HashMap::with_capacity_and_hasher(len, hash_builder);
-        for i in 0..len {
+        for _ in 0..len {
             // See the documentation on `unclaim_bytes_read` as to why we're doing this here
             decoder.unclaim_bytes_read(core::mem::size_of::<(Compat<B256>, MptNode)>());
 

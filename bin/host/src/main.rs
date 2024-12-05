@@ -184,16 +184,6 @@ async fn main() -> eyre::Result<()> {
         }
     };
 
-    // Try smaller input
-    // let mut test_input = client_input.clone();
-    // test_input.ancestor_headers.clear();
-    // test_input.parent_state.storage_tries.clear();
-    // test_input.parent_state.state_trie.cached_reference.borrow_mut().take();
-    // test_input.state_requests.clear();
-    // test_input.bytecodes.clear();
-    //
-    // let test_input = client_input.parent_state.storage_tries.clone();
-
     let config = bincode::config::standard();
     let input_vec: Vec<u8> = bincode::serde::encode_to_vec(&client_input, config)?;
     let (decoded, _): (ClientExecutorInput, usize) =

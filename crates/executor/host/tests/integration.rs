@@ -1,7 +1,6 @@
 use alloy_provider::ReqwestProvider;
 use rsp_client_executor::{
-    io::ClientExecutorInput, ChainVariant, ClientExecutor, EthereumVariant, LineaVariant,
-    OptimismVariant, Variant,
+    ChainVariant, ClientExecutor, EthereumVariant, LineaVariant, OptimismVariant, Variant,
 };
 use rsp_host_executor::HostExecutor;
 use tracing_subscriber::{
