@@ -24,9 +24,9 @@ pub fn main() {
     // Read the input. Implicitly uses bincode deserialize
     let input_vec = read_vec();
     print("start bincode");
-    let config = bincode::config::legacy();
+    let config = bincode::config::standard();
     let (input, len): (ClientExecutorInput, usize) =
-        bincode::decode_from_slice(&input_vec[..], config).unwrap();
+        bincode::serde::decode_from_slice(&input_vec[..], config).unwrap();
     print("finished reading input");
     assert_eq!(len, input_vec.len());
 

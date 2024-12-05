@@ -10,4 +10,4 @@ cd ../..
 
 mkdir -p rpc-cache
 source .env
-RUSTFLAGS="-Ctarget-cpu=native" RUST_BACKTRACE=1 cargo run --bin rsp --release -- --block-number 20526624 --rpc-url $RPC_1 --cache-dir rpc-cache --prove
+RUSTFLAGS="-Ctarget-cpu=native" RUST_BACKTRACE=1 cargo run --bin rsp --release -- --block-number 18884864 --rpc-url $RPC_1 --cache-dir rpc-cache --prove

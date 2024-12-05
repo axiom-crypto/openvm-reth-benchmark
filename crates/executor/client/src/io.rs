@@ -8,13 +8,14 @@ use revm_primitives::{keccak256, AccountInfo, Address, Bytecode, HashMap};
 use rsp_mpt::EthereumState;
 use rsp_witness_db::WitnessDb;
 use rustc_hash::FxBuildHasher;
+use serde::{Deserialize, Serialize};
 
 /// The input for the client to execute a block and fully verify the STF (state transition
 /// function).
 ///
 /// Instead of passing in the entire state, we only pass in the state roots along with merkle proofs
 /// for the storage slots that were modified and accessed.
-#[derive(Debug, Clone, PartialEq, Eq, bincode::Encode, bincode::Decode)]
+#[derive(Debug, Clone, PartialEq, Eq, bincode::Encode, bincode::Decode, Serialize, Deserialize)]
 pub struct ClientExecutorInput {
     /// The current block (which will be executed inside the client).
     #[bincode(with_serde)]
@@ -135,7 +136,7 @@ pub trait WitnessInput {
                             .to_owned(),
                         ),
                     },
-                    None => Default::default(),
+                    _ => Default::default(),
                 },
             );
 

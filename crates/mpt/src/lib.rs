@@ -4,6 +4,7 @@ use mpt::{proofs_to_tries, transition_proofs_to_tries, MptNode};
 use reth_trie::{AccountProof, TrieAccount};
 use revm::primitives::{Address, HashMap, B256};
 use rustc_hash::FxBuildHasher;
+use serde::{Deserialize, Serialize};
 use state::HashedPostState;
 
 /// Module containing MPT code adapted from `zeth`.
@@ -11,22 +12,24 @@ pub mod mpt;
 pub mod state;
 
 /// Ethereum state trie and account storage tries.
-#[derive(Debug, Clone, PartialEq, Eq, bincode::Encode, bincode::Decode)]
+#[derive(Debug, Clone, PartialEq, Eq, bincode::Encode, bincode::Decode, Serialize, Deserialize)]
 pub struct EthereumState {
     pub state_trie: MptNode,
     pub storage_tries: StorageTries,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct StorageTries(pub HashMap<B256, MptNode, FxBuildHasher>);
 
+// A custom bincode 2.0.0 Encode / Decode implementation, copied from the standard HashMap
+// derivation, except we use `Compat` to get around the fact that B256 does not implement
+// Encode/Decode but does implement serde
 impl bincode::Encode for StorageTries {
     fn encode<E: bincode::enc::Encoder>(
         &self,
         encoder: &mut E,
     ) -> core::result::Result<(), bincode::error::EncodeError> {
         bincode::Encode::encode(&(self.0.len() as u64), encoder)?;
-        dbg!(self.0.len() as u64);
         for (k, v) in self.0.iter() {
             bincode::Encode::encode(&Compat(*k), encoder)?;
             bincode::Encode::encode(v, encoder)?;
@@ -39,21 +42,14 @@ impl bincode::Decode for StorageTries {
     fn decode<D: bincode::de::Decoder>(
         decoder: &mut D,
     ) -> core::result::Result<Self, bincode::error::DecodeError> {
-        println!("decode start");
-        let len_u64: u64 = bincode::Decode::decode(decoder).unwrap_or_else(|e| {
-            println!("decode error: {e}");
-            0
-        });
-        println!("decode len: {}", len_u64);
+        let len_u64: u64 = bincode::Decode::decode(decoder)?;
         let len: usize = len_u64
             .try_into()
             .map_err(|_| bincode::error::DecodeError::OutsideUsizeRange(len_u64))?;
         decoder.claim_container_read::<(Compat<B256>, MptNode)>(len)?;
-        println!("here1");
 
         let hash_builder: _ = Default::default();
         let mut map = HashMap::with_capacity_and_hasher(len, hash_builder);
-        println!("here2");
         for i in 0..len {
             // See the documentation on `unclaim_bytes_read` as to why we're doing this here
             decoder.unclaim_bytes_read(core::mem::size_of::<(Compat<B256>, MptNode)>());
@@ -61,7 +57,6 @@ impl bincode::Decode for StorageTries {
             let k = Compat::<B256>::decode(decoder)?;
             let v = bincode::Decode::decode(decoder)?;
             map.insert(k.0, v);
-            println!("finished loop i={i}");
         }
         Ok(Self(map))
     }
@@ -70,18 +65,14 @@ impl<'de> bincode::BorrowDecode<'de> for StorageTries {
     fn borrow_decode<D: bincode::de::BorrowDecoder<'de>>(
         decoder: &mut D,
     ) -> core::result::Result<Self, bincode::error::DecodeError> {
-        println!("borrow_decode start");
         let len_u64: u64 = bincode::Decode::decode(decoder)?;
-        println!("borrow_decode len: {}", len_u64);
         let len: usize = len_u64
             .try_into()
             .map_err(|_| bincode::error::DecodeError::OutsideUsizeRange(len_u64))?;
         decoder.claim_container_read::<(Compat<B256>, MptNode)>(len)?;
-        println!("here1");
 
         let hash_builder: _ = Default::default();
         let mut map = HashMap::with_capacity_and_hasher(len, hash_builder);
-        println!("here2");
         for i in 0..len {
             // See the documentation on `unclaim_bytes_read` as to why we're doing this here
             decoder.unclaim_bytes_read(core::mem::size_of::<(Compat<B256>, MptNode)>());
@@ -89,7 +80,6 @@ impl<'de> bincode::BorrowDecode<'de> for StorageTries {
             let k = Compat::<B256>::borrow_decode(decoder)?;
             let v = bincode::BorrowDecode::borrow_decode(decoder)?;
             map.insert(k.0, v);
-            println!("finished loop i={i}");
         }
         Ok(Self(map))
     }
@@ -149,7 +139,7 @@ impl EthereumState {
                     };
                     self.state_trie.insert_rlp(hashed_address, state_account).unwrap();
                 }
-                None => {
+                _ => {
                     self.state_trie.delete(hashed_address).unwrap();
                 }
             }

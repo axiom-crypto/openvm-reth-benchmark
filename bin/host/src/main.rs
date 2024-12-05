@@ -8,10 +8,7 @@ use ax_stark_sdk::{
     config::{baby_bear_poseidon2::BabyBearPoseidon2Engine, FriParameters},
     engine::{StarkFriEngine, VerificationDataWithFriParams},
 };
-use axvm_algebra_circuit::{
-    ModularExtension, ModularExtensionExecutor, ModularExtensionPeriphery, Rv32ModularConfig,
-    Rv32ModularWithFp2Config,
-};
+use axvm_algebra_circuit::{ModularExtension, ModularExtensionExecutor, ModularExtensionPeriphery};
 use axvm_algebra_transpiler::ModularTranspilerExtension;
 use axvm_circuit::{
     arch::{
@@ -22,8 +19,8 @@ use axvm_circuit::{
     derive::{AnyEnum, InstructionExecutor, VmConfig},
 };
 use axvm_ecc_circuit::{
-    CurveConfig, Rv32WeierstrassConfig, WeierstrassExtension, WeierstrassExtensionExecutor,
-    WeierstrassExtensionPeriphery, SECP256K1_CONFIG,
+    WeierstrassExtension, WeierstrassExtensionExecutor, WeierstrassExtensionPeriphery,
+    SECP256K1_CONFIG,
 };
 use axvm_ecc_transpiler::EccTranspilerExtension;
 use axvm_keccak256_circuit::{Keccak256, Keccak256Executor, Keccak256Periphery};
@@ -36,15 +33,13 @@ use axvm_rv32im_transpiler::{
     Rv32ITranspilerExtension, Rv32IoTranspilerExtension, Rv32MTranspilerExtension,
 };
 use axvm_transpiler::{axvm_platform::memory::MEM_SIZE, elf::Elf, transpiler::Transpiler, FromElf};
-use bincode::de::{read::SliceReader, DecoderImpl};
 use clap::Parser;
+use core::option::Option::None;
 use derive_more::From;
 use metrics::{counter, gauge, Gauge};
-use reth_primitives::{Block, Header};
 use rsp_client_executor::{
-    io::ClientExecutorInput,
-    rsp_mpt::{mpt::MptNode, EthereumState, StorageTries},
-    ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET, CHAIN_ID_OP_MAINNET,
+    io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET,
+    CHAIN_ID_OP_MAINNET,
 };
 use rsp_host_executor::HostExecutor;
 use std::{path::PathBuf, time::Instant};
@@ -105,7 +100,7 @@ impl Default for Rv32RethConfig {
             system: SystemConfig::default()
                 .with_continuations()
                 .with_public_values(32)
-                .with_max_segment_len((1 << 20) - 100),
+                .with_max_segment_len((1 << 23) - 100),
             base: Rv32I,
             mul: Rv32M::default(),
             io: Rv32Io,
@@ -199,10 +194,10 @@ async fn main() -> eyre::Result<()> {
     //
     // let test_input = client_input.parent_state.storage_tries.clone();
 
-    let config = bincode::config::legacy();
-    let input_vec: Vec<u8> = bincode::encode_to_vec(&client_input, config)?;
+    let config = bincode::config::standard();
+    let input_vec: Vec<u8> = bincode::serde::encode_to_vec(&client_input, config)?;
     let (decoded, _): (ClientExecutorInput, usize) =
-        bincode::decode_from_slice(&input_vec, config)?;
+        bincode::serde::decode_from_slice(&input_vec, config)?;
     assert_eq!(client_input, decoded);
 
     let input_stream = vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
@@ -236,14 +231,17 @@ async fn main() -> eyre::Result<()> {
             config.system.collect_metrics = false;
             counter!("fri.log_blowup").absolute(engine.fri_params().log_blowup as u64);
             let vm = VirtualMachine::new(engine, config);
-            let pk = time(gauge!("keygen_time_ms"), || vm.keygen());
-            // 3. Commit to the exe by generating cached trace for program.
-            let committed_exe = time(gauge!("commit_exe_time_ms"), || vm.commit_exe(exe));
-            // 4. Executes runtime again without metric collection and generate trace.
-            let results = time(gauge!("execute_and_trace_gen_time_ms"), || {
-                vm.execute_and_generate_with_cached_program(committed_exe, input_stream)
-            })?;
-            if args.prove {
+            if !args.prove {
+                // Execute runtime only without metrics collection.
+                time(gauge!("execute_time_ms"), || vm.execute(exe, input_stream))?;
+            } else {
+                // 3. Commit to the exe by generating cached trace for program.
+                let committed_exe = time(gauge!("commit_exe_time_ms"), || vm.commit_exe(exe));
+                // 4. Executes runtime again without metric collection and generate trace.
+                let results = time(gauge!("execute_and_trace_gen_time_ms"), || {
+                    vm.execute_and_generate_with_cached_program(committed_exe, input_stream)
+                })?;
+                let pk = time(gauge!("keygen_time_ms"), || vm.keygen());
                 // 5. Generate STARK proofs for each segment (segmentation is determined by
                 //    `config`), with timer.
                 // vm.prove will emit metrics for proof time of each segment

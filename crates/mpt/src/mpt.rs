@@ -31,6 +31,7 @@ use core::{
 use reth_trie::AccountProof;
 use revm::primitives::HashMap;
 use rustc_hash::FxBuildHasher;
+use serde::{Deserialize, Serialize};
 
 use rlp::{Decodable, DecoderError, Prototype, Rlp};
 use thiserror::Error as ThisError;
@@ -96,7 +97,17 @@ pub fn keccak(data: impl AsRef<[u8]>) -> [u8; 32] {
 /// return an error. Another distinction of this implementation is that branches cannot
 /// store values, aligning with the construction of MPTs in Ethereum.
 #[derive(
-    Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd, bincode::Encode, bincode::Decode,
+    Clone,
+    Debug,
+    Default,
+    PartialEq,
+    Eq,
+    Ord,
+    PartialOrd,
+    bincode::Encode,
+    bincode::Decode,
+    Serialize,
+    Deserialize,
 )]
 pub struct MptNode {
     /// The type and data of the node.
@@ -137,7 +148,17 @@ pub enum Error {
 /// structure. This enum provides a clear and type-safe way to represent the data
 /// associated with each node type.
 #[derive(
-    Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd, bincode::Encode, bincode::Decode,
+    Clone,
+    Debug,
+    Default,
+    PartialEq,
+    Eq,
+    Ord,
+    PartialOrd,
+    bincode::Encode,
+    bincode::Decode,
+    Serialize,
+    Deserialize,
 )]
 pub enum MptNodeData {
     /// Represents an empty trie node.
@@ -161,7 +182,19 @@ pub enum MptNodeData {
 /// Nodes in the MPT can reference other nodes either directly through their byte
 /// representation or indirectly through a hash of their encoding. This enum provides a
 /// clear and type-safe way to represent these references.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd, bincode::Encode, bincode::Decode)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    Hash,
+    Ord,
+    PartialOrd,
+    bincode::Encode,
+    bincode::Decode,
+    Serialize,
+    Deserialize,
+)]
 pub enum MptNodeReference {
     /// Represents a direct reference to another node using its byte encoding. Typically
     /// used for short encodings that are less than 32 bytes in length.
