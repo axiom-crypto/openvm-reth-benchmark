@@ -137,4 +137,4 @@ rustdoc.all = "warn"
 
 [profile.release]
 lto = "fat"
-debug-assertions = true
+debug-assertions = false

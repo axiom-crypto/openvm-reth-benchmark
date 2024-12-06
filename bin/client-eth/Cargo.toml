@@ -14,10 +14,7 @@ rustc-hash = "2.1.0"
 rsp-client-executor = { path = "../../crates/executor/client" }
 
 # axvm
-axvm = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", features = [
-    "std",
-    # "heap-embedded-alloc",
-] }
+axvm = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", features = ["std"] }
 axvm-keccak256-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
 axvm-algebra-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
 axvm-ecc-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
@@ -29,6 +26,10 @@ tracing = { version = "0.1", features = [
     "max_level_off",
     "release_max_level_off",
 ] }
+
+[features]
+default = []
+heap-embedded-alloc = ["axvm/heap-embedded-alloc"]
 
 [patch.crates-io]
 # Precompile patches

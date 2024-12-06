@@ -40,12 +40,13 @@ axvm-ecc-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.g
 axvm-circuit = { workspace = true }
 axvm-benchmarks = { workspace = true, features = [
     "parallel",
-    "mimalloc",
-    # "bench-metrics",
 ] }
 ax-stark-sdk = { workspace = true }
 derive_more = "1.0.0"
 
 [features]
-default = []
+default = ["mimalloc", "bench-metrics"]
+bench-metrics = ["axvm-benchmarks/bench-metrics"]
+mimalloc = ["axvm-benchmarks/mimalloc"]
+jemalloc = ["axvm-benchmarks/jemalloc"]
 # cuda = ["sp1-sdk/cuda"]

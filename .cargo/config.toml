@@ -33,9 +33,7 @@ git-fetch-with-cli = true
 # axvm-ecc-circuit = { path = "../afs-prototype/extensions/ecc/circuit", default-features = false }
 # axvm-ecc-transpiler = { path = "../afs-prototype/extensions/ecc/transpiler", default-features = false }
 # axvm-ecc-guest = { path = "../afs-prototype/extensions/ecc/guest", default-features = false }
-# axvm-ecc-constants = { path = "../afs-prototype/extensions/ecc/constants", default-features = false }
 # axvm-ecc-sw-setup = { path = "../afs-prototype/extensions/ecc/sw-setup", default-features = false }
-# ax-ecc-execution = { path = "../afs-prototype/extensions/ecc/execution", default-features = false }
 # axvm-keccak256-circuit = { path = "../afs-prototype/extensions/keccak256/circuit", default-features = false }
 # axvm-keccak256-transpiler = { path = "../afs-prototype/extensions/keccak256/transpiler", default-features = false }
 # axvm-keccak256-guest = { path = "../afs-prototype/extensions/keccak256/guest", default-features = false }
