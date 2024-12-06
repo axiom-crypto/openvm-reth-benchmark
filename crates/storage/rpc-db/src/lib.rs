@@ -14,6 +14,7 @@ use reth_primitives::{
 use reth_revm::DatabaseRef;
 use reth_storage_errors::{db::DatabaseError, provider::ProviderError};
 use revm_primitives::HashMap;
+use rustc_hash::FxBuildHasher;
 
 /// A database that fetches data from a [Provider] over a [Transport].
 #[derive(Debug, Clone)]
@@ -137,7 +138,7 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> RpcDb<T, P> {
     }
 
     /// Gets all the state keys used. The client uses this to read the actual state data from tries.
-    pub fn get_state_requests(&self) -> HashMap<Address, Vec<U256>> {
+    pub fn get_state_requests(&self) -> HashMap<Address, Vec<U256>, FxBuildHasher> {
         let accounts = self.accounts.borrow();
         let storage = self.storage.borrow();
 

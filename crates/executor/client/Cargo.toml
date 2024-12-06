@@ -3,7 +3,6 @@ name = "rsp-client-executor"
 description = ""
 version.workspace = true
 edition.workspace = true
-license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
@@ -15,6 +14,9 @@ eyre.workspace = true
 serde_json.workspace = true
 serde.workspace = true
 tokio.workspace = true
+bincode.workspace = true
+rustc-hash.workspace = true
+hashbrown = { version = "0.14", features = ["rayon"] }
 
 # workspace
 rsp-witness-db.workspace = true
@@ -45,5 +47,9 @@ alloy-rlp.workspace = true
 itertools = "0.13.0"
 url.workspace = true
 futures.workspace = true
+
+[target.'cfg(target_os = "zkvm")'.dependencies]
+revm-primitives = { workspace = true, features = ["hashbrown"] }
+alloy-primitives = { workspace = true, features = ["native-keccak"] }
 
 [dev-dependencies]

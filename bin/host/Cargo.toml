@@ -8,12 +8,14 @@ tokio.workspace = true
 eyre.workspace = true
 url.workspace = true
 tracing-subscriber = "0.3.18"
+tracing.workspace = true
 dotenv = "0.15.0"
 clap = { version = "4.5.7", features = ["derive", "env"] }
 serde_json.workspace = true
 serde.workspace = true
-bincode = "1.3.3"
 csv = "1.1"
+bincode = { workspace = true, features = ["std"] }
+metrics = "0.23.0"
 # workspace
 rsp-host-executor.workspace = true
 rsp-client-executor.workspace = true
@@ -21,15 +23,30 @@ rsp-client-executor.workspace = true
 # alloy
 alloy-provider.workspace = true
 
-# reth 
+# reth
 reth-primitives.workspace = true
 
-# sp1
-sp1-sdk = "3.0.0"
-
-[build-dependencies]
-sp1-helper = "3.0.0"
+# axvm
+axvm-build = { workspace = true }
+axvm-transpiler = { workspace = true }
+axvm-keccak256-circuit = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-keccak256-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-rv32im-circuit = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-rv32im-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-algebra-circuit = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-algebra-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-ecc-circuit = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-ecc-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-circuit = { workspace = true }
+axvm-benchmarks = { workspace = true, features = [
+    "parallel",
+] }
+ax-stark-sdk = { workspace = true }
+derive_more = "1.0.0"
 
 [features]
-default = []
-cuda = ["sp1-sdk/cuda"]
+default = ["mimalloc", "bench-metrics"]
+bench-metrics = ["axvm-benchmarks/bench-metrics"]
+mimalloc = ["axvm-benchmarks/mimalloc"]
+jemalloc = ["axvm-benchmarks/jemalloc"]
+# cuda = ["sp1-sdk/cuda"]

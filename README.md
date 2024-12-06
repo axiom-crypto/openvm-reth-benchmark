@@ -6,9 +6,36 @@ A minimal implementation of generating zero-knowledge proofs of EVM block execut
 >
 > This repository is still an active work-in-progress and is not audited or meant for production usage.
 
+## [WIP] axVM
+
+Instructions to run:
+In axvm repo:
+```bash
+cd crates/cargo-axiom
+cargo install --force --path .
+```
+to install `cargo axiom`.
+
+In this repo,
+```bash
+cd bin/client-eth
+cargo axiom build
+mkdir -p ../host/elf
+cp target/riscv32im-risc0-zkvm-elf/release/rsp-client-eth ../host/elf/
+cd ../..
+```
+install any rust stuff it tells you to.
+
+To run
+```bash
+mkdir rpc-cache
+RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info cargo run --bin rsp --release -- --prove --block-number 20526624 --rpc-url $RPC_1 --cache-dir rpc-cache
+```
+Get an archive node rpc url for $RPC_1 for eth mainnet.
+
 ## Getting Started
 
-To use RSP, you must first have [Rust](https://www.rust-lang.org/tools/install) installed and [SP1](https://docs.succinct.xyz/getting-started/install.html) installed to build the client programs. Then follow the instructions below.
+To use RSP, you must first have [Rust](https://www.rust-lang.org/tools/install) installed and axVM installed to build the client programs. Then follow the instructions below.
 
 ### Installing the CLI
 

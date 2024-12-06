@@ -1,19 +1,55 @@
 use alloy_provider::ReqwestProvider;
+use ax_stark_sdk::{
+    ax_stark_backend::{
+        self,
+        engine::VerificationData,
+        p3_field::{AbstractField, PrimeField32},
+    },
+    config::{baby_bear_poseidon2::BabyBearPoseidon2Engine, FriParameters},
+    engine::{StarkFriEngine, VerificationDataWithFriParams},
+};
+use axvm_algebra_circuit::{ModularExtension, ModularExtensionExecutor, ModularExtensionPeriphery};
+use axvm_algebra_transpiler::ModularTranspilerExtension;
+use axvm_circuit::{
+    arch::{
+        instructions::exe::AxVmExe, SystemConfig, SystemExecutor, SystemPeriphery, VirtualMachine,
+        VmChipComplex, VmConfig, VmInventoryError,
+    },
+    circuit_derive::{Chip, ChipUsageGetter},
+    derive::{AnyEnum, InstructionExecutor, VmConfig},
+};
+use axvm_ecc_circuit::{
+    WeierstrassExtension, WeierstrassExtensionExecutor, WeierstrassExtensionPeriphery,
+    SECP256K1_CONFIG,
+};
+use axvm_ecc_transpiler::EccTranspilerExtension;
+use axvm_keccak256_circuit::{Keccak256, Keccak256Executor, Keccak256Periphery};
+use axvm_keccak256_transpiler::Keccak256TranspilerExtension;
+use axvm_rv32im_circuit::{
+    Rv32I, Rv32IExecutor, Rv32IPeriphery, Rv32Io, Rv32IoExecutor, Rv32IoPeriphery, Rv32M,
+    Rv32MExecutor, Rv32MPeriphery,
+};
+use axvm_rv32im_transpiler::{
+    Rv32ITranspilerExtension, Rv32IoTranspilerExtension, Rv32MTranspilerExtension,
+};
+use axvm_transpiler::{axvm_platform::memory::MEM_SIZE, elf::Elf, transpiler::Transpiler, FromElf};
 use clap::Parser;
-use reth_primitives::B256;
+use core::option::Option::None;
+use derive_more::From;
+use metrics::{counter, gauge, Gauge};
 use rsp_client_executor::{
     io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET,
     CHAIN_ID_OP_MAINNET,
 };
 use rsp_host_executor::HostExecutor;
-use sp1_sdk::{include_elf, ProverClient, SP1Stdin};
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Instant};
 use tracing_subscriber::{
-    filter::EnvFilter, fmt, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
+    fmt, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt, EnvFilter,
 };
 
+pub use reth_primitives;
+
 mod execute;
-use execute::process_execution_report;
 
 mod cli;
 use cli::ProviderArgs;
@@ -36,6 +72,46 @@ struct HostArgs {
     /// The path to the CSV file containing the execution data.
     #[clap(long, default_value = "report.csv")]
     report_path: PathBuf,
+}
+
+const RSP_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/rsp-client-eth");
+
+#[derive(Clone, Debug, VmConfig)]
+pub struct Rv32RethConfig {
+    #[system]
+    pub system: SystemConfig,
+    #[extension]
+    pub base: Rv32I,
+    #[extension]
+    pub mul: Rv32M,
+    #[extension]
+    pub io: Rv32Io,
+    #[extension]
+    pub keccak: Keccak256,
+    #[extension]
+    pub modular: ModularExtension,
+    #[extension]
+    pub weierstrass: WeierstrassExtension,
+}
+
+impl Default for Rv32RethConfig {
+    fn default() -> Self {
+        Self {
+            system: SystemConfig::default()
+                .with_continuations()
+                .with_public_values(32)
+                .with_max_segment_len((1 << 23) - 100),
+            base: Rv32I,
+            mul: Rv32M::default(),
+            io: Rv32Io,
+            keccak: Keccak256,
+            modular: ModularExtension::new(vec![
+                SECP256K1_CONFIG.modulus.clone(),
+                SECP256K1_CONFIG.scalar.clone(),
+            ]),
+            weierstrass: WeierstrassExtension::new(vec![SECP256K1_CONFIG.clone()]),
+        }
+    }
 }
 
 #[tokio::main]
@@ -94,7 +170,11 @@ async fn main() -> eyre::Result<()> {
                 let input_path = input_folder.join(format!("{}.bin", args.block_number));
                 let mut cache_file = std::fs::File::create(input_path)?;
 
-                bincode::serialize_into(&mut cache_file, &client_input)?;
+                bincode::serde::encode_into_std_write(
+                    &client_input,
+                    &mut cache_file,
+                    bincode::config::standard(),
+                )?;
             }
 
             client_input
@@ -104,42 +184,72 @@ async fn main() -> eyre::Result<()> {
         }
     };
 
-    // Generate the proof.
-    let client = ProverClient::new();
+    let config = bincode::config::standard();
+    let input_vec: Vec<u8> = bincode::serde::encode_to_vec(&client_input, config)?;
+    let (decoded, _): (ClientExecutorInput, usize) =
+        bincode::serde::decode_from_slice(&input_vec, config)?;
+    assert_eq!(client_input, decoded);
 
-    // Setup the proving key and verification key.
-    let (pk, vk) = client.setup(match variant {
-        ChainVariant::Ethereum => include_elf!("rsp-client-eth"),
-        ChainVariant::Optimism => include_elf!("rsp-client-op"),
-        ChainVariant::Linea => include_elf!("rsp-client-linea"),
-    });
+    let input_stream = vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
 
-    // Execute the block inside the zkVM.
-    let mut stdin = SP1Stdin::new();
-    let buffer = bincode::serialize(&client_input).unwrap();
-    stdin.write_vec(buffer);
+    let elf = Elf::decode(RSP_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
+    let exe = AxVmExe::from_elf(
+        elf,
+        Transpiler::default()
+            .with_extension(Rv32ITranspilerExtension)
+            .with_extension(Rv32MTranspilerExtension)
+            .with_extension(Rv32IoTranspilerExtension)
+            .with_extension(Keccak256TranspilerExtension)
+            .with_extension(ModularTranspilerExtension)
+            .with_extension(EccTranspilerExtension),
+        // add more extensions
+    );
+    let app_log_blowup = 2;
+    tracing::info_span!("reth-block", group = "reth_block", block_number = args.block_number)
+        .in_scope(|| -> eyre::Result<()> {
+            let engine = BabyBearPoseidon2Engine::new(
+                FriParameters::standard_with_100_bits_conjectured_security(app_log_blowup),
+            );
+            // bench_from_exe
+            let mut config = Rv32RethConfig::default();
+            // 1. Executes runtime once with full metric collection for flamegraphs (slow).
+            // config.system_mut().collect_metrics = true;
+            // let executor = VmExecutor::<Val<SC>, VC>::new(config.clone());
+            // tracing::info_span!("execute_with_metrics", collect_metrics = true)
+            //     .in_scope(|| executor.execute(exe.clone(), input_stream.clone()))?;
+            // 2. Generate proving key from config.
+            config.system.collect_metrics = false;
+            counter!("fri.log_blowup").absolute(engine.fri_params().log_blowup as u64);
+            let vm = VirtualMachine::new(engine, config);
+            if !args.prove {
+                // Execute runtime only without metrics collection.
+                time(gauge!("execute_time_ms"), || vm.execute(exe, input_stream))?;
+            } else {
+                // 3. Commit to the exe by generating cached trace for program.
+                let committed_exe = time(gauge!("commit_exe_time_ms"), || vm.commit_exe(exe));
+                // 4. Executes runtime again without metric collection and generate trace.
+                let results = time(gauge!("execute_and_trace_gen_time_ms"), || {
+                    vm.execute_and_generate_with_cached_program(committed_exe, input_stream)
+                })?;
+                let pk = time(gauge!("keygen_time_ms"), || vm.keygen());
+                // 5. Generate STARK proofs for each segment (segmentation is determined by
+                //    `config`), with timer.
+                // vm.prove will emit metrics for proof time of each segment
+                let proofs = vm.prove(&pk, results);
+                // 6. Verify STARK proofs.
+                let vk = pk.get_vk();
+                vm.verify(&vk, proofs.clone()).expect("Verification failed");
+                let _vdata: Vec<_> = proofs
+                    .into_iter()
+                    .map(|proof| VerificationDataWithFriParams {
+                        data: VerificationData { vk: vk.clone(), proof },
+                        fri_params: vm.engine.fri_params(),
+                    })
+                    .collect();
+            }
 
-    // Only execute the program.
-    let (mut public_values, execution_report) =
-        client.execute(&pk.elf, stdin.clone()).run().unwrap();
-
-    // Read the block hash.
-    let block_hash = public_values.read::<B256>();
-    println!("success: block_hash={block_hash}");
-
-    // Process the execute report, print it out, and save data to a CSV specified by
-    // report_path.
-    process_execution_report(variant, client_input, execution_report, args.report_path)?;
-
-    if args.prove {
-        // Actually generate the proof. It is strongly recommended you use the network prover
-        // given the size of these programs.
-        println!("Starting proof generation.");
-        let proof = client.prove(&pk, stdin).compressed().run().expect("Proving should work.");
-        println!("Proof generation finished.");
-
-        client.verify(&proof, &vk).expect("proof verification should succeed");
-    }
+            Ok(())
+        })?;
 
     Ok(())
 }
@@ -155,7 +265,8 @@ fn try_load_input_from_cache(
         if cache_path.exists() {
             // TODO: prune the cache if invalid instead
             let mut cache_file = std::fs::File::open(cache_path)?;
-            let client_input: ClientExecutorInput = bincode::deserialize_from(&mut cache_file)?;
+            let client_input: ClientExecutorInput =
+                bincode::serde::decode_from_std_read(&mut cache_file, bincode::config::standard())?;
 
             Some(client_input)
         } else {
@@ -164,4 +275,11 @@ fn try_load_input_from_cache(
     } else {
         None
     })
+}
+
+fn time<F: FnOnce() -> R, R>(gauge: Gauge, f: F) -> R {
+    let start = Instant::now();
+    let res = f();
+    gauge.set(start.elapsed().as_millis() as f64);
+    res
 }

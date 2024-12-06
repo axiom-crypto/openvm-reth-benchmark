@@ -1,12 +1,13 @@
-use std::{collections::HashMap, iter::once};
+use std::iter::once;
 
 use eyre::Result;
 use itertools::Itertools;
-use reth_primitives::{revm_primitives::AccountInfo, Address, Block, Header, B256, U256};
+use reth_primitives::{Block, Header, B256, U256};
 use reth_trie::TrieAccount;
-use revm_primitives::{keccak256, Bytecode};
+use revm_primitives::{keccak256, AccountInfo, Address, Bytecode, HashMap};
 use rsp_mpt::EthereumState;
 use rsp_witness_db::WitnessDb;
+use rustc_hash::FxBuildHasher;
 use serde::{Deserialize, Serialize};
 
 /// The input for the client to execute a block and fully verify the STF (state transition
@@ -14,18 +15,22 @@ use serde::{Deserialize, Serialize};
 ///
 /// Instead of passing in the entire state, we only pass in the state roots along with merkle proofs
 /// for the storage slots that were modified and accessed.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, bincode::Encode, bincode::Decode, Serialize, Deserialize)]
 pub struct ClientExecutorInput {
     /// The current block (which will be executed inside the client).
+    #[bincode(with_serde)]
     pub current_block: Block,
     /// The previous block headers starting from the most recent. There must be at least one header
     /// to provide the parent state root.
+    #[bincode(with_serde)]
     pub ancestor_headers: Vec<Header>,
     /// Network state as of the parent block.
     pub parent_state: EthereumState,
     /// Requests to account state and storage slots.
-    pub state_requests: HashMap<Address, Vec<U256>>,
+    #[bincode(with_serde)]
+    pub state_requests: HashMap<Address, Vec<U256>, FxBuildHasher>,
     /// Account bytecodes.
+    #[bincode(with_serde)]
     pub bytecodes: Vec<Bytecode>,
 }
 
@@ -131,7 +136,7 @@ pub trait WitnessInput {
                             .to_owned(),
                         ),
                     },
-                    None => Default::default(),
+                    _ => Default::default(),
                 },
             );
 
@@ -140,6 +145,7 @@ pub trait WitnessInput {
 
                 let storage_trie = state
                     .storage_tries
+                    .0
                     .get(hashed_address)
                     .ok_or_else(|| eyre::eyre!("parent state does not contain storage trie"))?;
 
@@ -155,7 +161,7 @@ pub trait WitnessInput {
         }
 
         // Verify and build block hashes
-        let mut block_hashes: HashMap<u64, B256> = HashMap::new();
+        let mut block_hashes: HashMap<u64, B256, _> = HashMap::new();
         for (child_header, parent_header) in self.headers().tuple_windows() {
             if parent_header.number != child_header.number - 1 {
                 eyre::bail!("non-consecutive blocks");
