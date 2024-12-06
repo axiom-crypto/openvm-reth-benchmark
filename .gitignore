@@ -22,3 +22,8 @@ pgo-data.profdata
 elf
 
 **.csv
+
+# KZG trusted setup
+**/params
+
+**/rpc-cache
