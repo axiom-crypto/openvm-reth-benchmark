@@ -37,9 +37,9 @@ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "alloy-chains"
-version = "0.1.47"
+version = "0.1.48"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18c5c520273946ecf715c0010b4e3503d7eba9893cd9ce6b7fff5654c4a3c470"
+checksum = "a0161082e0edd9013d23083465cc04b20e44b7a15646d36ba7b0cdb7cd6fe18f"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -499,7 +499,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 [[package]]
 name = "axvm"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#5946d12b864e9660817bf1fafafc20da49bdabdc"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
 dependencies = [
  "axvm-platform",
  "axvm-rv32im-guest",
@@ -510,9 +510,68 @@ dependencies = [
 ]
 
 [[package]]
+name = "axvm-algebra-guest"
+version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+dependencies = [
+ "axvm",
+ "axvm-algebra-moduli-setup",
+ "axvm-platform",
+ "num-bigint-dig",
+ "serde",
+ "serde-big-array",
+ "strum_macros",
+]
+
+[[package]]
+name = "axvm-algebra-moduli-setup"
+version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+dependencies = [
+ "axvm-macros-common",
+ "quote",
+ "syn 2.0.90",
+]
+
+[[package]]
+name = "axvm-ecc-guest"
+version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+dependencies = [
+ "axvm",
+ "axvm-algebra-guest",
+ "axvm-algebra-moduli-setup",
+ "axvm-ecc-sw-setup",
+ "axvm-platform",
+ "ecdsa",
+ "elliptic-curve",
+ "group",
+ "hex-literal",
+ "itertools 0.13.0",
+ "k256",
+ "lazy_static",
+ "num-bigint",
+ "num-bigint-dig",
+ "num-traits",
+ "rand",
+ "serde",
+ "strum_macros",
+]
+
+[[package]]
+name = "axvm-ecc-sw-setup"
+version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+dependencies = [
+ "axvm-macros-common",
+ "quote",
+ "syn 2.0.90",
+]
+
+[[package]]
 name = "axvm-keccak256-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#5946d12b864e9660817bf1fafafc20da49bdabdc"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
 dependencies = [
  "axvm-platform",
  "serde",
@@ -520,9 +579,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "axvm-macros-common"
+version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+dependencies = [
+ "syn 2.0.90",
+]
+
+[[package]]
 name = "axvm-platform"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#5946d12b864e9660817bf1fafafc20da49bdabdc"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
 dependencies = [
  "bincode",
  "critical-section",
@@ -536,7 +603,7 @@ dependencies = [
 [[package]]
 name = "axvm-rv32im-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#5946d12b864e9660817bf1fafafc20da49bdabdc"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
 dependencies = [
  "axvm-platform",
  "strum_macros",
@@ -1313,6 +1380,7 @@ checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 dependencies = [
  "ahash",
  "allocator-api2",
+ "rayon",
  "serde",
 ]
 
@@ -2628,7 +2696,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "14.0.1"
-source = "git+https://github.com/axiom-crypto/revm?branch=v43-patched#11564d93c8eb8a126921396dbd32e41948e89577"
+source = "git+ssh://git@github.com/axiom-crypto/revm?branch=v43-patched#cc00b06edc6528f24b8d8ae5b26a4d91a589cebc"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -2642,7 +2710,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "10.0.1"
-source = "git+https://github.com/axiom-crypto/revm?branch=v43-patched#11564d93c8eb8a126921396dbd32e41948e89577"
+source = "git+ssh://git@github.com/axiom-crypto/revm?branch=v43-patched#cc00b06edc6528f24b8d8ae5b26a4d91a589cebc"
 dependencies = [
  "revm-primitives",
  "serde",
@@ -2651,9 +2719,12 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "11.0.1"
-source = "git+https://github.com/axiom-crypto/revm?branch=v43-patched#11564d93c8eb8a126921396dbd32e41948e89577"
+source = "git+ssh://git@github.com/axiom-crypto/revm?branch=v43-patched#cc00b06edc6528f24b8d8ae5b26a4d91a589cebc"
 dependencies = [
  "aurora-engine-modexp",
+ "axvm",
+ "axvm-ecc-guest",
+ "axvm-keccak256-guest",
  "c-kzg",
  "cfg-if",
  "k256",
@@ -2669,7 +2740,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "9.0.1"
-source = "git+https://github.com/axiom-crypto/revm?branch=v43-patched#11564d93c8eb8a126921396dbd32e41948e89577"
+source = "git+ssh://git@github.com/axiom-crypto/revm?branch=v43-patched#cc00b06edc6528f24b8d8ae5b26a4d91a589cebc"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -2741,10 +2812,14 @@ name = "rsp-client-eth"
 version = "0.0.0"
 dependencies = [
  "axvm",
+ "axvm-algebra-guest",
+ "axvm-ecc-guest",
  "axvm-keccak256-guest",
+ "axvm-platform",
  "bincode",
  "log",
  "rsp-client-executor",
+ "rustc-hash",
  "tracing",
 ]
 
@@ -2754,8 +2829,10 @@ version = "0.1.0"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
+ "bincode",
  "eyre",
  "futures",
+ "hashbrown 0.14.5",
  "itertools 0.13.0",
  "reth-chainspec",
  "reth-errors",
@@ -2774,6 +2851,7 @@ dependencies = [
  "rsp-mpt",
  "rsp-primitives",
  "rsp-witness-db",
+ "rustc-hash",
  "serde",
  "serde_json",
  "tokio",
@@ -2788,6 +2866,7 @@ dependencies = [
  "alloy-rlp",
  "alloy-rpc-types",
  "anyhow",
+ "bincode",
  "eyre",
  "itertools 0.13.0",
  "reth-execution-types",
@@ -2797,6 +2876,7 @@ dependencies = [
  "revm-primitives",
  "rlp",
  "rsp-primitives",
+ "rustc-hash",
  "serde",
  "thiserror",
 ]
@@ -3007,6 +3087,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6513c1ad0b11a9376da888e3e0baa0077f1aed55c17f50e7b2397136129fb88f"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-big-array"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11fc7cc2c76d73e0f27ee52abbd64eec84d46f370c88371120433196934e4b7f"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

@@ -37,6 +37,12 @@ thiserror = "1.0.61"
 hex-literal = "0.4.1"
 rayon = "1.10.0"
 rlp = "0.5.2"
+bincode = { version = "2.0.0-rc", default-features = false, features = [
+    "derive",
+    "alloc",
+    "serde",
+] }
+rustc-hash = "2.1.0"
 
 # workspace
 rsp-rpc-db = { path = "./crates/storage/rpc-db" }
@@ -128,3 +134,7 @@ rust.unreachable_pub = "warn"
 rust.unused_must_use = "deny"
 rust.rust_2018_idioms = { level = "deny", priority = -1 }
 rustdoc.all = "warn"
+
+[profile.release]
+lto = "fat"
+debug-assertions = false

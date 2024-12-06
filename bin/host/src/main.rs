@@ -8,6 +8,8 @@ use ax_stark_sdk::{
     config::{baby_bear_poseidon2::BabyBearPoseidon2Engine, FriParameters},
     engine::{StarkFriEngine, VerificationDataWithFriParams},
 };
+use axvm_algebra_circuit::{ModularExtension, ModularExtensionExecutor, ModularExtensionPeriphery};
+use axvm_algebra_transpiler::ModularTranspilerExtension;
 use axvm_circuit::{
     arch::{
         instructions::exe::AxVmExe, SystemConfig, SystemExecutor, SystemPeriphery, VirtualMachine,
@@ -16,6 +18,11 @@ use axvm_circuit::{
     circuit_derive::{Chip, ChipUsageGetter},
     derive::{AnyEnum, InstructionExecutor, VmConfig},
 };
+use axvm_ecc_circuit::{
+    WeierstrassExtension, WeierstrassExtensionExecutor, WeierstrassExtensionPeriphery,
+    SECP256K1_CONFIG,
+};
+use axvm_ecc_transpiler::EccTranspilerExtension;
 use axvm_keccak256_circuit::{Keccak256, Keccak256Executor, Keccak256Periphery};
 use axvm_keccak256_transpiler::Keccak256TranspilerExtension;
 use axvm_rv32im_circuit::{
@@ -25,13 +32,9 @@ use axvm_rv32im_circuit::{
 use axvm_rv32im_transpiler::{
     Rv32ITranspilerExtension, Rv32IoTranspilerExtension, Rv32MTranspilerExtension,
 };
-use axvm_transpiler::{
-    axvm_platform::{bincode, memory::MEM_SIZE},
-    elf::Elf,
-    transpiler::Transpiler,
-    FromElf,
-};
+use axvm_transpiler::{axvm_platform::memory::MEM_SIZE, elf::Elf, transpiler::Transpiler, FromElf};
 use clap::Parser;
+use core::option::Option::None;
 use derive_more::From;
 use metrics::{counter, gauge, Gauge};
 use rsp_client_executor::{
@@ -43,6 +46,8 @@ use std::{path::PathBuf, time::Instant};
 use tracing_subscriber::{
     fmt, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt, EnvFilter,
 };
+
+pub use reth_primitives;
 
 mod execute;
 
@@ -83,16 +88,28 @@ pub struct Rv32RethConfig {
     pub io: Rv32Io,
     #[extension]
     pub keccak: Keccak256,
+    #[extension]
+    pub modular: ModularExtension,
+    #[extension]
+    pub weierstrass: WeierstrassExtension,
 }
 
 impl Default for Rv32RethConfig {
     fn default() -> Self {
         Self {
-            system: SystemConfig::default().with_continuations(),
+            system: SystemConfig::default()
+                .with_continuations()
+                .with_public_values(32)
+                .with_max_segment_len((1 << 23) - 100),
             base: Rv32I,
             mul: Rv32M::default(),
             io: Rv32Io,
             keccak: Keccak256,
+            modular: ModularExtension::new(vec![
+                SECP256K1_CONFIG.modulus.clone(),
+                SECP256K1_CONFIG.scalar.clone(),
+            ]),
+            weierstrass: WeierstrassExtension::new(vec![SECP256K1_CONFIG.clone()]),
         }
     }
 }
@@ -167,10 +184,12 @@ async fn main() -> eyre::Result<()> {
         }
     };
 
-    // Generate the proof.
+    let config = bincode::config::standard();
+    let input_vec: Vec<u8> = bincode::serde::encode_to_vec(&client_input, config)?;
+    let (decoded, _): (ClientExecutorInput, usize) =
+        bincode::serde::decode_from_slice(&input_vec, config)?;
+    assert_eq!(client_input, decoded);
 
-    // Execute the block inside the zkVM.
-    let input_vec = bincode::serde::encode_to_vec(&client_input, bincode::config::standard())?;
     let input_stream = vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
 
     let elf = Elf::decode(RSP_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
@@ -180,7 +199,9 @@ async fn main() -> eyre::Result<()> {
             .with_extension(Rv32ITranspilerExtension)
             .with_extension(Rv32MTranspilerExtension)
             .with_extension(Rv32IoTranspilerExtension)
-            .with_extension(Keccak256TranspilerExtension),
+            .with_extension(Keccak256TranspilerExtension)
+            .with_extension(ModularTranspilerExtension)
+            .with_extension(EccTranspilerExtension),
         // add more extensions
     );
     let app_log_blowup = 2;
@@ -200,14 +221,17 @@ async fn main() -> eyre::Result<()> {
             config.system.collect_metrics = false;
             counter!("fri.log_blowup").absolute(engine.fri_params().log_blowup as u64);
             let vm = VirtualMachine::new(engine, config);
-            let pk = time(gauge!("keygen_time_ms"), || vm.keygen());
-            // 3. Commit to the exe by generating cached trace for program.
-            let committed_exe = time(gauge!("commit_exe_time_ms"), || vm.commit_exe(exe));
-            // 4. Executes runtime again without metric collection and generate trace.
-            let results = time(gauge!("execute_and_trace_gen_time_ms"), || {
-                vm.execute_and_generate_with_cached_program(committed_exe, input_stream)
-            })?;
-            if args.prove {
+            if !args.prove {
+                // Execute runtime only without metrics collection.
+                time(gauge!("execute_time_ms"), || vm.execute(exe, input_stream))?;
+            } else {
+                // 3. Commit to the exe by generating cached trace for program.
+                let committed_exe = time(gauge!("commit_exe_time_ms"), || vm.commit_exe(exe));
+                // 4. Executes runtime again without metric collection and generate trace.
+                let results = time(gauge!("execute_and_trace_gen_time_ms"), || {
+                    vm.execute_and_generate_with_cached_program(committed_exe, input_stream)
+                })?;
+                let pk = time(gauge!("keygen_time_ms"), || vm.keygen());
                 // 5. Generate STARK proofs for each segment (segmentation is determined by
                 //    `config`), with timer.
                 // vm.prove will emit metrics for proof time of each segment

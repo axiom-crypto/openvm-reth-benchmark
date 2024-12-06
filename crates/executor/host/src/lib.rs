@@ -9,7 +9,7 @@ use revm::db::CacheDB;
 use rsp_client_executor::{
     io::ClientExecutorInput, ChainVariant, EthereumVariant, LineaVariant, OptimismVariant, Variant,
 };
-use rsp_mpt::EthereumState;
+use rsp_mpt::{state::HashedPostState, EthereumState};
 use rsp_primitives::account_proof::eip1186_proof_to_account_proof;
 use rsp_rpc_db::RpcDb;
 
@@ -160,7 +160,9 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> HostExecutor<T, P
         tracing::info!("verifying the state root");
         let state_root = {
             let mut mutated_state = state.clone();
-            mutated_state.update(&executor_outcome.hash_state_slow());
+            let post_state = HashedPostState::from_bundle_state(&executor_outcome.bundle.state);
+            // executor_outcome.hash_state_slow());
+            mutated_state.update(&post_state);
             mutated_state.state_root()
         };
         if state_root != current_block.state_root {
