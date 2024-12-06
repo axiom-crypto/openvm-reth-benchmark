@@ -29,11 +29,12 @@ install any rust stuff it tells you to.
 To run
 ```bash
 mkdir rpc-cache
-MODE=prove # can be execute, prove, or prove_e2e
+MODE=prove # can be execute, prove, or prove-e2e
 RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info cargo run --bin rsp --release -- --$MODE --block-number 20526624 --rpc-url $RPC_1 --cache-dir rpc-cache
 ```
 Get an archive node rpc url for $RPC_1 for eth mainnet.
-In order to run prove_e2e, you need some setup for halo2.
+Optional flag: `--collect-metrics` will collect metrics for flamegraphs.
+In order to run `prove-e2e`, you need some setup for halo2.
 ```
 bash path-to-afs-prototype/extensions/native/recursion/trusted_setup_s3.sh
 ```
