@@ -5,6 +5,7 @@ use ax_stark_sdk::{
         engine::VerificationData,
         p3_field::{AbstractField, PrimeField32},
     },
+    bench::run_with_metric_collection,
     config::{
         baby_bear_poseidon2::BabyBearPoseidon2Engine,
         fri_params::standard_fri_params_with_100_bits_conjectured_security, FriParameters,
@@ -13,6 +14,7 @@ use ax_stark_sdk::{
 };
 use axvm_algebra_circuit::{ModularExtension, ModularExtensionExecutor, ModularExtensionPeriphery};
 use axvm_algebra_transpiler::ModularTranspilerExtension;
+use axvm_benchmarks::utils::BenchmarkCli;
 use axvm_circuit::{
     arch::{
         instructions::{exe::AxVmExe, program::DEFAULT_MAX_NUM_PUBLIC_VALUES},
@@ -67,7 +69,7 @@ mod cli;
 use cli::ProviderArgs;
 
 /// The arguments for the host executable.
-#[derive(Debug, Clone, Parser)]
+#[derive(Debug, Parser)]
 #[clap(group(
     ArgGroup::new("mode")
         .required(true)
@@ -97,6 +99,9 @@ struct HostArgs {
     /// The path to the CSV file containing the execution data.
     #[clap(long, default_value = "report.csv")]
     report_path: PathBuf,
+
+    #[clap(flatten)]
+    benchmark: BenchmarkCli,
 }
 
 const RSP_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/rsp-client-eth");
@@ -227,88 +232,94 @@ async fn main() -> eyre::Result<()> {
             .with_extension(EccTranspilerExtension),
         // add more extensions
     );
-    let app_log_blowup = 2;
-    let agg_log_blowup = 2;
-    let internal_log_blowup = 2;
-    let root_log_blowup = 2;
+    let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(2);
+    let agg_log_blowup = args.benchmark.agg_log_blowup.unwrap_or(2);
+    let internal_log_blowup = args.benchmark.internal_log_blowup.unwrap_or(2);
+    let root_log_blowup = args.benchmark.root_log_blowup.unwrap_or(2);
 
-    tracing::info_span!("reth-block", group = "reth_block", block_number = args.block_number)
-        .in_scope(|| -> eyre::Result<()> {
-            let mut vm_config = Rv32RethConfig::default();
-            vm_config.system.collect_metrics = args.collect_metrics;
-            if args.execute {
-                let executor = VmExecutor::<_, _>::new(vm_config);
-                let input_stream =
-                    vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
-                time(gauge!("execute_time_ms"), || executor.execute(exe, input_stream))?;
-            } else if args.prove {
-                let engine = BabyBearPoseidon2Engine::new(
-                    FriParameters::standard_with_100_bits_conjectured_security(app_log_blowup),
-                );
-                counter!("fri.log_blowup").absolute(engine.fri_params().log_blowup as u64);
-                let vm = VirtualMachine::new(engine, vm_config);
-                let committed_exe = time(gauge!("commit_exe_time_ms"), || vm.commit_exe(exe));
-                let input_stream =
-                    vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
-                let results = time(gauge!("execute_and_trace_gen_time_ms"), || {
-                    vm.execute_and_generate_with_cached_program(committed_exe, input_stream)
-                })?;
-                let pk = time(gauge!("keygen_time_ms"), || vm.keygen());
-                let proofs = vm.prove(&pk, results);
-                let vk = pk.get_vk();
-                vm.verify(&vk, proofs.clone()).expect("Verification failed");
-                let _vdata: Vec<_> = proofs
-                    .into_iter()
-                    .map(|proof| VerificationDataWithFriParams {
-                        data: VerificationData { vk: vk.clone(), proof },
-                        fri_params: vm.engine.fri_params(),
-                    })
-                    .collect();
-            } else {
-                // e2e
-                let app_config = AppConfig {
-                    app_fri_params: standard_fri_params_with_100_bits_conjectured_security(
-                        app_log_blowup,
-                    ),
-                    app_vm_config: vm_config,
-                };
-                let app_pk = AppProvingKey::keygen(app_config.clone());
-                let app_committed_exe = commit_app_exe(&app_config, exe);
-                let agg_config = AggConfig {
-                    max_num_user_public_values: DEFAULT_MAX_NUM_PUBLIC_VALUES,
-                    leaf_fri_params: standard_fri_params_with_100_bits_conjectured_security(
-                        agg_log_blowup,
-                    ),
-                    internal_fri_params: standard_fri_params_with_100_bits_conjectured_security(
-                        internal_log_blowup,
-                    ),
-                    root_fri_params: standard_fri_params_with_100_bits_conjectured_security(
-                        root_log_blowup,
-                    ),
-                    compiler_options: CompilerOptions {
-                        enable_cycle_tracker: true,
-                        ..Default::default()
-                    },
-                };
-                let agg_pk = AggProvingKey::keygen(agg_config);
-                let leaf_committed_exe = generate_leaf_committed_exe(&agg_config, &app_pk);
+    run_with_metric_collection("OUTPUT_PATH", || {
+        tracing::info_span!("reth-block", group = "reth_block", block_number = args.block_number)
+            .in_scope(|| -> eyre::Result<()> {
+                let mut vm_config = Rv32RethConfig::default();
+                vm_config.system.collect_metrics = args.collect_metrics;
+                if args.execute {
+                    let executor = VmExecutor::<_, _>::new(vm_config);
+                    let input_stream =
+                        vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
+                    time(gauge!("execute_time_ms"), || executor.execute(exe, input_stream))?;
+                } else if args.prove {
+                    // TODO: consolidate the code with prove-e2e
+                    let engine = BabyBearPoseidon2Engine::new(
+                        FriParameters::standard_with_100_bits_conjectured_security(app_log_blowup),
+                    );
+                    counter!("fri.log_blowup").absolute(engine.fri_params().log_blowup as u64);
+                    let vm = VirtualMachine::new(engine, vm_config);
+                    let committed_exe = time(gauge!("commit_exe_time_ms"), || vm.commit_exe(exe));
+                    let input_stream =
+                        vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
+                    let results = time(gauge!("execute_and_trace_gen_time_ms"), || {
+                        vm.execute_and_generate_with_cached_program(committed_exe, input_stream)
+                    })?;
+                    let pk = time(gauge!("keygen_time_ms"), || vm.keygen());
+                    let proofs = vm.prove(&pk, results);
+                    let vk = pk.get_vk();
+                    vm.verify(&vk, proofs.clone()).expect("Verification failed");
+                    let _vdata: Vec<_> = proofs
+                        .into_iter()
+                        .map(|proof| VerificationDataWithFriParams {
+                            data: VerificationData { vk: vk.clone(), proof },
+                            fri_params: vm.engine.fri_params(),
+                        })
+                        .collect();
+                } else {
+                    // e2e
+                    let app_config = AppConfig {
+                        app_fri_params: standard_fri_params_with_100_bits_conjectured_security(
+                            app_log_blowup,
+                        ),
+                        app_vm_config: vm_config,
+                    };
+                    let app_pk = AppProvingKey::keygen(app_config.clone());
+                    let app_committed_exe = commit_app_exe(&app_config, exe);
+                    let agg_config = AggConfig {
+                        max_num_user_public_values: DEFAULT_MAX_NUM_PUBLIC_VALUES,
+                        leaf_fri_params: standard_fri_params_with_100_bits_conjectured_security(
+                            agg_log_blowup,
+                        ),
+                        internal_fri_params: standard_fri_params_with_100_bits_conjectured_security(
+                            internal_log_blowup,
+                        ),
+                        root_fri_params: standard_fri_params_with_100_bits_conjectured_security(
+                            root_log_blowup,
+                        ),
+                        compiler_options: CompilerOptions {
+                            enable_cycle_tracker: true,
+                            ..Default::default()
+                        },
+                    };
+                    let agg_pk = AggProvingKey::keygen(agg_config);
+                    let leaf_committed_exe = generate_leaf_committed_exe(&agg_config, &app_pk);
 
-                let prover = StarkProver::new(app_pk, app_committed_exe)
-                    .with_agg_pk_and_leaf_committed_exe(agg_pk, leaf_committed_exe);
+                    let prover = StarkProver::new(app_pk, app_committed_exe)
+                        .with_agg_pk_and_leaf_committed_exe(agg_pk, leaf_committed_exe);
 
-                // TODO: generate_e2e_proof_with_metric_spans? why is there another metric toggling
-                // in addition to cm_config.system.collect_metrics?
-                let root_proof = prover.generate_e2e_proof(StdIn::from_bytes(&input_vec));
+                    let root_proof = prover.generate_e2e_proof_with_metric_spans(
+                        StdIn::from_bytes(&input_vec),
+                        "reth",
+                    );
 
-                let static_verifier =
-                    prover.agg_pk().root_verifier_pk.keygen_static_verifier(23, root_proof.clone());
-                let mut witness = Witness::default();
-                root_proof.write(&mut witness);
-                static_verifier.prove(witness);
-            }
+                    let static_verifier = prover
+                        .agg_pk()
+                        .root_verifier_pk
+                        .keygen_static_verifier(23, root_proof.clone());
+                    let mut witness = Witness::default();
+                    root_proof.write(&mut witness);
+                    static_verifier.prove(witness);
+                }
 
-            Ok(())
-        })?;
+                Ok(())
+            })
+    })?;
 
     Ok(())
 }
