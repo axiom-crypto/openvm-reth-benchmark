@@ -153,9 +153,6 @@ async fn main() -> eyre::Result<()> {
         std::env::set_var("RUST_LOG", "info");
     }
 
-    // Initialize the logger.
-    tracing_subscriber::registry().with(fmt::layer()).with(EnvFilter::from_default_env()).init();
-
     // Parse the command line arguments.
     let args = HostArgs::parse();
     let provider_config = args.provider.into_provider().await?;
