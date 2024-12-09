@@ -293,7 +293,7 @@ async fn main() -> eyre::Result<()> {
                             root_log_blowup,
                         ),
                         compiler_options: CompilerOptions {
-                            enable_cycle_tracker: true,
+                            enable_cycle_tracker: args.collect_metrics,
                             ..Default::default()
                         },
                     };
