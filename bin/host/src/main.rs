@@ -5,15 +5,21 @@ use ax_stark_sdk::{
         engine::VerificationData,
         p3_field::{AbstractField, PrimeField32},
     },
-    config::{baby_bear_poseidon2::BabyBearPoseidon2Engine, FriParameters},
+    bench::run_with_metric_collection,
+    config::{
+        baby_bear_poseidon2::BabyBearPoseidon2Engine,
+        fri_params::standard_fri_params_with_100_bits_conjectured_security, FriParameters,
+    },
     engine::{StarkFriEngine, VerificationDataWithFriParams},
 };
 use axvm_algebra_circuit::{ModularExtension, ModularExtensionExecutor, ModularExtensionPeriphery};
 use axvm_algebra_transpiler::ModularTranspilerExtension;
+use axvm_benchmarks::utils::BenchmarkCli;
 use axvm_circuit::{
     arch::{
-        instructions::exe::AxVmExe, SystemConfig, SystemExecutor, SystemPeriphery, VirtualMachine,
-        VmChipComplex, VmConfig, VmInventoryError,
+        instructions::{exe::AxVmExe, program::DEFAULT_MAX_NUM_PUBLIC_VALUES},
+        SystemConfig, SystemExecutor, SystemPeriphery, VirtualMachine, VmChipComplex, VmConfig,
+        VmExecutor, VmInventoryError,
     },
     circuit_derive::{Chip, ChipUsageGetter},
     derive::{AnyEnum, InstructionExecutor, VmConfig},
@@ -25,6 +31,8 @@ use axvm_ecc_circuit::{
 use axvm_ecc_transpiler::EccTranspilerExtension;
 use axvm_keccak256_circuit::{Keccak256, Keccak256Executor, Keccak256Periphery};
 use axvm_keccak256_transpiler::Keccak256TranspilerExtension;
+use axvm_native_compiler::{conversion::CompilerOptions, prelude::Witness};
+use axvm_native_recursion::witness::Witnessable;
 use axvm_rv32im_circuit::{
     Rv32I, Rv32IExecutor, Rv32IPeriphery, Rv32Io, Rv32IoExecutor, Rv32IoPeriphery, Rv32M,
     Rv32MExecutor, Rv32MPeriphery,
@@ -32,8 +40,14 @@ use axvm_rv32im_circuit::{
 use axvm_rv32im_transpiler::{
     Rv32ITranspilerExtension, Rv32IoTranspilerExtension, Rv32MTranspilerExtension,
 };
+use axvm_sdk::{
+    config::{AggConfig, AppConfig},
+    keygen::{AggProvingKey, AppProvingKey},
+    prover::{commit_app_exe, generate_leaf_committed_exe, StarkProver},
+    StdIn,
+};
 use axvm_transpiler::{axvm_platform::memory::MEM_SIZE, elf::Elf, transpiler::Transpiler, FromElf};
-use clap::Parser;
+use clap::{ArgGroup, Parser};
 use core::option::Option::None;
 use derive_more::From;
 use metrics::{counter, gauge, Gauge};
@@ -55,16 +69,29 @@ mod cli;
 use cli::ProviderArgs;
 
 /// The arguments for the host executable.
-#[derive(Debug, Clone, Parser)]
+#[derive(Debug, Parser)]
+#[clap(group(
+    ArgGroup::new("mode")
+        .required(true)
+        .args(&["prove", "execute", "prove_e2e"]),
+))]
 struct HostArgs {
     /// The block number of the block to execute.
     #[clap(long)]
     block_number: u64,
     #[clap(flatten)]
     provider: ProviderArgs,
-    /// Whether to generate a proof or just execute the block.
-    #[clap(long)]
+
+    #[clap(long, group = "mode")]
+    execute: bool,
+    #[clap(long, group = "mode")]
     prove: bool,
+    #[clap(long, group = "mode")]
+    prove_e2e: bool,
+
+    #[clap(long)]
+    collect_metrics: bool,
+
     /// Optional path to the directory containing cached client input. A new cache file will be
     /// created from RPC data if it doesn't already exist.
     #[clap(long)]
@@ -72,6 +99,9 @@ struct HostArgs {
     /// The path to the CSV file containing the execution data.
     #[clap(long, default_value = "report.csv")]
     report_path: PathBuf,
+
+    #[clap(flatten)]
+    benchmark: BenchmarkCli,
 }
 
 const RSP_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/rsp-client-eth");
@@ -190,8 +220,6 @@ async fn main() -> eyre::Result<()> {
         bincode::serde::decode_from_slice(&input_vec, config)?;
     assert_eq!(client_input, decoded);
 
-    let input_stream = vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
-
     let elf = Elf::decode(RSP_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
     let exe = AxVmExe::from_elf(
         elf,
@@ -204,52 +232,94 @@ async fn main() -> eyre::Result<()> {
             .with_extension(EccTranspilerExtension),
         // add more extensions
     );
-    let app_log_blowup = 2;
-    tracing::info_span!("reth-block", group = "reth_block", block_number = args.block_number)
-        .in_scope(|| -> eyre::Result<()> {
-            let engine = BabyBearPoseidon2Engine::new(
-                FriParameters::standard_with_100_bits_conjectured_security(app_log_blowup),
-            );
-            // bench_from_exe
-            let mut config = Rv32RethConfig::default();
-            // 1. Executes runtime once with full metric collection for flamegraphs (slow).
-            // config.system_mut().collect_metrics = true;
-            // let executor = VmExecutor::<Val<SC>, VC>::new(config.clone());
-            // tracing::info_span!("execute_with_metrics", collect_metrics = true)
-            //     .in_scope(|| executor.execute(exe.clone(), input_stream.clone()))?;
-            // 2. Generate proving key from config.
-            config.system.collect_metrics = false;
-            counter!("fri.log_blowup").absolute(engine.fri_params().log_blowup as u64);
-            let vm = VirtualMachine::new(engine, config);
-            if !args.prove {
-                // Execute runtime only without metrics collection.
-                time(gauge!("execute_time_ms"), || vm.execute(exe, input_stream))?;
-            } else {
-                // 3. Commit to the exe by generating cached trace for program.
-                let committed_exe = time(gauge!("commit_exe_time_ms"), || vm.commit_exe(exe));
-                // 4. Executes runtime again without metric collection and generate trace.
-                let results = time(gauge!("execute_and_trace_gen_time_ms"), || {
-                    vm.execute_and_generate_with_cached_program(committed_exe, input_stream)
-                })?;
-                let pk = time(gauge!("keygen_time_ms"), || vm.keygen());
-                // 5. Generate STARK proofs for each segment (segmentation is determined by
-                //    `config`), with timer.
-                // vm.prove will emit metrics for proof time of each segment
-                let proofs = vm.prove(&pk, results);
-                // 6. Verify STARK proofs.
-                let vk = pk.get_vk();
-                vm.verify(&vk, proofs.clone()).expect("Verification failed");
-                let _vdata: Vec<_> = proofs
-                    .into_iter()
-                    .map(|proof| VerificationDataWithFriParams {
-                        data: VerificationData { vk: vk.clone(), proof },
-                        fri_params: vm.engine.fri_params(),
-                    })
-                    .collect();
-            }
+    let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(2);
+    let agg_log_blowup = args.benchmark.agg_log_blowup.unwrap_or(2);
+    let internal_log_blowup = args.benchmark.internal_log_blowup.unwrap_or(2);
+    let root_log_blowup = args.benchmark.root_log_blowup.unwrap_or(2);
 
-            Ok(())
-        })?;
+    run_with_metric_collection("OUTPUT_PATH", || {
+        tracing::info_span!("reth-block", group = "reth_block", block_number = args.block_number)
+            .in_scope(|| -> eyre::Result<()> {
+                let mut vm_config = Rv32RethConfig::default();
+                vm_config.system.collect_metrics = args.collect_metrics;
+                if args.execute {
+                    let executor = VmExecutor::<_, _>::new(vm_config);
+                    let input_stream =
+                        vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
+                    time(gauge!("execute_time_ms"), || executor.execute(exe, input_stream))?;
+                } else if args.prove {
+                    // TODO: consolidate the code with prove-e2e
+                    let engine = BabyBearPoseidon2Engine::new(
+                        FriParameters::standard_with_100_bits_conjectured_security(app_log_blowup),
+                    );
+                    counter!("fri.log_blowup").absolute(engine.fri_params().log_blowup as u64);
+                    let vm = VirtualMachine::new(engine, vm_config);
+                    let committed_exe = time(gauge!("commit_exe_time_ms"), || vm.commit_exe(exe));
+                    let input_stream =
+                        vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
+                    let results = time(gauge!("execute_and_trace_gen_time_ms"), || {
+                        vm.execute_and_generate_with_cached_program(committed_exe, input_stream)
+                    })?;
+                    let pk = time(gauge!("keygen_time_ms"), || vm.keygen());
+                    let proofs = vm.prove(&pk, results);
+                    let vk = pk.get_vk();
+                    vm.verify(&vk, proofs.clone()).expect("Verification failed");
+                    let _vdata: Vec<_> = proofs
+                        .into_iter()
+                        .map(|proof| VerificationDataWithFriParams {
+                            data: VerificationData { vk: vk.clone(), proof },
+                            fri_params: vm.engine.fri_params(),
+                        })
+                        .collect();
+                } else {
+                    // e2e
+                    let app_config = AppConfig {
+                        app_fri_params: standard_fri_params_with_100_bits_conjectured_security(
+                            app_log_blowup,
+                        ),
+                        app_vm_config: vm_config,
+                    };
+                    let app_pk = AppProvingKey::keygen(app_config.clone());
+                    let app_committed_exe = commit_app_exe(&app_config, exe);
+                    let agg_config = AggConfig {
+                        max_num_user_public_values: DEFAULT_MAX_NUM_PUBLIC_VALUES,
+                        leaf_fri_params: standard_fri_params_with_100_bits_conjectured_security(
+                            agg_log_blowup,
+                        ),
+                        internal_fri_params: standard_fri_params_with_100_bits_conjectured_security(
+                            internal_log_blowup,
+                        ),
+                        root_fri_params: standard_fri_params_with_100_bits_conjectured_security(
+                            root_log_blowup,
+                        ),
+                        compiler_options: CompilerOptions {
+                            enable_cycle_tracker: args.collect_metrics,
+                            ..Default::default()
+                        },
+                    };
+                    let agg_pk = AggProvingKey::keygen(agg_config);
+                    let leaf_committed_exe = generate_leaf_committed_exe(&agg_config, &app_pk);
+
+                    let prover = StarkProver::new(app_pk, app_committed_exe)
+                        .with_agg_pk_and_leaf_committed_exe(agg_pk, leaf_committed_exe);
+
+                    let root_proof = prover.generate_e2e_proof_with_metric_spans(
+                        StdIn::from_bytes(&input_vec),
+                        "reth",
+                    );
+
+                    let static_verifier = prover
+                        .agg_pk()
+                        .root_verifier_pk
+                        .keygen_static_verifier(23, root_proof.clone());
+                    let mut witness = Witness::default();
+                    root_proof.write(&mut witness);
+                    static_verifier.prove(witness);
+                }
+
+                Ok(())
+            })
+    })?;
 
     Ok(())
 }

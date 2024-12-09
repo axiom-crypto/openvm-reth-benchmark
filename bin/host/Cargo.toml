@@ -42,6 +42,9 @@ axvm-benchmarks = { workspace = true, features = [
     "parallel",
 ] }
 ax-stark-sdk = { workspace = true }
+axvm-sdk = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false, features = ["static-verifier"] }
+axvm-native-compiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-native-recursion = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
 derive_more = "1.0.0"
 
 [features]
