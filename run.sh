@@ -4,8 +4,12 @@ cd bin/client-eth
 cargo axiom build
 # AXIOM_BUILD_DEBUG=1 cargo axiom build
 mkdir -p ../host/elf
-cp target/riscv32im-risc0-zkvm-elf/release/rsp-client-eth ../host/elf/
-# cp target/riscv32im-risc0-zkvm-elf/debug/rsp-client-eth ../host/elf/
+SRC="target/riscv32im-risc0-zkvm-elf/release/rsp-client-eth"
+DEST="../host/elf/rsp-client-eth"
+
+if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
+    cp "$SRC" "$DEST"
+fi
 cd ../..
 
 mkdir -p rpc-cache
