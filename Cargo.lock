@@ -150,9 +150,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-json-abi"
-version = "0.8.14"
+version = "0.8.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac4b22b3e51cac09fd2adfcc73b55f447b4df669f983c13f7894ec82b607c63f"
+checksum = "c357da577dfb56998d01f574d81ad7a1958d248740a7981b205d69d65a7da404"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-type-parser",
@@ -209,9 +209,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-primitives"
-version = "0.8.14"
+version = "0.8.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9db948902dfbae96a73c2fbf1f7abec62af034ab883e4c777c3fd29702bd6e2c"
+checksum = "6259a506ab13e1d658796c31e6e39d2e2ee89243bcc505ddc613b35732e0a430"
 dependencies = [
  "alloy-rlp",
  "bytes",
@@ -272,9 +272,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-rlp"
-version = "0.3.9"
+version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da0822426598f95e45dd1ea32a738dac057529a709ee645fcc516ffa4cbde08f"
+checksum = "f542548a609dca89fcd72b3b9f355928cf844d4363c5eed9c5273a3dd225e097"
 dependencies = [
  "alloy-rlp-derive",
  "arrayvec",
@@ -283,9 +283,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-rlp-derive"
-version = "0.3.9"
+version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b09cae092c27b6f1bde952653a22708691802e57bfef4a2973b80bea21efd3f"
+checksum = "5a833d97bf8a5f0f878daf2c8451fff7de7f9de38baa5a45d936ec718d81255a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -372,9 +372,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-sol-macro"
-version = "0.8.14"
+version = "0.8.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3bfd7853b65a2b4f49629ec975fee274faf6dff15ab8894c620943398ef283c0"
+checksum = "d9d64f851d95619233f74b310f12bcf16e0cbc27ee3762b6115c14a84809280a"
 dependencies = [
  "alloy-sol-macro-expander",
  "alloy-sol-macro-input",
@@ -386,9 +386,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-sol-macro-expander"
-version = "0.8.14"
+version = "0.8.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82ec42f342d9a9261699f8078e57a7a4fda8aaa73c1a212ed3987080e6a9cd13"
+checksum = "6bf7ed1574b699f48bf17caab4e6e54c6d12bc3c006ab33d58b1e227c1c3559f"
 dependencies = [
  "alloy-sol-macro-input",
  "const-hex",
@@ -404,9 +404,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-sol-macro-input"
-version = "0.8.14"
+version = "0.8.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed2c50e6a62ee2b4f7ab3c6d0366e5770a21cad426e109c2f40335a1b3aff3df"
+checksum = "8c02997ccef5f34f9c099277d4145f183b422938ed5322dc57a089fe9b9ad9ee"
 dependencies = [
  "const-hex",
  "dunce",
@@ -419,9 +419,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-sol-type-parser"
-version = "0.8.14"
+version = "0.8.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac17c6e89a50fb4a758012e4b409d9a0ba575228e69b539fe37d7a1bd507ca4a"
+checksum = "ce13ff37285b0870d0a0746992a4ae48efaf34b766ae4c2640fa15e5305f8e73"
 dependencies = [
  "serde",
  "winnow",
@@ -429,9 +429,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-sol-types"
-version = "0.8.14"
+version = "0.8.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9dc0fffe397aa17628160e16b89f704098bf3c9d74d5d369ebc239575936de5"
+checksum = "1174cafd6c6d810711b4e00383037bdb458efc4fe3dbafafa16567e0320c54d8"
 dependencies = [
  "alloy-json-abi",
  "alloy-primitives",
@@ -769,7 +769,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 [[package]]
 name = "ax-circuit-derive"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "itertools 0.13.0",
  "proc-macro2",
@@ -780,7 +780,7 @@ dependencies = [
 [[package]]
 name = "ax-circuit-primitives"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-circuit-derive",
  "ax-stark-backend",
@@ -789,11 +789,6 @@ dependencies = [
  "lazy_static",
  "num-bigint-dig",
  "num-traits",
- "p3-air",
- "p3-field",
- "p3-matrix",
- "p3-maybe-rayon",
- "p3-util",
  "rand",
  "tracing",
 ]
@@ -801,7 +796,7 @@ dependencies = [
 [[package]]
 name = "ax-mod-circuit-builder"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-circuit-primitives",
  "ax-stark-backend",
@@ -811,11 +806,6 @@ dependencies = [
  "itertools 0.13.0",
  "num-bigint-dig",
  "num-traits",
- "p3-air",
- "p3-baby-bear",
- "p3-field",
- "p3-matrix",
- "p3-util",
  "rand",
  "tracing",
 ]
@@ -823,21 +813,16 @@ dependencies = [
 [[package]]
 name = "ax-poseidon2-air"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-circuit-primitives",
  "ax-stark-backend",
  "ax-stark-sdk",
  "itertools 0.13.0",
  "lazy_static",
- "p3-air",
- "p3-baby-bear",
- "p3-field",
- "p3-matrix",
  "p3-monty-31",
  "p3-poseidon2",
  "p3-symmetric",
- "p3-util",
  "rand",
  "zkhash",
 ]
@@ -845,7 +830,7 @@ dependencies = [
 [[package]]
 name = "ax-stark-backend"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "async-trait",
  "cfg-if",
@@ -871,7 +856,7 @@ dependencies = [
 [[package]]
 name = "ax-stark-sdk"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-circuit-derive",
  "ax-stark-backend",
@@ -881,23 +866,17 @@ dependencies = [
  "metrics",
  "metrics-tracing-context",
  "metrics-util",
- "p3-air",
  "p3-baby-bear",
  "p3-blake3",
  "p3-bn254-fr",
- "p3-challenger",
- "p3-commit",
  "p3-dft",
- "p3-field",
  "p3-fri",
  "p3-goldilocks",
  "p3-keccak",
- "p3-matrix",
  "p3-merkle-tree",
  "p3-poseidon",
  "p3-poseidon2",
  "p3-symmetric",
- "p3-util",
  "rand",
  "serde",
  "serde_json",
@@ -912,7 +891,7 @@ dependencies = [
 [[package]]
 name = "axvm"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "axvm-platform",
  "axvm-rv32im-guest",
@@ -925,7 +904,7 @@ dependencies = [
 [[package]]
 name = "axvm-algebra-circuit"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -945,10 +924,6 @@ dependencies = [
  "num-bigint-dig",
  "num-traits",
  "once_cell",
- "p3-air",
- "p3-baby-bear",
- "p3-field",
- "p3-matrix",
  "rand",
  "strum",
  "tracing",
@@ -957,7 +932,7 @@ dependencies = [
 [[package]]
 name = "axvm-algebra-complex-macros"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "axvm-macros-common",
  "quote",
@@ -967,7 +942,7 @@ dependencies = [
 [[package]]
 name = "axvm-algebra-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "axvm",
  "axvm-algebra-moduli-setup",
@@ -982,7 +957,7 @@ dependencies = [
 [[package]]
 name = "axvm-algebra-moduli-setup"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "axvm-macros-common",
  "quote",
@@ -992,13 +967,13 @@ dependencies = [
 [[package]]
 name = "axvm-algebra-transpiler"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
+ "ax-stark-backend",
  "axvm-algebra-guest",
  "axvm-instructions",
  "axvm-instructions-derive",
  "axvm-transpiler",
- "p3-field",
  "rrs-lib",
  "strum",
  "strum_macros",
@@ -1007,7 +982,7 @@ dependencies = [
 [[package]]
 name = "axvm-benchmarks"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-circuit-derive",
  "ax-stark-backend",
@@ -1036,8 +1011,6 @@ dependencies = [
  "k256",
  "metrics",
  "num-bigint-dig",
- "p3-baby-bear",
- "p3-field",
  "rand_chacha",
  "tempfile",
  "tiny-keccak",
@@ -1048,7 +1021,7 @@ dependencies = [
 [[package]]
 name = "axvm-bigint-circuit"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -1073,7 +1046,7 @@ dependencies = [
 [[package]]
 name = "axvm-bigint-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "axvm",
  "axvm-platform",
@@ -1086,14 +1059,14 @@ dependencies = [
 [[package]]
 name = "axvm-bigint-transpiler"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
+ "ax-stark-backend",
  "axvm-bigint-guest",
  "axvm-instructions",
  "axvm-instructions-derive",
  "axvm-rv32im-transpiler",
  "axvm-transpiler",
- "p3-field",
  "rrs-lib",
  "strum",
 ]
@@ -1101,7 +1074,7 @@ dependencies = [
 [[package]]
 name = "axvm-build"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "axvm-platform",
  "cargo_metadata",
@@ -1116,7 +1089,7 @@ dependencies = [
 [[package]]
 name = "axvm-circuit"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "async-trait",
  "ax-circuit-derive",
@@ -1137,13 +1110,7 @@ dependencies = [
  "itertools 0.13.0",
  "metrics",
  "once_cell",
- "p3-air",
- "p3-baby-bear",
- "p3-field",
- "p3-matrix",
- "p3-maybe-rayon",
  "p3-symmetric",
- "p3-util",
  "parking_lot",
  "rand",
  "rustc-hash 2.1.0",
@@ -1157,7 +1124,7 @@ dependencies = [
 [[package]]
 name = "axvm-circuit-derive"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "itertools 0.13.0",
  "proc-macro2",
@@ -1168,7 +1135,7 @@ dependencies = [
 [[package]]
 name = "axvm-ecc-circuit"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -1184,24 +1151,25 @@ dependencies = [
  "axvm-rv32im-circuit",
  "derive-new",
  "derive_more 1.0.0",
+ "eyre",
  "num-bigint-dig",
+ "num-integer",
  "num-traits",
  "once_cell",
- "p3-baby-bear",
- "p3-field",
  "strum",
 ]
 
 [[package]]
 name = "axvm-ecc-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "axvm",
  "axvm-algebra-guest",
  "axvm-algebra-moduli-setup",
  "axvm-ecc-sw-setup",
  "axvm-platform",
+ "axvm-rv32im-guest",
  "ecdsa",
  "elliptic-curve",
  "group 0.13.0",
@@ -1221,7 +1189,7 @@ dependencies = [
 [[package]]
 name = "axvm-ecc-sw-setup"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "axvm-macros-common",
  "quote",
@@ -1231,13 +1199,13 @@ dependencies = [
 [[package]]
 name = "axvm-ecc-transpiler"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
+ "ax-stark-backend",
  "axvm-ecc-guest",
  "axvm-instructions",
  "axvm-instructions-derive",
  "axvm-transpiler",
- "p3-field",
  "rrs-lib",
  "strum",
 ]
@@ -1245,7 +1213,7 @@ dependencies = [
 [[package]]
 name = "axvm-instructions"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-stark-backend",
  "axvm-instructions-derive",
@@ -1262,7 +1230,7 @@ dependencies = [
 [[package]]
 name = "axvm-instructions-derive"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1272,7 +1240,7 @@ dependencies = [
 [[package]]
 name = "axvm-keccak256-circuit"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -1298,7 +1266,7 @@ dependencies = [
 [[package]]
 name = "axvm-keccak256-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "axvm-platform",
  "serde",
@@ -1308,13 +1276,13 @@ dependencies = [
 [[package]]
 name = "axvm-keccak256-transpiler"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
+ "ax-stark-backend",
  "axvm-instructions",
  "axvm-instructions-derive",
  "axvm-keccak256-guest",
  "axvm-transpiler",
- "p3-field",
  "rrs-lib",
  "strum",
 ]
@@ -1322,7 +1290,7 @@ dependencies = [
 [[package]]
 name = "axvm-macros-common"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "syn 2.0.90",
 ]
@@ -1330,7 +1298,7 @@ dependencies = [
 [[package]]
 name = "axvm-native-circuit"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -1356,9 +1324,10 @@ dependencies = [
 [[package]]
 name = "axvm-native-compiler"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-circuit-primitives",
+ "ax-stark-backend",
  "ax-stark-sdk",
  "axvm-circuit",
  "axvm-instructions",
@@ -1372,9 +1341,6 @@ dependencies = [
  "num-bigint-dig",
  "num-integer",
  "num-traits",
- "p3-baby-bear",
- "p3-bn254-fr",
- "p3-field",
  "serde",
  "serde_json",
  "snark-verifier-sdk",
@@ -1387,7 +1353,7 @@ dependencies = [
 [[package]]
 name = "axvm-native-compiler-derive"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1397,7 +1363,7 @@ dependencies = [
 [[package]]
 name = "axvm-native-recursion"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-stark-backend",
  "ax-stark-sdk",
@@ -1409,17 +1375,10 @@ dependencies = [
  "lazy_static",
  "metrics",
  "once_cell",
- "p3-baby-bear",
- "p3-bn254-fr",
- "p3-challenger",
- "p3-commit",
  "p3-dft",
- "p3-field",
  "p3-fri",
- "p3-matrix",
  "p3-merkle-tree",
  "p3-symmetric",
- "p3-util",
  "rand",
  "serde",
  "serde_json",
@@ -1430,7 +1389,7 @@ dependencies = [
 [[package]]
 name = "axvm-pairing-circuit"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -1460,7 +1419,7 @@ dependencies = [
 [[package]]
 name = "axvm-pairing-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "axvm",
  "axvm-algebra-complex-macros",
@@ -1485,13 +1444,13 @@ dependencies = [
 [[package]]
 name = "axvm-pairing-transpiler"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
+ "ax-stark-backend",
  "axvm-instructions",
  "axvm-instructions-derive",
  "axvm-pairing-guest",
  "axvm-transpiler",
- "p3-field",
  "rrs-lib",
  "strum",
 ]
@@ -1499,7 +1458,7 @@ dependencies = [
 [[package]]
 name = "axvm-platform"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "bincode 2.0.0-rc.3",
  "getrandom",
@@ -1511,7 +1470,7 @@ dependencies = [
 [[package]]
 name = "axvm-rv32-adapters"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -1529,7 +1488,7 @@ dependencies = [
 [[package]]
 name = "axvm-rv32im-circuit"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -1553,7 +1512,7 @@ dependencies = [
 [[package]]
 name = "axvm-rv32im-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "axvm-platform",
  "strum_macros",
@@ -1562,13 +1521,13 @@ dependencies = [
 [[package]]
 name = "axvm-rv32im-transpiler"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
+ "ax-stark-backend",
  "axvm-instructions",
  "axvm-instructions-derive",
  "axvm-rv32im-guest",
  "axvm-transpiler",
- "p3-field",
  "rrs-lib",
  "strum",
  "tracing",
@@ -1577,31 +1536,36 @@ dependencies = [
 [[package]]
 name = "axvm-sdk"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
  "async-trait",
  "ax-stark-backend",
  "ax-stark-sdk",
  "axvm-algebra-circuit",
+ "axvm-algebra-transpiler",
  "axvm-bigint-circuit",
+ "axvm-bigint-transpiler",
  "axvm-build",
  "axvm-circuit",
  "axvm-ecc-circuit",
+ "axvm-ecc-transpiler",
  "axvm-keccak256-circuit",
+ "axvm-keccak256-transpiler",
  "axvm-native-circuit",
  "axvm-native-compiler",
  "axvm-native-recursion",
  "axvm-pairing-circuit",
+ "axvm-pairing-transpiler",
  "axvm-rv32im-circuit",
+ "axvm-rv32im-transpiler",
  "axvm-transpiler",
  "bincode 1.3.3",
  "bon",
  "derivative",
  "derive_more 1.0.0",
  "eyre",
+ "itertools 0.13.0",
  "metrics",
- "p3-baby-bear",
- "p3-field",
  "serde",
  "static_assertions",
  "tracing",
@@ -1610,17 +1574,18 @@ dependencies = [
 [[package]]
 name = "axvm-transpiler"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#732726af35a2743b03aec4fc99f5364209247322"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#9c9aa8592969c187d821a76dfb6dec196a013903"
 dependencies = [
+ "ax-stark-backend",
  "axvm-instructions",
  "axvm-platform",
  "derive_more 1.0.0",
  "elf",
  "eyre",
  "num-bigint-dig",
- "p3-field",
  "rrs-lib",
  "strum",
+ "thiserror 1.0.69",
  "tracing",
 ]
 
@@ -1798,9 +1763,9 @@ dependencies = [
 
 [[package]]
 name = "bon"
-version = "3.2.0"
+version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9276fe602371cd8a7f70fe68c4db55b2d3e92c570627d6ed0427646edfa5cf47"
+checksum = "f265cdb2e8501f1c952749e78babe8f1937be92c98120e5f78fc72d634682bad"
 dependencies = [
  "bon-macros",
  "rustversion",
@@ -1808,9 +1773,9 @@ dependencies = [
 
 [[package]]
 name = "bon-macros"
-version = "3.2.0"
+version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94828b84b32b4f3ac3865f692fcdbc46c7d0dd87b29658a391d58a244e1ce45a"
+checksum = "38aa5c627cd7706490e5b003d685f8b9d69bc343b1a00b9fdd01e75fdf6827cf"
 dependencies = [
  "darling",
  "ident_case",
@@ -1903,9 +1868,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.2"
+version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f34d93e62b03caf570cccc334cbc6c2fceca82f39211051345108adcba3eebdc"
+checksum = "27f657647bcff5394bf56c7317665bbf790a137a50eaaa5c6bfbb9e27a518f2d"
 dependencies = [
  "shlex",
 ]
@@ -1924,9 +1889,9 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
 name = "chrono"
-version = "0.4.38"
+version = "0.4.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a21f936df1771bf62b77f047b726c4625ff2e8aa607c01ec06e5a05bd8463401"
+checksum = "7e36cc9d416881d2e24f9a963be5fb1cd90966419ac844274161d10488b3e825"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
@@ -2517,9 +2482,9 @@ dependencies = [
 
 [[package]]
 name = "fastrand"
-version = "2.2.0"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "486f806e73c5707928240ddc295403b1b93c96a02038563881c4a2fd84b81ac4"
+checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 
 [[package]]
 name = "fastrlp"
@@ -3429,9 +3394,9 @@ checksum = "d75a2a4b1b190afb6f5425f10f6a8f959d2ea0b9c2b1d79553551850539e4674"
 
 [[package]]
 name = "js-sys"
-version = "0.3.74"
+version = "0.3.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a865e038f7f6ed956f788f0d7d60c541fff74c7bd74272c5d4cf15c63743e705"
+checksum = "6717b6b5b077764fb5966237269cb3c64edddde4b14ce42647430a78ced9e7b7"
 dependencies = [
  "once_cell",
  "wasm-bindgen",
@@ -3494,9 +3459,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.167"
+version = "0.2.168"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09d6582e104315a817dff97f75133544b2e094ee22447d2acf4a74e189ba06fc"
+checksum = "5aaeb2981e0606ca11d79718f8bb01164f1d6ed75080182d3abf017e6d244b6d"
 
 [[package]]
 name = "libm"
@@ -4394,12 +4359,12 @@ checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
 
 [[package]]
 name = "pest"
-version = "2.7.14"
+version = "2.7.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "879952a81a83930934cbf1786752d6dedc3b1f29e8f8fb2ad1d0a36f377cf442"
+checksum = "8b7cafe60d6cf8e62e1b9b2ea516a089c008945bb5a275416789e7db0bc199dc"
 dependencies = [
  "memchr",
- "thiserror 1.0.69",
+ "thiserror 2.0.6",
  "ucd-trie",
 ]
 
@@ -4614,7 +4579,7 @@ dependencies = [
  "rustc-hash 2.1.0",
  "rustls",
  "socket2",
- "thiserror 2.0.4",
+ "thiserror 2.0.6",
  "tokio",
  "tracing",
 ]
@@ -4633,7 +4598,7 @@ dependencies = [
  "rustls",
  "rustls-pki-types",
  "slab",
- "thiserror 2.0.4",
+ "thiserror 2.0.6",
  "tinyvec",
  "tracing",
  "web-time",
@@ -4641,9 +4606,9 @@ dependencies = [
 
 [[package]]
 name = "quinn-udp"
-version = "0.5.7"
+version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d5a626c6807713b15cac82a6acaccd6043c9a5408c24baae07611fec3f243da"
+checksum = "52cd4b1eff68bf27940dd39811292c49e007f4d0b4c357358dc9b0197be6b527"
 dependencies = [
  "cfg_aliases",
  "libc",
@@ -5475,9 +5440,9 @@ dependencies = [
 
 [[package]]
 name = "roaring"
-version = "0.10.7"
+version = "0.10.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f81dc953b2244ddd5e7860cb0bb2a790494b898ef321d4aff8e260efab60cc88"
+checksum = "395b0c39c00f9296f3937624c1fa4e0ee44f8c0e4b2c49408179ef381c6c2e6e"
 dependencies = [
  "bytemuck",
  "byteorder",
@@ -5759,15 +5724,15 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.38.41"
+version = "0.38.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7f649912bc1495e167a6edee79151c84b1bad49748cb4f1f1167f459f6224f6"
+checksum = "f93dc38ecbab2eb790ff964bb77fa94faf256fd3e73285fd7ba0903b76bedb85"
 dependencies = [
  "bitflags",
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -6263,9 +6228,9 @@ dependencies = [
 
 [[package]]
 name = "syn-solidity"
-version = "0.8.14"
+version = "0.8.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da0523f59468a2696391f2a772edc089342aacd53c3caa2ac3264e598edf119b"
+checksum = "219389c1ebe89f8333df8bdfb871f6631c552ff399c23cac02480b6088aad8f0"
 dependencies = [
  "paste",
  "proc-macro2",
@@ -6362,11 +6327,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.4"
+version = "2.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f49a1853cf82743e3b7950f77e0f4d622ca36cf4317cba00c767838bac8d490"
+checksum = "8fec2a1820ebd077e2b90c4df007bebf344cd394098a13c563957d0afc83ea47"
 dependencies = [
- "thiserror-impl 2.0.4",
+ "thiserror-impl 2.0.6",
 ]
 
 [[package]]
@@ -6382,9 +6347,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.4"
+version = "2.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8381894bb3efe0c4acac3ded651301ceee58a15d47c2e34885ed1908ad667061"
+checksum = "d65750cab40f4ff1929fb1ba509e9914eb756131cef4210da8d5d700d26f6312"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6554,9 +6519,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-stream"
-version = "0.1.16"
+version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f4e6ce100d0eb49a2734f8c0812bcd324cf357d21810932c5df6b96ef2b86f1"
+checksum = "eca58d7bba4a75707817a2c44174253f9236b2d5fbd055602e9d5c07c139a047"
 dependencies = [
  "futures-core",
  "pin-project-lite",
@@ -6864,9 +6829,9 @@ checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 
 [[package]]
 name = "wasm-bindgen"
-version = "0.2.97"
+version = "0.2.99"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d15e63b4482863c109d70a7b8706c1e364eb6ea449b201a76c5b89cedcec2d5c"
+checksum = "a474f6281d1d70c17ae7aa6a613c87fce69a127e2624002df63dcb39d6cf6396"
 dependencies = [
  "cfg-if",
  "once_cell",
@@ -6875,13 +6840,12 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-backend"
-version = "0.2.97"
+version = "0.2.99"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d36ef12e3aaca16ddd3f67922bc63e48e953f126de60bd33ccc0101ef9998cd"
+checksum = "5f89bb38646b4f81674e8f5c3fb81b562be1fd936d84320f3264486418519c79"
 dependencies = [
  "bumpalo",
  "log",
- "once_cell",
  "proc-macro2",
  "quote",
  "syn 2.0.90",
@@ -6890,9 +6854,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-futures"
-version = "0.4.47"
+version = "0.4.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dfaf8f50e5f293737ee323940c7d8b08a66a95a419223d9f41610ca08b0833d"
+checksum = "38176d9b44ea84e9184eff0bc34cc167ed044f816accfe5922e54d84cf48eca2"
 dependencies = [
  "cfg-if",
  "js-sys",
@@ -6903,9 +6867,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro"
-version = "0.2.97"
+version = "0.2.99"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "705440e08b42d3e4b36de7d66c944be628d579796b8090bfa3471478a2260051"
+checksum = "2cc6181fd9a7492eef6fef1f33961e3695e4579b9872a6f7c83aee556666d4fe"
 dependencies = [
  "quote",
  "wasm-bindgen-macro-support",
@@ -6913,9 +6877,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro-support"
-version = "0.2.97"
+version = "0.2.99"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98c9ae5a76e46f4deecd0f0255cc223cfa18dc9b261213b8aa0c7b36f61b3f1d"
+checksum = "30d7a95b763d3c45903ed6c81f156801839e5ee968bb07e534c44df0fcd330c2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6926,15 +6890,15 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-shared"
-version = "0.2.97"
+version = "0.2.99"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ee99da9c5ba11bd675621338ef6fa52296b76b83305e9b6e5c77d4c286d6d49"
+checksum = "943aab3fdaaa029a6e0271b35ea10b72b943135afe9bffca82384098ad0e06a6"
 
 [[package]]
 name = "web-sys"
-version = "0.3.74"
+version = "0.3.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a98bc3c33f0fe7e59ad7cd041b89034fa82a7c2d4365ca538dda6cdaf513863c"
+checksum = "04dd7223427d52553d3702c004d3b2fe07c148165faa56313cb00211e31c12bc"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
