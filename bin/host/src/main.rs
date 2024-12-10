@@ -136,6 +136,14 @@ impl Default for Rv32RethConfig {
     }
 }
 
+impl Rv32RethConfig {
+    fn new(app_log_blowup: usize) -> Self {
+        let mut config = Self::default();
+        config.system.max_constraint_degree = (1 << app_log_blowup) + 1;
+        config
+    }
+}
+
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
     // Intialize the environment variables.
@@ -231,7 +239,7 @@ async fn main() -> eyre::Result<()> {
     run_with_metric_collection("OUTPUT_PATH", || {
         tracing::info_span!("reth-block", group = "reth_block", block_number = args.block_number)
             .in_scope(|| -> eyre::Result<()> {
-                let mut vm_config = Rv32RethConfig::default();
+                let mut vm_config = Rv32RethConfig::new(app_log_blowup);
                 vm_config.system.collect_metrics = args.collect_metrics;
                 vm_config.system.max_segment_len = max_segment_length;
                 if args.execute {
