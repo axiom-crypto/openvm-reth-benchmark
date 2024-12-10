@@ -4851,7 +4851,7 @@ dependencies = [
 [[package]]
 name = "reth-blockchain-tree-api"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "reth-consensus",
  "reth-execution-errors",
@@ -4863,7 +4863,7 @@ dependencies = [
 [[package]]
 name = "reth-chainspec"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-chains",
  "alloy-eips",
@@ -4885,7 +4885,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4901,7 +4901,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs-derive"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "convert_case 0.6.0",
  "proc-macro2",
@@ -4912,7 +4912,7 @@ dependencies = [
 [[package]]
 name = "reth-consensus"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "auto_impl",
  "derive_more 1.0.0",
@@ -4922,7 +4922,7 @@ dependencies = [
 [[package]]
 name = "reth-consensus-common"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "reth-chainspec",
  "reth-consensus",
@@ -4932,7 +4932,7 @@ dependencies = [
 [[package]]
 name = "reth-db-models"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "bytes",
  "modular-bitfield",
@@ -4944,7 +4944,7 @@ dependencies = [
 [[package]]
 name = "reth-errors"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "reth-blockchain-tree-api",
  "reth-consensus",
@@ -4957,7 +4957,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-consensus"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "reth-chainspec",
  "reth-consensus",
@@ -4969,7 +4969,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-forks"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-chains",
  "alloy-primitives",
@@ -4986,7 +4986,7 @@ dependencies = [
 [[package]]
 name = "reth-evm"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-eips",
  "auto_impl",
@@ -5004,7 +5004,7 @@ dependencies = [
 [[package]]
 name = "reth-evm-ethereum"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-eips",
  "alloy-sol-types",
@@ -5022,7 +5022,7 @@ dependencies = [
 [[package]]
 name = "reth-evm-optimism"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "reth-chainspec",
  "reth-ethereum-forks",
@@ -5042,7 +5042,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-errors"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -5058,7 +5058,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-types"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "reth-chainspec",
  "reth-execution-errors",
@@ -5070,7 +5070,7 @@ dependencies = [
 [[package]]
 name = "reth-fs-util"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "serde",
  "serde_json",
@@ -5080,7 +5080,7 @@ dependencies = [
 [[package]]
 name = "reth-network-peers"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -5093,7 +5093,7 @@ dependencies = [
 [[package]]
 name = "reth-optimism-chainspec"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-chains",
  "alloy-primitives",
@@ -5108,7 +5108,7 @@ dependencies = [
 [[package]]
 name = "reth-optimism-consensus"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "reth-chainspec",
  "reth-consensus",
@@ -5120,7 +5120,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5151,7 +5151,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives-traits"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5172,7 +5172,7 @@ dependencies = [
 [[package]]
 name = "reth-prune-types"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-primitives",
  "bytes",
@@ -5186,7 +5186,7 @@ dependencies = [
 [[package]]
 name = "reth-revm"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "reth-chainspec",
  "reth-consensus-common",
@@ -5201,7 +5201,7 @@ dependencies = [
 [[package]]
 name = "reth-stages-types"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-primitives",
  "bytes",
@@ -5214,7 +5214,7 @@ dependencies = [
 [[package]]
 name = "reth-static-file-types"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-primitives",
  "derive_more 1.0.0",
@@ -5225,7 +5225,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-api"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "auto_impl",
  "reth-chainspec",
@@ -5241,7 +5241,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-errors"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-rlp",
  "derive_more 1.0.0",
@@ -5252,7 +5252,7 @@ dependencies = [
 [[package]]
 name = "reth-trie"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-rlp",
  "auto_impl",
@@ -5271,7 +5271,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-common"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
