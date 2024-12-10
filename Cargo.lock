@@ -769,6 +769,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 [[package]]
 name = "ax-circuit-derive"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "itertools 0.13.0",
  "proc-macro2",
@@ -779,6 +780,7 @@ dependencies = [
 [[package]]
 name = "ax-circuit-primitives"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-circuit-derive",
  "ax-stark-backend",
@@ -794,6 +796,7 @@ dependencies = [
 [[package]]
 name = "ax-mod-circuit-builder"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-circuit-primitives",
  "ax-stark-backend",
@@ -810,6 +813,7 @@ dependencies = [
 [[package]]
 name = "ax-poseidon2-air"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-circuit-primitives",
  "ax-stark-backend",
@@ -826,6 +830,7 @@ dependencies = [
 [[package]]
 name = "ax-stark-backend"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "async-trait",
  "cfg-if",
@@ -851,6 +856,7 @@ dependencies = [
 [[package]]
 name = "ax-stark-sdk"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-circuit-derive",
  "ax-stark-backend",
@@ -885,6 +891,7 @@ dependencies = [
 [[package]]
 name = "axvm"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "axvm-platform",
  "axvm-rv32im-guest",
@@ -897,6 +904,7 @@ dependencies = [
 [[package]]
 name = "axvm-algebra-circuit"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -923,6 +931,7 @@ dependencies = [
 [[package]]
 name = "axvm-algebra-complex-macros"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "axvm-macros-common",
  "quote",
@@ -932,6 +941,7 @@ dependencies = [
 [[package]]
 name = "axvm-algebra-guest"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "axvm",
  "axvm-algebra-moduli-setup",
@@ -946,6 +956,7 @@ dependencies = [
 [[package]]
 name = "axvm-algebra-moduli-setup"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "axvm-macros-common",
  "quote",
@@ -955,6 +966,7 @@ dependencies = [
 [[package]]
 name = "axvm-algebra-transpiler"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-stark-backend",
  "axvm-algebra-guest",
@@ -969,6 +981,7 @@ dependencies = [
 [[package]]
 name = "axvm-benchmarks"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-circuit-derive",
  "ax-stark-backend",
@@ -1008,6 +1021,7 @@ dependencies = [
 [[package]]
 name = "axvm-bigint-circuit"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -1029,6 +1043,7 @@ dependencies = [
 [[package]]
 name = "axvm-bigint-guest"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "axvm",
  "axvm-platform",
@@ -1041,6 +1056,7 @@ dependencies = [
 [[package]]
 name = "axvm-bigint-transpiler"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-stark-backend",
  "axvm-bigint-guest",
@@ -1055,6 +1071,7 @@ dependencies = [
 [[package]]
 name = "axvm-build"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "axvm-platform",
  "cargo_metadata",
@@ -1069,6 +1086,7 @@ dependencies = [
 [[package]]
 name = "axvm-circuit"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "async-trait",
  "ax-circuit-derive",
@@ -1104,6 +1122,7 @@ dependencies = [
 [[package]]
 name = "axvm-circuit-derive"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "itertools 0.13.0",
  "proc-macro2",
@@ -1114,6 +1133,7 @@ dependencies = [
 [[package]]
 name = "axvm-ecc-circuit"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -1141,6 +1161,7 @@ dependencies = [
 [[package]]
 name = "axvm-ecc-guest"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "axvm",
  "axvm-algebra-guest",
@@ -1167,6 +1188,7 @@ dependencies = [
 [[package]]
 name = "axvm-ecc-sw-setup"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "axvm-macros-common",
  "quote",
@@ -1176,6 +1198,7 @@ dependencies = [
 [[package]]
 name = "axvm-ecc-transpiler"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-stark-backend",
  "axvm-ecc-guest",
@@ -1189,6 +1212,7 @@ dependencies = [
 [[package]]
 name = "axvm-instructions"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-stark-backend",
  "axvm-instructions-derive",
@@ -1205,6 +1229,7 @@ dependencies = [
 [[package]]
 name = "axvm-instructions-derive"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1214,6 +1239,7 @@ dependencies = [
 [[package]]
 name = "axvm-keccak256-circuit"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -1240,6 +1266,7 @@ dependencies = [
 [[package]]
 name = "axvm-keccak256-guest"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "axvm-platform",
  "serde",
@@ -1249,6 +1276,7 @@ dependencies = [
 [[package]]
 name = "axvm-keccak256-transpiler"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-stark-backend",
  "axvm-instructions",
@@ -1262,6 +1290,7 @@ dependencies = [
 [[package]]
 name = "axvm-macros-common"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "syn 2.0.90",
 ]
@@ -1269,6 +1298,7 @@ dependencies = [
 [[package]]
 name = "axvm-native-circuit"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -1294,6 +1324,7 @@ dependencies = [
 [[package]]
 name = "axvm-native-compiler"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-circuit-primitives",
  "ax-stark-backend",
@@ -1322,6 +1353,7 @@ dependencies = [
 [[package]]
 name = "axvm-native-compiler-derive"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1331,6 +1363,7 @@ dependencies = [
 [[package]]
 name = "axvm-native-recursion"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-stark-backend",
  "ax-stark-sdk",
@@ -1356,6 +1389,7 @@ dependencies = [
 [[package]]
 name = "axvm-pairing-circuit"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -1386,6 +1420,7 @@ dependencies = [
 [[package]]
 name = "axvm-pairing-guest"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "axvm",
  "axvm-algebra-complex-macros",
@@ -1410,6 +1445,7 @@ dependencies = [
 [[package]]
 name = "axvm-pairing-transpiler"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-stark-backend",
  "axvm-instructions",
@@ -1423,6 +1459,7 @@ dependencies = [
 [[package]]
 name = "axvm-platform"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "bincode 2.0.0-rc.3",
  "getrandom",
@@ -1434,6 +1471,7 @@ dependencies = [
 [[package]]
 name = "axvm-rv32-adapters"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -1451,6 +1489,7 @@ dependencies = [
 [[package]]
 name = "axvm-rv32im-circuit"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-circuit-derive",
  "ax-circuit-primitives",
@@ -1475,6 +1514,7 @@ dependencies = [
 [[package]]
 name = "axvm-rv32im-guest"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "axvm-platform",
  "strum_macros",
@@ -1483,6 +1523,7 @@ dependencies = [
 [[package]]
 name = "axvm-rv32im-transpiler"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-stark-backend",
  "axvm-instructions",
@@ -1497,6 +1538,7 @@ dependencies = [
 [[package]]
 name = "axvm-sdk"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "async-trait",
  "ax-stark-backend",
@@ -1535,6 +1577,7 @@ dependencies = [
 [[package]]
 name = "axvm-transpiler"
 version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
 dependencies = [
  "ax-stark-backend",
  "axvm-instructions",
@@ -4808,7 +4851,7 @@ dependencies = [
 [[package]]
 name = "reth-blockchain-tree-api"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "reth-consensus",
  "reth-execution-errors",
@@ -4820,7 +4863,7 @@ dependencies = [
 [[package]]
 name = "reth-chainspec"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-chains",
  "alloy-eips",
@@ -4842,7 +4885,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4858,7 +4901,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs-derive"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "convert_case 0.6.0",
  "proc-macro2",
@@ -4869,7 +4912,7 @@ dependencies = [
 [[package]]
 name = "reth-consensus"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "auto_impl",
  "derive_more 1.0.0",
@@ -4879,7 +4922,7 @@ dependencies = [
 [[package]]
 name = "reth-consensus-common"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "reth-chainspec",
  "reth-consensus",
@@ -4889,7 +4932,7 @@ dependencies = [
 [[package]]
 name = "reth-db-models"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "bytes",
  "modular-bitfield",
@@ -4901,7 +4944,7 @@ dependencies = [
 [[package]]
 name = "reth-errors"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "reth-blockchain-tree-api",
  "reth-consensus",
@@ -4914,7 +4957,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-consensus"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "reth-chainspec",
  "reth-consensus",
@@ -4926,7 +4969,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-forks"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-chains",
  "alloy-primitives",
@@ -4943,7 +4986,7 @@ dependencies = [
 [[package]]
 name = "reth-evm"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-eips",
  "auto_impl",
@@ -4961,7 +5004,7 @@ dependencies = [
 [[package]]
 name = "reth-evm-ethereum"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-eips",
  "alloy-sol-types",
@@ -4979,7 +5022,7 @@ dependencies = [
 [[package]]
 name = "reth-evm-optimism"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "reth-chainspec",
  "reth-ethereum-forks",
@@ -4999,7 +5042,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-errors"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -5015,7 +5058,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-types"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "reth-chainspec",
  "reth-execution-errors",
@@ -5027,7 +5070,7 @@ dependencies = [
 [[package]]
 name = "reth-fs-util"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "serde",
  "serde_json",
@@ -5037,7 +5080,7 @@ dependencies = [
 [[package]]
 name = "reth-network-peers"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -5050,7 +5093,7 @@ dependencies = [
 [[package]]
 name = "reth-optimism-chainspec"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-chains",
  "alloy-primitives",
@@ -5065,7 +5108,7 @@ dependencies = [
 [[package]]
 name = "reth-optimism-consensus"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "reth-chainspec",
  "reth-consensus",
@@ -5077,7 +5120,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5108,7 +5151,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives-traits"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5129,7 +5172,7 @@ dependencies = [
 [[package]]
 name = "reth-prune-types"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-primitives",
  "bytes",
@@ -5143,7 +5186,7 @@ dependencies = [
 [[package]]
 name = "reth-revm"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "reth-chainspec",
  "reth-consensus-common",
@@ -5158,7 +5201,7 @@ dependencies = [
 [[package]]
 name = "reth-stages-types"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-primitives",
  "bytes",
@@ -5171,7 +5214,7 @@ dependencies = [
 [[package]]
 name = "reth-static-file-types"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-primitives",
  "derive_more 1.0.0",
@@ -5182,7 +5225,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-api"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "auto_impl",
  "reth-chainspec",
@@ -5198,7 +5241,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-errors"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-rlp",
  "derive_more 1.0.0",
@@ -5209,7 +5252,7 @@ dependencies = [
 [[package]]
 name = "reth-trie"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-rlp",
  "auto_impl",
@@ -5228,7 +5271,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-common"
 version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#71447995c588c01fe50b1ecfcc72caa9e5bd73ec"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#0311f1579297c7dfbfb9071918457759669f8105"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
@@ -7302,7 +7345,3 @@ dependencies = [
  "sha3",
  "subtle",
 ]
-
-[[patch.unused]]
-name = "cargo-axiom"
-version = "0.1.0"
