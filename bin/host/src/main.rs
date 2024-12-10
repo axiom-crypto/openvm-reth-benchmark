@@ -57,9 +57,6 @@ use rsp_client_executor::{
 };
 use rsp_host_executor::HostExecutor;
 use std::{path::PathBuf, time::Instant};
-use tracing_subscriber::{
-    fmt, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt, EnvFilter,
-};
 
 pub use reth_primitives;
 
@@ -228,7 +225,8 @@ async fn main() -> eyre::Result<()> {
             .with_extension(ModularTranspilerExtension)
             .with_extension(EccTranspilerExtension),
         // add more extensions
-    );
+    )
+    .unwrap();
     let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(2);
     let agg_log_blowup = args.benchmark.agg_log_blowup.unwrap_or(2);
     let internal_log_blowup = args.benchmark.internal_log_blowup.unwrap_or(2);

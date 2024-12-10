@@ -127,6 +127,17 @@ axvm-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git",
 axvm-circuit = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
 axvm-benchmarks = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
 ax-stark-sdk = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-keccak256-circuit = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-keccak256-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-rv32im-circuit = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-rv32im-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-algebra-circuit = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-algebra-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-ecc-circuit = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-ecc-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-sdk = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-native-compiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-native-recursion = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
 
 [workspace.lints]
 rust.missing_debug_implementations = "warn"

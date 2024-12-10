@@ -29,22 +29,22 @@ reth-primitives.workspace = true
 # axvm
 axvm-build = { workspace = true }
 axvm-transpiler = { workspace = true }
-axvm-keccak256-circuit = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
-axvm-keccak256-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
-axvm-rv32im-circuit = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
-axvm-rv32im-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
-axvm-algebra-circuit = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
-axvm-algebra-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
-axvm-ecc-circuit = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
-axvm-ecc-transpiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-keccak256-circuit = { workspace = true }
+axvm-keccak256-transpiler = { workspace = true }
+axvm-rv32im-circuit = { workspace = true }
+axvm-rv32im-transpiler = { workspace = true }
+axvm-algebra-circuit = { workspace = true }
+axvm-algebra-transpiler = { workspace = true }
+axvm-ecc-circuit = { workspace = true }
+axvm-ecc-transpiler = { workspace = true }
 axvm-circuit = { workspace = true }
 axvm-benchmarks = { workspace = true, features = [
     "parallel",
 ] }
 ax-stark-sdk = { workspace = true }
-axvm-sdk = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false, features = ["static-verifier"] }
-axvm-native-compiler = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
-axvm-native-recursion = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", default-features = false }
+axvm-sdk = { workspace = true }
+axvm-native-compiler = { workspace = true }
+axvm-native-recursion = { workspace = true }
 derive_more = "1.0.0"
 
 [features]
