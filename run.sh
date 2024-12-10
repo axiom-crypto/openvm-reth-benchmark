@@ -10,4 +10,5 @@ cd ../..
 
 mkdir -p rpc-cache
 source .env
-RUSTFLAGS="-Ctarget-cpu=native" RUST_BACKTRACE=1 cargo run --bin rsp --release -- --block-number 18884864 --rpc-url $RPC_1 --cache-dir rpc-cache --prove
+MODE=prove # can be execute, prove, or prove-e2e
+RUSTFLAGS="-Ctarget-cpu=native" RUST_BACKTRACE=1 OUTPUT_PATH="metrics.json" cargo run --bin rsp --release -- --$MODE --block-number 18884864 --rpc-url $RPC_1 --cache-dir rpc-cache
