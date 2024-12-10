@@ -6,10 +6,7 @@ use ax_stark_sdk::{
         p3_field::{AbstractField, PrimeField32},
     },
     bench::run_with_metric_collection,
-    config::{
-        baby_bear_poseidon2::BabyBearPoseidon2Engine,
-        fri_params::standard_fri_params_with_100_bits_conjectured_security, FriParameters,
-    },
+    config::{baby_bear_poseidon2::BabyBearPoseidon2Engine, FriParameters},
     engine::{StarkFriEngine, VerificationDataWithFriParams},
 };
 use axvm_algebra_circuit::{ModularExtension, ModularExtensionExecutor, ModularExtensionPeriphery};
@@ -17,9 +14,8 @@ use axvm_algebra_transpiler::ModularTranspilerExtension;
 use axvm_benchmarks::utils::BenchmarkCli;
 use axvm_circuit::{
     arch::{
-        instructions::{exe::AxVmExe, program::DEFAULT_MAX_NUM_PUBLIC_VALUES},
-        SystemConfig, SystemExecutor, SystemPeriphery, VirtualMachine, VmChipComplex, VmConfig,
-        VmExecutor, VmInventoryError,
+        instructions::exe::AxVmExe, SystemConfig, SystemExecutor, SystemPeriphery, VirtualMachine,
+        VmChipComplex, VmConfig, VmExecutor, VmInventoryError,
     },
     circuit_derive::{Chip, ChipUsageGetter},
     derive::{AnyEnum, InstructionExecutor, VmConfig},
@@ -31,8 +27,7 @@ use axvm_ecc_circuit::{
 use axvm_ecc_transpiler::EccTranspilerExtension;
 use axvm_keccak256_circuit::{Keccak256, Keccak256Executor, Keccak256Periphery};
 use axvm_keccak256_transpiler::Keccak256TranspilerExtension;
-use axvm_native_compiler::{conversion::CompilerOptions, prelude::Witness};
-use axvm_native_recursion::witness::Witnessable;
+use axvm_native_compiler::conversion::CompilerOptions;
 use axvm_rv32im_circuit::{
     Rv32I, Rv32IExecutor, Rv32IPeriphery, Rv32Io, Rv32IoExecutor, Rv32IoPeriphery, Rv32M,
     Rv32MExecutor, Rv32MPeriphery,
@@ -41,10 +36,9 @@ use axvm_rv32im_transpiler::{
     Rv32ITranspilerExtension, Rv32IoTranspilerExtension, Rv32MTranspilerExtension,
 };
 use axvm_sdk::{
-    config::{AggConfig, AppConfig},
-    keygen::{AggProvingKey, AppProvingKey},
-    prover::{commit_app_exe, generate_leaf_committed_exe, StarkProver},
-    StdIn,
+    commit::commit_app_exe,
+    config::{AggConfig, AppConfig, FullAggConfig, Halo2Config},
+    Sdk, StdIn,
 };
 use axvm_transpiler::{axvm_platform::memory::MEM_SIZE, elf::Elf, transpiler::Transpiler, FromElf};
 use clap::{ArgGroup, Parser};
@@ -56,6 +50,7 @@ use rsp_client_executor::{
     CHAIN_ID_OP_MAINNET,
 };
 use rsp_host_executor::HostExecutor;
+use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, time::Instant};
 
 pub use reth_primitives;
@@ -103,7 +98,7 @@ struct HostArgs {
 
 const RSP_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/rsp-client-eth");
 
-#[derive(Clone, Debug, VmConfig)]
+#[derive(Clone, Debug, VmConfig, Serialize, Deserialize)]
 pub struct Rv32RethConfig {
     #[system]
     pub system: SystemConfig,
@@ -230,13 +225,15 @@ async fn main() -> eyre::Result<()> {
     let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(2);
     let agg_log_blowup = args.benchmark.agg_log_blowup.unwrap_or(2);
     let internal_log_blowup = args.benchmark.internal_log_blowup.unwrap_or(2);
-    let root_log_blowup = args.benchmark.root_log_blowup.unwrap_or(2);
+    let root_log_blowup = args.benchmark.root_log_blowup.unwrap_or(3);
+    let max_segment_length = args.benchmark.max_segment_length.unwrap_or((1 << 23) - 100);
 
     run_with_metric_collection("OUTPUT_PATH", || {
         tracing::info_span!("reth-block", group = "reth_block", block_number = args.block_number)
             .in_scope(|| -> eyre::Result<()> {
                 let mut vm_config = Rv32RethConfig::default();
                 vm_config.system.collect_metrics = args.collect_metrics;
+                vm_config.system.max_segment_len = max_segment_length;
                 if args.execute {
                     let executor = VmExecutor::<_, _>::new(vm_config);
                     let input_stream =
@@ -267,49 +264,49 @@ async fn main() -> eyre::Result<()> {
                         })
                         .collect();
                 } else {
-                    // e2e
+                    let mut compiler_options = CompilerOptions::default();
+                    if args.collect_metrics {
+                        compiler_options.enable_cycle_tracker = true;
+                    }
+                    let app_fri_params =
+                        FriParameters::standard_with_100_bits_conjectured_security(app_log_blowup);
+                    let leaf_fri_params =
+                        FriParameters::standard_with_100_bits_conjectured_security(agg_log_blowup);
                     let app_config = AppConfig {
-                        app_fri_params: standard_fri_params_with_100_bits_conjectured_security(
-                            app_log_blowup,
-                        ),
-                        app_vm_config: vm_config,
+                        app_vm_config: vm_config.clone(),
+                        app_fri_params,
+                        leaf_fri_params,
+                        compiler_options,
                     };
-                    let app_pk = AppProvingKey::keygen(app_config.clone());
-                    let app_committed_exe = commit_app_exe(&app_config, exe);
-                    let agg_config = AggConfig {
-                        max_num_user_public_values: DEFAULT_MAX_NUM_PUBLIC_VALUES,
-                        leaf_fri_params: standard_fri_params_with_100_bits_conjectured_security(
-                            agg_log_blowup,
-                        ),
-                        internal_fri_params: standard_fri_params_with_100_bits_conjectured_security(
-                            internal_log_blowup,
-                        ),
-                        root_fri_params: standard_fri_params_with_100_bits_conjectured_security(
-                            root_log_blowup,
-                        ),
-                        compiler_options: CompilerOptions {
-                            enable_cycle_tracker: args.collect_metrics,
-                            ..Default::default()
+                    let full_agg_config = FullAggConfig {
+                        agg_config: AggConfig {
+                            max_num_user_public_values: vm_config.system.num_public_values,
+                            leaf_fri_params,
+                            internal_fri_params:
+                                FriParameters::standard_with_100_bits_conjectured_security(
+                                    internal_log_blowup,
+                                ),
+                            root_fri_params:
+                                FriParameters::standard_with_100_bits_conjectured_security(
+                                    root_log_blowup,
+                                ),
+                            compiler_options,
                         },
+                        halo2_config: Halo2Config { verifier_k: 24, wrapper_k: None },
                     };
-                    let agg_pk = AggProvingKey::keygen(agg_config);
-                    let leaf_committed_exe = generate_leaf_committed_exe(&agg_config, &app_pk);
 
-                    let prover = StarkProver::new(app_pk, app_committed_exe)
-                        .with_agg_pk_and_leaf_committed_exe(agg_pk, leaf_committed_exe);
+                    let app_pk = Sdk.app_keygen(app_config, None::<&str>)?;
+                    let full_agg_pk = Sdk.agg_keygen(full_agg_config, None::<&str>)?;
+                    let app_committed_exe = commit_app_exe(app_fri_params, exe);
 
-                    let root_proof = prover.generate_e2e_proof_with_metric_spans(
-                        StdIn::from_bytes(&input_vec),
-                        "reth",
-                    );
+                    let e2e_prover =
+                        Sdk.create_e2e_prover(app_pk, app_committed_exe, full_agg_pk)?;
 
-                    let static_verifier = prover
-                        .agg_pk()
-                        .root_verifier_pk
-                        .keygen_static_verifier(23, root_proof.clone());
-                    let mut witness = Witness::default();
-                    root_proof.write(&mut witness);
-                    static_verifier.prove(witness);
+                    let mut stdin = StdIn::default();
+                    stdin.write(&client_input);
+                    run_with_metric_collection("OUTPUT_PATH", || {
+                        e2e_prover.generate_proof_for_evm(stdin);
+                    });
                 }
 
                 Ok(())
