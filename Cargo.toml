@@ -53,37 +53,38 @@ rsp-mpt = { path = "./crates/mpt" }
 rsp-primitives = { path = "./crates/primitives" }
 
 # reth
-reth-primitives = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false, features = [
+reth-primitives = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false, features = [
     "alloy-compat",
     "optimism",
     "std",
+    "ecrecover",
 ] }
-reth-codecs = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false }
-reth-consensus = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false }
-reth-evm = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false }
-reth-revm = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false, features = [
+reth-codecs = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false }
+reth-consensus = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false }
+reth-evm = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false }
+reth-revm = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false, features = [
     "std",
 ] }
-reth-node-ethereum = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false }
-reth-evm-ethereum = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false, features = [
+reth-node-ethereum = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false }
+reth-evm-ethereum = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false, features = [
     "std",
 ] }
-reth-evm-optimism = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false, features = [
+reth-evm-optimism = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false, features = [
     "optimism",
 ] }
-reth-storage-errors = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false, features = [
+reth-storage-errors = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false, features = [
     "std",
 ] }
-reth-trie = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false }
-reth-trie-common = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false }
-reth-chainspec = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false }
-reth-optimism-chainspec = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false }
-reth-execution-errors = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false }
-reth-execution-types = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false }
-reth-db = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false }
-reth-errors = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false }
-reth-ethereum-consensus = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false }
-reth-optimism-consensus = { git = "ssh://git@github.com/axiom-crypto/reth", tag = "rsp-20240830", default-features = false, features = [
+reth-trie = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false }
+reth-trie-common = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false }
+reth-chainspec = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false }
+reth-optimism-chainspec = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false }
+reth-execution-errors = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false }
+reth-execution-types = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false }
+reth-db = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false }
+reth-errors = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false }
+reth-ethereum-consensus = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false }
+reth-optimism-consensus = { git = "ssh://git@github.com/axiom-crypto/reth", branch = "rsp", default-features = false, features = [
     "optimism",
 ] }
 
@@ -147,5 +148,13 @@ rust.rust_2018_idioms = { level = "deny", priority = -1 }
 rustdoc.all = "warn"
 
 [profile.release]
+lto = "thin"
+
+[profile.profiling]
+inherits = "bench"
+debug = 2
+
+[profile.maxperf]
+inherits = "release"
 lto = "fat"
-debug-assertions = false
+codegen-units = 1
