@@ -155,9 +155,6 @@ jobs:
           current_sha=$(git rev-parse HEAD)
           echo "Current SHA: $current_sha"
           echo "current_sha=${current_sha}" >> $GITHUB_ENV
-          if [ ! -f "${METRIC_PATH}" ]; then
-            echo "Error: Metric file ${METRIC_PATH} does not exist!!!"
-          fi
           s5cmd cp ${METRIC_PATH} ${{ env.S3_METRICS_PATH }}/${current_sha}-${METRIC_NAME}.json
 
       - name: Generate markdown # result path is hardcoded results.md
@@ -223,3 +220,6 @@ jobs:
               echo "PUSH_FAILED"
               exit 1
           fi
+      - name: Path to result
+        run: |
+          echo "https://github.com/axiom-crypto/afs-prototype/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_NAME}.md"
