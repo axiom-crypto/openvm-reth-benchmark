@@ -5,16 +5,15 @@ description = ""
 edition = "2021"
 
 [dependencies]
-bincode = { version = "2.0.0-rc", default-features = false, features = [
-    "alloc",
-] }
 rustc-hash = "2.1.0"
 
 # workspace
 rsp-client-executor = { path = "../../crates/executor/client" }
 
 # axvm
-axvm = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", features = ["std"] }
+axvm = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", features = [
+    "std",
+] }
 axvm-keccak256-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
 axvm-algebra-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
 axvm-ecc-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }

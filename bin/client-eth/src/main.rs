@@ -4,10 +4,7 @@ use axvm::io::{println, read, reveal};
 use axvm_ecc_guest::k256::Secp256k1Coord;
 #[allow(unused_imports)]
 use axvm_keccak256_guest; // trigger extern native-keccak256
-use bincode::de::{read::SliceReader, Decoder, DecoderImpl};
-use rsp_client_executor::{
-    io::ClientExecutorInput, rsp_mpt::StorageTries, ClientExecutor, EthereumVariant,
-};
+use rsp_client_executor::{io::ClientExecutorInput, ClientExecutor, EthereumVariant};
 
 axvm_algebra_guest::moduli_setup::moduli_init! {
     "0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE FFFFFC2F",
