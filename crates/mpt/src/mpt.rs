@@ -1015,7 +1015,7 @@ pub fn proofs_to_tries(
     }
 
     let mut storage: HashMap<B256, MptNode, FxBuildHasher> =
-        HashMap::with_capacity_and_hasher(proofs.len(), FxBuildHasher::default());
+        HashMap::with_capacity_and_hasher(proofs.len(), FxBuildHasher);
 
     let mut state_nodes = HashMap::<_, _, FxBuildHasher>::default();
     let mut state_root_node = MptNode::default();
@@ -1082,7 +1082,7 @@ pub fn transition_proofs_to_tries(
     }
 
     let mut storage: HashMap<B256, MptNode, _> =
-        HashMap::with_capacity_and_hasher(parent_proofs.len(), FxBuildHasher::default());
+        HashMap::with_capacity_and_hasher(parent_proofs.len(), FxBuildHasher);
 
     let mut state_nodes = HashMap::<_, _, FxBuildHasher>::default();
     let mut state_root_node = MptNode::default();
