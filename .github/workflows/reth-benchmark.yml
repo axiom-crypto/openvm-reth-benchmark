@@ -91,3 +91,134 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
+
+      - name: Checkout afs-prototype
+        run: |
+          git clone git@github.com:axiom-crypto/afs-prototype.git
+
+      - name: Display workflow inputs
+        run: echo "${{ toJSON(github.event.inputs) }}"
+      - name: Setup CLI
+        working-directory: afs-prototype/crates/cargo-axiom
+        run: |
+          cargo install --force --path .
+      - name: Install architecture specific tools
+        run: |
+          source afs-prototype/ci/scripts/utils.sh
+          install_s5cmd
+
+      - name: Setup halo2
+        if: ${{ github.event.inputs.mode == 'prove-e2e' }}
+        run: |
+          bash afs-prototype/extensions/native/recursion/trusted_setup_s3.sh
+
+      - name: Set metric name
+        run: |
+          input_json_str="${{ toJSON(github.event.inputs) }}"
+          input_hash=$(echo $input_json_str | sha256sum | cut -d' ' -f1)
+          METRIC_NAME=reth-${input_hash}
+          echo "METRIC_NAME=${METRIC_NAME}" >> $GITHUB_ENV
+          METRIC_PATH=".bench_metrics/${METRIC_NAME}.json"
+          echo "METRIC_PATH=${METRIC_PATH}" >> $GITHUB_ENV
+
+      - name: Run Reth
+        run: |
+          cd bin/client-eth
+          cargo axiom build
+          mkdir -p ../host/elf
+          cp target/riscv32im-risc0-zkvm-elf/release/rsp-client-eth ../host/elf/
+
+          cd ../..
+          mkdir -p rpc-cache
+          mkdir -p .bench_metrics # TODO: remove this
+          RPC_1=${{ secrets.RPC_URL_1 }}
+          MODE=${{ inputs.mode }}
+          BLOCK_NUMBER=${{ inputs.block_number }}
+          OPTIONAL_ARGS=""
+          PROFILE="release"
+          FEATURES="bench-metrics,${{ inputs.memory_allocator }}"
+          if [[ "${{ inputs.collect_metrics }}" == "true" ]]; then
+            OPTIONAL_ARGS="--collect-metrics"
+            PROFILE="profiling"
+            FEATURES="${FEATURES},profiling"
+          fi
+          cargo build --bin rsp --profile=$PROFILE --no-default-features --features=$FEATURES
+          OUTPUT_PATH=${METRIC_PATH} RUSTFLAGS="-Ctarget-cpu=native" ./target/$PROFILE/rsp \
+            --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
+            --app-log-blowup ${{ inputs.app_log_blowup }} \
+            --agg-log-blowup ${{ inputs.agg_log_blowup }} \
+            --root-log-blowup ${{ inputs.root_log_blowup }} \
+            --max-segment-length ${{ inputs.max_segment_length }} $OPTIONAL_ARGS
+
+      - name: Upload Benchmark Metrics
+        working-directory: rsp
+        run: |
+          current_sha=$(git rev-parse HEAD)
+          echo "Current SHA: $current_sha"
+          echo "current_sha=${current_sha}" >> $GITHUB_ENV
+          s5cmd cp ${METRIC_PATH} ${{ env.S3_METRICS_PATH }}/${current_sha}-${METRIC_NAME}.json
+
+      - name: Generate markdown # result path is hardcoded results.md
+        working-directory: rsp
+        run: |
+          source afs-prototype/ci/scripts/utils.sh
+          generate_markdown $METRIC_PATH $METRIC_NAME $current_sha ${{ env.S3_METRICS_PATH }} ".."
+
+      - name: Install inferno-flamegraph
+        run: cargo install inferno
+
+      - name: Generate flamegraphs
+        working-directory: rsp
+        run: |
+          if [[ -f $METRIC_PATH ]]; then
+            python3 afs-prototype/ci/scripts/metric_unify/flamegraph.py $METRIC_PATH
+            s5cmd cp '.bench_metrics/flamegraphs/*.svg' "${{ env.PUBLIC_S3_PATH }}/${current_sha}/"
+            echo "UPLOAD_FLAMEGRAPHS=1" >> $GITHUB_ENV
+          fi
+
+      - name: Add benchmark metadata to markdown, and upload
+        run: |
+          source afs-prototype/ci/scripts/utils.sh
+          add_metadata results.md ${{ inputs.max_segment_length }} ${{ inputs.instance_family }} ${{ inputs.memory_allocator }} ${{ github.repository }} ${{ github.run_id }}
+          s5cmd cp "${{ env.S3_PATH }}/${{ env.current_sha }}-${METRIC_NAME}.md" "${{ env.S3_PATH }}/main-${METRIC_NAME}.md"
+
+      ### Update gh-pages
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Set up git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Commit to gh-pages branch
+        run: |
+          GH_PAGES_PATH="benchmarks-dispatch/${{ github.head_ref || github.ref }}"
+          echo "GH_PAGES_PATH=${GH_PAGES_PATH}" >> $GITHUB_ENV
+          mkdir -p ${GH_PAGES_PATH}
+          s5cmd cp "${{ env.S3_PATH }}/main-${METRIC_NAME}.md" "${GH_PAGES_PATH}/${METRIC_NAME}.md"
+
+          git add ${GH_PAGES_PATH}/${METRIC_NAME}.md
+          git commit --allow-empty -m "Update benchmark result at ${GH_PAGES_PATH}/${METRIC_NAME}.md"
+          MAX_RETRIES=10
+          RETRY_DELAY=5
+          ATTEMPT=0
+          SUCCESS=false
+          while [ $ATTEMPT -lt $MAX_RETRIES ]; do
+              echo "Attempt $((ATTEMPT + 1)) to push of $MAX_RETRIES..."
+              git fetch origin gh-pages
+              git merge origin/gh-pages --no-edit
+              if git push origin gh-pages; then
+                  SUCCESS=true
+                  break
+              else
+                  echo "Push failed. Retrying in $RETRY_DELAY seconds..."
+                  sleep $RETRY_DELAY
+                  ATTEMPT=$((ATTEMPT + 1))
+              fi
+          done
+          if [ "$SUCCESS" = false ]; then
+              echo "PUSH_FAILED"
+              exit 1
+          fi
