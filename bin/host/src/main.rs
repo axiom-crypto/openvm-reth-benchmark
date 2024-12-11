@@ -1,17 +1,16 @@
 use alloy_provider::ReqwestProvider;
 use ax_stark_sdk::{
-    ax_stark_backend::{self, engine::VerificationData, p3_field::PrimeField32},
+    ax_stark_backend::{self, p3_field::PrimeField32},
     bench::run_with_metric_collection,
-    config::{baby_bear_poseidon2::BabyBearPoseidon2Engine, FriParameters},
-    engine::{StarkFriEngine, VerificationDataWithFriParams},
+    config::FriParameters,
 };
 use axvm_algebra_circuit::{ModularExtension, ModularExtensionExecutor, ModularExtensionPeriphery};
 use axvm_algebra_transpiler::ModularTranspilerExtension;
 use axvm_benchmarks::utils::BenchmarkCli;
 use axvm_circuit::{
     arch::{
-        instructions::exe::AxVmExe, SystemConfig, SystemExecutor, SystemPeriphery, VirtualMachine,
-        VmChipComplex, VmConfig, VmExecutor, VmInventoryError,
+        instructions::exe::AxVmExe, SystemConfig, SystemExecutor, SystemPeriphery, VmChipComplex,
+        VmConfig, VmExecutor, VmInventoryError,
     },
     circuit_derive::{Chip, ChipUsageGetter},
     derive::{AnyEnum, InstructionExecutor, VmConfig},
@@ -40,7 +39,7 @@ use axvm_transpiler::{axvm_platform::memory::MEM_SIZE, elf::Elf, transpiler::Tra
 use clap::{ArgGroup, Parser};
 use core::option::Option::None;
 use derive_more::From;
-use metrics::{counter, gauge, Gauge};
+use metrics::{gauge, Gauge};
 use rsp_client_executor::{
     io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET,
     CHAIN_ID_OP_MAINNET,
@@ -210,6 +209,7 @@ async fn main() -> eyre::Result<()> {
     let mut stdin = StdIn::default();
     stdin.write(&client_input);
 
+    let sdk = Sdk;
     let elf = Elf::decode(RSP_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
     let exe = AxVmExe::from_elf(
         elf,
@@ -229,52 +229,38 @@ async fn main() -> eyre::Result<()> {
     let root_log_blowup = args.benchmark.root_log_blowup.unwrap_or(3);
     let max_segment_length = args.benchmark.max_segment_length.unwrap_or((1 << 23) - 100);
 
+    let mut compiler_options = CompilerOptions::default();
+    if args.collect_metrics {
+        compiler_options.enable_cycle_tracker = true;
+    }
+    let app_fri_params = FriParameters::standard_with_100_bits_conjectured_security(app_log_blowup);
+    let leaf_fri_params =
+        FriParameters::standard_with_100_bits_conjectured_security(agg_log_blowup);
+    let mut vm_config = Rv32RethConfig::new(app_log_blowup);
+    vm_config.system.collect_metrics = args.collect_metrics;
+    vm_config.system.max_segment_len = max_segment_length;
+
+    let app_config = AppConfig {
+        app_vm_config: vm_config.clone(),
+        app_fri_params,
+        leaf_fri_params: leaf_fri_params.into(),
+        compiler_options,
+    };
+
     run_with_metric_collection("OUTPUT_PATH", || {
         tracing::info_span!("reth-block", group = "reth_block", block_number = args.block_number)
             .in_scope(|| -> eyre::Result<()> {
-                let mut vm_config = Rv32RethConfig::new(app_log_blowup);
-                vm_config.system.collect_metrics = args.collect_metrics;
-                vm_config.system.max_segment_len = max_segment_length;
                 if args.execute {
                     let executor = VmExecutor::<_, _>::new(vm_config);
                     time(gauge!("execute_time_ms"), || executor.execute(exe, stdin))?;
                 } else if args.prove {
-                    // TODO: consolidate the code with prove-e2e
-                    let engine = BabyBearPoseidon2Engine::new(
-                        FriParameters::standard_with_100_bits_conjectured_security(app_log_blowup),
-                    );
-                    counter!("fri.log_blowup").absolute(engine.fri_params().log_blowup as u64);
-                    let vm = VirtualMachine::new(engine, vm_config);
-                    let committed_exe = time(gauge!("commit_exe_time_ms"), || vm.commit_exe(exe));
-                    let results = time(gauge!("execute_and_trace_gen_time_ms"), || {
-                        vm.execute_and_generate_with_cached_program(committed_exe, stdin)
-                    })?;
-                    let pk = time(gauge!("keygen_time_ms"), || vm.keygen());
-                    let proofs = vm.prove(&pk, results);
-                    let vk = pk.get_vk();
-                    vm.verify(&vk, proofs.clone()).expect("Verification failed");
-                    let _vdata: Vec<_> = proofs
-                        .into_iter()
-                        .map(|proof| VerificationDataWithFriParams {
-                            data: VerificationData { vk: vk.clone(), proof },
-                            fri_params: vm.engine.fri_params(),
-                        })
-                        .collect();
+                    let app_pk = sdk.app_keygen(app_config)?;
+                    let app_committed_exe = sdk.commit_app_exe(app_fri_params, exe)?;
+
+                    let _proof = sdk.generate_app_proof(app_pk, app_committed_exe, stdin)?;
+                    // TODO: fix sdk to not consume app_pk
+                    // sdk.verify_app_proof(&app_pk, &proof)?;
                 } else {
-                    let mut compiler_options = CompilerOptions::default();
-                    if args.collect_metrics {
-                        compiler_options.enable_cycle_tracker = true;
-                    }
-                    let app_fri_params =
-                        FriParameters::standard_with_100_bits_conjectured_security(app_log_blowup);
-                    let leaf_fri_params =
-                        FriParameters::standard_with_100_bits_conjectured_security(agg_log_blowup);
-                    let app_config = AppConfig {
-                        app_vm_config: vm_config.clone(),
-                        app_fri_params,
-                        leaf_fri_params: leaf_fri_params.into(),
-                        compiler_options,
-                    };
                     let full_agg_config = FullAggConfig {
                         agg_config: AggConfig {
                             max_num_user_public_values: vm_config.system.num_public_values,
@@ -292,13 +278,12 @@ async fn main() -> eyre::Result<()> {
                         halo2_config: Halo2Config { verifier_k: 24, wrapper_k: None },
                     };
 
-                    let app_pk = Sdk.app_keygen(app_config)?;
-                    let full_agg_pk = Sdk.agg_keygen(full_agg_config)?;
+                    let app_pk = sdk.app_keygen(app_config)?;
+                    let full_agg_pk = sdk.agg_keygen(full_agg_config)?;
                     let app_committed_exe = commit_app_exe(app_fri_params, exe);
 
-                    run_with_metric_collection("OUTPUT_PATH", || {
-                        Sdk.generate_evm_proof(app_pk, app_committed_exe, full_agg_pk, stdin)
-                    })?;
+                    let _evm_proof =
+                        sdk.generate_evm_proof(app_pk, app_committed_exe, full_agg_pk, stdin)?;
                 }
 
                 Ok(())

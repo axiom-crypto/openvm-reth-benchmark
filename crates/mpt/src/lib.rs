@@ -48,7 +48,7 @@ impl bincode::Decode for StorageTries {
             .map_err(|_| bincode::error::DecodeError::OutsideUsizeRange(len_u64))?;
         decoder.claim_container_read::<(Compat<B256>, MptNode)>(len)?;
 
-        let hash_builder: _ = Default::default();
+        let hash_builder = Default::default();
         let mut map = HashMap::with_capacity_and_hasher(len, hash_builder);
         for _ in 0..len {
             // See the documentation on `unclaim_bytes_read` as to why we're doing this here
@@ -71,7 +71,7 @@ impl<'de> bincode::BorrowDecode<'de> for StorageTries {
             .map_err(|_| bincode::error::DecodeError::OutsideUsizeRange(len_u64))?;
         decoder.claim_container_read::<(Compat<B256>, MptNode)>(len)?;
 
-        let hash_builder: _ = Default::default();
+        let hash_builder = Default::default();
         let mut map = HashMap::with_capacity_and_hasher(len, hash_builder);
         for _ in 0..len {
             // See the documentation on `unclaim_bytes_read` as to why we're doing this here
