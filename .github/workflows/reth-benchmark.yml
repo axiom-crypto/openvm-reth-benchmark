@@ -222,4 +222,4 @@ jobs:
           fi
       - name: Path to result
         run: |
-          echo "https://github.com/axiom-crypto/afs-prototype/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_NAME}.md"
+          echo "https://github.com/axiom-crypto/rsp/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_NAME}.md"
