@@ -151,7 +151,6 @@ jobs:
             --max-segment-length ${{ inputs.max_segment_length }} $OPTIONAL_ARGS
 
       - name: Upload Benchmark Metrics
-        working-directory: rsp
         run: |
           current_sha=$(git rev-parse HEAD)
           echo "Current SHA: $current_sha"
@@ -159,7 +158,6 @@ jobs:
           s5cmd cp ${METRIC_PATH} ${{ env.S3_METRICS_PATH }}/${current_sha}-${METRIC_NAME}.json
 
       - name: Generate markdown # result path is hardcoded results.md
-        working-directory: rsp
         run: |
           source afs-prototype/ci/scripts/utils.sh
           generate_markdown $METRIC_PATH $METRIC_NAME $current_sha ${{ env.S3_METRICS_PATH }} ".."
@@ -168,7 +166,6 @@ jobs:
         run: cargo install inferno
 
       - name: Generate flamegraphs
-        working-directory: rsp
         run: |
           if [[ -f $METRIC_PATH ]]; then
             python3 afs-prototype/ci/scripts/metric_unify/flamegraph.py $METRIC_PATH
