@@ -18,17 +18,13 @@ axvm_ecc_guest::sw_setup::sw_init! {
 }
 
 pub fn main() {
+    println("client-eth starting");
     setup_all_moduli();
     setup_all_curves();
 
-    // Read the input. Implicitly uses bincode deserialize
-    let input_vec = read_vec();
-    println("start bincode");
-    let config = bincode::config::standard();
-    let (input, len): (ClientExecutorInput, usize) =
-        bincode::serde::decode_from_slice(&input_vec[..], config).unwrap();
+    // Read the input.
+    let input: ClientExecutorInput = read();
     println("finished reading input");
-    assert_eq!(len, input_vec.len());
 
     // Execute the block.
     let executor = ClientExecutor;
@@ -38,5 +34,5 @@ pub fn main() {
     // Commit the block hash.
     let block_hash = unsafe { transmute::<_, [u32; 8]>(block_hash) };
 
-    // block_hash.into_iter().enumerate().for_each(|(i, x)| reveal(x, i));
+    block_hash.into_iter().enumerate().for_each(|(i, x)| reveal(x, i));
 }
