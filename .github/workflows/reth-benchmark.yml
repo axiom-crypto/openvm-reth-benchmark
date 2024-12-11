@@ -160,8 +160,7 @@ jobs:
       - name: Generate markdown # result path is hardcoded results.md
         run: |
           source afs-prototype/ci/scripts/utils.sh
-          generate_markdown $METRIC_PATH $METRIC_NAME $current_sha ${{ env.S3_METRICS_PATH }} "./afs-prototype"
-        # todo: remove current_sha when the afs pr is merged.
+          generate_markdown $METRIC_PATH $METRIC_NAME ${{ env.S3_METRICS_PATH }} "./afs-prototype"
 
       - name: Install inferno-flamegraph
         run: cargo install inferno
