@@ -1,6 +1,6 @@
 use core::mem::transmute;
 
-use axvm::io::{println, read_vec, reveal};
+use axvm::io::{println, read, reveal};
 use axvm_ecc_guest::k256::Secp256k1Coord;
 #[allow(unused_imports)]
 use axvm_keccak256_guest; // trigger extern native-keccak256
