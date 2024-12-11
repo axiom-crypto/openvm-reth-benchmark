@@ -35,13 +35,11 @@ on:
         required: false
         description: Root level log blowup (only for e2e)
         default: 3
-      # workflow dispatch has a limit on how many inputs
-      # we always use the default for now
-      # internal_log_blowup:
-      #   type: number
-      #   required: false
-      #   description: Internal level log blowup (only for e2e)
-      #   default: 2
+      internal_log_blowup:
+        type: number
+        required: false
+        description: Internal level log blowup (only for e2e)
+        default: 2
       mode:
         type: choice
         required: false
