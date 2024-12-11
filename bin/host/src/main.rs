@@ -1,10 +1,6 @@
 use alloy_provider::ReqwestProvider;
 use ax_stark_sdk::{
-    ax_stark_backend::{
-        self,
-        engine::VerificationData,
-        p3_field::{AbstractField, PrimeField32},
-    },
+    ax_stark_backend::{self, engine::VerificationData, p3_field::PrimeField32},
     bench::run_with_metric_collection,
     config::{baby_bear_poseidon2::BabyBearPoseidon2Engine, FriParameters},
     engine::{StarkFriEngine, VerificationDataWithFriParams},
@@ -211,11 +207,8 @@ async fn main() -> eyre::Result<()> {
         }
     };
 
-    let config = bincode::config::standard();
-    let input_vec: Vec<u8> = bincode::serde::encode_to_vec(&client_input, config)?;
-    let (decoded, _): (ClientExecutorInput, usize) =
-        bincode::serde::decode_from_slice(&input_vec, config)?;
-    assert_eq!(client_input, decoded);
+    let mut stdin = StdIn::default();
+    stdin.write(&client_input);
 
     let elf = Elf::decode(RSP_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
     let exe = AxVmExe::from_elf(
@@ -244,9 +237,7 @@ async fn main() -> eyre::Result<()> {
                 vm_config.system.max_segment_len = max_segment_length;
                 if args.execute {
                     let executor = VmExecutor::<_, _>::new(vm_config);
-                    let input_stream =
-                        vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
-                    time(gauge!("execute_time_ms"), || executor.execute(exe, input_stream))?;
+                    time(gauge!("execute_time_ms"), || executor.execute(exe, stdin))?;
                 } else if args.prove {
                     // TODO: consolidate the code with prove-e2e
                     let engine = BabyBearPoseidon2Engine::new(
@@ -255,10 +246,8 @@ async fn main() -> eyre::Result<()> {
                     counter!("fri.log_blowup").absolute(engine.fri_params().log_blowup as u64);
                     let vm = VirtualMachine::new(engine, vm_config);
                     let committed_exe = time(gauge!("commit_exe_time_ms"), || vm.commit_exe(exe));
-                    let input_stream =
-                        vec![input_vec.into_iter().map(AbstractField::from_canonical_u8).collect()];
                     let results = time(gauge!("execute_and_trace_gen_time_ms"), || {
-                        vm.execute_and_generate_with_cached_program(committed_exe, input_stream)
+                        vm.execute_and_generate_with_cached_program(committed_exe, stdin)
                     })?;
                     let pk = time(gauge!("keygen_time_ms"), || vm.keygen());
                     let proofs = vm.prove(&pk, results);
@@ -283,7 +272,7 @@ async fn main() -> eyre::Result<()> {
                     let app_config = AppConfig {
                         app_vm_config: vm_config.clone(),
                         app_fri_params,
-                        leaf_fri_params,
+                        leaf_fri_params: leaf_fri_params.into(),
                         compiler_options,
                     };
                     let full_agg_config = FullAggConfig {
@@ -303,18 +292,13 @@ async fn main() -> eyre::Result<()> {
                         halo2_config: Halo2Config { verifier_k: 24, wrapper_k: None },
                     };
 
-                    let app_pk = Sdk.app_keygen(app_config, None::<&str>)?;
-                    let full_agg_pk = Sdk.agg_keygen(full_agg_config, None::<&str>)?;
+                    let app_pk = Sdk.app_keygen(app_config)?;
+                    let full_agg_pk = Sdk.agg_keygen(full_agg_config)?;
                     let app_committed_exe = commit_app_exe(app_fri_params, exe);
 
-                    let e2e_prover =
-                        Sdk.create_e2e_prover(app_pk, app_committed_exe, full_agg_pk)?;
-
-                    let mut stdin = StdIn::default();
-                    stdin.write(&client_input);
                     run_with_metric_collection("OUTPUT_PATH", || {
-                        e2e_prover.generate_proof_for_evm(stdin);
-                    });
+                        Sdk.generate_evm_proof(app_pk, app_committed_exe, full_agg_pk, stdin)
+                    })?;
                 }
 
                 Ok(())
