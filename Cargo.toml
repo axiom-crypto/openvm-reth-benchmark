@@ -153,6 +153,7 @@ lto = "thin"
 [profile.profiling]
 inherits = "bench"
 debug = 2
+strip = false
 
 [profile.maxperf]
 inherits = "release"
