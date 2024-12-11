@@ -499,10 +499,11 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 [[package]]
 name = "axvm"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#02fc1b3cb39968d34c9ca643a5909ab229342a5e"
 dependencies = [
  "axvm-platform",
  "axvm-rv32im-guest",
+ "bytemuck",
  "hex-literal",
  "num-bigint-dig",
  "num-traits",
@@ -512,7 +513,7 @@ dependencies = [
 [[package]]
 name = "axvm-algebra-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#02fc1b3cb39968d34c9ca643a5909ab229342a5e"
 dependencies = [
  "axvm",
  "axvm-algebra-moduli-setup",
@@ -526,7 +527,7 @@ dependencies = [
 [[package]]
 name = "axvm-algebra-moduli-setup"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#02fc1b3cb39968d34c9ca643a5909ab229342a5e"
 dependencies = [
  "axvm-macros-common",
  "quote",
@@ -536,7 +537,7 @@ dependencies = [
 [[package]]
 name = "axvm-ecc-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#02fc1b3cb39968d34c9ca643a5909ab229342a5e"
 dependencies = [
  "axvm",
  "axvm-algebra-guest",
@@ -562,7 +563,7 @@ dependencies = [
 [[package]]
 name = "axvm-ecc-sw-setup"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#02fc1b3cb39968d34c9ca643a5909ab229342a5e"
 dependencies = [
  "axvm-macros-common",
  "quote",
@@ -572,7 +573,7 @@ dependencies = [
 [[package]]
 name = "axvm-keccak256-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#02fc1b3cb39968d34c9ca643a5909ab229342a5e"
 dependencies = [
  "axvm-platform",
  "serde",
@@ -582,7 +583,7 @@ dependencies = [
 [[package]]
 name = "axvm-macros-common"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#02fc1b3cb39968d34c9ca643a5909ab229342a5e"
 dependencies = [
  "syn 2.0.90",
 ]
@@ -590,9 +591,8 @@ dependencies = [
 [[package]]
 name = "axvm-platform"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#02fc1b3cb39968d34c9ca643a5909ab229342a5e"
 dependencies = [
- "bincode",
  "critical-section",
  "embedded-alloc",
  "getrandom",
@@ -604,7 +604,7 @@ dependencies = [
 [[package]]
 name = "axvm-rv32im-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#12cd1368db7b0d80177bd1daf333dd48b40a7d04"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#02fc1b3cb39968d34c9ca643a5909ab229342a5e"
 dependencies = [
  "axvm-platform",
  "strum_macros",
@@ -2818,7 +2818,6 @@ dependencies = [
  "axvm-ecc-guest",
  "axvm-keccak256-guest",
  "axvm-platform",
- "bincode",
  "log",
  "rsp-client-executor",
  "rustc-hash",
@@ -3084,9 +3083,9 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.215"
+version = "1.0.216"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6513c1ad0b11a9376da888e3e0baa0077f1aed55c17f50e7b2397136129fb88f"
+checksum = "0b9781016e935a97e8beecf0c933758c97a5520d32930e460142b4cd80c6338e"
 dependencies = [
  "serde_derive",
 ]
@@ -3102,9 +3101,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.215"
+version = "1.0.216"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad1e866f866923f252f05c889987993144fb74e722403468a4ebd70c3cd756c0"
+checksum = "46f859dbbf73865c6627ed570e78961cd3ac92407a2d117204c49232485da55e"
 dependencies = [
  "proc-macro2",
  "quote",
