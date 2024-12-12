@@ -4441,6 +4441,20 @@
       "value": "7821915"
     },
     {
+      "metric": "total_cycles",
+      "labels": [
+        [
+          "segment",
+          "0"
+        ],
+        [
+          "block_number",
+          "21345144"
+        ]
+      ],
+      "value": "11622798"
+    },
+    {
       "metric": "rows",
       "labels": [
         [
@@ -5569,6 +5583,34 @@
         ]
       ],
       "value": "832047576"
+    },
+    {
+      "metric": "total_cycles",
+      "labels": [
+        [
+          "block_number",
+          "21345144"
+        ]
+      ],
+      "value": "10330414"
+    },
+    {
+      "metric": "total_cycles",
+      "labels": [
+        [
+          "segment",
+          "0"
+        ],
+        [
+          "group",
+          "reth_block"
+        ],
+        [
+          "block_number",
+          "21345144"
+        ]
+      ],
+      "value": "21889550"
     },
     {
       "metric": "num_segments",
@@ -9343,6 +9385,28 @@
       "value": "3852286451"
     },
     {
+      "metric": "total_cycles",
+      "labels": [
+        [
+          "segment",
+          "0"
+        ],
+        [
+          "idx",
+          "0"
+        ],
+        [
+          "group",
+          "leaf"
+        ],
+        [
+          "block_number",
+          "21345144"
+        ]
+      ],
+      "value": "10197186"
+    },
+    {
       "metric": "rows",
       "labels": [
         [
@@ -11121,6 +11185,20 @@
       "value": "1309936088"
     },
     {
+      "metric": "total_cycles",
+      "labels": [
+        [
+          "group",
+          "root"
+        ],
+        [
+          "block_number",
+          "21345144"
+        ]
+      ],
+      "value": "3596748"
+    },
+    {
       "metric": "rows",
       "labels": [
         [
@@ -12584,7 +12662,45 @@
           "21345144"
         ]
       ],
-      "value": "3784"
+      "value": "4719"
+    },
+    {
+      "metric": "trace_gen_time_ms",
+      "labels": [
+        [
+          "segment",
+          "0"
+        ],
+        [
+          "block_number",
+          "21345144"
+        ]
+      ],
+      "value": "1351"
+    },
+    {
+      "metric": "stark_prove_excluding_trace_time_ms",
+      "labels": [
+        [
+          "segment",
+          "0"
+        ],
+        [
+          "block_number",
+          "21345144"
+        ]
+      ],
+      "value": "1886"
+    },
+    {
+      "metric": "stark_prove_excluding_trace_time_ms",
+      "labels": [
+        [
+          "block_number",
+          "21345144"
+        ]
+      ],
+      "value": "66818"
     },
     {
       "metric": "trace_gen_time_ms",
@@ -12592,37 +12708,9 @@
         [
           "block_number",
           "21345144"
-        ],
-        [
-          "segment",
-          "0"
         ]
       ],
-      "value": "1303"
-    },
-    {
-      "metric": "stark_prove_excluding_trace_time_ms",
-      "labels": [
-        [
-          "segment",
-          "0"
-        ],
-        [
-          "block_number",
-          "21345144"
-        ]
-      ],
-      "value": "1915"
-    },
-    {
-      "metric": "stark_prove_excluding_trace_time_ms",
-      "labels": [
-        [
-          "block_number",
-          "21345144"
-        ]
-      ],
-      "value": "70090"
+      "value": "837"
     },
     {
       "metric": "halo2_keygen_time_ms",
@@ -12632,7 +12720,7 @@
           "21345144"
         ]
       ],
-      "value": "23377"
+      "value": "22542"
     },
     {
       "metric": "halo2_total_cells",
@@ -12656,11 +12744,15 @@
           "21345144"
         ]
       ],
-      "value": "34128"
+      "value": "45629"
     },
     {
       "metric": "trace_gen_time_ms",
       "labels": [
+        [
+          "segment",
+          "0"
+        ],
         [
           "group",
           "reth_block"
@@ -12668,13 +12760,9 @@
         [
           "block_number",
           "21345144"
-        ],
-        [
-          "segment",
-          "0"
         ]
       ],
-      "value": "18014"
+      "value": "17522"
     },
     {
       "metric": "stark_prove_excluding_trace_time_ms",
@@ -12692,7 +12780,7 @@
           "21345144"
         ]
       ],
-      "value": "125396"
+      "value": "126648"
     },
     {
       "metric": "execute_time_ms",
@@ -12710,11 +12798,15 @@
           "21345144"
         ]
       ],
-      "value": "12314"
+      "value": "18337"
     },
     {
       "metric": "trace_gen_time_ms",
       "labels": [
+        [
+          "segment",
+          "0"
+        ],
         [
           "idx",
           "0"
@@ -12726,13 +12818,9 @@
         [
           "block_number",
           "21345144"
-        ],
-        [
-          "segment",
-          "0"
         ]
       ],
-      "value": "2849"
+      "value": "2937"
     },
     {
       "metric": "stark_prove_excluding_trace_time_ms",
@@ -12750,7 +12838,35 @@
           "21345144"
         ]
       ],
-      "value": "58295"
+      "value": "60124"
+    },
+    {
+      "metric": "execute_time_ms",
+      "labels": [
+        [
+          "group",
+          "root"
+        ],
+        [
+          "block_number",
+          "21345144"
+        ]
+      ],
+      "value": "6247"
+    },
+    {
+      "metric": "trace_gen_time_ms",
+      "labels": [
+        [
+          "group",
+          "root"
+        ],
+        [
+          "block_number",
+          "21345144"
+        ]
+      ],
+      "value": "1465"
     },
     {
       "metric": "stark_prove_excluding_trace_time_ms",
@@ -12764,7 +12880,7 @@
           "21345144"
         ]
       ],
-      "value": "66468"
+      "value": "66194"
     },
     {
       "metric": "halo2_total_cells",
@@ -12792,7 +12908,7 @@
           "21345144"
         ]
       ],
-      "value": "236220"
+      "value": "224957"
     },
     {
       "metric": "halo2_proof_time_ms",
@@ -12806,7 +12922,7 @@
           "21345144"
         ]
       ],
-      "value": "41944"
+      "value": "37950"
     }
   ]
 }

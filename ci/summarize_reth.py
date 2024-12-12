@@ -105,6 +105,13 @@ def main():
     for key, value in z['Tracegen'].items():
         if key in z['STARK Prove']:
             z['STARK Prove'][key].extend(value)
+        else:
+            key = re.split('\|seg=', key)[0]
+            if key in z['STARK Prove']:
+                z['STARK Prove'][key].extend(value)
+            else:
+                print("ERROR: Key not found {}".format(key))
+
     for key, value in z['STARK Prove'].items():
         if len(value) != 4:
             value.extend([0, 0])
