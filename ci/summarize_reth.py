@@ -45,6 +45,9 @@ def main():
 
     x = x['gauge']                # contains all the timing metrics, in ms
     x = [y for y in x if y['metric'] not in ['halo2_total_cells', 'halo2_keygen_time_ms']]
+    for y in x:
+        if 'group' not in [a[0] for a in y['labels']]:
+            y['labels'].append(['group', 'dummy'])
     metrics = set([y['metric'] for y in x])
 
     block_number = 0
@@ -71,15 +74,15 @@ def main():
     for key in ['Execution', 'Tracegen', 'STARK Prove', 'Halo2 Prove']:
         parallel[key] = []
 
-    for grp in ['reth_block', '', 'leaf', 'internal', 'root']:
+    for grp in ['reth_block', 'dummy', 'leaf', 'internal', 'root']:
         val = max([a['value'] for a in x if a['metric'] == 'execute_time_ms' and ['group', grp] in a['labels']], default=0)
         parallel['Execution'].append([grp, float(val) / 1000, float(val) / 60000])
 
-    for grp in ['reth_block', '', 'leaf', 'internal', 'root']:
+    for grp in ['reth_block', 'dummy', 'leaf', 'internal', 'root']:
         val = max([a['value'] for a in x if a['metric'] == 'trace_gen_time_ms' and ['group', grp] in a['labels']], default=0)
         parallel['Tracegen'].append([grp, float(val) / 1000, float(val) / 60000])
 
-    for grp in ['reth_block', '', 'leaf', 'internal', 'root']:
+    for grp in ['reth_block', 'dummy', 'leaf', 'internal', 'root']:
         val = max([a['value'] for a in x if a['metric'] == 'stark_prove_excluding_trace_time_ms' and ['group', grp] in a['labels']], default=0)
         parallel['STARK Prove'].append([grp, float(val) / 1000, float(val) / 60000])
 
