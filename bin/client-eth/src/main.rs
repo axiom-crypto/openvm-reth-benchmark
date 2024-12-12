@@ -1,6 +1,8 @@
 use core::mem::transmute;
 
 use axvm::io::{println, read, reveal};
+#[allow(unused_imports)]
+use axvm_bigint_guest; // trigger extern u256 (this may be unneeded)
 use axvm_ecc_guest::k256::Secp256k1Coord;
 #[allow(unused_imports)]
 use axvm_keccak256_guest; // trigger extern native-keccak256

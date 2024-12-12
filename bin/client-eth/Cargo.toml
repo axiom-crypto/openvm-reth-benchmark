@@ -15,6 +15,7 @@ axvm = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", features =
     "std",
 ] }
 axvm-keccak256-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
+axvm-bigint-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git", features = ["export-intrinsics"] }
 axvm-algebra-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
 axvm-ecc-guest = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
 axvm-platform = { git = "ssh://git@github.com/axiom-crypto/afs-prototype.git" }
@@ -41,6 +42,7 @@ revm = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "v43-patched" 
 revm-primitives = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "v43-patched" }
 revm-interpreter = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "v43-patched" }
 revm-precompile = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "v43-patched" }
+ruint = { git = "ssh://git@github.com/axiom-crypto/uint", branch = "v1.12.3-patched" }
 
 [profile.release]
 panic = "abort"
