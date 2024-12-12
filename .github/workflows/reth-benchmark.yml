@@ -173,11 +173,18 @@ jobs:
             echo "UPLOAD_FLAMEGRAPHS=1" >> $GITHUB_ENV
           fi
 
-      - name: Add benchmark metadata to markdown, and upload
+      # - name: Add benchmark metadata to markdown, and upload
+      #   run: |
+      #     source afs-prototype/ci/scripts/utils.sh
+      #     add_metadata results.md ${{ inputs.max_segment_length }} ${{ inputs.instance_family }} ${{ inputs.memory_allocator }} ${{ github.repository }} ${{ github.run_id }}
+      #     s5cmd cp "${{ env.S3_PATH }}/${{ env.current_sha }}-${METRIC_NAME}.md" "${{ env.S3_PATH }}/main-${METRIC_NAME}.md"
+
+      - name: Summarize metrics
         run: |
-          source afs-prototype/ci/scripts/utils.sh
-          add_metadata results.md ${{ inputs.max_segment_length }} ${{ inputs.instance_family }} ${{ inputs.memory_allocator }} ${{ github.repository }} ${{ github.run_id }}
-          s5cmd cp "${{ env.S3_PATH }}/${{ env.current_sha }}-${METRIC_NAME}.md" "${{ env.S3_PATH }}/main-${METRIC_NAME}.md"
+          if [[ -f $METRIC_PATH ]]; then
+            python3 ci/summarize.py $METRIC_PATH --print >> results.md
+            s5cmd cp results.md "${{ env.S3_PATH }}/${current_sha}-${METRIC_NAME}.md"
+          fi
 
       ### Update gh-pages
       - uses: actions/checkout@v4
@@ -194,7 +201,7 @@ jobs:
           GH_PAGES_PATH="benchmarks-dispatch/${{ github.head_ref || github.ref }}"
           echo "GH_PAGES_PATH=${GH_PAGES_PATH}" >> $GITHUB_ENV
           mkdir -p ${GH_PAGES_PATH}
-          s5cmd cp "${{ env.S3_PATH }}/main-${METRIC_NAME}.md" "${GH_PAGES_PATH}/${METRIC_NAME}.md"
+          s5cmd cp "${{ env.S3_PATH }}/${current_sha}-${METRIC_NAME}.md" "${GH_PAGES_PATH}/${METRIC_NAME}.md"
 
           git add ${GH_PAGES_PATH}/${METRIC_NAME}.md
           git commit --allow-empty -m "Update benchmark result at ${GH_PAGES_PATH}/${METRIC_NAME}.md"
