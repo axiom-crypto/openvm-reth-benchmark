@@ -35,7 +35,7 @@ def process_label(label):
 
 def main():
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('metrics_json', type=str, help="Path to the metrics JSON", default='reth-example.json')
+    argparser.add_argument('metrics_json', type=str, help="Path to the metrics JSON")
     args = argparser.parse_args()
 
     with open(args.metrics_json, 'r') as f:
