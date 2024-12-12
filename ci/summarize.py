@@ -66,6 +66,7 @@ def main():
         tag = METRIC_TAGS[m]
         z[tag] = {}
         group_sum = 0
+        cycle_sum = 0
         for y in x:
             if y['metric'] == m:
                 y_tags = []
@@ -89,11 +90,11 @@ def main():
                                 print("Ignoring dummy", y)
                         else:
                             z[tag][y_str] = [int(y['value'])]
-                            group_sum += int(y['value'])
+                            cycle_sum += int(y['value'])
         if tag != 'Cycles':
             z[tag]['Total'] = [group_sum, group_sum / 60]
         else:
-            z[tag]['Total'] = [group_sum]
+            z[tag]['Total'] = [cycle_sum]
 
     parallel = {}
     for key in ['Execution', 'Tracegen', 'STARK Prove', 'Halo2 Prove']:
@@ -138,7 +139,7 @@ def main():
     for tag, tbl in parallel.items():
         tbl.append(['Total', sum([a[1] for a in tbl]), sum([a[2] for a in tbl])])
 
-    total_sum = sum([z[tag]['Total'][0] for tag in z])
+    total_sum = sum([z[tag]['Total'][0] for tag in z if tag != 'Cycles'])
 
     exec_cycles = 0
     for k, v in z['Cycles'].items():
