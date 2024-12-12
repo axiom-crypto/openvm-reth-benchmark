@@ -499,7 +499,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 [[package]]
 name = "openvm"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#93a0a33cc437f7832bef07505d5b290378467538"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#072d8dbe4c2f3a307b9cdb67c90495002ee0f38d"
 dependencies = [
  "openvm-platform",
  "openvm-rv32im-guest",
@@ -513,7 +513,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#93a0a33cc437f7832bef07505d5b290378467538"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#072d8dbe4c2f3a307b9cdb67c90495002ee0f38d"
 dependencies = [
  "openvm",
  "openvm-algebra-moduli-setup",
@@ -527,7 +527,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-moduli-setup"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#93a0a33cc437f7832bef07505d5b290378467538"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#072d8dbe4c2f3a307b9cdb67c90495002ee0f38d"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -535,9 +535,26 @@ dependencies = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "openvm-ecc-guest"
+=======
+name = "axvm-bigint-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#93a0a33cc437f7832bef07505d5b290378467538"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#072d8dbe4c2f3a307b9cdb67c90495002ee0f38d"
+dependencies = [
+ "axvm",
+ "axvm-platform",
+ "num-bigint-dig",
+ "num-traits",
+ "serde",
+ "strum_macros",
+]
+
+[[package]]
+name = "axvm-ecc-guest"
+>>>>>>> b2602e5 (feat: patch `ruint` U256 (#18))
+version = "0.1.0"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#072d8dbe4c2f3a307b9cdb67c90495002ee0f38d"
 dependencies = [
  "openvm",
  "openvm-algebra-guest",
@@ -563,7 +580,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-sw-setup"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#93a0a33cc437f7832bef07505d5b290378467538"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#072d8dbe4c2f3a307b9cdb67c90495002ee0f38d"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -573,7 +590,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#93a0a33cc437f7832bef07505d5b290378467538"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#072d8dbe4c2f3a307b9cdb67c90495002ee0f38d"
 dependencies = [
  "openvm-platform",
  "serde",
@@ -583,7 +600,7 @@ dependencies = [
 [[package]]
 name = "openvm-macros-common"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#93a0a33cc437f7832bef07505d5b290378467538"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#072d8dbe4c2f3a307b9cdb67c90495002ee0f38d"
 dependencies = [
  "syn 2.0.90",
 ]
@@ -591,7 +608,7 @@ dependencies = [
 [[package]]
 name = "openvm-platform"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#93a0a33cc437f7832bef07505d5b290378467538"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#072d8dbe4c2f3a307b9cdb67c90495002ee0f38d"
 dependencies = [
  "critical-section",
  "embedded-alloc",
@@ -604,7 +621,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-guest"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#93a0a33cc437f7832bef07505d5b290378467538"
+source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#072d8dbe4c2f3a307b9cdb67c90495002ee0f38d"
 dependencies = [
  "openvm-platform",
  "strum_macros",
@@ -2813,11 +2830,20 @@ dependencies = [
 name = "rsp-client-eth"
 version = "0.0.0"
 dependencies = [
+<<<<<<< HEAD
  "openvm",
  "openvm-algebra-guest",
  "openvm-ecc-guest",
  "openvm-keccak256-guest",
  "openvm-platform",
+=======
+ "axvm",
+ "axvm-algebra-guest",
+ "axvm-bigint-guest",
+ "axvm-ecc-guest",
+ "axvm-keccak256-guest",
+ "axvm-platform",
+>>>>>>> b2602e5 (feat: patch `ruint` U256 (#18))
  "log",
  "rsp-client-executor",
  "rustc-hash",
@@ -2915,8 +2941,7 @@ dependencies = [
 [[package]]
 name = "ruint"
 version = "1.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c3cc4c2511671f327125da14133d0c5c5d137f006a1017a16f557bc85b16286"
+source = "git+ssh://git@github.com/axiom-crypto/uint?branch=v1.12.3-patched#f4c9d52daa9aa4a329ce0e6b342f55bffe2f05c3"
 dependencies = [
  "alloy-rlp",
  "ark-ff 0.3.0",
@@ -2939,8 +2964,7 @@ dependencies = [
 [[package]]
 name = "ruint-macro"
 version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48fd7bd8a6377e15ad9d42a8ec25371b94ddc67abe7c8b9127bec79bebaaae18"
+source = "git+ssh://git@github.com/axiom-crypto/uint?branch=v1.12.3-patched#f4c9d52daa9aa4a329ce0e6b342f55bffe2f05c3"
 
 [[package]]
 name = "rustc-demangle"

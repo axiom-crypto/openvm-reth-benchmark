@@ -1,13 +1,13 @@
 use alloy_provider::ReqwestProvider;
 use clap::{ArgGroup, Parser};
-use core::option::Option::None;
-use derive_more::From;
 use openvm_algebra_circuit::ModularExtension;
 use openvm_benchmarks::utils::BenchmarkCli;
+use openvm_bigint_circuit::Int256;
 use openvm_circuit::arch::{instructions::exe::VmExe, SystemConfig, VmConfig, VmExecutor};
 use openvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
 use openvm_native_compiler::conversion::CompilerOptions;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
+use openvm_rv32im_circuit::Rv32M;
 use openvm_sdk::{
     commit::commit_app_exe,
     config::{AggConfig, AggStarkConfig, AppConfig, Halo2Config, SdkVmConfig},
@@ -83,12 +83,16 @@ fn reth_vm_config(
     if collect_metrics {
         system_config.collect_metrics = true;
     }
+    let int256 = Int256::default();
+    // The builder will do this automatically, but we set it just in case.
+    let rv32m = Rv32M { range_tuple_checker_sizes: int256.range_tuple_checker_sizes };
     SdkVmConfig::builder()
         .system(system_config.into())
         .rv32i(Default::default())
-        .rv32m(Default::default())
+        .rv32m(rv32m)
         .io(Default::default())
         .keccak(Default::default())
+        .bigint(int256)
         .modular(ModularExtension::new(vec![
             SECP256K1_CONFIG.modulus.clone(),
             SECP256K1_CONFIG.scalar.clone(),

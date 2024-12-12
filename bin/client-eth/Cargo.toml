@@ -17,7 +17,9 @@ openvm = { git = "ssh://git@github.com/openvm-org/openvm.git", features = [
 openvm-keccak256-guest = { git = "ssh://git@github.com/openvm-org/openvm.git" }
 openvm-algebra-guest = { git = "ssh://git@github.com/openvm-org/openvm.git" }
 openvm-ecc-guest = { git = "ssh://git@github.com/openvm-org/openvm.git" }
-openvm-platform = { git = "ssh://git@github.com/openvm-org/openvm.git" }
+openvm-bigint-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", features = [
+    "export-intrinsics",
+] }
 
 # Statically turns off logging
 log = { version = "0.4", features = ["max_level_off", "release_max_level_off"] }
@@ -35,6 +37,7 @@ revm = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "openvm" }
 revm-primitives = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "openvm" }
 revm-interpreter = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "openvm" }
 revm-precompile = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "openvm" }
+ruint = { git = "ssh://git@github.com/axiom-crypto/uint", branch = "v1.12.3-patched" }
 
 [profile.release]
 panic = "abort"

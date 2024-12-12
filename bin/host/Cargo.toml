@@ -27,7 +27,9 @@ reth-primitives.workspace = true
 # openvm
 openvm-build = { workspace = true }
 openvm-transpiler = { workspace = true }
+openvm-rv32im-circuit = { workspace = true }
 openvm-algebra-circuit = { workspace = true }
+openvm-bigint-circuit = { workspace = true }
 openvm-ecc-circuit = { workspace = true }
 openvm-circuit = { workspace = true }
 openvm-native-recursion = { workspace = true, features = ["static-verifier"] }
