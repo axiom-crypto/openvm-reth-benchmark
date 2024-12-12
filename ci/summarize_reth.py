@@ -14,7 +14,7 @@ LABEL_PRIORITY = {
     'group': 0,
     'idx': 1,
     'segment': 2,
-    'height': 3,
+    'hgt': 3,
     'block_number': 4,
 }
 
@@ -22,7 +22,7 @@ LABEL_TAG = {
     'group': '',
     'idx': 'idx=',
     'segment': 'seg=',
-    'height': 'hgt=',
+    'hgt': 'hgt=',
     'block_number': 'blk=',
 }
 
@@ -38,6 +38,7 @@ def main():
     argparser.add_argument('metrics_json', type=str, help="Path to the metrics JSON")
     argparser.add_argument('--out', type=str, help="Path to the output file")
     argparser.add_argument('--print', action='store_true', help="Print the output to the console", default=False)
+    argparser.add_argument('--print-raw', action='store_true', help="Print the raw metrics to the console", default=False)
     args = argparser.parse_args()
 
     with open(args.metrics_json, 'r') as f:
@@ -106,7 +107,11 @@ def main():
         if key in z['STARK Prove']:
             z['STARK Prove'][key].extend(value)
         else:
-            key = re.split('\|seg=', key)[0]
+            split = re.split('\|seg=0', key)
+            if len(split) > 0:
+                key = split[0] + split[1]
+            else:
+                key = split[0]
             if key in z['STARK Prove']:
                 z['STARK Prove'][key].extend(value)
             else:
@@ -116,19 +121,19 @@ def main():
         if len(value) != 4:
             value.extend([0, 0])
 
-    exec_table = map(lambda a: [a[0], a[1][0], a[1][1]], z['Execution'].items())
-    stark_table = map(lambda a: [a[0], a[1][0], a[1][1], a[1][2], a[1][3]], z['STARK Prove'].items())
-    halo2_table = map(lambda a: [a[0], a[1][0], a[1][1]], z['Halo2 Prove'].items())
+    exec_table = list(map(lambda a: [a[0], a[1][0], a[1][1]], z['Execution'].items()))
+    stark_table = list(map(lambda a: [a[0], a[1][0], a[1][1], a[1][2], a[1][3]], z['STARK Prove'].items()))
+    halo2_table = list(map(lambda a: [a[0], a[1][0], a[1][1]], z['Halo2 Prove'].items()))
 
     if args.out:
         with open(args.out, 'w') as f:
-            f.write(tabulate(total_table, headers=['Block ' + str(block_number), 'time (s)', 'time (m)', 'partime (s)', 'partime (m)'], tablefmt="pipe", floatfmt=".2f"))
-            f.write('\n')
-            f.write(tabulate(exec_table, headers=['Block ' + str(block_number), 'Execution (s)', 'Execution (m)'], tablefmt="pipe", floatfmt=".2f"))
-            f.write('\n')
-            f.write(tabulate(stark_table, headers=['Block ' + str(block_number), 'STARK Prove (s)', 'STARK Prove (m)', 'Tracegen (s)', 'Tracegen (m)'], tablefmt="pipe", floatfmt=".2f"))
-            f.write('\n')
-            f.write(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"))
+            print(tabulate(total_table, headers=['Block ' + str(block_number), 'time (s)', 'time (m)', 'partime (s)', 'partime (m)'], tablefmt="pipe", floatfmt=".2f"), file=f)
+            print(file=f)
+            print(tabulate(exec_table, headers=['Block ' + str(block_number), 'Execution (s)', 'Execution (m)'], tablefmt="pipe", floatfmt=".2f"), file=f)
+            print(file=f)
+            print(tabulate(stark_table, headers=['Block ' + str(block_number), 'STARK Prove (s)', 'STARK Prove (m)', 'Tracegen (s)', 'Tracegen (m)'], tablefmt="pipe", floatfmt=".2f"), file=f)
+            print(file=f)
+            print(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"), file=f)
 
     if args.print:
         print(tabulate(total_table, headers=['Block ' + str(block_number), 'time (s)', 'time (m)', 'partime (s)', 'partime (m)'], tablefmt="pipe", floatfmt=".2f"))
@@ -139,8 +144,9 @@ def main():
         print()
         print(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"))
 
-    for y in x:
-        print(y)
+    if args.print_raw:
+        for y in x:
+            print(y)
 
 if __name__ == '__main__':
     main()
