@@ -1,41 +1,19 @@
 use alloy_provider::ReqwestProvider;
 use ax_stark_sdk::{
-    ax_stark_backend::{self, p3_field::PrimeField32},
-    bench::run_with_metric_collection,
-    config::FriParameters,
+    bench::run_with_metric_collection, config::FriParameters, p3_baby_bear::BabyBear,
 };
-use axvm_algebra_circuit::{ModularExtension, ModularExtensionExecutor, ModularExtensionPeriphery};
-use axvm_algebra_transpiler::ModularTranspilerExtension;
+use axvm_algebra_circuit::ModularExtension;
 use axvm_benchmarks::utils::BenchmarkCli;
-use axvm_circuit::{
-    arch::{
-        instructions::exe::AxVmExe, SystemConfig, SystemExecutor, SystemPeriphery, VmChipComplex,
-        VmConfig, VmExecutor, VmInventoryError,
-    },
-    circuit_derive::{Chip, ChipUsageGetter},
-    derive::{AnyEnum, InstructionExecutor, VmConfig},
-};
-use axvm_ecc_circuit::{
-    WeierstrassExtension, WeierstrassExtensionExecutor, WeierstrassExtensionPeriphery,
-    SECP256K1_CONFIG,
-};
-use axvm_ecc_transpiler::EccTranspilerExtension;
-use axvm_keccak256_circuit::{Keccak256, Keccak256Executor, Keccak256Periphery};
-use axvm_keccak256_transpiler::Keccak256TranspilerExtension;
+use axvm_circuit::arch::{instructions::exe::AxVmExe, SystemConfig, VmConfig, VmExecutor};
+use axvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
 use axvm_native_compiler::conversion::CompilerOptions;
-use axvm_rv32im_circuit::{
-    Rv32I, Rv32IExecutor, Rv32IPeriphery, Rv32Io, Rv32IoExecutor, Rv32IoPeriphery, Rv32M,
-    Rv32MExecutor, Rv32MPeriphery,
-};
-use axvm_rv32im_transpiler::{
-    Rv32ITranspilerExtension, Rv32IoTranspilerExtension, Rv32MTranspilerExtension,
-};
 use axvm_sdk::{
     commit::commit_app_exe,
-    config::{AggConfig, AppConfig, FullAggConfig, Halo2Config},
+    config::{AggConfig, AggStarkConfig, AppConfig, Halo2Config, SdkVmConfig},
+    prover::{AppProver, ContinuationProver},
     Sdk, StdIn,
 };
-use axvm_transpiler::{axvm_platform::memory::MEM_SIZE, elf::Elf, transpiler::Transpiler, FromElf};
+use axvm_transpiler::{axvm_platform::memory::MEM_SIZE, elf::Elf, FromElf};
 use clap::{ArgGroup, Parser};
 use core::option::Option::None;
 use derive_more::From;
@@ -45,8 +23,7 @@ use rsp_client_executor::{
     CHAIN_ID_OP_MAINNET,
 };
 use rsp_host_executor::HostExecutor;
-use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, time::Instant};
+use std::{path::PathBuf, sync::Arc, time::Instant};
 
 pub use reth_primitives;
 
@@ -93,50 +70,31 @@ struct HostArgs {
 
 const RSP_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/rsp-client-eth");
 
-#[derive(Clone, Debug, VmConfig, Serialize, Deserialize)]
-pub struct Rv32RethConfig {
-    #[system]
-    pub system: SystemConfig,
-    #[extension]
-    pub base: Rv32I,
-    #[extension]
-    pub mul: Rv32M,
-    #[extension]
-    pub io: Rv32Io,
-    #[extension]
-    pub keccak: Keccak256,
-    #[extension]
-    pub modular: ModularExtension,
-    #[extension]
-    pub weierstrass: WeierstrassExtension,
-}
-
-impl Default for Rv32RethConfig {
-    fn default() -> Self {
-        Self {
-            system: SystemConfig::default()
-                .with_continuations()
-                .with_public_values(32)
-                .with_max_segment_len((1 << 23) - 100),
-            base: Rv32I,
-            mul: Rv32M::default(),
-            io: Rv32Io,
-            keccak: Keccak256,
-            modular: ModularExtension::new(vec![
-                SECP256K1_CONFIG.modulus.clone(),
-                SECP256K1_CONFIG.scalar.clone(),
-            ]),
-            weierstrass: WeierstrassExtension::new(vec![SECP256K1_CONFIG.clone()]),
-        }
+fn reth_vm_config(
+    app_log_blowup: usize,
+    max_segment_length: usize,
+    collect_metrics: bool,
+) -> SdkVmConfig {
+    let mut system_config = SystemConfig::default()
+        .with_continuations()
+        .with_max_constraint_degree((1 << app_log_blowup) + 1)
+        .with_public_values(32)
+        .with_max_segment_len(max_segment_length);
+    if collect_metrics {
+        system_config.collect_metrics = true;
     }
-}
-
-impl Rv32RethConfig {
-    fn new(app_log_blowup: usize) -> Self {
-        let mut config = Self::default();
-        config.system.max_constraint_degree = (1 << app_log_blowup) + 1;
-        config
-    }
+    SdkVmConfig::builder()
+        .system(system_config.into())
+        .rv32i(Default::default())
+        .rv32m(Default::default())
+        .io(Default::default())
+        .keccak(Default::default())
+        .modular(ModularExtension::new(vec![
+            SECP256K1_CONFIG.modulus.clone(),
+            SECP256K1_CONFIG.scalar.clone(),
+        ]))
+        .ecc(WeierstrassExtension::new(vec![SECP256K1_CONFIG.clone()]))
+        .build()
 }
 
 #[tokio::main]
@@ -209,25 +167,16 @@ async fn main() -> eyre::Result<()> {
     let mut stdin = StdIn::default();
     stdin.write(&client_input);
 
-    let sdk = Sdk;
-    let elf = Elf::decode(RSP_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
-    let exe = AxVmExe::from_elf(
-        elf,
-        Transpiler::default()
-            .with_extension(Rv32ITranspilerExtension)
-            .with_extension(Rv32MTranspilerExtension)
-            .with_extension(Rv32IoTranspilerExtension)
-            .with_extension(Keccak256TranspilerExtension)
-            .with_extension(ModularTranspilerExtension)
-            .with_extension(EccTranspilerExtension),
-        // add more extensions
-    )
-    .unwrap();
     let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(2);
     let agg_log_blowup = args.benchmark.agg_log_blowup.unwrap_or(2);
     let internal_log_blowup = args.benchmark.internal_log_blowup.unwrap_or(2);
     let root_log_blowup = args.benchmark.root_log_blowup.unwrap_or(3);
     let max_segment_length = args.benchmark.max_segment_length.unwrap_or((1 << 23) - 100);
+
+    let vm_config = reth_vm_config(app_log_blowup, max_segment_length, args.collect_metrics);
+    let sdk = Sdk;
+    let elf = Elf::decode(RSP_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
+    let exe = AxVmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
     let mut compiler_options = CompilerOptions::default();
     if args.collect_metrics {
@@ -236,10 +185,8 @@ async fn main() -> eyre::Result<()> {
     let app_fri_params = FriParameters::standard_with_100_bits_conjectured_security(app_log_blowup);
     let leaf_fri_params =
         FriParameters::standard_with_100_bits_conjectured_security(agg_log_blowup);
-    let mut vm_config = Rv32RethConfig::new(app_log_blowup);
-    vm_config.system.collect_metrics = args.collect_metrics;
-    vm_config.system.max_segment_len = max_segment_length;
 
+    let program_name = "reth_block";
     let app_config = AppConfig {
         app_vm_config: vm_config.clone(),
         app_fri_params,
@@ -248,8 +195,8 @@ async fn main() -> eyre::Result<()> {
     };
 
     run_with_metric_collection("OUTPUT_PATH", || {
-        tracing::info_span!("reth-block", group = "reth_block", block_number = args.block_number)
-            .in_scope(|| -> eyre::Result<()> {
+        tracing::info_span!("reth-block", block_number = args.block_number).in_scope(
+            || -> eyre::Result<()> {
                 if args.execute {
                     let executor = VmExecutor::<_, _>::new(vm_config);
                     time(gauge!("execute_time_ms"), || executor.execute(exe, stdin))?;
@@ -257,13 +204,18 @@ async fn main() -> eyre::Result<()> {
                     let app_pk = sdk.app_keygen(app_config)?;
                     let app_committed_exe = sdk.commit_app_exe(app_fri_params, exe)?;
 
-                    let _proof = sdk.generate_app_proof(app_pk, app_committed_exe, stdin)?;
-                    // TODO: fix sdk to not consume app_pk
-                    // sdk.verify_app_proof(&app_pk, &proof)?;
+                    let mut app_prover =
+                        AppProver::new(app_pk.app_vm_pk.clone(), app_committed_exe)
+                            .with_program_name(program_name);
+                    app_prover.set_profile(args.collect_metrics);
+                    let proof = app_prover.generate_app_proof(stdin);
+                    let app_vk = app_pk.get_vk();
+                    sdk.verify_app_proof(&app_vk, &proof)?;
                 } else {
-                    let full_agg_config = FullAggConfig {
-                        agg_config: AggConfig {
-                            max_num_user_public_values: vm_config.system.num_public_values,
+                    let full_agg_config = AggConfig {
+                        agg_stark_config: AggStarkConfig {
+                            max_num_user_public_values: VmConfig::<BabyBear>::system(&vm_config)
+                                .num_public_values,
                             leaf_fri_params,
                             internal_fri_params:
                                 FriParameters::standard_with_100_bits_conjectured_security(
@@ -282,12 +234,16 @@ async fn main() -> eyre::Result<()> {
                     let full_agg_pk = sdk.agg_keygen(full_agg_config)?;
                     let app_committed_exe = commit_app_exe(app_fri_params, exe);
 
-                    let _evm_proof =
-                        sdk.generate_evm_proof(app_pk, app_committed_exe, full_agg_pk, stdin)?;
+                    let mut prover =
+                        ContinuationProver::new(Arc::new(app_pk), app_committed_exe, full_agg_pk);
+                    prover.set_program_name("reth_block");
+                    prover.set_profile(args.collect_metrics);
+                    let _evm_proof = prover.generate_proof_for_evm(stdin);
                 }
 
                 Ok(())
-            })
+            },
+        )
     })?;
 
     Ok(())
