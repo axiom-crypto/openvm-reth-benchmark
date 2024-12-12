@@ -106,6 +106,9 @@ jobs:
         run: |
           source afs-prototype/ci/scripts/utils.sh
           install_s5cmd
+      - name: Setup python
+        run: |
+          pip install -r ci/requirements.txt
 
       - name: Setup halo2
         if: ${{ github.event.inputs.mode == 'prove-e2e' }}
@@ -177,7 +180,19 @@ jobs:
         run: |
           source afs-prototype/ci/scripts/utils.sh
           add_metadata results.md ${{ inputs.max_segment_length }} ${{ inputs.instance_family }} ${{ inputs.memory_allocator }} ${{ github.repository }} ${{ github.run_id }}
-          s5cmd cp "${{ env.S3_PATH }}/${{ env.current_sha }}-${METRIC_NAME}.md" "${{ env.S3_PATH }}/main-${METRIC_NAME}.md"
+
+      - name: Summarize metrics md
+        run: |
+          if [[ -f $METRIC_PATH ]] && [[ ${{ inputs.mode }} == "prove-e2e" ]]; then
+            # prepend to results.md
+            python3 ci/summarize.py $METRIC_PATH --print > temp.md
+            cat results.md >> temp.md
+            rm results.md
+            mv temp.md results.md
+          fi
+      - name: upload markdown
+        run: |
+          s5cmd cp results.md "${{ env.S3_PATH }}/${current_sha}-${METRIC_NAME}.md"
 
       ### Update gh-pages
       - uses: actions/checkout@v4
@@ -194,7 +209,7 @@ jobs:
           GH_PAGES_PATH="benchmarks-dispatch/${{ github.head_ref || github.ref }}"
           echo "GH_PAGES_PATH=${GH_PAGES_PATH}" >> $GITHUB_ENV
           mkdir -p ${GH_PAGES_PATH}
-          s5cmd cp "${{ env.S3_PATH }}/main-${METRIC_NAME}.md" "${GH_PAGES_PATH}/${METRIC_NAME}.md"
+          s5cmd cp "${{ env.S3_PATH }}/${current_sha}-${METRIC_NAME}.md" "${GH_PAGES_PATH}/${METRIC_NAME}.md"
 
           git add ${GH_PAGES_PATH}/${METRIC_NAME}.md
           git commit --allow-empty -m "Update benchmark result at ${GH_PAGES_PATH}/${METRIC_NAME}.md"
