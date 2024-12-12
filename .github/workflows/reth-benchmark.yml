@@ -176,18 +176,19 @@ jobs:
             echo "UPLOAD_FLAMEGRAPHS=1" >> $GITHUB_ENV
           fi
 
-      # - name: Add benchmark metadata to markdown, and upload
-      #   run: |
-      #     source afs-prototype/ci/scripts/utils.sh
-      #     add_metadata results.md ${{ inputs.max_segment_length }} ${{ inputs.instance_family }} ${{ inputs.memory_allocator }} ${{ github.repository }} ${{ github.run_id }}
-      #     s5cmd cp "${{ env.S3_PATH }}/${{ env.current_sha }}-${METRIC_NAME}.md" "${{ env.S3_PATH }}/main-${METRIC_NAME}.md"
-
-      - name: Summarize metrics
+      - name: Add benchmark metadata to markdown, and upload
         run: |
-          if [[ -f $METRIC_PATH ]]; then
+          source afs-prototype/ci/scripts/utils.sh
+          add_metadata results.md ${{ inputs.max_segment_length }} ${{ inputs.instance_family }} ${{ inputs.memory_allocator }} ${{ github.repository }} ${{ github.run_id }}
+
+      - name: Summarize metrics md
+        run: |
+          if [[ -f $METRIC_PATH ]] && [[ ${{ inputs.mode }} == "prove-e2e" ]]; then
             python3 ci/summarize.py $METRIC_PATH --print >> results.md
-            s5cmd cp results.md "${{ env.S3_PATH }}/${current_sha}-${METRIC_NAME}.md"
           fi
+      - name: upload markdown
+        run: |
+          s5cmd cp results.md "${{ env.S3_PATH }}/${current_sha}-${METRIC_NAME}.md"
 
       ### Update gh-pages
       - uses: actions/checkout@v4
