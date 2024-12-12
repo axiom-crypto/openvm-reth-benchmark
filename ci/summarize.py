@@ -40,6 +40,7 @@ def main():
     argparser.add_argument('--out', type=str, help="Path to the output file")
     argparser.add_argument('--print', action='store_true', help="Print the output to the console", default=False)
     argparser.add_argument('--print-raw', action='store_true', help="Print the raw metrics to the console", default=False)
+    argparser.add_argument('--debug', action='store_true', help="Debug print", default=False)
     args = argparser.parse_args()
 
     with open(args.metrics_json, 'r') as f:
@@ -84,7 +85,8 @@ def main():
                         if len(group) == 0:
                             print("ERROR: Group not found {}".format(y_str))
                         elif group[0][1] == 'dummy':
-                            print("Ignoring dummy", y)
+                            if args.debug:
+                                print("Ignoring dummy", y)
                         else:
                             z[tag][y_str] = [int(y['value'])]
                             group_sum += int(y['value'])
