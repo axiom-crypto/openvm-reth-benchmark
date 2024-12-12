@@ -18,13 +18,12 @@ use axvm_transpiler::{axvm_platform::memory::MEM_SIZE, elf::Elf, FromElf};
 use clap::{ArgGroup, Parser};
 use core::option::Option::None;
 use derive_more::From;
-use metrics::{gauge, Gauge};
 use rsp_client_executor::{
     io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET,
     CHAIN_ID_OP_MAINNET,
 };
 use rsp_host_executor::HostExecutor;
-use std::{path::PathBuf, sync::Arc, time::Instant};
+use std::{path::PathBuf, sync::Arc};
 
 pub use reth_primitives;
 
@@ -200,7 +199,7 @@ async fn main() -> eyre::Result<()> {
             || -> eyre::Result<()> {
                 if args.execute {
                     let executor = VmExecutor::<_, _>::new(vm_config);
-                    time(gauge!("execute_time_ms"), || executor.execute(exe, stdin))?;
+                    executor.execute(exe, stdin)?;
                 } else if args.prove {
                     let app_pk = sdk.app_keygen(app_config)?;
                     let app_committed_exe = sdk.commit_app_exe(app_fri_params, exe)?;
@@ -276,11 +275,4 @@ fn try_load_input_from_cache(
     } else {
         None
     })
-}
-
-fn time<F: FnOnce() -> R, R>(gauge: Gauge, f: F) -> R {
-    let start = Instant::now();
-    let res = f();
-    gauge.set(start.elapsed().as_millis() as f64);
-    res
 }
