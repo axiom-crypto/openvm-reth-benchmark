@@ -12,7 +12,7 @@ METRIC_TAGS = {
 
 LABEL_PRIORITY = {
     'group': 0,
-    'index': 1,
+    'idx': 1,
     'segment': 2,
     'height': 3,
     'block_number': 4,
@@ -20,7 +20,7 @@ LABEL_PRIORITY = {
 
 LABEL_TAG = {
     'group': '',
-    'index': 'idx=',
+    'idx': 'idx=',
     'segment': 'seg=',
     'height': 'hgt=',
     'block_number': 'blk=',
@@ -37,6 +37,7 @@ def main():
     argparser = argparse.ArgumentParser()
     argparser.add_argument('metrics_json', type=str, help="Path to the metrics JSON")
     argparser.add_argument('--out', type=str, help="Path to the output file")
+    argparser.add_argument('--print', action='store_true', help="Print the output to the console", default=False)
     args = argparser.parse_args()
 
     with open(args.metrics_json, 'r') as f:
@@ -70,19 +71,19 @@ def main():
     for key in ['Execution', 'Tracegen', 'STARK Prove', 'Halo2 Prove']:
         parallel[key] = []
 
-    for grp in ['reth_block', 'app_proof', 'leaf_verifier', 'internal_verifier_height_0', 'internal_verifier_height_1', 'internal_verifier_height_2', 'internal_verifier_height_3', 'internal_verifier_height_4', 'internal_verifier_height_5', 'internal_verifier_height_6', 'internal_verifier_height_7', 'root_verifier']:
+    for grp in ['reth_block', '', 'leaf', 'internal', 'root']:
         val = max([a['value'] for a in x if a['metric'] == 'execute_time_ms' and ['group', grp] in a['labels']], default=0)
         parallel['Execution'].append([grp, float(val) / 1000, float(val) / 60000])
 
-    for grp in ['reth_block', 'app_proof', 'leaf_verifier', 'internal_verifier_height_0', 'internal_verifier_height_1', 'internal_verifier_height_2', 'internal_verifier_height_3', 'internal_verifier_height_4', 'internal_verifier_height_5', 'internal_verifier_height_6', 'internal_verifier_height_7', 'root_verifier']:
+    for grp in ['reth_block', '', 'leaf', 'internal', 'root']:
         val = max([a['value'] for a in x if a['metric'] == 'trace_gen_time_ms' and ['group', grp] in a['labels']], default=0)
         parallel['Tracegen'].append([grp, float(val) / 1000, float(val) / 60000])
 
-    for grp in ['reth_block', 'app_proof', 'leaf_verifier', 'internal_verifier_height_0', 'internal_verifier_height_1', 'internal_verifier_height_2', 'internal_verifier_height_3', 'internal_verifier_height_4', 'internal_verifier_height_5', 'internal_verifier_height_6', 'internal_verifier_height_7', 'root_verifier']:
+    for grp in ['reth_block', '', 'leaf', 'internal', 'root']:
         val = max([a['value'] for a in x if a['metric'] == 'stark_prove_excluding_trace_time_ms' and ['group', grp] in a['labels']], default=0)
         parallel['STARK Prove'].append([grp, float(val) / 1000, float(val) / 60000])
 
-    for grp in ['halo2_verifier', 'halo2_wrapper']:
+    for grp in ['halo2_outer', 'halo2_wrapper']:
         val = max([a['value'] for a in x if a['metric'] == 'halo2_proof_time_ms' and ['group', grp] in a['labels']], default=0)
         parallel['Halo2 Prove'].append([grp, float(val) / 1000, float(val) / 60000])
 
@@ -109,24 +110,27 @@ def main():
     stark_table = map(lambda a: [a[0], a[1][0], a[1][1], a[1][2], a[1][3]], z['STARK Prove'].items())
     halo2_table = map(lambda a: [a[0], a[1][0], a[1][1]], z['Halo2 Prove'].items())
 
-    with open(args.out, 'w') as f:
-        f.write(tabulate(total_table, headers=['Block ' + str(block_number), 'time (s)', 'time (m)', 'partime (s)', 'partime (m)'], tablefmt="pipe", floatfmt=".2f"))
-        f.write('\n')
-        f.write(tabulate(exec_table, headers=['Block ' + str(block_number), 'Execution (s)', 'Execution (m)'], tablefmt="pipe", floatfmt=".2f"))
-        f.write('\n')
-        f.write(tabulate(stark_table, headers=['Block ' + str(block_number), 'STARK Prove (s)', 'STARK Prove (m)', 'Tracegen (s)', 'Tracegen (m)'], tablefmt="pipe", floatfmt=".2f"))
-        f.write('\n')
-        f.write(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"))
+    if args.out:
+        with open(args.out, 'w') as f:
+            f.write(tabulate(total_table, headers=['Block ' + str(block_number), 'time (s)', 'time (m)', 'partime (s)', 'partime (m)'], tablefmt="pipe", floatfmt=".2f"))
+            f.write('\n')
+            f.write(tabulate(exec_table, headers=['Block ' + str(block_number), 'Execution (s)', 'Execution (m)'], tablefmt="pipe", floatfmt=".2f"))
+            f.write('\n')
+            f.write(tabulate(stark_table, headers=['Block ' + str(block_number), 'STARK Prove (s)', 'STARK Prove (m)', 'Tracegen (s)', 'Tracegen (m)'], tablefmt="pipe", floatfmt=".2f"))
+            f.write('\n')
+            f.write(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"))
 
-"""
-    print(tabulate(total_table, headers=['Block ' + str(block_number), 'time (s)', 'time (m)', 'partime (s)', 'partime (m)'], tablefmt="pipe", floatfmt=".2f"))
-    print()        
-    print(tabulate(exec_table, headers=['Block ' + str(block_number), 'Execution (s)', 'Execution (m)'], tablefmt="pipe", floatfmt=".2f"))
-    print()
-    print(tabulate(stark_table, headers=['Block ' + str(block_number), 'STARK Prove (s)', 'STARK Prove (m)', 'Tracegen (s)', 'Tracegen (m)'], tablefmt="pipe", floatfmt=".2f"))
-    print()
-    print(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"))
-"""
+    if args.print:
+        print(tabulate(total_table, headers=['Block ' + str(block_number), 'time (s)', 'time (m)', 'partime (s)', 'partime (m)'], tablefmt="pipe", floatfmt=".2f"))
+        print()        
+        print(tabulate(exec_table, headers=['Block ' + str(block_number), 'Execution (s)', 'Execution (m)'], tablefmt="pipe", floatfmt=".2f"))
+        print()
+        print(tabulate(stark_table, headers=['Block ' + str(block_number), 'STARK Prove (s)', 'STARK Prove (m)', 'Tracegen (s)', 'Tracegen (m)'], tablefmt="pipe", floatfmt=".2f"))
+        print()
+        print(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"))
+
+    for y in x:
+        print(y)
 
 if __name__ == '__main__':
     main()
