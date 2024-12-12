@@ -65,7 +65,7 @@ def main():
                         y_tags.append(LABEL_TAG[xx[0]] + process_label(xx[1]))
                     else:
                         block_number = int(xx[1])
-                y_str = '|'.join(y_tags)
+                y_str = '/'.join(y_tags)
                 sec = float(y['value']) / 1000
                 if 'agg_keygen' not in y_str:
                     z[tag][y_str] = [sec, sec / 60]
@@ -128,7 +128,7 @@ def main():
         if key in z['STARK Prove']:
             z['STARK Prove'][key].extend(value)
         else:
-            split = re.split('\|seg=0', key)
+            split = re.split('/seg=0', key)
             if len(split) > 0:
                 key = split[0] + split[1]
             else:
