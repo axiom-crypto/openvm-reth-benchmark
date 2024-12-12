@@ -7,6 +7,7 @@ use axvm_benchmarks::utils::BenchmarkCli;
 use axvm_circuit::arch::{instructions::exe::AxVmExe, SystemConfig, VmConfig, VmExecutor};
 use axvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
 use axvm_native_compiler::conversion::CompilerOptions;
+use axvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use axvm_sdk::{
     commit::commit_app_exe,
     config::{AggConfig, AggStarkConfig, AppConfig, Halo2Config, SdkVmConfig},
@@ -212,6 +213,7 @@ async fn main() -> eyre::Result<()> {
                     let app_vk = app_pk.get_vk();
                     sdk.verify_app_proof(&app_vk, &proof)?;
                 } else {
+                    let halo2_params_reader = CacheHalo2ParamsReader::new_with_default_params_dir();
                     let full_agg_config = AggConfig {
                         agg_stark_config: AggStarkConfig {
                             max_num_user_public_values: VmConfig::<BabyBear>::system(&vm_config)
@@ -231,11 +233,15 @@ async fn main() -> eyre::Result<()> {
                     };
 
                     let app_pk = sdk.app_keygen(app_config)?;
-                    let full_agg_pk = sdk.agg_keygen(full_agg_config)?;
+                    let full_agg_pk = sdk.agg_keygen(full_agg_config, &halo2_params_reader)?;
                     let app_committed_exe = commit_app_exe(app_fri_params, exe);
 
-                    let mut prover =
-                        ContinuationProver::new(Arc::new(app_pk), app_committed_exe, full_agg_pk);
+                    let mut prover = ContinuationProver::new(
+                        &halo2_params_reader,
+                        Arc::new(app_pk),
+                        app_committed_exe,
+                        full_agg_pk,
+                    );
                     prover.set_program_name("reth_block");
                     prover.set_profile(args.collect_metrics);
                     let _evm_proof = prover.generate_proof_for_evm(stdin);
