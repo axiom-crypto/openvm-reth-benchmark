@@ -184,7 +184,11 @@ jobs:
       - name: Summarize metrics md
         run: |
           if [[ -f $METRIC_PATH ]] && [[ ${{ inputs.mode }} == "prove-e2e" ]]; then
-            python3 ci/summarize.py $METRIC_PATH --print >> results.md
+            # prepend to results.md
+            python3 ci/summarize.py $METRIC_PATH --print > temp.md
+            cat results.md >> temp.md
+            rm results.md
+            mv temp.md results.md
           fi
       - name: upload markdown
         run: |
