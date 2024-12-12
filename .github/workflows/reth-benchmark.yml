@@ -106,6 +106,9 @@ jobs:
         run: |
           source afs-prototype/ci/scripts/utils.sh
           install_s5cmd
+      - name: Setup python
+        run: |
+          pip install -r ci/requirements.txt
 
       - name: Setup halo2
         if: ${{ github.event.inputs.mode == 'prove-e2e' }}
