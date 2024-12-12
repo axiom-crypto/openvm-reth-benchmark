@@ -67,8 +67,9 @@ def main():
                         block_number = int(xx[1])
                 y_str = '|'.join(y_tags)
                 sec = float(y['value']) / 1000
-                z[tag][y_str] = [sec, sec / 60]
-                group_sum += sec
+                if 'agg_keygen' not in y_str:
+                    z[tag][y_str] = [sec, sec / 60]
+                    group_sum += sec
         z[tag]['Total'] = [group_sum, group_sum / 60]
 
     parallel = {}
