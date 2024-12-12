@@ -36,6 +36,7 @@ def process_label(label):
 def main():
     argparser = argparse.ArgumentParser()
     argparser.add_argument('metrics_json', type=str, help="Path to the metrics JSON")
+    argparser.add_argument('--out', type=str, help="Path to the output file")
     args = argparser.parse_args()
 
     with open(args.metrics_json, 'r') as f:
@@ -108,6 +109,16 @@ def main():
     stark_table = map(lambda a: [a[0], a[1][0], a[1][1], a[1][2], a[1][3]], z['STARK Prove'].items())
     halo2_table = map(lambda a: [a[0], a[1][0], a[1][1]], z['Halo2 Prove'].items())
 
+    with open(args.out, 'w') as f:
+        f.write(tabulate(total_table, headers=['Block ' + str(block_number), 'time (s)', 'time (m)', 'partime (s)', 'partime (m)'], tablefmt="pipe", floatfmt=".2f"))
+        f.write('\n')
+        f.write(tabulate(exec_table, headers=['Block ' + str(block_number), 'Execution (s)', 'Execution (m)'], tablefmt="pipe", floatfmt=".2f"))
+        f.write('\n')
+        f.write(tabulate(stark_table, headers=['Block ' + str(block_number), 'STARK Prove (s)', 'STARK Prove (m)', 'Tracegen (s)', 'Tracegen (m)'], tablefmt="pipe", floatfmt=".2f"))
+        f.write('\n')
+        f.write(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"))
+
+"""
     print(tabulate(total_table, headers=['Block ' + str(block_number), 'time (s)', 'time (m)', 'partime (s)', 'partime (m)'], tablefmt="pipe", floatfmt=".2f"))
     print()        
     print(tabulate(exec_table, headers=['Block ' + str(block_number), 'Execution (s)', 'Execution (m)'], tablefmt="pipe", floatfmt=".2f"))
@@ -115,6 +126,7 @@ def main():
     print(tabulate(stark_table, headers=['Block ' + str(block_number), 'STARK Prove (s)', 'STARK Prove (m)', 'Tracegen (s)', 'Tracegen (m)'], tablefmt="pipe", floatfmt=".2f"))
     print()
     print(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"))
+"""
 
 if __name__ == '__main__':
     main()
