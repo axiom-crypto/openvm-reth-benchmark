@@ -79,16 +79,34 @@ def main():
     INTERNAL_GROUPS = ['internal_0', 'internal_1', 'internal_2', 'internal_3', 'internal_4', 'internal_5', 'internal_6', 'internal_7', 'internal_8', 'internal_9']
 
     for grp in ['reth_block', 'dummy', 'leaf', 'internal', 'root'] + INTERNAL_GROUPS:
-        val = max([a['value'] for a in x if a['metric'] == 'execute_time_ms' and ['group', grp] in a['labels']], default=0)
-        parallel['Execution'].append([grp, float(val) / 1000, float(val) / 60000])
+        if grp != 'internal':
+            val = max([a['value'] for a in x if a['metric'] == 'execute_time_ms' and ['group', grp] in a['labels']], default=0)
+            parallel['Execution'].append([grp, float(val) / 1000, float(val) / 60000])
+        else:
+            heights = set(list([[b[1] for b in a['labels'] if b[0] == 'hgt'][0] for a in x if a['metric'] == 'execute_time_ms' and ['group', grp] in a['labels']]))
+            for hgt in heights:
+                val = max([a['value'] for a in x if a['metric'] == 'execute_time_ms' and ['group', grp] in a['labels'] and ['hgt', hgt] in a['labels']], default=0)
+                parallel['Execution'].append([grp + '_' + hgt, float(val) / 1000, float(val) / 60000])
 
     for grp in ['reth_block', 'dummy', 'leaf', 'internal', 'root'] + INTERNAL_GROUPS:
-        val = max([a['value'] for a in x if a['metric'] == 'trace_gen_time_ms' and ['group', grp] in a['labels']], default=0)
-        parallel['Tracegen'].append([grp, float(val) / 1000, float(val) / 60000])
+        if grp != 'internal':
+            val = max([a['value'] for a in x if a['metric'] == 'trace_gen_time_ms' and ['group', grp] in a['labels']], default=0)
+            parallel['Tracegen'].append([grp, float(val) / 1000, float(val) / 60000])
+        else:
+            heights = set(list([[b[1] for b in a['labels'] if b[0] == 'hgt'][0] for a in x if a['metric'] == 'trace_gen_time_ms' and ['group', grp] in a['labels']]))
+            for hgt in heights:
+                val = max([a['value'] for a in x if a['metric'] == 'trace_gen_time_ms' and ['group', grp] in a['labels'] and ['hgt', hgt] in a['labels']], default=0)
+                parallel['Tracegen'].append([grp + '_' + hgt, float(val) / 1000, float(val) / 60000])
 
     for grp in ['reth_block', 'dummy', 'leaf', 'internal', 'root'] + INTERNAL_GROUPS:
-        val = max([a['value'] for a in x if a['metric'] == 'stark_prove_excluding_trace_time_ms' and ['group', grp] in a['labels']], default=0)
-        parallel['STARK Prove'].append([grp, float(val) / 1000, float(val) / 60000])
+        if grp != 'internal':
+            val = max([a['value'] for a in x if a['metric'] == 'stark_prove_excluding_trace_time_ms' and ['group', grp] in a['labels']], default=0)
+            parallel['STARK Prove'].append([grp, float(val) / 1000, float(val) / 60000])
+        else:
+            heights = set(list([[b[1] for b in a['labels'] if b[0] == 'hgt'][0] for a in x if a['metric'] == 'stark_prove_excluding_trace_time_ms' and ['group', grp] in a['labels']]))
+            for hgt in heights:
+                val = max([a['value'] for a in x if a['metric'] == 'stark_prove_excluding_trace_time_ms' and ['group', grp] in a['labels'] and ['hgt', hgt] in a['labels']], default=0)
+                parallel['STARK Prove'].append([grp + '_' + hgt, float(val) / 1000, float(val) / 60000])
 
     for grp in ['halo2_outer', 'halo2_wrapper']:
         val = max([a['value'] for a in x if a['metric'] == 'halo2_proof_time_ms' and ['group', grp] in a['labels']], default=0)
