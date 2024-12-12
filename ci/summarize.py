@@ -8,6 +8,7 @@ METRIC_TAGS = {
     'execute_time_ms': 'Execution',
     'stark_prove_excluding_trace_time_ms': 'STARK Prove',
     'trace_gen_time_ms': 'Tracegen',
+    'total_cycles': 'Cycles',
 }
 
 LABEL_PRIORITY = {
@@ -44,7 +45,14 @@ def main():
     with open(args.metrics_json, 'r') as f:
         x = json.load(f)
 
-    x = x['gauge']                # contains all the timing metrics, in ms
+    cycles_raw = x['counter']
+    cycles = []
+    for m in cycles_raw:
+        if m['metric'] == 'total_cycles':
+            cycles.append(m)
+
+    x = x['gauge']
+    x.extend(cycles)                # contains all the timing metrics, in ms
     x = [y for y in x if y['metric'] not in ['halo2_total_cells', 'halo2_keygen_time_ms']]
     for y in x:
         if 'group' not in [a[0] for a in y['labels']]:
@@ -66,11 +74,24 @@ def main():
                     else:
                         block_number = int(xx[1])
                 y_str = '/'.join(y_tags)
-                sec = float(y['value']) / 1000
                 if 'agg_keygen' not in y_str:
-                    z[tag][y_str] = [sec, sec / 60]
-                    group_sum += sec
-        z[tag]['Total'] = [group_sum, group_sum / 60]
+                    if tag != 'Cycles':
+                        sec = float(y['value']) / 1000
+                        z[tag][y_str] = [sec, sec / 60]
+                        group_sum += sec
+                    else:
+                        group = [a for a in y['labels'] if a[0] == 'group']
+                        if len(group) == 0:
+                            print("ERROR: Group not found {}".format(y_str))
+                        elif group[0][1] == 'dummy':
+                            print("Ignoring dummy", y)
+                        else:
+                            z[tag][y_str] = [int(y['value'])]
+                            group_sum += int(y['value'])
+        if tag != 'Cycles':
+            z[tag]['Total'] = [group_sum, group_sum / 60]
+        else:
+            z[tag]['Total'] = [group_sum]
 
     parallel = {}
     for key in ['Execution', 'Tracegen', 'STARK Prove', 'Halo2 Prove']:
@@ -117,51 +138,61 @@ def main():
 
     total_sum = sum([z[tag]['Total'][0] for tag in z])
 
+    exec_cycles = 0
+    for k, v in z['Cycles'].items():
+        if 'reth_block' in k:
+            exec_cycles += v[0]
     total_table = [
-        ['Total', total_sum, total_sum / 60, sum([a[-1][1] for a in parallel.values()]), sum([a[-1][2] for a in parallel.values()])],
-        ['Execution', z['Execution']['Total'][0], z['Execution']['Total'][1], parallel['Execution'][-1][1], parallel['Execution'][-1][2]],
-        ['Tracegen', z['Tracegen']['Total'][0], z['Tracegen']['Total'][1], parallel['Tracegen'][-1][1], parallel['Tracegen'][-1][2]],
-        ['STARK Prove', z['STARK Prove']['Total'][0], z['STARK Prove']['Total'][1], parallel['STARK Prove'][-1][1], parallel['STARK Prove'][-1][2]],
-        ['Halo2 Prove', z['Halo2 Prove']['Total'][0], z['Halo2 Prove']['Total'][1], parallel['Halo2 Prove'][-1][1], parallel['Halo2 Prove'][-1][2]],
+        ['Total', total_sum, total_sum / 60, sum([a[-1][1] for a in parallel.values()]), sum([a[-1][2] for a in parallel.values()]), z['Cycles']['Total'][0]],
+        ['Execution', z['Execution']['Total'][0], z['Execution']['Total'][1], parallel['Execution'][-1][1], parallel['Execution'][-1][2], exec_cycles],
+        ['Tracegen', z['Tracegen']['Total'][0], z['Tracegen']['Total'][1], parallel['Tracegen'][-1][1], parallel['Tracegen'][-1][2], '--'],
+        ['STARK Prove', z['STARK Prove']['Total'][0], z['STARK Prove']['Total'][1], parallel['STARK Prove'][-1][1], parallel['STARK Prove'][-1][2], '--'],
+        ['Halo2 Prove', z['Halo2 Prove']['Total'][0], z['Halo2 Prove']['Total'][1], parallel['Halo2 Prove'][-1][1], parallel['Halo2 Prove'][-1][2], '--'],
     ]
-    for key, value in z['Tracegen'].items():
-        if key in z['STARK Prove']:
-            z['STARK Prove'][key].extend(value)
-        else:
-            split = re.split('/seg=0', key)
-            if len(split) > 0:
-                key = split[0] + split[1]
-            else:
-                key = split[0]
+
+    for tag in ['Tracegen', 'Cycles']:
+        for key, value in z[tag].items():
             if key in z['STARK Prove']:
                 z['STARK Prove'][key].extend(value)
             else:
-                print("ERROR: Key not found {}".format(key))
+                if '/seg=0' in key:
+                    split = re.split('/seg=0', key)
+                    if len(split) > 0:
+                        key = split[0] + split[1]
+                    else:
+                        key = split[0]
+                else:
+                    print("ERROR: Key not found {}".format(key))
+
+                if key in z['STARK Prove']:
+                    z['STARK Prove'][key].extend(value)
+                else:
+                    print("ERROR: Key not found {}".format(key))
 
     for key, value in z['STARK Prove'].items():
-        if len(value) != 4:
-            value.extend([0, 0])
+        if len(value) != 5:
+            value.extend([0])
 
     exec_table = list(map(lambda a: [a[0], a[1][0], a[1][1]], z['Execution'].items()))
-    stark_table = list(map(lambda a: [a[0], a[1][0], a[1][1], a[1][2], a[1][3]], z['STARK Prove'].items()))
+    stark_table = list(map(lambda a: [a[0], a[1][0], a[1][1], a[1][2], a[1][3], a[1][4]], z['STARK Prove'].items()))
     halo2_table = list(map(lambda a: [a[0], a[1][0], a[1][1]], z['Halo2 Prove'].items()))
 
     if args.out:
         with open(args.out, 'w') as f:
-            print(tabulate(total_table, headers=['Block ' + str(block_number), 'time (s)', 'time (m)', 'partime (s)', 'partime (m)'], tablefmt="pipe", floatfmt=".2f"), file=f)
+            print(tabulate(total_table, headers=['Block ' + str(block_number), 'time (s)', 'time (m)', 'partime (s)', 'partime (m)', 'cycles'], tablefmt="pipe", floatfmt=".2f"), file=f)
             print(file=f)
             print(tabulate(exec_table, headers=['Block ' + str(block_number), 'Execution (s)', 'Execution (m)'], tablefmt="pipe", floatfmt=".2f"), file=f)
             print(file=f)
-            print(tabulate(stark_table, headers=['Block ' + str(block_number), 'STARK Prove (s)', 'STARK Prove (m)', 'Tracegen (s)', 'Tracegen (m)'], tablefmt="pipe", floatfmt=".2f"), file=f)
+            print(tabulate(stark_table, headers=['Block ' + str(block_number), 'STARK Prove (s)', 'STARK Prove (m)', 'Tracegen (s)', 'Tracegen (m)', 'Cycles'], tablefmt="pipe", floatfmt=".2f"), file=f)
             print(file=f)
             print(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"), file=f)
 
     if args.print:
-        print(tabulate(total_table, headers=['Block ' + str(block_number), 'time (s)', 'time (m)', 'partime (s)', 'partime (m)'], tablefmt="pipe", floatfmt=".2f"))
+        print(tabulate(total_table, headers=['Block ' + str(block_number), 'time (s)', 'time (m)', 'partime (s)', 'partime (m)', 'cycles'], tablefmt="pipe", floatfmt=".2f"))
         print()        
         print(tabulate(exec_table, headers=['Block ' + str(block_number), 'Execution (s)', 'Execution (m)'], tablefmt="pipe", floatfmt=".2f"))
         print()
-        print(tabulate(stark_table, headers=['Block ' + str(block_number), 'STARK Prove (s)', 'STARK Prove (m)', 'Tracegen (s)', 'Tracegen (m)'], tablefmt="pipe", floatfmt=".2f"))
+        print(tabulate(stark_table, headers=['Block ' + str(block_number), 'STARK Prove (s)', 'STARK Prove (m)', 'Tracegen (s)', 'Tracegen (m)', 'Cycles'], tablefmt="pipe", floatfmt=".2f"))
         print()
         print(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"))
 
