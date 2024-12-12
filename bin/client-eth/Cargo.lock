@@ -2919,8 +2919,7 @@ dependencies = [
 [[package]]
 name = "ruint"
 version = "1.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c3cc4c2511671f327125da14133d0c5c5d137f006a1017a16f557bc85b16286"
+source = "git+ssh://git@github.com/axiom-crypto/uint?branch=v1.12.3-patched#f4c9d52daa9aa4a329ce0e6b342f55bffe2f05c3"
 dependencies = [
  "alloy-rlp",
  "ark-ff 0.3.0",
@@ -2943,8 +2942,7 @@ dependencies = [
 [[package]]
 name = "ruint-macro"
 version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48fd7bd8a6377e15ad9d42a8ec25371b94ddc67abe7c8b9127bec79bebaaae18"
+source = "git+ssh://git@github.com/axiom-crypto/uint?branch=v1.12.3-patched#f4c9d52daa9aa4a329ce0e6b342f55bffe2f05c3"
 
 [[package]]
 name = "rustc-demangle"
