@@ -24,23 +24,23 @@ alloy-provider.workspace = true
 # reth
 reth-primitives.workspace = true
 
-# axvm
-axvm-build = { workspace = true }
-axvm-transpiler = { workspace = true }
-axvm-algebra-circuit = { workspace = true }
-axvm-ecc-circuit = { workspace = true }
-axvm-circuit = { workspace = true }
-axvm-native-recursion = { workspace = true, features = ["static-verifier"] }
-axvm-benchmarks = { workspace = true, features = ["parallel"] }
-ax-stark-sdk = { workspace = true }
-axvm-sdk = { workspace = true }
-axvm-native-compiler = { workspace = true }
+# openvm
+openvm-build = { workspace = true }
+openvm-transpiler = { workspace = true }
+openvm-algebra-circuit = { workspace = true }
+openvm-ecc-circuit = { workspace = true }
+openvm-circuit = { workspace = true }
+openvm-native-recursion = { workspace = true, features = ["static-verifier"] }
+openvm-benchmarks = { workspace = true, features = ["parallel"] }
+openvm-stark-sdk = { workspace = true }
+openvm-sdk = { workspace = true }
+openvm-native-compiler = { workspace = true }
 derive_more = "1.0.0"
 
 [features]
 default = ["mimalloc", "bench-metrics"]
-bench-metrics = ["axvm-benchmarks/bench-metrics"]
-profiling = ["bench-metrics", "axvm-circuit/function-span"]
-mimalloc = ["axvm-benchmarks/mimalloc"]
-jemalloc = ["axvm-benchmarks/jemalloc"]
+bench-metrics = ["openvm-benchmarks/bench-metrics"]
+profiling = ["bench-metrics", "openvm-circuit/function-span"]
+mimalloc = ["openvm-benchmarks/mimalloc"]
+jemalloc = ["openvm-benchmarks/jemalloc"]
 # cuda = ["sp1-sdk/cuda"]

@@ -6,10 +6,10 @@
 //! configuring the custom CustomEvmConfig precompiles and instructions.
 
 use crate::ChainVariant;
-use reth_chainspec::ChainSpec;
-use reth_evm::{ConfigureEvm, ConfigureEvmEnv};
+use reth_evm::{ConfigureEvm, ConfigureEvmEnv, NextBlockEnvAttributes};
 use reth_evm_ethereum::EthEvmConfig;
 use reth_evm_optimism::OptimismEvmConfig;
+use reth_optimism_chainspec::OpChainSpec;
 use reth_primitives::{
     revm_primitives::{CfgEnvWithHandlerCfg, TxEnv},
     Address, Bytes, Header, TransactionSigned, U256,
@@ -18,7 +18,8 @@ use reth_revm::{
     handler::register::EvmHandler, precompile::PrecompileSpecId, primitives::Env,
     ContextPrecompiles, Database, Evm, EvmBuilder,
 };
-use revm::precompile::{bn128, secp256k1, Precompile, PrecompileResult, PrecompileWithAddress}; // todo: kzg_point_evaluation
+use revm::precompile::{bn128, secp256k1, Precompile, PrecompileResult, PrecompileWithAddress};
+use rsp_primitives::chain_spec; // todo: kzg_point_evaluation
 use std::sync::Arc;
 
 /// Create an annotated precompile that tracks the cycle count of a precompile.
@@ -57,8 +58,8 @@ macro_rules! create_annotated_precompile {
 //                     "kzg-point-evaluation"
 //                 ));
 //                 let result = precompile(input, gas_limit, env);
-//                 println!(concat!("cycle-tracker-report-end: precompile-", "kzg-point-evaluation"));
-//                 result
+//                 println!(concat!("cycle-tracker-report-end: precompile-",
+// "kzg-point-evaluation"));                 result
 //             }
 //             _ => panic!("Annotated precompile must be a env precompile."),
 //         }
@@ -147,38 +148,44 @@ impl ConfigureEvm for CustomEvmConfig {
 }
 
 impl ConfigureEvmEnv for CustomEvmConfig {
+    type Header = Header;
     fn fill_tx_env(&self, tx_env: &mut TxEnv, transaction: &TransactionSigned, sender: Address) {
         match self.0 {
-            ChainVariant::Ethereum => {
-                EthEvmConfig::default().fill_tx_env(tx_env, transaction, sender)
-            }
+            ChainVariant::Ethereum => EthEvmConfig::new(Arc::new(self.0.chain_spec())).fill_tx_env(
+                tx_env,
+                transaction,
+                sender,
+            ),
             ChainVariant::Optimism => {
-                OptimismEvmConfig::default().fill_tx_env(tx_env, transaction, sender)
+                OptimismEvmConfig::new(Arc::new(OpChainSpec { inner: chain_spec::op_mainnet() }))
+                    .fill_tx_env(tx_env, transaction, sender)
             }
-            ChainVariant::Linea => EthEvmConfig::default().fill_tx_env(tx_env, transaction, sender),
+            ChainVariant::Linea => EthEvmConfig::new(Arc::new(self.0.chain_spec())).fill_tx_env(
+                tx_env,
+                transaction,
+                sender,
+            ),
         }
     }
 
     fn fill_cfg_env(
         &self,
         cfg_env: &mut CfgEnvWithHandlerCfg,
-        chain_spec: &ChainSpec,
         header: &Header,
         total_difficulty: U256,
     ) {
         match self.0 {
-            ChainVariant::Ethereum => {
-                EthEvmConfig::default().fill_cfg_env(cfg_env, chain_spec, header, total_difficulty)
+            ChainVariant::Ethereum => EthEvmConfig::new(Arc::new(self.0.chain_spec()))
+                .fill_cfg_env(cfg_env, header, total_difficulty),
+            ChainVariant::Optimism => {
+                OptimismEvmConfig::new(Arc::new(OpChainSpec { inner: chain_spec::op_mainnet() }))
+                    .fill_cfg_env(cfg_env, header, total_difficulty)
             }
-            ChainVariant::Optimism => OptimismEvmConfig::default().fill_cfg_env(
+            ChainVariant::Linea => EthEvmConfig::new(Arc::new(self.0.chain_spec())).fill_cfg_env(
                 cfg_env,
-                chain_spec,
                 header,
                 total_difficulty,
             ),
-            ChainVariant::Linea => {
-                EthEvmConfig::default().fill_cfg_env(cfg_env, chain_spec, header, total_difficulty)
-            }
         }
     }
 
@@ -190,12 +197,31 @@ impl ConfigureEvmEnv for CustomEvmConfig {
         data: Bytes,
     ) {
         match self.0 {
-            ChainVariant::Ethereum => EthEvmConfig::default()
+            ChainVariant::Ethereum => EthEvmConfig::new(Arc::new(self.0.chain_spec()))
                 .fill_tx_env_system_contract_call(env, caller, contract, data),
-            ChainVariant::Optimism => OptimismEvmConfig::default()
+            ChainVariant::Optimism => {
+                OptimismEvmConfig::new(Arc::new(OpChainSpec { inner: chain_spec::op_mainnet() }))
+                    .fill_tx_env_system_contract_call(env, caller, contract, data)
+            }
+            ChainVariant::Linea => EthEvmConfig::new(Arc::new(self.0.chain_spec()))
                 .fill_tx_env_system_contract_call(env, caller, contract, data),
-            ChainVariant::Linea => EthEvmConfig::default()
-                .fill_tx_env_system_contract_call(env, caller, contract, data),
+        }
+    }
+
+    fn next_cfg_and_block_env(
+        &self,
+        parent: &Header,
+        attributes: NextBlockEnvAttributes,
+    ) -> (CfgEnvWithHandlerCfg, revm_primitives::BlockEnv) {
+        match self.0 {
+            ChainVariant::Ethereum => EthEvmConfig::new(Arc::new(self.0.chain_spec()))
+                .next_cfg_and_block_env(parent, attributes),
+            ChainVariant::Optimism => {
+                OptimismEvmConfig::new(Arc::new(OpChainSpec { inner: chain_spec::op_mainnet() }))
+                    .next_cfg_and_block_env(parent, attributes)
+            }
+            ChainVariant::Linea => EthEvmConfig::new(Arc::new(self.0.chain_spec()))
+                .next_cfg_and_block_env(parent, attributes),
         }
     }
 }
@@ -224,7 +250,6 @@ mod tests {
         CustomEvmConfig::from_variant(ChainVariant::Ethereum).fill_cfg_and_block_env(
             &mut cfg_env,
             &mut block_env,
-            &chain_spec,
             &header,
             total_difficulty,
         );

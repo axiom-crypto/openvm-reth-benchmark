@@ -1,16 +1,16 @@
 use core::mem::transmute;
 
-use axvm::io::{println, read, reveal};
-use axvm_ecc_guest::k256::Secp256k1Coord;
+use openvm::io::{println, read, reveal};
+use openvm_ecc_guest::k256::Secp256k1Coord;
 #[allow(unused_imports)]
-use axvm_keccak256_guest; // trigger extern native-keccak256
+use openvm_keccak256_guest; // trigger extern native-keccak256
 use rsp_client_executor::{io::ClientExecutorInput, ClientExecutor, EthereumVariant};
 
-axvm_algebra_guest::moduli_setup::moduli_init! {
+openvm_algebra_guest::moduli_setup::moduli_init! {
     "0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE FFFFFC2F",
     "0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364141"
 }
-axvm_ecc_guest::sw_setup::sw_init! {
+openvm_ecc_guest::sw_setup::sw_init! {
     Secp256k1Coord,
 }
 

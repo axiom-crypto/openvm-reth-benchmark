@@ -79,6 +79,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-rlp",
  "alloy-serde",
+ "arbitrary",
  "c-kzg",
  "serde",
 ]
@@ -91,6 +92,8 @@ checksum = "0069cf0642457f87a01a014f6dc29d5d893cd4fd8fddf0c3cdfad1bb3ebafc41"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
+ "arbitrary",
+ "rand",
  "serde",
 ]
 
@@ -102,7 +105,9 @@ checksum = "ea59dc42102bc9a1905dc57901edc6dd48b9f38115df86c7d252acba70d71d04"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
+ "arbitrary",
  "k256",
+ "rand",
  "serde",
 ]
 
@@ -130,6 +135,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-rlp",
  "alloy-serde",
+ "arbitrary",
  "c-kzg",
  "derive_more 1.0.0",
  "once_cell",
@@ -214,9 +220,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6259a506ab13e1d658796c31e6e39d2e2ee89243bcc505ddc613b35732e0a430"
 dependencies = [
  "alloy-rlp",
+ "arbitrary",
  "bytes",
  "cfg-if",
  "const-hex",
+ "derive_arbitrary",
  "derive_more 1.0.0",
  "foldhash",
  "getrandom",
@@ -228,6 +236,7 @@ dependencies = [
  "keccak-asm",
  "paste",
  "proptest",
+ "proptest-derive",
  "rand",
  "ruint",
  "rustc-hash 2.1.0",
@@ -352,6 +361,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "731f75ec5d383107fd745d781619bd9cedf145836c51ecb991623d41278e71fa"
 dependencies = [
  "alloy-primitives",
+ "arbitrary",
  "serde",
  "serde_json",
 ]
@@ -570,6 +580,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1fd03a028ef38ba2276dce7e33fcd6369c158a1bca17946c4b1b701891c1ff7"
 
 [[package]]
+name = "arbitrary"
+version = "1.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dde20b3d026af13f561bdd0f15edf01fc734f0dafcedbaf42bba506a9517f223"
+dependencies = [
+ "derive_arbitrary",
+]
+
+[[package]]
 name = "ark-ff"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -767,833 +786,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
-name = "ax-circuit-derive"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "itertools 0.13.0",
- "proc-macro2",
- "quote",
- "syn 2.0.90",
-]
-
-[[package]]
-name = "ax-circuit-primitives"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-circuit-derive",
- "ax-stark-backend",
- "derive-new",
- "itertools 0.13.0",
- "lazy_static",
- "num-bigint-dig",
- "num-traits",
- "rand",
- "tracing",
-]
-
-[[package]]
-name = "ax-mod-circuit-builder"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-circuit-primitives",
- "ax-stark-backend",
- "ax-stark-sdk",
- "axvm-circuit",
- "axvm-instructions",
- "itertools 0.13.0",
- "num-bigint-dig",
- "num-traits",
- "rand",
- "tracing",
-]
-
-[[package]]
-name = "ax-poseidon2-air"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-circuit-primitives",
- "ax-stark-backend",
- "ax-stark-sdk",
- "itertools 0.13.0",
- "lazy_static",
- "p3-monty-31",
- "p3-poseidon2",
- "p3-symmetric",
- "rand",
- "zkhash",
-]
-
-[[package]]
-name = "ax-stark-backend"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "async-trait",
- "cfg-if",
- "derivative",
- "itertools 0.13.0",
- "metrics",
- "mimalloc",
- "p3-air",
- "p3-challenger",
- "p3-commit",
- "p3-field",
- "p3-matrix",
- "p3-maybe-rayon",
- "p3-uni-stark",
- "p3-util",
- "rayon",
- "serde",
- "thiserror 1.0.69",
- "tikv-jemallocator",
- "tracing",
-]
-
-[[package]]
-name = "ax-stark-sdk"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-circuit-derive",
- "ax-stark-backend",
- "derive_more 0.99.18",
- "ff 0.13.0",
- "itertools 0.13.0",
- "metrics",
- "metrics-tracing-context",
- "metrics-util",
- "p3-baby-bear",
- "p3-blake3",
- "p3-bn254-fr",
- "p3-dft",
- "p3-fri",
- "p3-goldilocks",
- "p3-keccak",
- "p3-merkle-tree",
- "p3-poseidon",
- "p3-poseidon2",
- "p3-symmetric",
- "rand",
- "serde",
- "serde_json",
- "static_assertions",
- "toml",
- "tracing",
- "tracing-forest",
- "tracing-subscriber",
- "zkhash",
-]
-
-[[package]]
-name = "axvm"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "axvm-platform",
- "axvm-rv32im-guest",
- "bytemuck",
- "hex-literal",
- "num-bigint-dig",
- "num-traits",
- "serde",
-]
-
-[[package]]
-name = "axvm-algebra-circuit"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-circuit-derive",
- "ax-circuit-primitives",
- "ax-mod-circuit-builder",
- "ax-stark-backend",
- "ax-stark-sdk",
- "axvm-algebra-transpiler",
- "axvm-circuit",
- "axvm-circuit-derive",
- "axvm-instructions",
- "axvm-rv32-adapters",
- "axvm-rv32im-circuit",
- "derive-new",
- "derive_more 1.0.0",
- "itertools 0.13.0",
- "num-bigint-dig",
- "num-traits",
- "rand",
- "serde",
- "strum",
- "tracing",
-]
-
-[[package]]
-name = "axvm-algebra-complex-macros"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "axvm-macros-common",
- "quote",
- "syn 2.0.90",
-]
-
-[[package]]
-name = "axvm-algebra-guest"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "axvm",
- "axvm-algebra-moduli-setup",
- "axvm-platform",
- "halo2curves-axiom 0.7.0",
- "num-bigint-dig",
- "serde",
- "serde-big-array",
- "strum_macros",
-]
-
-[[package]]
-name = "axvm-algebra-moduli-setup"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "axvm-macros-common",
- "quote",
- "syn 2.0.90",
-]
-
-[[package]]
-name = "axvm-algebra-transpiler"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-stark-backend",
- "axvm-algebra-guest",
- "axvm-instructions",
- "axvm-instructions-derive",
- "axvm-transpiler",
- "rrs-lib",
- "strum",
- "strum_macros",
-]
-
-[[package]]
-name = "axvm-benchmarks"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-circuit-derive",
- "ax-stark-backend",
- "ax-stark-sdk",
- "axvm-algebra-circuit",
- "axvm-algebra-transpiler",
- "axvm-build",
- "axvm-circuit",
- "axvm-ecc-circuit",
- "axvm-ecc-transpiler",
- "axvm-keccak256-circuit",
- "axvm-keccak256-guest",
- "axvm-keccak256-transpiler",
- "axvm-native-circuit",
- "axvm-native-compiler",
- "axvm-native-recursion",
- "axvm-rv32im-circuit",
- "axvm-rv32im-transpiler",
- "axvm-sdk",
- "axvm-transpiler",
- "clap",
- "derive-new",
- "derive_more 1.0.0",
- "eyre",
- "hex",
- "k256",
- "metrics",
- "num-bigint-dig",
- "rand_chacha",
- "serde",
- "tempfile",
- "tiny-keccak",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "axvm-bigint-circuit"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-circuit-derive",
- "ax-circuit-primitives",
- "ax-stark-backend",
- "ax-stark-sdk",
- "axvm-bigint-transpiler",
- "axvm-circuit",
- "axvm-circuit-derive",
- "axvm-instructions",
- "axvm-rv32-adapters",
- "axvm-rv32im-circuit",
- "axvm-rv32im-transpiler",
- "derive-new",
- "derive_more 1.0.0",
- "rand",
- "serde",
-]
-
-[[package]]
-name = "axvm-bigint-guest"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "axvm",
- "axvm-platform",
- "num-bigint-dig",
- "num-traits",
- "serde",
- "strum_macros",
-]
-
-[[package]]
-name = "axvm-bigint-transpiler"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-stark-backend",
- "axvm-bigint-guest",
- "axvm-instructions",
- "axvm-instructions-derive",
- "axvm-rv32im-transpiler",
- "axvm-transpiler",
- "rrs-lib",
- "strum",
-]
-
-[[package]]
-name = "axvm-build"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "axvm-platform",
- "cargo_metadata",
- "dirs",
- "eyre",
- "hex",
- "serde",
- "serde_json",
- "tempfile",
-]
-
-[[package]]
-name = "axvm-circuit"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "async-trait",
- "ax-circuit-derive",
- "ax-circuit-primitives",
- "ax-poseidon2-air",
- "ax-stark-backend",
- "ax-stark-sdk",
- "axvm-circuit-derive",
- "axvm-instructions",
- "backtrace",
- "cfg-if",
- "derivative",
- "derive-new",
- "derive_more 1.0.0",
- "eyre",
- "getset",
- "inferno",
- "itertools 0.13.0",
- "metrics",
- "once_cell",
- "p3-baby-bear",
- "p3-symmetric",
- "parking_lot",
- "rand",
- "rustc-hash 2.1.0",
- "serde",
- "static_assertions",
- "thiserror 1.0.69",
- "toml",
- "tracing",
-]
-
-[[package]]
-name = "axvm-circuit-derive"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "itertools 0.13.0",
- "proc-macro2",
- "quote",
- "syn 2.0.90",
-]
-
-[[package]]
-name = "axvm-ecc-circuit"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-circuit-derive",
- "ax-circuit-primitives",
- "ax-mod-circuit-builder",
- "ax-stark-backend",
- "axvm-algebra-circuit",
- "axvm-circuit",
- "axvm-circuit-derive",
- "axvm-ecc-guest",
- "axvm-ecc-transpiler",
- "axvm-instructions",
- "axvm-rv32-adapters",
- "axvm-rv32im-circuit",
- "derive-new",
- "derive_more 1.0.0",
- "eyre",
- "num-bigint-dig",
- "num-integer",
- "num-traits",
- "once_cell",
- "serde",
- "strum",
-]
-
-[[package]]
-name = "axvm-ecc-guest"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "axvm",
- "axvm-algebra-guest",
- "axvm-algebra-moduli-setup",
- "axvm-ecc-sw-setup",
- "axvm-platform",
- "axvm-rv32im-guest",
- "ecdsa",
- "elliptic-curve",
- "group 0.13.0",
- "halo2curves-axiom 0.7.0",
- "hex-literal",
- "itertools 0.13.0",
- "k256",
- "lazy_static",
- "num-bigint 0.4.6",
- "num-bigint-dig",
- "num-traits",
- "rand",
- "serde",
- "strum_macros",
-]
-
-[[package]]
-name = "axvm-ecc-sw-setup"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "axvm-macros-common",
- "quote",
- "syn 2.0.90",
-]
-
-[[package]]
-name = "axvm-ecc-transpiler"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-stark-backend",
- "axvm-ecc-guest",
- "axvm-instructions",
- "axvm-instructions-derive",
- "axvm-transpiler",
- "rrs-lib",
- "strum",
-]
-
-[[package]]
-name = "axvm-instructions"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-stark-backend",
- "axvm-instructions-derive",
- "backtrace",
- "derive-new",
- "itertools 0.13.0",
- "num-bigint-dig",
- "num-traits",
- "serde",
- "strum",
- "strum_macros",
-]
-
-[[package]]
-name = "axvm-instructions-derive"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.90",
-]
-
-[[package]]
-name = "axvm-keccak256-circuit"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-circuit-derive",
- "ax-circuit-primitives",
- "ax-stark-backend",
- "ax-stark-sdk",
- "axvm-circuit",
- "axvm-circuit-derive",
- "axvm-instructions",
- "axvm-keccak256-transpiler",
- "axvm-rv32im-circuit",
- "derive-new",
- "derive_more 1.0.0",
- "eyre",
- "hex-literal",
- "itertools 0.13.0",
- "p3-keccak-air",
- "rand",
- "serde",
- "strum",
- "tiny-keccak",
- "tracing",
-]
-
-[[package]]
-name = "axvm-keccak256-guest"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "axvm-platform",
- "serde",
- "tiny-keccak",
-]
-
-[[package]]
-name = "axvm-keccak256-transpiler"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-stark-backend",
- "axvm-instructions",
- "axvm-instructions-derive",
- "axvm-keccak256-guest",
- "axvm-transpiler",
- "rrs-lib",
- "strum",
-]
-
-[[package]]
-name = "axvm-macros-common"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "syn 2.0.90",
-]
-
-[[package]]
-name = "axvm-native-circuit"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-circuit-derive",
- "ax-circuit-primitives",
- "ax-poseidon2-air",
- "ax-stark-backend",
- "ax-stark-sdk",
- "axvm-circuit",
- "axvm-circuit-derive",
- "axvm-instructions",
- "axvm-native-compiler",
- "axvm-rv32im-circuit",
- "derive-new",
- "derive_more 1.0.0",
- "eyre",
- "itertools 0.13.0",
- "parking_lot",
- "rand",
- "serde",
- "strum",
- "tracing",
-]
-
-[[package]]
-name = "axvm-native-compiler"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-circuit-primitives",
- "ax-stark-backend",
- "ax-stark-sdk",
- "axvm-circuit",
- "axvm-instructions",
- "axvm-instructions-derive",
- "axvm-native-compiler-derive",
- "axvm-rv32im-transpiler",
- "backtrace",
- "cfg-if",
- "itertools 0.13.0",
- "num-bigint 0.4.6",
- "num-bigint-dig",
- "num-integer",
- "num-traits",
- "serde",
- "serde_json",
- "snark-verifier-sdk",
- "strum",
- "strum_macros",
- "tracing",
- "zkhash",
-]
-
-[[package]]
-name = "axvm-native-compiler-derive"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.90",
-]
-
-[[package]]
-name = "axvm-native-recursion"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-stark-backend",
- "ax-stark-sdk",
- "axvm-circuit",
- "axvm-native-circuit",
- "axvm-native-compiler",
- "cfg-if",
- "itertools 0.13.0",
- "lazy_static",
- "metrics",
- "once_cell",
- "p3-dft",
- "p3-fri",
- "p3-merkle-tree",
- "p3-symmetric",
- "rand",
- "serde",
- "serde_json",
- "snark-verifier-sdk",
- "tracing",
-]
-
-[[package]]
-name = "axvm-pairing-circuit"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-circuit-derive",
- "ax-circuit-primitives",
- "ax-mod-circuit-builder",
- "ax-stark-backend",
- "axvm-algebra-circuit",
- "axvm-circuit",
- "axvm-circuit-derive",
- "axvm-ecc-circuit",
- "axvm-ecc-guest",
- "axvm-instructions",
- "axvm-pairing-guest",
- "axvm-pairing-transpiler",
- "axvm-rv32-adapters",
- "axvm-rv32im-circuit",
- "derive-new",
- "derive_more 1.0.0",
- "eyre",
- "itertools 0.13.0",
- "num-bigint-dig",
- "num-traits",
- "once_cell",
- "rand",
- "serde",
- "strum",
-]
-
-[[package]]
-name = "axvm-pairing-guest"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "axvm",
- "axvm-algebra-complex-macros",
- "axvm-algebra-guest",
- "axvm-algebra-moduli-setup",
- "axvm-ecc-guest",
- "axvm-platform",
- "axvm-rv32im-guest",
- "group 0.13.0",
- "halo2curves-axiom 0.7.0",
- "hex-literal",
- "itertools 0.13.0",
- "lazy_static",
- "num-bigint 0.4.6",
- "num-bigint-dig",
- "num-traits",
- "rand",
- "serde",
- "strum_macros",
-]
-
-[[package]]
-name = "axvm-pairing-transpiler"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-stark-backend",
- "axvm-instructions",
- "axvm-instructions-derive",
- "axvm-pairing-guest",
- "axvm-transpiler",
- "rrs-lib",
- "strum",
-]
-
-[[package]]
-name = "axvm-platform"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "getrandom",
- "libm",
- "stability",
- "strum_macros",
-]
-
-[[package]]
-name = "axvm-rv32-adapters"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-circuit-derive",
- "ax-circuit-primitives",
- "ax-stark-backend",
- "ax-stark-sdk",
- "axvm-circuit",
- "axvm-instructions",
- "axvm-rv32im-circuit",
- "derive-new",
- "itertools 0.13.0",
- "rand",
- "tracing",
-]
-
-[[package]]
-name = "axvm-rv32im-circuit"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-circuit-derive",
- "ax-circuit-primitives",
- "ax-stark-backend",
- "axvm-circuit",
- "axvm-circuit-derive",
- "axvm-instructions",
- "axvm-rv32im-transpiler",
- "derive-new",
- "derive_more 1.0.0",
- "eyre",
- "itertools 0.13.0",
- "num-bigint 0.4.6",
- "num-integer",
- "parking_lot",
- "rand",
- "serde",
- "strum",
- "tracing",
-]
-
-[[package]]
-name = "axvm-rv32im-guest"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "axvm-platform",
- "strum_macros",
-]
-
-[[package]]
-name = "axvm-rv32im-transpiler"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-stark-backend",
- "axvm-instructions",
- "axvm-instructions-derive",
- "axvm-rv32im-guest",
- "axvm-transpiler",
- "rrs-lib",
- "strum",
- "tracing",
-]
-
-[[package]]
-name = "axvm-sdk"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "async-trait",
- "ax-stark-backend",
- "ax-stark-sdk",
- "axvm",
- "axvm-algebra-circuit",
- "axvm-algebra-transpiler",
- "axvm-bigint-circuit",
- "axvm-bigint-transpiler",
- "axvm-build",
- "axvm-circuit",
- "axvm-ecc-circuit",
- "axvm-ecc-transpiler",
- "axvm-keccak256-circuit",
- "axvm-keccak256-transpiler",
- "axvm-native-circuit",
- "axvm-native-compiler",
- "axvm-native-recursion",
- "axvm-pairing-circuit",
- "axvm-pairing-transpiler",
- "axvm-rv32im-circuit",
- "axvm-rv32im-transpiler",
- "axvm-transpiler",
- "bincode 2.0.0-rc.3",
- "bon",
- "bson",
- "derivative",
- "derive_more 1.0.0",
- "eyre",
- "itertools 0.13.0",
- "metrics",
- "serde",
- "static_assertions",
- "tracing",
-]
-
-[[package]]
-name = "axvm-transpiler"
-version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/afs-prototype.git#f606f9093fb1c3d6b24b560d252f0a5daacb069b"
-dependencies = [
- "ax-stark-backend",
- "axvm-instructions",
- "axvm-platform",
- "derive_more 1.0.0",
- "elf",
- "eyre",
- "num-bigint-dig",
- "rrs-lib",
- "strum",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
 name = "backtrace"
 version = "0.3.74"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1614,12 +806,6 @@ name = "base16ct"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c7f02d4ea65f2c1853089ffd8d2787bdbc63de2f0d29dedbcf8ccdfa0ccd4cf"
-
-[[package]]
-name = "base64"
-version = "0.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
 
 [[package]]
 name = "base64"
@@ -1681,6 +867,16 @@ name = "bit-vec"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "349f9b6a179ed607305526ca489b34ad0a41aed5f7980fa90eb03160b69598fb"
+
+[[package]]
+name = "bitcode"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee1bce7608560cd4bf0296a4262d0dbf13e6bcec5ff2105724c8ab88cc7fc784"
+dependencies = [
+ "bytemuck",
+ "serde",
+]
 
 [[package]]
 name = "bitflags"
@@ -1794,27 +990,6 @@ dependencies = [
  "quote",
  "rustversion",
  "syn 2.0.90",
-]
-
-[[package]]
-name = "bson"
-version = "2.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "068208f2b6fcfa27a7f1ee37488d2bb8ba2640f68f5475d08e1d9130696aba59"
-dependencies = [
- "ahash",
- "base64 0.13.1",
- "bitvec",
- "hex",
- "indexmap 2.7.0",
- "js-sys",
- "once_cell",
- "rand",
- "serde",
- "serde_bytes",
- "serde_json",
- "time",
- "uuid",
 ]
 
 [[package]]
@@ -2233,6 +1408,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive_arbitrary"
+version = "1.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "30542c1ad912e0e3d22a1935c290e12e8a29d704a420177a31faad4a601a0800"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.90",
+]
+
+[[package]]
 name = "derive_more"
 version = "0.99.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2409,6 +1595,18 @@ dependencies = [
  "rand",
  "sha3",
  "zeroize",
+]
+
+[[package]]
+name = "enum_dispatch"
+version = "0.3.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aa18ce2bc66555b3218614519ac839ddb759a7d6720732f979ef8d13be147ecd"
+dependencies = [
+ "once_cell",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.90",
 ]
 
 [[package]]
@@ -3318,6 +2516,7 @@ version = "2.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62f822373a4fe84d4bb149bf54e584a7f4abec90e072ed49cda0edea5b95471f"
 dependencies = [
+ "arbitrary",
  "equivalent",
  "hashbrown 0.15.2",
  "serde",
@@ -3894,6 +3093,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-rlp",
  "alloy-serde",
+ "arbitrary",
  "derive_more 1.0.0",
  "serde",
  "spin",
@@ -3915,6 +3115,834 @@ dependencies = [
  "op-alloy-consensus",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "openvm"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "bytemuck",
+ "hex-literal",
+ "num-bigint-dig",
+ "num-traits",
+ "openvm-platform",
+ "openvm-rv32im-guest",
+ "serde",
+]
+
+[[package]]
+name = "openvm-algebra-circuit"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "derive-new",
+ "derive_more 1.0.0",
+ "itertools 0.13.0",
+ "num-bigint-dig",
+ "num-traits",
+ "openvm-algebra-transpiler",
+ "openvm-circuit",
+ "openvm-circuit-derive",
+ "openvm-circuit-primitives",
+ "openvm-circuit-primitives-derive",
+ "openvm-instructions",
+ "openvm-mod-circuit-builder",
+ "openvm-rv32-adapters",
+ "openvm-rv32im-circuit",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
+ "rand",
+ "serde",
+ "strum",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-algebra-complex-macros"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "openvm-macros-common",
+ "quote",
+ "syn 2.0.90",
+]
+
+[[package]]
+name = "openvm-algebra-guest"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "halo2curves-axiom 0.7.0",
+ "num-bigint-dig",
+ "openvm",
+ "openvm-algebra-moduli-setup",
+ "openvm-platform",
+ "serde",
+ "serde-big-array",
+ "strum_macros",
+]
+
+[[package]]
+name = "openvm-algebra-moduli-setup"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "openvm-macros-common",
+ "quote",
+ "syn 2.0.90",
+]
+
+[[package]]
+name = "openvm-algebra-transpiler"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "openvm-algebra-guest",
+ "openvm-instructions",
+ "openvm-instructions-derive",
+ "openvm-stark-backend",
+ "openvm-transpiler",
+ "rrs-lib",
+ "strum",
+ "strum_macros",
+]
+
+[[package]]
+name = "openvm-benchmarks"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "bincode 2.0.0-rc.3",
+ "clap",
+ "derive-new",
+ "derive_more 1.0.0",
+ "eyre",
+ "hex",
+ "k256",
+ "metrics",
+ "num-bigint-dig",
+ "openvm-algebra-circuit",
+ "openvm-algebra-transpiler",
+ "openvm-build",
+ "openvm-circuit",
+ "openvm-circuit-primitives-derive",
+ "openvm-ecc-circuit",
+ "openvm-ecc-transpiler",
+ "openvm-keccak256-circuit",
+ "openvm-keccak256-guest",
+ "openvm-keccak256-transpiler",
+ "openvm-native-circuit",
+ "openvm-native-compiler",
+ "openvm-native-recursion",
+ "openvm-rv32im-circuit",
+ "openvm-rv32im-transpiler",
+ "openvm-sdk",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
+ "openvm-transpiler",
+ "rand_chacha",
+ "serde",
+ "tempfile",
+ "tiny-keccak",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-bigint-circuit"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "derive-new",
+ "derive_more 1.0.0",
+ "openvm-bigint-transpiler",
+ "openvm-circuit",
+ "openvm-circuit-derive",
+ "openvm-circuit-primitives",
+ "openvm-circuit-primitives-derive",
+ "openvm-instructions",
+ "openvm-rv32-adapters",
+ "openvm-rv32im-circuit",
+ "openvm-rv32im-transpiler",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
+ "rand",
+ "serde",
+]
+
+[[package]]
+name = "openvm-bigint-guest"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "num-bigint-dig",
+ "num-traits",
+ "openvm",
+ "openvm-platform",
+ "serde",
+ "strum_macros",
+]
+
+[[package]]
+name = "openvm-bigint-transpiler"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "openvm-bigint-guest",
+ "openvm-instructions",
+ "openvm-instructions-derive",
+ "openvm-rv32im-transpiler",
+ "openvm-stark-backend",
+ "openvm-transpiler",
+ "rrs-lib",
+ "strum",
+]
+
+[[package]]
+name = "openvm-build"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "cargo_metadata",
+ "dirs",
+ "eyre",
+ "hex",
+ "openvm-platform",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "openvm-circuit"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "async-trait",
+ "backtrace",
+ "cfg-if",
+ "derivative",
+ "derive-new",
+ "derive_more 1.0.0",
+ "enum_dispatch",
+ "eyre",
+ "getset",
+ "inferno",
+ "itertools 0.13.0",
+ "metrics",
+ "once_cell",
+ "openvm-circuit-derive",
+ "openvm-circuit-primitives",
+ "openvm-circuit-primitives-derive",
+ "openvm-instructions",
+ "openvm-poseidon2-air",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
+ "p3-baby-bear",
+ "p3-symmetric",
+ "parking_lot",
+ "rand",
+ "rustc-hash 2.1.0",
+ "serde",
+ "static_assertions",
+ "thiserror 1.0.69",
+ "toml",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-circuit-derive"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "itertools 0.13.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.90",
+]
+
+[[package]]
+name = "openvm-circuit-primitives"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "derive-new",
+ "itertools 0.13.0",
+ "lazy_static",
+ "num-bigint-dig",
+ "num-traits",
+ "openvm-circuit-primitives-derive",
+ "openvm-stark-backend",
+ "rand",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-circuit-primitives-derive"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "itertools 0.13.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.90",
+]
+
+[[package]]
+name = "openvm-ecc-circuit"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "derive-new",
+ "derive_more 1.0.0",
+ "eyre",
+ "num-bigint-dig",
+ "num-integer",
+ "num-traits",
+ "once_cell",
+ "openvm-algebra-circuit",
+ "openvm-circuit",
+ "openvm-circuit-derive",
+ "openvm-circuit-primitives",
+ "openvm-circuit-primitives-derive",
+ "openvm-ecc-guest",
+ "openvm-ecc-transpiler",
+ "openvm-instructions",
+ "openvm-mod-circuit-builder",
+ "openvm-rv32-adapters",
+ "openvm-rv32im-circuit",
+ "openvm-stark-backend",
+ "serde",
+ "strum",
+]
+
+[[package]]
+name = "openvm-ecc-guest"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "ecdsa",
+ "elliptic-curve",
+ "group 0.13.0",
+ "halo2curves-axiom 0.7.0",
+ "hex-literal",
+ "itertools 0.13.0",
+ "k256",
+ "lazy_static",
+ "num-bigint 0.4.6",
+ "num-bigint-dig",
+ "num-traits",
+ "openvm",
+ "openvm-algebra-guest",
+ "openvm-algebra-moduli-setup",
+ "openvm-ecc-sw-setup",
+ "openvm-platform",
+ "openvm-rv32im-guest",
+ "rand",
+ "serde",
+ "strum_macros",
+]
+
+[[package]]
+name = "openvm-ecc-sw-setup"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "openvm-macros-common",
+ "quote",
+ "syn 2.0.90",
+]
+
+[[package]]
+name = "openvm-ecc-transpiler"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "openvm-ecc-guest",
+ "openvm-instructions",
+ "openvm-instructions-derive",
+ "openvm-stark-backend",
+ "openvm-transpiler",
+ "rrs-lib",
+ "strum",
+]
+
+[[package]]
+name = "openvm-instructions"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "backtrace",
+ "derive-new",
+ "itertools 0.13.0",
+ "num-bigint-dig",
+ "num-traits",
+ "openvm-instructions-derive",
+ "openvm-stark-backend",
+ "serde",
+ "strum",
+ "strum_macros",
+]
+
+[[package]]
+name = "openvm-instructions-derive"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.90",
+]
+
+[[package]]
+name = "openvm-keccak256-circuit"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "derive-new",
+ "derive_more 1.0.0",
+ "eyre",
+ "hex-literal",
+ "itertools 0.13.0",
+ "openvm-circuit",
+ "openvm-circuit-derive",
+ "openvm-circuit-primitives",
+ "openvm-circuit-primitives-derive",
+ "openvm-instructions",
+ "openvm-keccak256-transpiler",
+ "openvm-rv32im-circuit",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
+ "p3-keccak-air",
+ "rand",
+ "serde",
+ "strum",
+ "tiny-keccak",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-keccak256-guest"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "openvm-platform",
+ "serde",
+ "tiny-keccak",
+]
+
+[[package]]
+name = "openvm-keccak256-transpiler"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "openvm-instructions",
+ "openvm-instructions-derive",
+ "openvm-keccak256-guest",
+ "openvm-stark-backend",
+ "openvm-transpiler",
+ "rrs-lib",
+ "strum",
+]
+
+[[package]]
+name = "openvm-macros-common"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "syn 2.0.90",
+]
+
+[[package]]
+name = "openvm-mod-circuit-builder"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "itertools 0.13.0",
+ "num-bigint-dig",
+ "num-traits",
+ "openvm-circuit",
+ "openvm-circuit-primitives",
+ "openvm-instructions",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
+ "rand",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-native-circuit"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "derive-new",
+ "derive_more 1.0.0",
+ "eyre",
+ "itertools 0.13.0",
+ "openvm-circuit",
+ "openvm-circuit-derive",
+ "openvm-circuit-primitives",
+ "openvm-circuit-primitives-derive",
+ "openvm-instructions",
+ "openvm-native-compiler",
+ "openvm-poseidon2-air",
+ "openvm-rv32im-circuit",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
+ "parking_lot",
+ "rand",
+ "serde",
+ "strum",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-native-compiler"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "backtrace",
+ "cfg-if",
+ "itertools 0.13.0",
+ "num-bigint 0.4.6",
+ "num-bigint-dig",
+ "num-integer",
+ "num-traits",
+ "openvm-circuit",
+ "openvm-circuit-primitives",
+ "openvm-instructions",
+ "openvm-instructions-derive",
+ "openvm-native-compiler-derive",
+ "openvm-rv32im-transpiler",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
+ "serde",
+ "serde_json",
+ "snark-verifier-sdk",
+ "strum",
+ "strum_macros",
+ "tracing",
+ "zkhash",
+]
+
+[[package]]
+name = "openvm-native-compiler-derive"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.90",
+]
+
+[[package]]
+name = "openvm-native-recursion"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "cfg-if",
+ "itertools 0.13.0",
+ "lazy_static",
+ "metrics",
+ "once_cell",
+ "openvm-circuit",
+ "openvm-native-circuit",
+ "openvm-native-compiler",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
+ "p3-dft",
+ "p3-fri",
+ "p3-merkle-tree",
+ "p3-symmetric",
+ "rand",
+ "serde",
+ "serde_json",
+ "snark-verifier-sdk",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-pairing-circuit"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "derive-new",
+ "derive_more 1.0.0",
+ "eyre",
+ "itertools 0.13.0",
+ "num-bigint-dig",
+ "num-traits",
+ "once_cell",
+ "openvm-algebra-circuit",
+ "openvm-circuit",
+ "openvm-circuit-derive",
+ "openvm-circuit-primitives",
+ "openvm-circuit-primitives-derive",
+ "openvm-ecc-circuit",
+ "openvm-ecc-guest",
+ "openvm-instructions",
+ "openvm-mod-circuit-builder",
+ "openvm-pairing-guest",
+ "openvm-pairing-transpiler",
+ "openvm-rv32-adapters",
+ "openvm-rv32im-circuit",
+ "openvm-stark-backend",
+ "rand",
+ "serde",
+ "strum",
+]
+
+[[package]]
+name = "openvm-pairing-guest"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "group 0.13.0",
+ "halo2curves-axiom 0.7.0",
+ "hex-literal",
+ "itertools 0.13.0",
+ "lazy_static",
+ "num-bigint 0.4.6",
+ "num-bigint-dig",
+ "num-traits",
+ "openvm",
+ "openvm-algebra-complex-macros",
+ "openvm-algebra-guest",
+ "openvm-algebra-moduli-setup",
+ "openvm-ecc-guest",
+ "openvm-ecc-sw-setup",
+ "openvm-platform",
+ "openvm-rv32im-guest",
+ "rand",
+ "serde",
+ "strum_macros",
+]
+
+[[package]]
+name = "openvm-pairing-transpiler"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "openvm-instructions",
+ "openvm-instructions-derive",
+ "openvm-pairing-guest",
+ "openvm-stark-backend",
+ "openvm-transpiler",
+ "rrs-lib",
+ "strum",
+]
+
+[[package]]
+name = "openvm-platform"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "getrandom",
+ "libm",
+ "stability",
+ "strum_macros",
+]
+
+[[package]]
+name = "openvm-poseidon2-air"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "itertools 0.13.0",
+ "lazy_static",
+ "openvm-circuit-primitives",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
+ "p3-monty-31",
+ "p3-poseidon2",
+ "p3-symmetric",
+ "rand",
+ "zkhash",
+]
+
+[[package]]
+name = "openvm-rv32-adapters"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "derive-new",
+ "itertools 0.13.0",
+ "openvm-circuit",
+ "openvm-circuit-primitives",
+ "openvm-circuit-primitives-derive",
+ "openvm-instructions",
+ "openvm-rv32im-circuit",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
+ "rand",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-rv32im-circuit"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "derive-new",
+ "derive_more 1.0.0",
+ "eyre",
+ "itertools 0.13.0",
+ "num-bigint 0.4.6",
+ "num-integer",
+ "openvm-circuit",
+ "openvm-circuit-derive",
+ "openvm-circuit-primitives",
+ "openvm-circuit-primitives-derive",
+ "openvm-instructions",
+ "openvm-rv32im-transpiler",
+ "openvm-stark-backend",
+ "parking_lot",
+ "rand",
+ "serde",
+ "strum",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-rv32im-guest"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "openvm-platform",
+ "strum_macros",
+]
+
+[[package]]
+name = "openvm-rv32im-transpiler"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "openvm-instructions",
+ "openvm-instructions-derive",
+ "openvm-rv32im-guest",
+ "openvm-stark-backend",
+ "openvm-transpiler",
+ "rrs-lib",
+ "strum",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-sdk"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "async-trait",
+ "bitcode",
+ "bon",
+ "derivative",
+ "derive_more 1.0.0",
+ "eyre",
+ "itertools 0.13.0",
+ "metrics",
+ "openvm",
+ "openvm-algebra-circuit",
+ "openvm-algebra-transpiler",
+ "openvm-bigint-circuit",
+ "openvm-bigint-transpiler",
+ "openvm-build",
+ "openvm-circuit",
+ "openvm-ecc-circuit",
+ "openvm-ecc-transpiler",
+ "openvm-keccak256-circuit",
+ "openvm-keccak256-transpiler",
+ "openvm-native-circuit",
+ "openvm-native-compiler",
+ "openvm-native-recursion",
+ "openvm-pairing-circuit",
+ "openvm-pairing-transpiler",
+ "openvm-rv32im-circuit",
+ "openvm-rv32im-transpiler",
+ "openvm-stark-backend",
+ "openvm-stark-sdk",
+ "openvm-transpiler",
+ "serde",
+ "static_assertions",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-stark-backend"
+version = "0.1.0-alpha"
+source = "git+ssh://git@github.com/openvm-org/stark-backend.git#75f79da9da485c2091637207201fc40f0985ef14"
+dependencies = [
+ "async-trait",
+ "cfg-if",
+ "derivative",
+ "itertools 0.13.0",
+ "metrics",
+ "mimalloc",
+ "p3-air",
+ "p3-challenger",
+ "p3-commit",
+ "p3-field",
+ "p3-matrix",
+ "p3-maybe-rayon",
+ "p3-uni-stark",
+ "p3-util",
+ "rayon",
+ "serde",
+ "thiserror 1.0.69",
+ "tikv-jemallocator",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-stark-sdk"
+version = "0.1.0-alpha"
+source = "git+ssh://git@github.com/openvm-org/stark-backend.git#75f79da9da485c2091637207201fc40f0985ef14"
+dependencies = [
+ "derive_more 0.99.18",
+ "ff 0.13.0",
+ "itertools 0.13.0",
+ "metrics",
+ "metrics-tracing-context",
+ "metrics-util",
+ "openvm-stark-backend",
+ "p3-baby-bear",
+ "p3-blake3",
+ "p3-bn254-fr",
+ "p3-dft",
+ "p3-fri",
+ "p3-goldilocks",
+ "p3-keccak",
+ "p3-merkle-tree",
+ "p3-poseidon",
+ "p3-poseidon2",
+ "p3-symmetric",
+ "rand",
+ "serde",
+ "serde_json",
+ "static_assertions",
+ "toml",
+ "tracing",
+ "tracing-forest",
+ "tracing-subscriber",
+ "zkhash",
+]
+
+[[package]]
+name = "openvm-transpiler"
+version = "0.1.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#7646803de4827963b8e748c58da558a88c6140b0"
+dependencies = [
+ "derive_more 1.0.0",
+ "elf",
+ "eyre",
+ "num-bigint-dig",
+ "openvm-instructions",
+ "openvm-platform",
+ "openvm-stark-backend",
+ "rrs-lib",
+ "strum",
+ "thiserror 1.0.69",
+ "tracing",
 ]
 
 [[package]]
@@ -4283,6 +4311,7 @@ dependencies = [
  "arrayvec",
  "bitvec",
  "byte-slice-cast",
+ "bytes",
  "impl-trait-for-tuples",
  "parity-scale-codec-derive",
  "serde",
@@ -4544,6 +4573,17 @@ dependencies = [
  "rusty-fork",
  "tempfile",
  "unarray",
+]
+
+[[package]]
+name = "proptest-derive"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ff7ff745a347b87471d859a377a9a404361e7efc2a971d73424a6d183c0fc77"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.90",
 ]
 
 [[package]]
@@ -4830,9 +4870,10 @@ dependencies = [
 
 [[package]]
 name = "reth-blockchain-tree-api"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
+ "alloy-primitives",
  "reth-consensus",
  "reth-execution-errors",
  "reth-primitives",
@@ -4842,8 +4883,8 @@ dependencies = [
 
 [[package]]
 name = "reth-chainspec"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "alloy-chains",
  "alloy-eips",
@@ -4864,8 +4905,8 @@ dependencies = [
 
 [[package]]
 name = "reth-codecs"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4874,14 +4915,15 @@ dependencies = [
  "alloy-trie",
  "bytes",
  "modular-bitfield",
+ "op-alloy-consensus",
  "reth-codecs-derive",
  "serde",
 ]
 
 [[package]]
 name = "reth-codecs-derive"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "convert_case 0.6.0",
  "proc-macro2",
@@ -4891,9 +4933,10 @@ dependencies = [
 
 [[package]]
 name = "reth-consensus"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
+ "alloy-primitives",
  "auto_impl",
  "derive_more 1.0.0",
  "reth-primitives",
@@ -4901,19 +4944,43 @@ dependencies = [
 
 [[package]]
 name = "reth-consensus-common"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
+ "alloy-primitives",
  "reth-chainspec",
  "reth-consensus",
  "reth-primitives",
 ]
 
 [[package]]
-name = "reth-db-models"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+name = "reth-db-api"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
+ "alloy-primitives",
+ "bytes",
+ "derive_more 1.0.0",
+ "metrics",
+ "modular-bitfield",
+ "parity-scale-codec",
+ "reth-codecs",
+ "reth-db-models",
+ "reth-primitives",
+ "reth-primitives-traits",
+ "reth-prune-types",
+ "reth-stages-types",
+ "reth-storage-errors",
+ "reth-trie-common",
+ "serde",
+]
+
+[[package]]
+name = "reth-db-models"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
+dependencies = [
+ "alloy-primitives",
  "bytes",
  "modular-bitfield",
  "reth-codecs",
@@ -4923,8 +4990,8 @@ dependencies = [
 
 [[package]]
 name = "reth-errors"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "reth-blockchain-tree-api",
  "reth-consensus",
@@ -4936,8 +5003,8 @@ dependencies = [
 
 [[package]]
 name = "reth-ethereum-consensus"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "reth-chainspec",
  "reth-consensus",
@@ -4948,8 +5015,8 @@ dependencies = [
 
 [[package]]
 name = "reth-ethereum-forks"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "alloy-chains",
  "alloy-primitives",
@@ -4965,16 +5032,19 @@ dependencies = [
 
 [[package]]
 name = "reth-evm"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "alloy-eips",
  "auto_impl",
  "futures-util",
+ "metrics",
  "reth-chainspec",
  "reth-execution-errors",
  "reth-execution-types",
+ "reth-metrics",
  "reth-primitives",
+ "reth-primitives-traits",
  "reth-prune-types",
  "reth-storage-errors",
  "revm 14.0.1",
@@ -4983,8 +5053,8 @@ dependencies = [
 
 [[package]]
 name = "reth-evm-ethereum"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "alloy-eips",
  "alloy-sol-types",
@@ -5001,14 +5071,16 @@ dependencies = [
 
 [[package]]
 name = "reth-evm-optimism"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
+ "alloy-primitives",
  "reth-chainspec",
  "reth-ethereum-forks",
  "reth-evm",
  "reth-execution-errors",
  "reth-execution-types",
+ "reth-optimism-chainspec",
  "reth-optimism-consensus",
  "reth-primitives",
  "reth-prune-types",
@@ -5021,8 +5093,8 @@ dependencies = [
 
 [[package]]
 name = "reth-execution-errors"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -5037,8 +5109,8 @@ dependencies = [
 
 [[package]]
 name = "reth-execution-types"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "reth-chainspec",
  "reth-execution-errors",
@@ -5049,8 +5121,8 @@ dependencies = [
 
 [[package]]
 name = "reth-fs-util"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "serde",
  "serde_json",
@@ -5058,9 +5130,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "reth-metrics"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
+dependencies = [
+ "metrics",
+ "reth-metrics-derive",
+]
+
+[[package]]
+name = "reth-metrics-derive"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn 2.0.90",
+]
+
+[[package]]
 name = "reth-network-peers"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -5072,8 +5164,8 @@ dependencies = [
 
 [[package]]
 name = "reth-optimism-chainspec"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "alloy-chains",
  "alloy-primitives",
@@ -5087,20 +5179,22 @@ dependencies = [
 
 [[package]]
 name = "reth-optimism-consensus"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
+ "alloy-primitives",
  "reth-chainspec",
  "reth-consensus",
  "reth-consensus-common",
  "reth-primitives",
+ "reth-trie-common",
  "tracing",
 ]
 
 [[package]]
 name = "reth-primitives"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5113,9 +5207,11 @@ dependencies = [
  "derive_more 1.0.0",
  "k256",
  "once_cell",
+ "op-alloy-consensus",
  "op-alloy-rpc-types",
  "rayon",
  "reth-chainspec",
+ "reth-codecs",
  "reth-ethereum-forks",
  "reth-optimism-chainspec",
  "reth-primitives-traits",
@@ -5125,13 +5221,12 @@ dependencies = [
  "revm-primitives 9.0.2",
  "secp256k1",
  "serde",
- "thiserror 1.0.69",
 ]
 
 [[package]]
 name = "reth-primitives-traits"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5151,8 +5246,8 @@ dependencies = [
 
 [[package]]
 name = "reth-prune-types"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "alloy-primitives",
  "bytes",
@@ -5165,8 +5260,8 @@ dependencies = [
 
 [[package]]
 name = "reth-revm"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "reth-chainspec",
  "reth-consensus-common",
@@ -5180,8 +5275,8 @@ dependencies = [
 
 [[package]]
 name = "reth-stages-types"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "alloy-primitives",
  "bytes",
@@ -5193,8 +5288,8 @@ dependencies = [
 
 [[package]]
 name = "reth-static-file-types"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "alloy-primitives",
  "derive_more 1.0.0",
@@ -5204,11 +5299,14 @@ dependencies = [
 
 [[package]]
 name = "reth-storage-api"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
+ "alloy-eips",
+ "alloy-primitives",
  "auto_impl",
  "reth-chainspec",
+ "reth-db-api",
  "reth-db-models",
  "reth-execution-types",
  "reth-primitives",
@@ -5220,9 +5318,11 @@ dependencies = [
 
 [[package]]
 name = "reth-storage-errors"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
+ "alloy-eips",
+ "alloy-primitives",
  "alloy-rlp",
  "derive_more 1.0.0",
  "reth-fs-util",
@@ -5231,9 +5331,10 @@ dependencies = [
 
 [[package]]
 name = "reth-trie"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
+ "alloy-primitives",
  "alloy-rlp",
  "auto_impl",
  "derive_more 1.0.0",
@@ -5250,8 +5351,8 @@ dependencies = [
 
 [[package]]
 name = "reth-trie-common"
-version = "1.0.6"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=rsp#d670331a809ce02ef52a1726be258726045adcc7"
+version = "1.0.7"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#1507b75bfa4308aa86b20a54fd4f4087fd979726"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
@@ -5474,22 +5575,22 @@ name = "rsp"
 version = "0.1.0"
 dependencies = [
  "alloy-provider",
- "ax-stark-sdk",
- "axvm-algebra-circuit",
- "axvm-benchmarks",
- "axvm-build",
- "axvm-circuit",
- "axvm-ecc-circuit",
- "axvm-native-compiler",
- "axvm-native-recursion",
- "axvm-sdk",
- "axvm-transpiler",
  "bincode 2.0.0-rc.3",
  "clap",
  "derive_more 1.0.0",
  "dotenv",
  "eyre",
  "metrics",
+ "openvm-algebra-circuit",
+ "openvm-benchmarks",
+ "openvm-build",
+ "openvm-circuit",
+ "openvm-ecc-circuit",
+ "openvm-native-compiler",
+ "openvm-native-recursion",
+ "openvm-sdk",
+ "openvm-stark-sdk",
+ "openvm-transpiler",
  "reth-primitives",
  "rsp-client-executor",
  "rsp-host-executor",
@@ -5518,6 +5619,7 @@ dependencies = [
  "reth-evm-ethereum",
  "reth-evm-optimism",
  "reth-execution-types",
+ "reth-optimism-chainspec",
  "reth-optimism-consensus",
  "reth-primitives",
  "reth-revm",
@@ -5657,6 +5759,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c3cc4c2511671f327125da14133d0c5c5d137f006a1017a16f557bc85b16286"
 dependencies = [
  "alloy-rlp",
+ "arbitrary",
  "ark-ff 0.3.0",
  "ark-ff 0.4.2",
  "bytes",
@@ -5894,15 +5997,6 @@ name = "serde_arrays"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "38636132857f68ec3d5f3eb121166d2af33cb55174c4d5ff645db6165cbef0fd"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "serde_bytes"
-version = "0.11.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "387cc504cb06bb40a96c8e04e951fe01854cf6bc921053c954e4a606d9675c6a"
 dependencies = [
  "serde",
 ]
@@ -6790,16 +6884,6 @@ name = "utf8parse"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
-
-[[package]]
-name = "uuid"
-version = "1.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8c5f0a0af699448548ad1a2fbf920fb4bee257eae39953ba95cb84891a0446a"
-dependencies = [
- "getrandom",
- "serde",
-]
 
 [[package]]
 name = "valuable"

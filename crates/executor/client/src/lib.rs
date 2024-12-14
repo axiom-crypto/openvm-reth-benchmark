@@ -26,6 +26,7 @@ use revm_primitives::{address, U256};
 #[allow(unused_imports)]
 pub use rsp_mpt;
 use rsp_mpt::state::HashedPostState;
+use rsp_primitives::chain_spec;
 
 /// Chain ID for Ethereum Mainnet.
 pub const CHAIN_ID_ETH_MAINNET: u64 = 0x1;
@@ -95,6 +96,14 @@ impl ChainVariant {
             ChainVariant::Ethereum => CHAIN_ID_ETH_MAINNET,
             ChainVariant::Optimism => CHAIN_ID_OP_MAINNET,
             ChainVariant::Linea => CHAIN_ID_LINEA_MAINNET,
+        }
+    }
+
+    pub fn chain_spec(&self) -> ChainSpec {
+        match self {
+            ChainVariant::Ethereum => chain_spec::mainnet(),
+            ChainVariant::Optimism => chain_spec::op_mainnet(),
+            ChainVariant::Linea => chain_spec::linea_mainnet(),
         }
     }
 }

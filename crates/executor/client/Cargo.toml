@@ -35,6 +35,7 @@ reth-evm-ethereum.workspace = true
 reth-evm-optimism.workspace = true
 reth-errors.workspace = true
 reth-chainspec.workspace = true
+reth-optimism-chainspec.workspace = true
 reth-revm.workspace = true
 
 # revm

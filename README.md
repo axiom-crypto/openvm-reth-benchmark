@@ -6,10 +6,10 @@ A minimal implementation of generating zero-knowledge proofs of EVM block execut
 >
 > This repository is still an active work-in-progress and is not audited or meant for production usage.
 
-## [WIP] axVM
+## [WIP] openvm
 
 Instructions to run:
-In axvm repo:
+In openvm repo:
 
 ```bash
 cd crates/cargo-axiom
@@ -65,7 +65,7 @@ TODO: upload the specialized script to generating pretty markdown.
 
 ## Getting Started
 
-To use RSP, you must first have [Rust](https://www.rust-lang.org/tools/install) installed and axVM installed to build the client programs. Then follow the instructions below.
+To use RSP, you must first have [Rust](https://www.rust-lang.org/tools/install) installed and openvm installed to build the client programs. Then follow the instructions below.
 
 ### Installing the CLI
 

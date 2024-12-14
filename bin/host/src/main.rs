@@ -1,23 +1,23 @@
 use alloy_provider::ReqwestProvider;
-use ax_stark_sdk::{
-    bench::run_with_metric_collection, config::FriParameters, p3_baby_bear::BabyBear,
-};
-use axvm_algebra_circuit::ModularExtension;
-use axvm_benchmarks::utils::BenchmarkCli;
-use axvm_circuit::arch::{instructions::exe::AxVmExe, SystemConfig, VmConfig, VmExecutor};
-use axvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
-use axvm_native_compiler::conversion::CompilerOptions;
-use axvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
-use axvm_sdk::{
+use clap::{ArgGroup, Parser};
+use core::option::Option::None;
+use derive_more::From;
+use openvm_algebra_circuit::ModularExtension;
+use openvm_benchmarks::utils::BenchmarkCli;
+use openvm_circuit::arch::{instructions::exe::VmExe, SystemConfig, VmConfig, VmExecutor};
+use openvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
+use openvm_native_compiler::conversion::CompilerOptions;
+use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
+use openvm_sdk::{
     commit::commit_app_exe,
     config::{AggConfig, AggStarkConfig, AppConfig, Halo2Config, SdkVmConfig},
     prover::{AppProver, ContinuationProver},
     Sdk, StdIn,
 };
-use axvm_transpiler::{axvm_platform::memory::MEM_SIZE, elf::Elf, FromElf};
-use clap::{ArgGroup, Parser};
-use core::option::Option::None;
-use derive_more::From;
+use openvm_stark_sdk::{
+    bench::run_with_metric_collection, config::FriParameters, p3_baby_bear::BabyBear,
+};
+use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 use rsp_client_executor::{
     io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET,
     CHAIN_ID_OP_MAINNET,
@@ -176,7 +176,7 @@ async fn main() -> eyre::Result<()> {
     let vm_config = reth_vm_config(app_log_blowup, max_segment_length, args.collect_metrics);
     let sdk = Sdk;
     let elf = Elf::decode(RSP_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
-    let exe = AxVmExe::from_elf(elf, vm_config.transpiler()).unwrap();
+    let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
     let mut compiler_options = CompilerOptions::default();
     if args.collect_metrics {
