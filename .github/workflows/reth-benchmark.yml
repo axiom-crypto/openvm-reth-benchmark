@@ -92,19 +92,19 @@ jobs:
         with:
           cache-on-failure: true
 
-      - name: Checkout afs-prototype
+      - name: Checkout openvm
         run: |
-          git clone git@github.com:axiom-crypto/afs-prototype.git
+          git clone git@github.com:openvm-org/openvm.git
 
       - name: Display workflow inputs
         run: echo "${{ toJSON(github.event.inputs) }}"
-      - name: Setup CLI
-        working-directory: afs-prototype/crates/cargo-axiom
+      - name: Install cargo-openvm
+        working-directory: openvm/crates/cli
         run: |
           cargo install --force --path .
       - name: Install architecture specific tools
         run: |
-          source afs-prototype/ci/scripts/utils.sh
+          source openvm/ci/scripts/utils.sh
           install_s5cmd
       - name: Setup python
         run: |
@@ -113,7 +113,8 @@ jobs:
       - name: Setup halo2
         if: ${{ github.event.inputs.mode == 'prove-e2e' }}
         run: |
-          bash afs-prototype/extensions/native/recursion/trusted_setup_s3.sh
+          bash openvm/extensions/native/recursion/trusted_setup_s3.sh
+          export PARAMS_DIR=$(pwd)/params
 
       - name: Set metric name
         run: |
@@ -124,14 +125,19 @@ jobs:
           METRIC_PATH=".bench_metrics/${METRIC_NAME}.json"
           echo "METRIC_PATH=${METRIC_PATH}" >> $GITHUB_ENV
 
-      - name: Run Reth
+      - name: Build ELF
+        working-directory: bin/client-eth
         run: |
-          cd bin/client-eth
-          cargo axiom build
+          PROFILE="release"
+          if [[ "${{ inputs.collect_metrics }}" == "true" ]]; then
+            PROFILE="profiling"
+          fi
+          cargo openvm build --profile=$PROFILE
           mkdir -p ../host/elf
           cp target/riscv32im-risc0-zkvm-elf/release/rsp-client-eth ../host/elf/
 
-          cd ../..
+      - name: Run Reth
+        run: |
           mkdir -p rpc-cache
           mkdir -p .bench_metrics # TODO: remove this
           RPC_1=${{ secrets.RPC_URL_1 }}
@@ -162,8 +168,8 @@ jobs:
 
       - name: Generate markdown # result path is hardcoded results.md
         run: |
-          source afs-prototype/ci/scripts/utils.sh
-          generate_markdown $METRIC_PATH $METRIC_NAME ${{ env.S3_METRICS_PATH }} "./afs-prototype"
+          source openvm/ci/scripts/utils.sh
+          generate_markdown $METRIC_PATH $METRIC_NAME ${{ env.S3_METRICS_PATH }} "./openvm"
 
       - name: Install inferno-flamegraph
         run: cargo install inferno
@@ -171,14 +177,14 @@ jobs:
       - name: Generate flamegraphs
         run: |
           if [[ -f $METRIC_PATH ]]; then
-            python3 afs-prototype/ci/scripts/metric_unify/flamegraph.py $METRIC_PATH
+            python3 openvm/ci/scripts/metric_unify/flamegraph.py $METRIC_PATH
             s5cmd cp '.bench_metrics/flamegraphs/*.svg' "${{ env.PUBLIC_S3_PATH }}/${current_sha}/"
             echo "UPLOAD_FLAMEGRAPHS=1" >> $GITHUB_ENV
           fi
 
       - name: Add benchmark metadata to markdown, and upload
         run: |
-          source afs-prototype/ci/scripts/utils.sh
+          source openvm/ci/scripts/utils.sh
           add_metadata results.md ${{ inputs.max_segment_length }} ${{ inputs.instance_family }} ${{ inputs.memory_allocator }} ${{ github.repository }} ${{ github.run_id }}
 
       - name: Summarize metrics md
