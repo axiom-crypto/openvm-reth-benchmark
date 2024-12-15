@@ -1991,6 +1991,61 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm-client-eth"
+version = "0.0.0"
+dependencies = [
+ "log",
+ "openvm",
+ "openvm-algebra-complex-macros",
+ "openvm-algebra-guest",
+ "openvm-bigint-guest",
+ "openvm-client-executor",
+ "openvm-ecc-guest",
+ "openvm-keccak256-guest",
+ "openvm-pairing-guest",
+ "openvm-platform",
+ "revm-precompile",
+ "rustc-hash",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-client-executor"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-rlp",
+ "bincode",
+ "eyre",
+ "futures",
+ "hashbrown 0.14.5",
+ "itertools 0.13.0",
+ "openvm-mpt",
+ "openvm-primitives",
+ "openvm-witness-db",
+ "reth-chainspec",
+ "reth-errors",
+ "reth-ethereum-consensus",
+ "reth-evm",
+ "reth-evm-ethereum",
+ "reth-evm-optimism",
+ "reth-execution-types",
+ "reth-optimism-chainspec",
+ "reth-optimism-consensus",
+ "reth-primitives",
+ "reth-revm",
+ "reth-storage-errors",
+ "reth-trie",
+ "revm",
+ "revm-primitives",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "tokio",
+ "url",
+]
+
+[[package]]
 name = "openvm-ecc-guest"
 version = "0.1.0"
 source = "git+ssh://git@github.com/openvm-org/openvm.git#0a3905c3dc6bcbf888b60750aa7eb5d878589188"
@@ -2046,6 +2101,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm-mpt"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-rlp",
+ "alloy-rpc-types",
+ "anyhow",
+ "bincode",
+ "eyre",
+ "itertools 0.13.0",
+ "openvm-primitives",
+ "reth-execution-types",
+ "reth-primitives",
+ "reth-trie",
+ "revm",
+ "revm-primitives",
+ "rlp",
+ "rustc-hash",
+ "serde",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "openvm-pairing-guest"
 version = "0.1.0"
 source = "git+ssh://git@github.com/openvm-org/openvm.git#0a3905c3dc6bcbf888b60750aa7eb5d878589188"
@@ -2084,12 +2162,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm-primitives"
+version = "0.1.0"
+dependencies = [
+ "alloy-rpc-types",
+ "eyre",
+ "reth-chainspec",
+ "reth-optimism-chainspec",
+ "reth-primitives",
+ "reth-revm",
+ "reth-trie",
+ "revm-interpreter",
+ "revm-precompile",
+ "revm-primitives",
+ "serde",
+ "serde_json",
+ "tracing",
+]
+
+[[package]]
 name = "openvm-rv32im-guest"
 version = "0.1.0"
 source = "git+ssh://git@github.com/openvm-org/openvm.git#0a3905c3dc6bcbf888b60750aa7eb5d878589188"
 dependencies = [
  "openvm-platform",
  "strum_macros",
+]
+
+[[package]]
+name = "openvm-witness-db"
+version = "0.1.0"
+dependencies = [
+ "openvm-primitives",
+ "reth-primitives",
+ "reth-storage-errors",
+ "revm-primitives",
+ "serde",
 ]
 
 [[package]]
@@ -2932,114 +3040,6 @@ checksum = "41589aba99537475bf697f2118357cad1c31590c5a1b9f6d9fc4ad6d07503661"
 dependencies = [
  "bytemuck",
  "byteorder",
-]
-
-[[package]]
-name = "rsp-client-eth"
-version = "0.0.0"
-dependencies = [
- "log",
- "openvm",
- "openvm-algebra-complex-macros",
- "openvm-algebra-guest",
- "openvm-bigint-guest",
- "openvm-ecc-guest",
- "openvm-keccak256-guest",
- "openvm-pairing-guest",
- "openvm-platform",
- "revm-precompile",
- "rsp-client-executor",
- "rustc-hash",
- "tracing",
-]
-
-[[package]]
-name = "rsp-client-executor"
-version = "0.1.0"
-dependencies = [
- "alloy-primitives",
- "alloy-rlp",
- "bincode",
- "eyre",
- "futures",
- "hashbrown 0.14.5",
- "itertools 0.13.0",
- "reth-chainspec",
- "reth-errors",
- "reth-ethereum-consensus",
- "reth-evm",
- "reth-evm-ethereum",
- "reth-evm-optimism",
- "reth-execution-types",
- "reth-optimism-chainspec",
- "reth-optimism-consensus",
- "reth-primitives",
- "reth-revm",
- "reth-storage-errors",
- "reth-trie",
- "revm",
- "revm-primitives",
- "rsp-mpt",
- "rsp-primitives",
- "rsp-witness-db",
- "rustc-hash",
- "serde",
- "serde_json",
- "tokio",
- "url",
-]
-
-[[package]]
-name = "rsp-mpt"
-version = "0.1.0"
-dependencies = [
- "alloy-primitives",
- "alloy-rlp",
- "alloy-rpc-types",
- "anyhow",
- "bincode",
- "eyre",
- "itertools 0.13.0",
- "reth-execution-types",
- "reth-primitives",
- "reth-trie",
- "revm",
- "revm-primitives",
- "rlp",
- "rsp-primitives",
- "rustc-hash",
- "serde",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "rsp-primitives"
-version = "0.1.0"
-dependencies = [
- "alloy-rpc-types",
- "eyre",
- "reth-chainspec",
- "reth-optimism-chainspec",
- "reth-primitives",
- "reth-revm",
- "reth-trie",
- "revm-interpreter",
- "revm-precompile",
- "revm-primitives",
- "serde",
- "serde_json",
- "tracing",
-]
-
-[[package]]
-name = "rsp-witness-db"
-version = "0.1.0"
-dependencies = [
- "reth-primitives",
- "reth-storage-errors",
- "revm-primitives",
- "rsp-primitives",
- "serde",
 ]
 
 [[package]]

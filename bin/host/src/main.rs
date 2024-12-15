@@ -4,7 +4,12 @@ use openvm_algebra_circuit::ModularExtension;
 use openvm_benchmarks::utils::BenchmarkCli;
 use openvm_bigint_circuit::Int256;
 use openvm_circuit::arch::{instructions::exe::VmExe, SystemConfig, VmConfig, VmExecutor};
+use openvm_client_executor::{
+    io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET,
+    CHAIN_ID_OP_MAINNET,
+};
 use openvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
+use openvm_host_executor::HostExecutor;
 use openvm_native_compiler::conversion::CompilerOptions;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_rv32im_circuit::Rv32M;
@@ -18,11 +23,6 @@ use openvm_stark_sdk::{
     bench::run_with_metric_collection, config::FriParameters, p3_baby_bear::BabyBear,
 };
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
-use rsp_client_executor::{
-    io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET,
-    CHAIN_ID_OP_MAINNET,
-};
-use rsp_host_executor::HostExecutor;
 use std::{path::PathBuf, sync::Arc};
 
 pub use reth_primitives;
@@ -68,7 +68,7 @@ struct HostArgs {
     benchmark: BenchmarkCli,
 }
 
-const RSP_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/rsp-client-eth");
+const OPENVM_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/openvm-client-eth");
 
 fn reth_vm_config(
     app_log_blowup: usize,
@@ -179,7 +179,7 @@ async fn main() -> eyre::Result<()> {
 
     let vm_config = reth_vm_config(app_log_blowup, max_segment_length, args.collect_metrics);
     let sdk = Sdk;
-    let elf = Elf::decode(RSP_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
+    let elf = Elf::decode(OPENVM_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
     let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
     let mut compiler_options = CompilerOptions::default();

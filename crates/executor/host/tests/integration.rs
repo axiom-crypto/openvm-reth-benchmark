@@ -1,8 +1,8 @@
 use alloy_provider::ReqwestProvider;
-use rsp_client_executor::{
+use openvm_client_executor::{
     ChainVariant, ClientExecutor, EthereumVariant, LineaVariant, OptimismVariant, Variant,
 };
-use rsp_host_executor::HostExecutor;
+use openvm_host_executor::HostExecutor;
 use tracing_subscriber::{
     filter::EnvFilter, fmt, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
 };

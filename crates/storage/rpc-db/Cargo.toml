@@ -1,5 +1,5 @@
 [package]
-name = "rsp-rpc-db"
+name = "openvm-rpc-db"
 description = ""
 version.workspace = true
 edition.workspace = true
@@ -15,7 +15,7 @@ rayon.workspace = true
 rustc-hash.workspace = true
 
 # workspace
-rsp-primitives.workspace = true
+openvm-primitives.workspace = true
 
 # reth
 reth-primitives.workspace = true

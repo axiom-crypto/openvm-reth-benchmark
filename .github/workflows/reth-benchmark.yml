@@ -134,7 +134,7 @@ jobs:
           fi
           cargo openvm build --profile=$PROFILE
           mkdir -p ../host/elf
-          cp target/riscv32im-risc0-zkvm-elf/release/rsp-client-eth ../host/elf/
+          cp target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth ../host/elf/
 
       - name: Run Reth
         run: |
@@ -151,8 +151,8 @@ jobs:
             PROFILE="profiling"
             FEATURES="${FEATURES},profiling"
           fi
-          cargo build --bin rsp --profile=$PROFILE --no-default-features --features=$FEATURES
-          OUTPUT_PATH=${METRIC_PATH} RUSTFLAGS="-Ctarget-cpu=native" ./target/$PROFILE/rsp \
+          cargo build --bin openvm-reth-benchmark --profile=$PROFILE --no-default-features --features=$FEATURES
+          OUTPUT_PATH=${METRIC_PATH} RUSTFLAGS="-Ctarget-cpu=native" ./target/$PROFILE/openvm-reth-benchmark \
             --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
             --app-log-blowup ${{ inputs.app_log_blowup }} \
             --agg-log-blowup ${{ inputs.agg_log_blowup }} \
@@ -242,4 +242,4 @@ jobs:
           fi
       - name: Path to result
         run: |
-          echo "https://github.com/axiom-crypto/rsp/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_NAME}.md"
+          echo "https://github.com/axiom-crypto/openvm-reth-benchmark/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_NAME}.md"

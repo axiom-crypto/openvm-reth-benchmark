@@ -3,15 +3,15 @@ use std::{collections::BTreeSet, marker::PhantomData};
 use alloy_provider::{network::AnyNetwork, Provider};
 use alloy_transport::Transport;
 use eyre::{eyre, Ok};
+use openvm_client_executor::{
+    io::ClientExecutorInput, ChainVariant, EthereumVariant, LineaVariant, OptimismVariant, Variant,
+};
+use openvm_mpt::{state::HashedPostState, EthereumState};
+use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
+use openvm_rpc_db::RpcDb;
 use reth_execution_types::ExecutionOutcome;
 use reth_primitives::{proofs, Block, Bloom, Receipts, B256};
 use revm::db::CacheDB;
-use rsp_client_executor::{
-    io::ClientExecutorInput, ChainVariant, EthereumVariant, LineaVariant, OptimismVariant, Variant,
-};
-use rsp_mpt::{state::HashedPostState, EthereumState};
-use rsp_primitives::account_proof::eip1186_proof_to_account_proof;
-use rsp_rpc_db::RpcDb;
 
 /// An executor that fetches data from a [Provider] to execute blocks in the [ClientExecutor].
 #[derive(Debug, Clone)]

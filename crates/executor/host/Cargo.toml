@@ -1,5 +1,5 @@
 [package]
-name = "rsp-host-executor"
+name = "openvm-host-executor"
 description = ""
 version.workspace = true
 edition.workspace = true
@@ -18,11 +18,11 @@ tokio.workspace = true
 tracing.workspace = true
 
 # workspace
-rsp-rpc-db.workspace = true
-rsp-witness-db.workspace = true
-rsp-client-executor.workspace = true
-rsp-mpt = { workspace = true, features = ["preimage_context"] }
-rsp-primitives.workspace = true
+openvm-rpc-db.workspace = true
+openvm-witness-db.workspace = true
+openvm-client-executor.workspace = true
+openvm-mpt = { workspace = true, features = ["preimage_context"] }
+openvm-primitives.workspace = true
 
 # reth
 reth-codecs.workspace = true

@@ -1,5 +1,5 @@
 [package]
-name = "rsp-witness-db"
+name = "openvm-witness-db"
 description = ""
 version.workspace = true
 edition.workspace = true
@@ -10,7 +10,7 @@ repository.workspace = true
 serde.workspace = true
 
 # workspace
-rsp-primitives.workspace = true
+openvm-primitives.workspace = true
 
 # reth
 reth-primitives.workspace = true

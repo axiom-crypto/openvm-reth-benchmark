@@ -1,7 +1,7 @@
 use core::mem::transmute;
 
 use openvm::io::{println, read, reveal};
-use rsp_client_executor::{io::ClientExecutorInput, ClientExecutor, EthereumVariant};
+use openvm_client_executor::{io::ClientExecutorInput, ClientExecutor, EthereumVariant};
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
     openvm_bigint_guest, // trigger extern u256 (this may be unneeded)

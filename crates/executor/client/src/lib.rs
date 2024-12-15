@@ -10,6 +10,10 @@ use std::{borrow::BorrowMut, fmt::Display};
 use custom::CustomEvmConfig;
 use eyre::eyre;
 use io::ClientExecutorInput;
+#[allow(unused_imports)]
+pub use openvm_mpt;
+use openvm_mpt::state::HashedPostState;
+use openvm_primitives::chain_spec;
 use reth_chainspec::ChainSpec;
 use reth_errors::ProviderError;
 use reth_ethereum_consensus::validate_block_post_execution as validate_block_post_execution_ethereum;
@@ -23,10 +27,6 @@ pub use reth_primitives;
 use reth_primitives::{proofs, Block, BlockWithSenders, Bloom, Header, Receipt, Receipts, Request};
 use revm::{db::CacheDB, Database};
 use revm_primitives::{address, U256};
-#[allow(unused_imports)]
-pub use rsp_mpt;
-use rsp_mpt::state::HashedPostState;
-use rsp_primitives::chain_spec;
 
 /// Chain ID for Ethereum Mainnet.
 pub const CHAIN_ID_ETH_MAINNET: u64 = 0x1;
@@ -194,7 +194,7 @@ impl ClientExecutor {
 
 impl Variant for EthereumVariant {
     fn spec() -> ChainSpec {
-        rsp_primitives::chain_spec::mainnet()
+        openvm_primitives::chain_spec::mainnet()
     }
 
     fn execute<DB>(
@@ -225,7 +225,7 @@ impl Variant for EthereumVariant {
 
 impl Variant for OptimismVariant {
     fn spec() -> ChainSpec {
-        rsp_primitives::chain_spec::op_mainnet()
+        openvm_primitives::chain_spec::op_mainnet()
     }
 
     fn execute<DB>(
@@ -256,7 +256,7 @@ impl Variant for OptimismVariant {
 
 impl Variant for LineaVariant {
     fn spec() -> ChainSpec {
-        rsp_primitives::chain_spec::linea_mainnet()
+        openvm_primitives::chain_spec::linea_mainnet()
     }
 
     fn execute<DB>(

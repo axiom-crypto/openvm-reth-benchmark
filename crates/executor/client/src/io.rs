@@ -2,11 +2,11 @@ use std::iter::once;
 
 use eyre::Result;
 use itertools::Itertools;
+use openvm_mpt::EthereumState;
+use openvm_witness_db::WitnessDb;
 use reth_primitives::{Block, Header, B256, U256};
 use reth_trie::TrieAccount;
 use revm_primitives::{keccak256, AccountInfo, Address, Bytecode, HashMap};
-use rsp_mpt::EthereumState;
-use rsp_witness_db::WitnessDb;
 use rustc_hash::FxBuildHasher;
 use serde::{Deserialize, Serialize};
 

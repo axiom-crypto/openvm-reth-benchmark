@@ -1,5 +1,5 @@
 [package]
-name = "rsp-client-executor"
+name = "openvm-client-executor"
 description = ""
 version.workspace = true
 edition.workspace = true
@@ -19,9 +19,9 @@ rustc-hash.workspace = true
 hashbrown = { version = "0.14", features = ["rayon"] }
 
 # workspace
-rsp-witness-db.workspace = true
-rsp-primitives.workspace = true
-rsp-mpt.workspace = true
+openvm-witness-db.workspace = true
+openvm-primitives.workspace = true
+openvm-mpt.workspace = true
 
 # reth
 reth-ethereum-consensus.workspace = true

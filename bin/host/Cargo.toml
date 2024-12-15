@@ -1,6 +1,6 @@
 [package]
 version = "0.1.0"
-name = "rsp"
+name = "openvm-reth-benchmark"
 edition = "2021"
 
 [dependencies]
@@ -15,8 +15,8 @@ serde.workspace = true
 bincode = { workspace = true, features = ["std"] }
 metrics = "0.23.0"
 # workspace
-rsp-host-executor.workspace = true
-rsp-client-executor.workspace = true
+openvm-host-executor.workspace = true
+openvm-client-executor.workspace = true
 
 # alloy
 alloy-provider.workspace = true
@@ -45,4 +45,3 @@ bench-metrics = ["openvm-benchmarks/bench-metrics"]
 profiling = ["bench-metrics", "openvm-circuit/function-span"]
 mimalloc = ["openvm-benchmarks/mimalloc"]
 jemalloc = ["openvm-benchmarks/jemalloc"]
-# cuda = ["sp1-sdk/cuda"]

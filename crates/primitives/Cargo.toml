@@ -1,5 +1,5 @@
 [package]
-name = "rsp-primitives"
+name = "openvm-primitives"
 description = ""
 version.workspace = true
 edition.workspace = true
