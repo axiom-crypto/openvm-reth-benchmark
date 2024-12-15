@@ -61,9 +61,9 @@ on:
         default: 8388508 # 2**23 - 100
 
 env:
-  S3_PATH: s3://axiom-workflow-data-sandbox-us-east-1/benchmark/github/results
-  S3_METRICS_PATH: s3://axiom-workflow-data-sandbox-us-east-1/benchmark/github/metrics
-  PUBLIC_S3_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/flamegraphs
+  S3_PATH: s3://openvm-public-data-sandbox-us-east-1/benchmark/github/results
+  S3_METRICS_PATH: s3://openvm-public-data-sandbox-us-east-1/benchmark/github/metrics
+  PUBLIC_S3_PATH: s3://openvm-public-data-sandbox-us-east-1/benchmark/github/flamegraphs
   FEATURE_FLAGS: "bench-metrics,parallel,nightly-features"
   CMD_ARGS: ""
   INPUT_ARGS: ""
@@ -171,16 +171,16 @@ jobs:
           source openvm/ci/scripts/utils.sh
           generate_markdown $METRIC_PATH $METRIC_NAME ${{ env.S3_METRICS_PATH }} "./openvm"
 
-      - name: Install inferno-flamegraph
-        run: cargo install inferno
+      # - name: Install inferno-flamegraph
+      #   run: cargo install inferno
 
-      - name: Generate flamegraphs
-        run: |
-          if [[ -f $METRIC_PATH ]]; then
-            python3 openvm/ci/scripts/metric_unify/flamegraph.py $METRIC_PATH
-            s5cmd cp '.bench_metrics/flamegraphs/*.svg' "${{ env.PUBLIC_S3_PATH }}/${current_sha}/"
-            echo "UPLOAD_FLAMEGRAPHS=1" >> $GITHUB_ENV
-          fi
+      # - name: Generate flamegraphs
+      #   run: |
+      #     if [[ -f $METRIC_PATH ]]; then
+      #       python3 openvm/ci/scripts/metric_unify/flamegraph.py $METRIC_PATH
+      #       s5cmd cp '.bench_metrics/flamegraphs/*.svg' "${{ env.PUBLIC_S3_PATH }}/${current_sha}/"
+      #       echo "UPLOAD_FLAMEGRAPHS=1" >> $GITHUB_ENV
+      #     fi
 
       - name: Add benchmark metadata to markdown, and upload
         run: |
