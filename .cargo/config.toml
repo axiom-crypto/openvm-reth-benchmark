@@ -48,3 +48,9 @@ git-fetch-with-cli = true
 # openvm-rv32im-circuit = { path = "../openvm/extensions/rv32im/circuit", default-features = false }
 # openvm-rv32im-transpiler = { path = "../openvm/extensions/rv32im/transpiler", default-features = false }
 # openvm-rv32im-guest = { path = "../openvm/extensions/rv32im/guest", default-features = false }
+
+# [patch.crates-io]
+# revm = { path = "../revm/crates/revm" }
+# revm-primitives = { path = "../revm/crates/primitives" }
+# revm-interpreter = { path = "../revm/crates/interpreter" }
+# revm-precompile = { path = "../revm/crates/precompile" }

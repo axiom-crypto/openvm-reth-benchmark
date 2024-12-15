@@ -10,13 +10,19 @@ rustc-hash = "2.1.0"
 # workspace
 rsp-client-executor = { path = "../../crates/executor/client" }
 
+revm-precompile = { version = "11.0.1", default-features = false, features = [
+    "openvm",
+] }
+
 # openvm
 openvm = { git = "ssh://git@github.com/openvm-org/openvm.git", features = [
     "std",
 ] }
 openvm-keccak256-guest = { git = "ssh://git@github.com/openvm-org/openvm.git" }
 openvm-algebra-guest = { git = "ssh://git@github.com/openvm-org/openvm.git" }
-openvm-ecc-guest = { git = "ssh://git@github.com/openvm-org/openvm.git" }
+openvm-ecc-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", features = [
+    "k256",
+] }
 openvm-bigint-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", features = [
     "export-intrinsics",
 ] }
@@ -33,11 +39,15 @@ default = []
 heap-embedded-alloc = ["openvm/heap-embedded-alloc"]
 
 [patch.crates-io]
-revm = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "openvm" }
-revm-primitives = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "openvm" }
-revm-interpreter = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "openvm" }
-revm-precompile = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "openvm" }
-ruint = { git = "ssh://git@github.com/axiom-crypto/uint", branch = "v1.12.3-patched" }
+# revm = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "openvm" }
+# revm-primitives = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "openvm" }
+# revm-interpreter = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "openvm" }
+# revm-precompile = { git = "ssh://git@github.com/axiom-crypto/revm", branch = "openvm" }
+# ruint = { git = "ssh://git@github.com/axiom-crypto/uint", branch = "v1.12.3-patched" }
+revm = { path = "../../../revm/crates/revm" }
+revm-primitives = { path = "../../../revm/crates/primitives" }
+revm-interpreter = { path = "../../../revm/crates/interpreter" }
+revm-precompile = { path = "../../../revm/crates/precompile" }
 
 [profile.release]
 panic = "abort"

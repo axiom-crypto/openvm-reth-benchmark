@@ -1,17 +1,13 @@
 use core::mem::transmute;
 
-<<<<<<< HEAD
 use openvm::io::{println, read, reveal};
-use openvm_ecc_guest::k256::Secp256k1Coord;
-=======
-use axvm::io::{println, read, reveal};
-#[allow(unused_imports)]
-use axvm_bigint_guest; // trigger extern u256 (this may be unneeded)
-use axvm_ecc_guest::k256::Secp256k1Coord;
->>>>>>> b2602e5 (feat: patch `ruint` U256 (#18))
-#[allow(unused_imports)]
-use openvm_keccak256_guest; // trigger extern native-keccak256
 use rsp_client_executor::{io::ClientExecutorInput, ClientExecutor, EthereumVariant};
+#[allow(unused_imports)]
+use {
+    openvm_bigint_guest, // trigger extern u256 (this may be unneeded)
+    openvm_ecc_guest::k256::Secp256k1Coord,
+    openvm_keccak256_guest, // trigger extern native-keccak256
+};
 
 openvm_algebra_guest::moduli_setup::moduli_init! {
     "0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE FFFFFC2F",
