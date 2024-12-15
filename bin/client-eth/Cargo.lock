@@ -30,15 +30,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aho-corasick"
-version = "1.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e60d3430d3a69478ad0993f19238d2df97c507009a52b3c10addcd7f6bcb916"
-dependencies = [
- "memchr",
-]
-
-[[package]]
 name = "allocator-api2"
 version = "0.2.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1721,16 +1712,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
 
 [[package]]
-name = "metrics"
-version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "884adb57038347dfbaf2d5065887b6cf4312330dc8e94bc30a1a839bd79d3261"
-dependencies = [
- "ahash",
- "portable-atomic",
-]
-
-[[package]]
 name = "miniz_oxide"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2141,7 +2122,6 @@ dependencies = [
  "arrayvec",
  "bitvec",
  "byte-slice-cast",
- "bytes",
  "impl-trait-for-tuples",
  "parity-scale-codec-derive",
  "serde",
@@ -2218,12 +2198,6 @@ dependencies = [
  "der",
  "spki",
 ]
-
-[[package]]
-name = "portable-atomic"
-version = "1.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "280dc24453071f1b63954171985a0b0d30058d287960968b9b2aca264c8d4ee6"
 
 [[package]]
 name = "powerfmt"
@@ -2402,29 +2376,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "regex"
-version = "1.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b544ef1b4eac5dc2db33ea63606ae9ffcfac26c1416a2806ae0bf5f56b201191"
-dependencies = [
- "aho-corasick",
- "memchr",
- "regex-automata",
- "regex-syntax",
-]
-
-[[package]]
-name = "regex-automata"
-version = "0.4.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "809e8dc61f6de73b46c85f4c96486310fe304c434cfa43669d7b40f711150908"
-dependencies = [
- "aho-corasick",
- "memchr",
- "regex-syntax",
-]
-
-[[package]]
 name = "regex-syntax"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2432,10 +2383,9 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "reth-blockchain-tree-api"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
- "alloy-primitives",
  "reth-consensus",
  "reth-execution-errors",
  "reth-primitives",
@@ -2445,8 +2395,8 @@ dependencies = [
 
 [[package]]
 name = "reth-chainspec"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "alloy-chains",
  "alloy-eips",
@@ -2467,8 +2417,8 @@ dependencies = [
 
 [[package]]
 name = "reth-codecs"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -2477,15 +2427,14 @@ dependencies = [
  "alloy-trie",
  "bytes",
  "modular-bitfield",
- "op-alloy-consensus",
  "reth-codecs-derive",
  "serde",
 ]
 
 [[package]]
 name = "reth-codecs-derive"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "convert_case",
  "proc-macro2",
@@ -2495,10 +2444,9 @@ dependencies = [
 
 [[package]]
 name = "reth-consensus"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
- "alloy-primitives",
  "auto_impl",
  "derive_more",
  "reth-primitives",
@@ -2506,43 +2454,19 @@ dependencies = [
 
 [[package]]
 name = "reth-consensus-common"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
- "alloy-primitives",
  "reth-chainspec",
  "reth-consensus",
  "reth-primitives",
 ]
 
 [[package]]
-name = "reth-db-api"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
-dependencies = [
- "alloy-primitives",
- "bytes",
- "derive_more",
- "metrics",
- "modular-bitfield",
- "parity-scale-codec",
- "reth-codecs",
- "reth-db-models",
- "reth-primitives",
- "reth-primitives-traits",
- "reth-prune-types",
- "reth-stages-types",
- "reth-storage-errors",
- "reth-trie-common",
- "serde",
-]
-
-[[package]]
 name = "reth-db-models"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
- "alloy-primitives",
  "bytes",
  "modular-bitfield",
  "reth-codecs",
@@ -2552,8 +2476,8 @@ dependencies = [
 
 [[package]]
 name = "reth-errors"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "reth-blockchain-tree-api",
  "reth-consensus",
@@ -2565,8 +2489,8 @@ dependencies = [
 
 [[package]]
 name = "reth-ethereum-consensus"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "reth-chainspec",
  "reth-consensus",
@@ -2577,8 +2501,8 @@ dependencies = [
 
 [[package]]
 name = "reth-ethereum-forks"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "alloy-chains",
  "alloy-primitives",
@@ -2594,19 +2518,16 @@ dependencies = [
 
 [[package]]
 name = "reth-evm"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "alloy-eips",
  "auto_impl",
  "futures-util",
- "metrics",
  "reth-chainspec",
  "reth-execution-errors",
  "reth-execution-types",
- "reth-metrics",
  "reth-primitives",
- "reth-primitives-traits",
  "reth-prune-types",
  "reth-storage-errors",
  "revm",
@@ -2615,8 +2536,8 @@ dependencies = [
 
 [[package]]
 name = "reth-evm-ethereum"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "alloy-eips",
  "alloy-sol-types",
@@ -2633,16 +2554,14 @@ dependencies = [
 
 [[package]]
 name = "reth-evm-optimism"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
- "alloy-primitives",
  "reth-chainspec",
  "reth-ethereum-forks",
  "reth-evm",
  "reth-execution-errors",
  "reth-execution-types",
- "reth-optimism-chainspec",
  "reth-optimism-consensus",
  "reth-primitives",
  "reth-prune-types",
@@ -2655,8 +2574,8 @@ dependencies = [
 
 [[package]]
 name = "reth-execution-errors"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -2671,8 +2590,8 @@ dependencies = [
 
 [[package]]
 name = "reth-execution-types"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "reth-chainspec",
  "reth-execution-errors",
@@ -2683,8 +2602,8 @@ dependencies = [
 
 [[package]]
 name = "reth-fs-util"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "serde",
  "serde_json",
@@ -2692,29 +2611,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "reth-metrics"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
-dependencies = [
- "metrics",
- "reth-metrics-derive",
-]
-
-[[package]]
-name = "reth-metrics-derive"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
-dependencies = [
- "proc-macro2",
- "quote",
- "regex",
- "syn 2.0.90",
-]
-
-[[package]]
 name = "reth-network-peers"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -2726,8 +2625,8 @@ dependencies = [
 
 [[package]]
 name = "reth-optimism-chainspec"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "alloy-chains",
  "alloy-primitives",
@@ -2741,22 +2640,20 @@ dependencies = [
 
 [[package]]
 name = "reth-optimism-consensus"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
- "alloy-primitives",
  "reth-chainspec",
  "reth-consensus",
  "reth-consensus-common",
  "reth-primitives",
- "reth-trie-common",
  "tracing",
 ]
 
 [[package]]
 name = "reth-primitives"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -2769,11 +2666,9 @@ dependencies = [
  "derive_more",
  "k256",
  "once_cell",
- "op-alloy-consensus",
  "op-alloy-rpc-types",
  "rayon",
  "reth-chainspec",
- "reth-codecs",
  "reth-ethereum-forks",
  "reth-optimism-chainspec",
  "reth-primitives-traits",
@@ -2782,12 +2677,13 @@ dependencies = [
  "revm-precompile",
  "revm-primitives",
  "serde",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
 name = "reth-primitives-traits"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -2807,8 +2703,8 @@ dependencies = [
 
 [[package]]
 name = "reth-prune-types"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "alloy-primitives",
  "bytes",
@@ -2821,8 +2717,8 @@ dependencies = [
 
 [[package]]
 name = "reth-revm"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "reth-chainspec",
  "reth-consensus-common",
@@ -2836,8 +2732,8 @@ dependencies = [
 
 [[package]]
 name = "reth-stages-types"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "alloy-primitives",
  "bytes",
@@ -2849,8 +2745,8 @@ dependencies = [
 
 [[package]]
 name = "reth-static-file-types"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "alloy-primitives",
  "derive_more",
@@ -2860,14 +2756,11 @@ dependencies = [
 
 [[package]]
 name = "reth-storage-api"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
- "alloy-eips",
- "alloy-primitives",
  "auto_impl",
  "reth-chainspec",
- "reth-db-api",
  "reth-db-models",
  "reth-execution-types",
  "reth-primitives",
@@ -2879,11 +2772,9 @@ dependencies = [
 
 [[package]]
 name = "reth-storage-errors"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
- "alloy-eips",
- "alloy-primitives",
  "alloy-rlp",
  "derive_more",
  "reth-fs-util",
@@ -2892,10 +2783,9 @@ dependencies = [
 
 [[package]]
 name = "reth-trie"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
- "alloy-primitives",
  "alloy-rlp",
  "auto_impl",
  "derive_more",
@@ -2912,8 +2802,8 @@ dependencies = [
 
 [[package]]
 name = "reth-trie-common"
-version = "1.0.7"
-source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.7#0ae926d47adccb76aa3f4969df9bc18c4d383146"
+version = "1.0.6"
+source = "git+ssh://git@github.com/axiom-crypto/reth?branch=openvm%2Fv1.0.6#06be1a5ec87b8ce2d2793b12192a335255674164"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
@@ -2932,7 +2822,8 @@ dependencies = [
 
 [[package]]
 name = "revm"
-version = "14.0.2"
+version = "14.0.1"
+source = "git+ssh://git@github.com/axiom-crypto/revm?branch=v43-openvm#040bfe99a5753886aab909d4ea2f887f8e810e62"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -2945,7 +2836,8 @@ dependencies = [
 
 [[package]]
 name = "revm-interpreter"
-version = "10.0.2"
+version = "10.0.1"
+source = "git+ssh://git@github.com/axiom-crypto/revm?branch=v43-openvm#040bfe99a5753886aab909d4ea2f887f8e810e62"
 dependencies = [
  "revm-primitives",
  "serde",
@@ -2953,7 +2845,8 @@ dependencies = [
 
 [[package]]
 name = "revm-precompile"
-version = "11.0.2"
+version = "11.0.1"
+source = "git+ssh://git@github.com/axiom-crypto/revm?branch=v43-openvm#040bfe99a5753886aab909d4ea2f887f8e810e62"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -2963,7 +2856,6 @@ dependencies = [
  "openvm",
  "openvm-ecc-guest",
  "openvm-keccak256-guest",
- "openvm-pairing-guest",
  "p256",
  "revm-primitives",
  "ripemd",
@@ -2974,7 +2866,8 @@ dependencies = [
 
 [[package]]
 name = "revm-primitives"
-version = "9.0.2"
+version = "9.0.1"
+source = "git+ssh://git@github.com/axiom-crypto/revm?branch=v43-openvm#040bfe99a5753886aab909d4ea2f887f8e810e62"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -3047,10 +2940,13 @@ version = "0.0.0"
 dependencies = [
  "log",
  "openvm",
+ "openvm-algebra-complex-macros",
  "openvm-algebra-guest",
  "openvm-bigint-guest",
  "openvm-ecc-guest",
  "openvm-keccak256-guest",
+ "openvm-pairing-guest",
+ "openvm-platform",
  "revm-precompile",
  "rsp-client-executor",
  "rustc-hash",
@@ -3149,8 +3045,7 @@ dependencies = [
 [[package]]
 name = "ruint"
 version = "1.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c3cc4c2511671f327125da14133d0c5c5d137f006a1017a16f557bc85b16286"
+source = "git+ssh://git@github.com/axiom-crypto/uint?branch=v1.12.3-patched#f4c9d52daa9aa4a329ce0e6b342f55bffe2f05c3"
 dependencies = [
  "alloy-rlp",
  "ark-ff 0.3.0",
@@ -3173,8 +3068,7 @@ dependencies = [
 [[package]]
 name = "ruint-macro"
 version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48fd7bd8a6377e15ad9d42a8ec25371b94ddc67abe7c8b9127bec79bebaaae18"
+source = "git+ssh://git@github.com/axiom-crypto/uint?branch=v1.12.3-patched#f4c9d52daa9aa4a329ce0e6b342f55bffe2f05c3"
 
 [[package]]
 name = "rustc-demangle"

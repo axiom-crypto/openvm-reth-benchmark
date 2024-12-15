@@ -1,6 +1,6 @@
 use reth_chainspec::{
-    once_cell_set, BaseFeeParams, BaseFeeParamsKind, Chain, ChainHardforks, ChainSpec,
-    DepositContract, EthereumHardfork, ForkCondition, OptimismHardfork,
+    BaseFeeParams, BaseFeeParamsKind, Chain, ChainHardforks, ChainSpec, DepositContract,
+    EthereumHardfork, ForkCondition, OptimismHardfork,
 };
 use reth_primitives::{constants::ETHEREUM_BLOCK_GAS_LIMIT, MAINNET_GENESIS_HASH};
 use revm_primitives::{address, b256, U256};
@@ -9,20 +9,37 @@ use revm_primitives::{address, b256, U256};
 pub fn mainnet() -> ChainSpec {
     // Spec extracted from:
     //
-    // https://github.com/paradigmxyz/reth/blob/v1.0.7/crates/chainspec/src/spec.rs#L29
+    // https://github.com/paradigmxyz/reth/blob/c228fe15808c3acbf18dc3af1a03ef5cbdcda07a/crates/chainspec/src/spec.rs#L35-L60
     let mut spec = ChainSpec {
         chain: Chain::mainnet(),
         // We don't need the genesis state. Using default to save cycles.
         genesis: Default::default(),
-        genesis_hash: once_cell_set(MAINNET_GENESIS_HASH),
-        genesis_header: Default::default(),
-        // <https://etherscan.io/block/15537394>
-        paris_block_and_final_difficulty: Some((
-            15537394,
-            U256::from(58_750_003_716_598_352_816_469u128),
-        )),
-        hardforks: EthereumHardfork::mainnet().into(),
-        // https://etherscan.io/tx/0xe75fb554e433e03763a1560646ee22dcb74e5274b34c5ad644e7c0f619a7e1d0
+        genesis_hash: Some(MAINNET_GENESIS_HASH),
+        paris_block_and_final_difficulty: Some((0, U256::ZERO)),
+        // For some reasons a state root mismatch error arises if we don't force activate everything
+        // before and including Shanghai.
+        hardforks: ChainHardforks::new(vec![
+            (EthereumHardfork::Frontier.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::Homestead.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::Dao.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::Tangerine.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::SpuriousDragon.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::Byzantium.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::Constantinople.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::Petersburg.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::Istanbul.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::MuirGlacier.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::Berlin.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::London.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::ArrowGlacier.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::GrayGlacier.boxed(), ForkCondition::Block(0)),
+            (
+                EthereumHardfork::Paris.boxed(),
+                ForkCondition::TTD { fork_block: Some(0), total_difficulty: U256::ZERO },
+            ),
+            (EthereumHardfork::Shanghai.boxed(), ForkCondition::Timestamp(0)),
+            (EthereumHardfork::Cancun.boxed(), ForkCondition::Timestamp(1710338135)),
+        ]),
         deposit_contract: Some(DepositContract::new(
             address!("00000000219ab540356cbb839cbe05303d7705fa"),
             11052984,
@@ -45,7 +62,7 @@ pub fn op_mainnet() -> ChainSpec {
         chain: Chain::optimism_mainnet(),
         // We don't need the genesis state. Using default to save cycles.
         genesis: Default::default(),
-        genesis_hash: once_cell_set(b256!(
+        genesis_hash: Some(b256!(
             "7ca38a1916c42007829c55e69d3e9a73265554b586a499015373241b8a3fa48b"
         )),
         paris_block_and_final_difficulty: Some((0, U256::ZERO)),
