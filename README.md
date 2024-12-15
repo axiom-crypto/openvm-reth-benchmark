@@ -7,63 +7,6 @@ framework to generate zero-knowledge proofs of EVM block execution on Ethereum M
 >
 > This repository is still an active work-in-progress and is not audited or meant for production usage.
 
-## [WIP] openvm
-
-Instructions to run:
-In openvm repo:
-
-```bash
-cd crates/cargo-axiom
-cargo install --force --path .
-```
-
-to install `cargo axiom`.
-
-In this repo,
-
-```bash
-cd bin/client-eth
-cargo axiom build
-mkdir -p ../host/elf
-cp target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth ../host/elf/
-cd ../..
-```
-
-install any rust stuff it tells you to.
-
-To run
-
-```bash
-mkdir rpc-cache
-MODE=prove-e2e # can be execute, prove, or prove-e2e
-RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info OUTPUT_PATH="metrics.json" cargo run --bin rsp --release -- --$MODE --block-number 20526624 --rpc-url $RPC_1 --cache-dir rpc-cache
-```
-
-Get an archive node rpc url for $RPC_1 for eth mainnet.
-Optional flag: `--collect-metrics` will collect metrics for flamegraphs [NOTE: this slows down execution significantly].
-In order to run `prove-e2e`, you need to download the KZG trusted setup for halo2 into the `params` folder.
-
-```
-bash path-to-afs-prototype/extensions/native/recursion/trusted_setup_s3.sh
-```
-
-This will download the trusted setup from s3 and put it in a `params` folder. Set `PARAMS_DIR` to the path of the `params` folder.
-
-To collect detailed metrics of instructions used and trace cell breakdowns, run
-
-```bash
-RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info OUTPUT_PATH="metrics.json" cargo run --bin rsp --profile=profiling -- --execute --block-number 20526624 --rpc-url $RPC_1 --cache-dir rpc-cache --collect-metrics
-```
-
-This will only execute the runtime (without proving), but collect many metrics that are output into the `OUTPUT_PATH` file.
-
-```bash
-<afs-prototype>/ci/scripts/metric_unify/flamegraph.py $OUTPUT_PATH # generates flamegraphs
-<afs-prototype>/ci/scripts/metric_unify/main.py $OUTPUT_PATH --aggregation-json <afs-prototype>/ci/scripts/metric_unify/aggregation.json # generates markdown
-```
-
-TODO: upload the specialized script to generating pretty markdown.
-
 ## Getting Started
 
 To run these benchmarks locally, you must first have [Rust](https://www.rust-lang.org/tools/install) installed. Then follow the rest of the instructions below.
@@ -156,6 +99,22 @@ This will generate proofs locally on your machine. Given how large these program
 ### Generating Proof for On-Chain Verification
 
 In order to have a single proof of small size for on-chain verification in the EVM, the OpenVM framework uses proof aggregation and STARK-to-SNARK recursion to generate a final proof for verification in a smart contract.
+
+Before running the benchmark, you will need to download a KZG trusted setup necessary for generating the Halo2 SNARK proofs:
+
+```bash
+#!/bin/bash
+
+for k in {5..24}
+do
+    wget "https://axiom-crypto.s3.amazonaws.com/challenge_0085/kzg_bn254_${k}.srs"
+    # for faster download, install s5cmd and use:
+    # s5cmd --no-sign-request cp --concurrency 10 "s3://axiom-crypto/challenge_0085/${pkey_file}" .
+done
+
+mv *.srs params/
+export PARAMS_DIR=$(pwd)/params
+```
 
 To run the full end-to-end benchmark for EVM verification, run:
 
