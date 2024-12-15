@@ -18,7 +18,7 @@ use reth_revm::{
     handler::register::EvmHandler, precompile::PrecompileSpecId, primitives::Env,
     ContextPrecompiles, Database, Evm, EvmBuilder,
 };
-use revm::precompile::{bn128, secp256k1, Precompile, PrecompileResult, PrecompileWithAddress}; // todo: kzg_point_evaluation
+use revm::precompile::{bn128, secp256k1, Precompile, PrecompileResult, PrecompileWithAddress}; /* todo: kzg_point_evaluation */
 use std::sync::Arc;
 
 /// Create an annotated precompile that tracks the cycle count of a precompile.
@@ -57,8 +57,8 @@ macro_rules! create_annotated_precompile {
 //                     "kzg-point-evaluation"
 //                 ));
 //                 let result = precompile(input, gas_limit, env);
-//                 println!(concat!("cycle-tracker-report-end: precompile-", "kzg-point-evaluation"));
-//                 result
+//                 println!(concat!("cycle-tracker-report-end: precompile-",
+// "kzg-point-evaluation"));                 result
 //             }
 //             _ => panic!("Annotated precompile must be a env precompile."),
 //         }
