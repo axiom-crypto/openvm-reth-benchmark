@@ -79,7 +79,9 @@ where `$arch` is the architecture of your machine (e.g. `x86_64` or `aarch64`).
 To execute the guest program for only the OpenVM runtime (without proving), for example to collect metrics such as cycle counts, run:
 
 ```bash
-RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info OUTPUT_PATH="metrics.json" cargo run --bin openvm-reth-benchmark --release -- --execute --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
+RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info OUTPUT_PATH="metrics.json" \
+cargo run --bin openvm-reth-benchmark --release -- \
+--execute --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
 ```
 
 By default a minimal set of metrics will be collected and output to a `metrics.json` file.
@@ -91,7 +93,9 @@ The overall program for executing an Ethereum block may be long depending on how
 To prove all segments of the block execution program (without aggregation, see next section for that), run:
 
 ```bash
-RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info OUTPUT_PATH="metrics.json" cargo run --bin openvm-reth-benchmark --release -- --prove --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
+RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info OUTPUT_PATH="metrics.json" \
+cargo run --bin openvm-reth-benchmark --release -- \
+--prove --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
 ```
 
 This will generate proofs locally on your machine. Given how large these programs are, it might take a while for the proof to generate.
@@ -119,7 +123,9 @@ export PARAMS_DIR=$(pwd)/params
 To run the full end-to-end benchmark for EVM verification, run:
 
 ```bash
-RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info OUTPUT_PATH="metrics.json" cargo run --bin openvm-reth-benchmark --release -- --prove-e2e --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
+RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info OUTPUT_PATH="metrics.json" \
+cargo run --bin openvm-reth-benchmark --release -- \
+--prove-e2e --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
 ```
 
 ### Summarizing Benchmark Results
