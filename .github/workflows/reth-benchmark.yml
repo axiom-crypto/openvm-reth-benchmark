@@ -132,7 +132,7 @@ jobs:
           if [[ "${{ inputs.collect_metrics }}" == "true" ]]; then
             PROFILE="profiling"
           fi
-          cargo openvm build --profile=$PROFILE
+          cargo openvm build --no-transpile --profile=$PROFILE
           mkdir -p ../host/elf
           cp target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth ../host/elf/
 

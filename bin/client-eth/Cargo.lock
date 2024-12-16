@@ -1931,7 +1931,7 @@ dependencies = [
 [[package]]
 name = "openvm"
 version = "0.1.0-alpha"
-source = "git+ssh://git@github.com/openvm-org/openvm.git#6c0c0e25ef70dba8a8505880e99e31b58b094626"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#93e489081af7e91d23c1a50d49063e898857c807"
 dependencies = [
  "bytemuck",
  "hex-literal",
@@ -1945,7 +1945,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-complex-macros"
 version = "0.1.0"
-source = "git+ssh://git@github.com/openvm-org/openvm.git#6c0c0e25ef70dba8a8505880e99e31b58b094626"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#93e489081af7e91d23c1a50d49063e898857c807"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -1955,7 +1955,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-guest"
 version = "0.1.0-alpha"
-source = "git+ssh://git@github.com/openvm-org/openvm.git#6c0c0e25ef70dba8a8505880e99e31b58b094626"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#93e489081af7e91d23c1a50d49063e898857c807"
 dependencies = [
  "halo2curves-axiom",
  "num-bigint-dig",
@@ -1970,7 +1970,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-moduli-setup"
 version = "0.1.0-alpha"
-source = "git+ssh://git@github.com/openvm-org/openvm.git#6c0c0e25ef70dba8a8505880e99e31b58b094626"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#93e489081af7e91d23c1a50d49063e898857c807"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -1980,7 +1980,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-guest"
 version = "0.1.0-alpha"
-source = "git+ssh://git@github.com/openvm-org/openvm.git#6c0c0e25ef70dba8a8505880e99e31b58b094626"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#93e489081af7e91d23c1a50d49063e898857c807"
 dependencies = [
  "num-bigint-dig",
  "num-traits",
@@ -2048,7 +2048,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-guest"
 version = "0.1.0-alpha"
-source = "git+ssh://git@github.com/openvm-org/openvm.git#6c0c0e25ef70dba8a8505880e99e31b58b094626"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#93e489081af7e91d23c1a50d49063e898857c807"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -2075,7 +2075,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-sw-setup"
 version = "0.1.0-alpha"
-source = "git+ssh://git@github.com/openvm-org/openvm.git#6c0c0e25ef70dba8a8505880e99e31b58b094626"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#93e489081af7e91d23c1a50d49063e898857c807"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2085,7 +2085,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-guest"
 version = "0.1.0-alpha"
-source = "git+ssh://git@github.com/openvm-org/openvm.git#6c0c0e25ef70dba8a8505880e99e31b58b094626"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#93e489081af7e91d23c1a50d49063e898857c807"
 dependencies = [
  "openvm-platform",
  "serde",
@@ -2095,7 +2095,7 @@ dependencies = [
 [[package]]
 name = "openvm-macros-common"
 version = "0.1.0-alpha"
-source = "git+ssh://git@github.com/openvm-org/openvm.git#6c0c0e25ef70dba8a8505880e99e31b58b094626"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#93e489081af7e91d23c1a50d49063e898857c807"
 dependencies = [
  "syn 2.0.90",
 ]
@@ -2126,7 +2126,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-guest"
 version = "0.1.0-alpha"
-source = "git+ssh://git@github.com/openvm-org/openvm.git#6c0c0e25ef70dba8a8505880e99e31b58b094626"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#93e489081af7e91d23c1a50d49063e898857c807"
 dependencies = [
  "group",
  "hex-literal",
@@ -2151,7 +2151,7 @@ dependencies = [
 [[package]]
 name = "openvm-platform"
 version = "0.1.0-alpha"
-source = "git+ssh://git@github.com/openvm-org/openvm.git#6c0c0e25ef70dba8a8505880e99e31b58b094626"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#93e489081af7e91d23c1a50d49063e898857c807"
 dependencies = [
  "critical-section",
  "embedded-alloc",
@@ -2183,7 +2183,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-guest"
 version = "0.1.0-alpha"
-source = "git+ssh://git@github.com/openvm-org/openvm.git#6c0c0e25ef70dba8a8505880e99e31b58b094626"
+source = "git+ssh://git@github.com/openvm-org/openvm.git#93e489081af7e91d23c1a50d49063e898857c807"
 dependencies = [
  "openvm-platform",
  "strum_macros",
