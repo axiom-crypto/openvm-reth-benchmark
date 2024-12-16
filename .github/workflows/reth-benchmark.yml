@@ -91,6 +91,10 @@ jobs:
       - name: Install cargo-openvm
         run: |
           cargo install --git https://github.com/openvm-org/openvm.git --tag v0.1.0-alpha cargo-openvm
+      - name: Checkout openvm (for scripts)
+        run: |
+          git clone https://github.com:openvm-org/openvm.git
+
       - name: Install architecture specific tools
         run: |
           source openvm/ci/scripts/utils.sh
