@@ -1,6 +1,6 @@
 use alloy_provider::ReqwestProvider;
 use clap::{ArgGroup, Parser};
-use openvm_algebra_circuit::ModularExtension;
+use openvm_algebra_circuit::{Fp2Extension, ModularExtension};
 use openvm_benchmarks::utils::BenchmarkCli;
 use openvm_bigint_circuit::Int256;
 use openvm_circuit::arch::{instructions::exe::VmExe, SystemConfig, VmConfig, VmExecutor};
@@ -101,6 +101,7 @@ fn reth_vm_config(
             bn_config.modulus.clone(),
             bn_config.scalar.clone(),
         ]))
+        .fp2(Fp2Extension::new(vec![bn_config.modulus.clone()]))
         .ecc(WeierstrassExtension::new(vec![SECP256K1_CONFIG.clone(), bn_config.clone()]))
         .pairing(PairingExtension::new(vec![PairingCurve::Bn254]))
         .build()
