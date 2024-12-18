@@ -94,7 +94,7 @@ jobs:
 
       - name: Checkout openvm
         run: |
-          git clone git@github.com:openvm-org/openvm.git
+          git clone https://github.com/openvm-org/openvm.git
 
       - name: Display workflow inputs
         run: echo "${{ toJSON(github.event.inputs) }}"
