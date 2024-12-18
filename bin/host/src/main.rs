@@ -96,10 +96,10 @@ fn reth_vm_config(
         .keccak(Default::default())
         .bigint(int256)
         .modular(ModularExtension::new(vec![
-            SECP256K1_CONFIG.modulus.clone(),
-            SECP256K1_CONFIG.scalar.clone(),
             bn_config.modulus.clone(),
             bn_config.scalar.clone(),
+            SECP256K1_CONFIG.modulus.clone(),
+            SECP256K1_CONFIG.scalar.clone(),
         ]))
         .fp2(Fp2Extension::new(vec![bn_config.modulus.clone()]))
         .ecc(WeierstrassExtension::new(vec![SECP256K1_CONFIG.clone(), bn_config.clone()]))
