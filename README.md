@@ -58,7 +58,7 @@ Before running the benchmark, you must first compile the guest program using `ca
 
 ```bash
 cd bin/client-eth
-cargo openvm build
+cargo openvm build --no-transpile
 mkdir -p ../host/elf
 cp target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth ../host/elf/
 cd ../..

@@ -193,7 +193,7 @@ async fn main() -> eyre::Result<()> {
     let program_name = "reth_block";
     let app_config = AppConfig {
         app_vm_config: vm_config.clone(),
-        app_fri_params,
+        app_fri_params: app_fri_params.into(),
         leaf_fri_params: leaf_fri_params.into(),
         compiler_options,
     };
