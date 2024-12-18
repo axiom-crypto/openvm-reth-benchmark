@@ -136,6 +136,7 @@ openvm-algebra-circuit = { git = "https://github.com/openvm-org/openvm.git", tag
 openvm-algebra-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.0-alpha", default-features = false }
 openvm-ecc-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.0-alpha", default-features = false }
 openvm-ecc-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.0-alpha", default-features = false }
+openvm-pairing-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.0-alpha", default-features = false }
 openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.0-alpha", default-features = false }
 openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.0-alpha", default-features = false }
 openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.0-alpha", default-features = false }

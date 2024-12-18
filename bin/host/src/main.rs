@@ -12,6 +12,7 @@ use openvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
 use openvm_host_executor::HostExecutor;
 use openvm_native_compiler::conversion::CompilerOptions;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
+use openvm_pairing_circuit::{PairingCurve, PairingExtension};
 use openvm_rv32im_circuit::Rv32M;
 use openvm_sdk::{
     commit::commit_app_exe,
@@ -84,6 +85,7 @@ fn reth_vm_config(
         system_config.collect_metrics = true;
     }
     let int256 = Int256::default();
+    let bn_config = PairingCurve::Bn254.curve_config();
     // The builder will do this automatically, but we set it just in case.
     let rv32m = Rv32M { range_tuple_checker_sizes: int256.range_tuple_checker_sizes };
     SdkVmConfig::builder()
@@ -96,8 +98,11 @@ fn reth_vm_config(
         .modular(ModularExtension::new(vec![
             SECP256K1_CONFIG.modulus.clone(),
             SECP256K1_CONFIG.scalar.clone(),
+            BN254_MODULUS.clone(),
+            BN254_ORDER.clone(),
         ]))
-        .ecc(WeierstrassExtension::new(vec![SECP256K1_CONFIG.clone()]))
+        .ecc(WeierstrassExtension::new(vec![SECP256K1_CONFIG.clone(), bn_config.clone()]))
+        .ecc(WeierstrassExtension::new(vec![bn_config.clone()]))
         .build()
 }
 
