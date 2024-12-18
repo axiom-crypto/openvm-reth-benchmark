@@ -102,7 +102,7 @@ fn reth_vm_config(
             bn_config.scalar.clone(),
         ]))
         .ecc(WeierstrassExtension::new(vec![SECP256K1_CONFIG.clone(), bn_config.clone()]))
-        .ecc(WeierstrassExtension::new(vec![bn_config.clone()]))
+        .pairing(PairingExtension::new(vec![PairingCurve::Bn254]))
         .build()
 }
 
