@@ -86,11 +86,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
-
-      - name: Checkout openvm
-        run: |
-          git clone https://github.com/openvm-org/openvm.git
-
       - name: Display workflow inputs
         run: echo "${{ toJSON(github.event.inputs) }}"
       - name: Install cargo-openvm
