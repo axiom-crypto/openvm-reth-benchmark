@@ -98,8 +98,8 @@ fn reth_vm_config(
         .modular(ModularExtension::new(vec![
             SECP256K1_CONFIG.modulus.clone(),
             SECP256K1_CONFIG.scalar.clone(),
-            BN254_MODULUS.clone(),
-            BN254_ORDER.clone(),
+            bn_config.modulus.clone(),
+            bn_config.scalar.clone(),
         ]))
         .ecc(WeierstrassExtension::new(vec![SECP256K1_CONFIG.clone(), bn_config.clone()]))
         .ecc(WeierstrassExtension::new(vec![bn_config.clone()]))
