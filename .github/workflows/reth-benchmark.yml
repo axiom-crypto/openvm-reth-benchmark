@@ -9,7 +9,7 @@ on:
         type: string
         required: false
         description: The family of the instance, can be multiple ones concat with "+" e.g. r8g+r7g
-        default: m7a.metal-48xl
+        default: m7a.48xlarge
       memory_allocator:
         type: string
         required: false
