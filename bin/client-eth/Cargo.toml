@@ -12,7 +12,7 @@ openvm-client-executor = { path = "../../crates/executor/client" }
 
 revm-precompile = { version = "11.0.1", default-features = false, features = [
     "openvm-k256",
-    "openvm-bn",
+    # "openvm-bn",
 ] }
 
 # openvm
