@@ -145,8 +145,17 @@ jobs:
             PROFILE="profiling"
             FEATURES="${FEATURES},profiling"
           fi
-          cargo build --bin openvm-reth-benchmark --profile=$PROFILE --no-default-features --features=$FEATURES
-          OUTPUT_PATH=${METRIC_PATH} RUSTFLAGS="-Ctarget-cpu=native" ./target/$PROFILE/openvm-reth-benchmark \
+          arch=$(uname -m)
+          case $arch in
+          arm64|aarch64)
+              RUSTFLAGS="-Ctarget-cpu=native"
+              ;;
+          x86_64|amd64)
+              RUSTFLAGS="-Ctarget-cpu=native -C target-feature=+avx512f"
+              ;;
+          *)
+          RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark --profile=$PROFILE --no-default-features --features=$FEATURES
+          OUTPUT_PATH=${METRIC_PATH} ./target/$PROFILE/openvm-reth-benchmark \
             --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
             --app-log-blowup ${{ inputs.app_log_blowup }} \
             --agg-log-blowup ${{ inputs.agg_log_blowup }} \
