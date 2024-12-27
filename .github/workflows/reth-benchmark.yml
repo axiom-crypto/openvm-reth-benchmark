@@ -154,6 +154,10 @@ jobs:
               RUSTFLAGS="-Ctarget-cpu=native -C target-feature=+avx512f"
               ;;
           *)
+          echo "Unsupported architecture: $arch"
+          exit 1
+          ;;
+          esac
           RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark --profile=$PROFILE --no-default-features --features=$FEATURES
           OUTPUT_PATH=${METRIC_PATH} ./target/$PROFILE/openvm-reth-benchmark \
             --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
