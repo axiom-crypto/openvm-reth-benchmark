@@ -88,6 +88,12 @@ jobs:
           cache-on-failure: true
       - name: Display workflow inputs
         run: echo "${{ toJSON(github.event.inputs) }}"
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
+
       - name: Install cargo-openvm
         run: |
           cargo install --git https://github.com/openvm-org/openvm.git --tag v0.1.0-alpha cargo-openvm
