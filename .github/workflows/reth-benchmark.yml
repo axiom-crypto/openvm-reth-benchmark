@@ -19,7 +19,7 @@ on:
         type: number
         required: false
         description: Block number to run the benchmark on
-        default: 21345144
+        default: 21000000
       app_log_blowup:
         type: number
         required: false
