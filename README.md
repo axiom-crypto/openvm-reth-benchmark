@@ -7,27 +7,6 @@ framework to generate zero-knowledge proofs of EVM block execution on Ethereum M
 >
 > This repository is still an active work-in-progress and is not audited or meant for production usage.
 
-> [!WARNING]
->
-> This is the development branch, used to test the latest updates from dependency crates. It is regularly rebased against `main`.
-> Pull request should be made against `main` branch.
-
-## Using latest `openvm` commits
-
-To use the latest `main` commits of `openvm-*` crates, either use this branch directly, or rebase your
-branch against this branch. This branch has a `.cargo/config.toml` that patches all crates with the latest commits. Because you cannot patch the same git url with another branch, the patch uses `ssh` instead of `https`.
-Due to these patches, package versions are not tagged and are updated to latest commits on relevant branches.
-We still maintain `Cargo.lock` files for reproducibility.
-
-To update to the latest `main` commits, run:
-
-```bash
-cargo update
-cd bin/client-eth && cargo update
-```
-
-Push or rebase this branch, and then start a benchmark workflow using `develop` branch as the ref.
-
 ## Getting Started
 
 To run these benchmarks locally, you must first have [Rust](https://www.rust-lang.org/tools/install) installed. Then follow the rest of the instructions below.
