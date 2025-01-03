@@ -55,7 +55,7 @@ struct HostArgs {
     prove_e2e: bool,
 
     #[clap(long)]
-    collect_metrics: bool,
+    profiling: bool,
 
     /// Optional path to the directory containing cached client input. A new cache file will be
     /// created from RPC data if it doesn't already exist.
@@ -74,16 +74,14 @@ const OPENVM_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/openvm-client-eth");
 fn reth_vm_config(
     app_log_blowup: usize,
     max_segment_length: usize,
-    collect_metrics: bool,
+    profiling: bool,
 ) -> SdkVmConfig {
     let mut system_config = SystemConfig::default()
         .with_continuations()
         .with_max_constraint_degree((1 << app_log_blowup) + 1)
         .with_public_values(32)
         .with_max_segment_len(max_segment_length);
-    if collect_metrics {
-        system_config.collect_metrics = true;
-    }
+    system_config.profiling = profiling;
     let int256 = Int256::default();
     let bn_config = PairingCurve::Bn254.curve_config();
     // The builder will do this automatically, but we set it just in case.
@@ -183,13 +181,13 @@ async fn main() -> eyre::Result<()> {
     let root_log_blowup = args.benchmark.root_log_blowup.unwrap_or(3);
     let max_segment_length = args.benchmark.max_segment_length.unwrap_or((1 << 23) - 100);
 
-    let vm_config = reth_vm_config(app_log_blowup, max_segment_length, args.collect_metrics);
+    let vm_config = reth_vm_config(app_log_blowup, max_segment_length, args.profiling);
     let sdk = Sdk;
     let elf = Elf::decode(OPENVM_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
     let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
     let mut compiler_options = CompilerOptions::default();
-    if args.collect_metrics {
+    if args.profiling {
         compiler_options.enable_cycle_tracker = true;
     }
     let app_fri_params = FriParameters::standard_with_100_bits_conjectured_security(app_log_blowup);
@@ -214,12 +212,10 @@ async fn main() -> eyre::Result<()> {
                     let app_pk = sdk.app_keygen(app_config)?;
                     let app_committed_exe = sdk.commit_app_exe(app_fri_params, exe)?;
 
-                    let mut app_prover =
-                        AppProver::new(app_pk.app_vm_pk.clone(), app_committed_exe)
-                            .with_program_name(program_name);
-                    app_prover.set_profile(args.collect_metrics);
+                    let app_prover = AppProver::new(app_pk.app_vm_pk.clone(), app_committed_exe)
+                        .with_program_name(program_name);
                     let proof = app_prover.generate_app_proof(stdin);
-                    let app_vk = app_pk.get_vk();
+                    let app_vk = app_pk.get_app_vk();
                     sdk.verify_app_proof(&app_vk, &proof)?;
                 } else {
                     let halo2_params_reader = CacheHalo2ParamsReader::new_with_default_params_dir();
@@ -252,7 +248,6 @@ async fn main() -> eyre::Result<()> {
                         full_agg_pk,
                     );
                     prover.set_program_name("reth_block");
-                    prover.set_profile(args.collect_metrics);
                     let _evm_proof = prover.generate_proof_for_evm(stdin);
                 }
 

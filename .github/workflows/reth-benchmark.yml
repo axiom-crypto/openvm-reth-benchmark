@@ -88,9 +88,18 @@ jobs:
           cache-on-failure: true
       - name: Display workflow inputs
         run: echo "${{ toJSON(github.event.inputs) }}"
+      # - name: Load SSH key
+      #   uses: webfactory/ssh-agent@v0.9.0
+      #   with:
+      #     ssh-private-key: |
+      #       ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
+
       - name: Install cargo-openvm
         run: |
-          cargo install --git https://github.com/openvm-org/openvm.git --tag v0.1.0-alpha cargo-openvm
+          cargo install --git https://github.com/openvm-org/openvm.git cargo-openvm
+      - name: Install openvm-prof
+        run: |
+          cargo install --git https://github.com/openvm-org/openvm.git --profile=dev openvm-prof
       - name: Checkout openvm (for scripts)
         run: |
           git clone https://github.com/openvm-org/openvm.git
@@ -100,9 +109,6 @@ jobs:
           rustup install nightly-2024-10-30
           source openvm/ci/scripts/utils.sh
           install_s5cmd
-      - name: Setup python
-        run: |
-          pip install -r ci/requirements.txt
 
       - name: Setup halo2
         if: ${{ github.event.inputs.mode == 'prove-e2e' }}
@@ -175,8 +181,9 @@ jobs:
 
       - name: Generate markdown # result path is hardcoded results.md
         run: |
-          source openvm/ci/scripts/utils.sh
-          generate_markdown $METRIC_PATH $METRIC_NAME ${{ env.S3_METRICS_PATH }} "./openvm"
+          openvm-prof --json-paths $METRIC_PATH
+          MD_PATH=${METRIC_PATH%.json}.md
+          echo "MD_PATH=${MD_PATH}" >> $GITHUB_ENV
 
       # - name: Install inferno-flamegraph
       #   run: cargo install inferno
@@ -191,21 +198,20 @@ jobs:
 
       - name: Add benchmark metadata to markdown, and upload
         run: |
-          source openvm/ci/scripts/utils.sh
-          add_metadata results.md ${{ inputs.max_segment_length }} ${{ inputs.instance_family }} ${{ inputs.memory_allocator }} ${{ github.repository }} ${{ github.run_id }}
+          COMMIT_URL=https://github.com/${{ github.repository }}/commit/${current_sha}
+          BENCHMARK_WORKFLOW_URL=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-      - name: Summarize metrics md
+          source openvm/ci/scripts/utils.sh
+          add_metadata $MD_PATH \
+            ${{ inputs.max_segment_length }} \
+            ${{ inputs.instance_family }} \
+            ${{ inputs.memory_allocator }} \
+            $COMMIT_URL \
+            $BENCHMARK_WORKFLOW_URL
+
+      - name: Upload markdown
         run: |
-          if [[ -f $METRIC_PATH ]] && [[ ${{ inputs.mode }} == "prove-e2e" ]]; then
-            # prepend to results.md
-            python3 ci/summarize.py $METRIC_PATH --print > temp.md
-            cat results.md >> temp.md
-            rm results.md
-            mv temp.md results.md
-          fi
-      - name: upload markdown
-        run: |
-          s5cmd cp results.md "${{ env.S3_PATH }}/${current_sha}-${METRIC_NAME}.md"
+          s5cmd cp $MD_PATH "${{ env.S3_PATH }}/${current_sha}-${METRIC_NAME}.md"
 
       ### Update gh-pages
       - uses: actions/checkout@v4

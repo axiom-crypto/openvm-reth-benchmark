@@ -1,53 +1,105 @@
-[net]
-git-fetch-with-cli = true
+# [net]
+# git-fetch-with-cli = true
 
-# [patch."ssh://git@github.com/openvm-org/openvm.git"]
+# [patch."https://github.com/openvm-org/stark-backend.git"]
+# openvm-stark-backend = { git = "ssh://git@github.com/openvm-org/stark-backend.git" }
+# openvm-stark-sdk = { git = "ssh://git@github.com/openvm-org/stark-backend.git" }
+
+# [patch."https://github.com/openvm-org/openvm.git"]
+# openvm-benchmarks = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
 # # OpenVM
-# openvm-sdk = { path = "../openvm/crates/sdk", default-features = false }
-# cargo-openvm = { path = "../openvm/crates/cli", default-features = false }
-# openvm-mod-circuit-builder = { path = "../openvm/crates/circuits/mod-builder", default-features = false }
-# openvm-poseidon2-air = { path = "../openvm/crates/circuits/poseidon2-air", default-features = false }
-# openvm-circuit-primitives = { path = "../openvm/crates/circuits/primitives", default-features = false }
-# openvm-circuit-primitives-derive = { path = "../openvm/crates/circuits/primitives/derive", default-features = false }
-# openvm = { path = "../openvm/crates/toolchain/openvm", default-features = false }
-# openvm-build = { path = "../openvm/crates/toolchain/build", default-features = false }
-# openvm-instructions = { path = "../openvm/crates/toolchain/instructions", default-features = false }
-# openvm-instructions-derive = { path = "../openvm/crates/toolchain/instructions/derive", default-features = false }
-# openvm-macros-common = { path = "../openvm/crates/toolchain/macros", default-features = false }
-# openvm-platform = { path = "../openvm/crates/toolchain/platform", default-features = false }
-# openvm-transpiler = { path = "../openvm/crates/toolchain/transpiler", default-features = false }
-# openvm-circuit = { path = "../openvm/crates/vm", default-features = false }
-# openvm-circuit-derive = { path = "../openvm/crates/vm/derive", default-features = false }
+# openvm-sdk = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# cargo-openvm = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-mod-circuit-builder = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-poseidon2-air = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-circuit-primitives = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-circuit-primitives-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-build = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-instructions = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-instructions-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-macros-common = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-platform = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-circuit-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+
+# # Extensions
+# openvm-algebra-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-algebra-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-algebra-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-algebra-moduli-setup = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-algebra-complex-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-bigint-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-bigint-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-bigint-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-ecc-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-ecc-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-ecc-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-ecc-sw-setup = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-keccak256-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-keccak256-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-keccak256-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-native-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-native-compiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-native-compiler-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-native-recursion = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-pairing-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-pairing-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-pairing-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-rv32-adapters = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-rv32im-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-rv32im-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-rv32im-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+
+
+# [patch."https://github.com/openvm-org/openvm.git"]
+# # OpenVM
+# openvm-sdk = { git = "ssh://git@github.com/openvm-org/openvm.git"sdk", default-features = false }
+# cargo-openvm = { git = "ssh://git@github.com/openvm-org/openvm.git"cli", default-features = false }
+# openvm-mod-circuit-builder = { git = "ssh://git@github.com/openvm-org/openvm.git"circuits/mod-builder", default-features = false }
+# openvm-poseidon2-air = { git = "ssh://git@github.com/openvm-org/openvm.git"circuits/poseidon2-air", default-features = false }
+# openvm-circuit-primitives = { git = "ssh://git@github.com/openvm-org/openvm.git"circuits/primitives", default-features = false }
+# openvm-circuit-primitives-derive = { git = "ssh://git@github.com/openvm-org/openvm.git"circuits/primitives/derive", default-features = false }
+# openvm = { git = "ssh://git@github.com/openvm-org/openvm.git"toolchain/openvm", default-features = false }
+# openvm-build = { git = "ssh://git@github.com/openvm-org/openvm.git"toolchain/build", default-features = false }
+# openvm-instructions = { git = "ssh://git@github.com/openvm-org/openvm.git"toolchain/instructions", default-features = false }
+# openvm-instructions-derive = { git = "ssh://git@github.com/openvm-org/openvm.git"toolchain/instructions/derive", default-features = false }
+# openvm-macros-common = { git = "ssh://git@github.com/openvm-org/openvm.git"toolchain/macros", default-features = false }
+# openvm-platform = { git = "ssh://git@github.com/openvm-org/openvm.git"toolchain/platform", default-features = false }
+# openvm-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git"toolchain/transpiler", default-features = false }
+# openvm-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git"vm", default-features = false }
+# openvm-circuit-derive = { git = "ssh://git@github.com/openvm-org/openvm.git"vm/derive", default-features = false }
 # openvm-stark-backend = { path = "../stark-backend/crates/stark-backend", default-features = false }
 # openvm-stark-sdk = { path = "../stark-backend/crates/stark-sdk", default-features = false }
 
 # # Extensions
-# openvm-algebra-circuit = { path = "../openvm/extensions/algebra/circuit", default-features = false }
-# openvm-algebra-transpiler = { path = "../openvm/extensions/algebra/transpiler", default-features = false }
-# openvm-algebra-guest = { path = "../openvm/extensions/algebra/guest", default-features = false }
-# openvm-algebra-moduli-setup = { path = "../openvm/extensions/algebra/moduli-setup", default-features = false }
-# openvm-algebra-complex-macros = { path = "../openvm/extensions/algebra/guest/src/field/complex-macros", default-features = false }
-# openvm-bigint-circuit = { path = "../openvm/extensions/bigint/circuit", default-features = false }
-# openvm-bigint-transpiler = { path = "../openvm/extensions/bigint/transpiler", default-features = false }
-# openvm-bigint-guest = { path = "../openvm/extensions/bigint/guest", default-features = false }
-# openvm-ecc-circuit = { path = "../openvm/extensions/ecc/circuit", default-features = false }
-# openvm-ecc-transpiler = { path = "../openvm/extensions/ecc/transpiler", default-features = false }
-# openvm-ecc-guest = { path = "../openvm/extensions/ecc/guest", default-features = false }
-# openvm-ecc-sw-setup = { path = "../openvm/extensions/ecc/sw-setup", default-features = false }
-# openvm-keccak256-circuit = { path = "../openvm/extensions/keccak256/circuit", default-features = false }
-# openvm-keccak256-transpiler = { path = "../openvm/extensions/keccak256/transpiler", default-features = false }
-# openvm-keccak256-guest = { path = "../openvm/extensions/keccak256/guest", default-features = false }
-# openvm-native-circuit = { path = "../openvm/extensions/native/circuit", default-features = false }
-# openvm-native-compiler = { path = "../openvm/extensions/native/compiler", default-features = false }
-# openvm-native-compiler-derive = { path = "../openvm/extensions/native/compiler/derive", default-features = false }
-# openvm-native-recursion = { path = "../openvm/extensions/native/recursion", default-features = false }
-# openvm-pairing-circuit = { path = "../openvm/extensions/pairing/circuit", default-features = false }
-# openvm-pairing-transpiler = { path = "../openvm/extensions/pairing/transpiler", default-features = false }
-# openvm-pairing-guest = { path = "../openvm/extensions/pairing/guest", default-features = false }
-# openvm-rv32-adapters = { path = "../openvm/extensions/rv32-adapters", default-features = false }
-# openvm-rv32im-circuit = { path = "../openvm/extensions/rv32im/circuit", default-features = false }
-# openvm-rv32im-transpiler = { path = "../openvm/extensions/rv32im/transpiler", default-features = false }
-# openvm-rv32im-guest = { path = "../openvm/extensions/rv32im/guest", default-features = false }
+# openvm-algebra-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-algebra-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-algebra-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-algebra-moduli-setup = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-algebra-complex-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-bigint-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-bigint-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-bigint-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-ecc-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-ecc-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-ecc-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-ecc-sw-setup = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-keccak256-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-keccak256-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-keccak256-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-native-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-native-compiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-native-compiler-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-native-recursion = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-pairing-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-pairing-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-pairing-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-rv32-adapters = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-rv32im-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-rv32im-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-rv32im-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
 
 # [patch.crates-io]
 # revm = { path = "../revm/crates/revm" }
