@@ -45,10 +45,10 @@ default = []
 heap-embedded-alloc = ["openvm/heap-embedded-alloc"]
 
 [patch.crates-io]
-revm = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm-dev" }
-revm-primitives = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm-dev" }
-revm-interpreter = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm-dev" }
-revm-precompile = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm-dev" }
+revm = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm" }
+revm-primitives = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm" }
+revm-interpreter = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm" }
+revm-precompile = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm" }
 ruint = { git = "https://github.com/axiom-crypto/uint", branch = "v1.12.3-openvm" }
 # revm = { path = "../../../revm/crates/revm" }
 # revm-primitives = { path = "../../../revm/crates/primitives" }
