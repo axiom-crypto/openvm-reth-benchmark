@@ -43,7 +43,7 @@ derive_more = "1.0.0"
 [features]
 default = ["mimalloc", "bench-metrics"]
 bench-metrics = ["openvm-benchmarks/bench-metrics"]
-profiling = ["bench-metrics", "openvm-circuit/function-span"]
+profiling = ["openvm-sdk/profiling", "openvm-benchmarks/profiling"]
 mimalloc = ["openvm-benchmarks/mimalloc"]
 jemalloc = ["openvm-benchmarks/jemalloc"]
 nightly-features = ["openvm-benchmarks/nightly-features"]
