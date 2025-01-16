@@ -134,7 +134,7 @@ jobs:
           fi
           cargo openvm build --no-transpile --profile=$PROFILE
           mkdir -p ../host/elf
-          cp target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth ../host/elf/
+          cp target/riscv32im-risc0-zkvm-elf/$PROFILE/openvm-client-eth ../host/elf/
 
       - name: Run Reth
         run: |
