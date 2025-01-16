@@ -147,7 +147,7 @@ jobs:
           PROFILE="release"
           FEATURES="bench-metrics,${{ inputs.memory_allocator }}"
           if [[ "${{ inputs.collect_metrics }}" == "true" ]]; then
-            OPTIONAL_ARGS="--collect-metrics"
+            OPTIONAL_ARGS="--profiling"
             PROFILE="profiling"
             FEATURES="${FEATURES},profiling"
           fi
