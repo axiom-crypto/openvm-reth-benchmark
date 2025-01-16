@@ -114,7 +114,8 @@ jobs:
         if: ${{ github.event.inputs.mode == 'prove-e2e' }}
         run: |
           bash openvm/extensions/native/recursion/trusted_setup_s3.sh
-          export PARAMS_DIR=$(pwd)/params
+          PARAMS_DIR=$(pwd)/params
+          echo "PARAMS_DIR=$PARAMS_DIR" >> $GITHUB_ENV
 
       - name: Set metric name
         run: |
