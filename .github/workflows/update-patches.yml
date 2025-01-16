@@ -77,7 +77,7 @@ jobs:
         run: |
           BRANCH_NAME="patch-openvm-$(date +%Y%m%d%H%M%S)"
           git checkout -b "$BRANCH_NAME"
-          git add .cargo/config.toml
+          git add -f .cargo/config.toml
           git commit -m "Patch openvm commits in .cargo/config.toml"
           git push -u origin "$BRANCH_NAME"
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
