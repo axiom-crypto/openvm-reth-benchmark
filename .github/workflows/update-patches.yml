@@ -13,7 +13,8 @@ on:
 jobs:
   update-config:
     name: "Update .cargo/config.toml and open a pull request"
-    runs-on: ubuntu-latest
+    runs-on:
+      ["runs-on", "runner=2cpu-linux-arm64", "run-id=${{ github.run_id }}"]
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
@@ -28,9 +29,11 @@ jobs:
               return ${{ github.event.inputs.STARK_BACKEND_REV }};
             } else {
               // Otherwise fetch latest commit of main
-              const fetch = require('node-fetch');
-              const response = await fetch('https://api.github.com/repos/openvm-org/stark-backend/commits/main');
-              const data = await response.json();
+              const { data } = await github.rest.repos.getCommit({
+                owner: 'openvm-org',
+                repo: 'stark-backend',
+                ref: 'main'
+              });
               return data.sha;
             }
 
@@ -44,9 +47,11 @@ jobs:
               return ${{ github.event.inputs.OPENVM_REV }};
             } else {
               // Otherwise fetch latest commit of main
-              const fetch = require('node-fetch');
-              const response = await fetch('https://api.github.com/repos/openvm-org/openvm/commits/main');
-              const data = await response.json();
+              const { data } = await github.rest.repos.getCommit({
+                owner: 'openvm-org',
+                repo: 'openvm',
+                ref: 'main'
+              });
               return data.sha;
             }
 
