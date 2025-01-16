@@ -148,7 +148,7 @@ jobs:
           PROFILE="release"
           FEATURES="bench-metrics,${{ inputs.memory_allocator }}"
           if [[ "${{ inputs.collect_metrics }}" == "true" ]]; then
-            OPTIONAL_ARGS="--profiling"
+            OPTIONAL_ARGS="--profiling --kzg-params-dir $PARAMS_DIR"
             PROFILE="profiling"
             FEATURES="${FEATURES},profiling"
           fi
@@ -171,7 +171,6 @@ jobs:
             --app-log-blowup ${{ inputs.app_log_blowup }} \
             --leaf-log-blowup ${{ inputs.leaf_log_blowup }} \
             --root-log-blowup ${{ inputs.root_log_blowup }} \
-            --kzg-params-dir $PARAMS_DIR \
             --max-segment-length ${{ inputs.max_segment_length }} $OPTIONAL_ARGS
 
       - name: Upload Benchmark Metrics
