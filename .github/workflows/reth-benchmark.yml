@@ -78,6 +78,7 @@ jobs:
       - family=${{ inputs.instance_family }}
       - disk=large
       - tag=bench-reth-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
+      - spot=false
     steps:
       - uses: actions/checkout@v4
         with:
