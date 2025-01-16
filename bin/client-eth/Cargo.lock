@@ -1939,8 +1939,8 @@ dependencies = [
 
 [[package]]
 name = "openvm"
-version = "0.1.1-alpha"
-source = "git+https://github.com/openvm-org/openvm.git?tag=v0.1.1-alpha#ac2f61988f68621258fc84ea4589a7db8a85a873"
+version = "0.2.0-alpha"
+source = "git+https://github.com/openvm-org/openvm.git?rev=1ad4140#1ad41409577404a0a29c9474516335440f137d60"
 dependencies = [
  "bytemuck",
  "hex-literal",
@@ -1954,7 +1954,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-complex-macros"
 version = "0.1.0"
-source = "git+https://github.com/openvm-org/openvm.git?tag=v0.1.1-alpha#ac2f61988f68621258fc84ea4589a7db8a85a873"
+source = "git+https://github.com/openvm-org/openvm.git?rev=1ad4140#1ad41409577404a0a29c9474516335440f137d60"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -1963,8 +1963,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-algebra-guest"
-version = "0.1.1-alpha"
-source = "git+https://github.com/openvm-org/openvm.git?tag=v0.1.1-alpha#ac2f61988f68621258fc84ea4589a7db8a85a873"
+version = "0.2.0-alpha"
+source = "git+https://github.com/openvm-org/openvm.git?rev=1ad4140#1ad41409577404a0a29c9474516335440f137d60"
 dependencies = [
  "halo2curves-axiom",
  "num-bigint-dig",
@@ -1979,8 +1979,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-algebra-moduli-setup"
-version = "0.1.1-alpha"
-source = "git+https://github.com/openvm-org/openvm.git?tag=v0.1.1-alpha#ac2f61988f68621258fc84ea4589a7db8a85a873"
+version = "0.2.0-alpha"
+source = "git+https://github.com/openvm-org/openvm.git?rev=1ad4140#1ad41409577404a0a29c9474516335440f137d60"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -1989,8 +1989,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-bigint-guest"
-version = "0.1.1-alpha"
-source = "git+https://github.com/openvm-org/openvm.git?tag=v0.1.1-alpha#ac2f61988f68621258fc84ea4589a7db8a85a873"
+version = "0.2.0-alpha"
+source = "git+https://github.com/openvm-org/openvm.git?rev=1ad4140#1ad41409577404a0a29c9474516335440f137d60"
 dependencies = [
  "num-bigint-dig",
  "num-traits",
@@ -2056,9 +2056,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm-custom-insn"
+version = "0.1.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=1ad4140#1ad41409577404a0a29c9474516335440f137d60"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.94",
+]
+
+[[package]]
 name = "openvm-ecc-guest"
-version = "0.1.1-alpha"
-source = "git+https://github.com/openvm-org/openvm.git?tag=v0.1.1-alpha#ac2f61988f68621258fc84ea4589a7db8a85a873"
+version = "0.2.0-alpha"
+source = "git+https://github.com/openvm-org/openvm.git?rev=1ad4140#1ad41409577404a0a29c9474516335440f137d60"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -2084,8 +2094,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-ecc-sw-setup"
-version = "0.1.1-alpha"
-source = "git+https://github.com/openvm-org/openvm.git?tag=v0.1.1-alpha#ac2f61988f68621258fc84ea4589a7db8a85a873"
+version = "0.2.0-alpha"
+source = "git+https://github.com/openvm-org/openvm.git?rev=1ad4140#1ad41409577404a0a29c9474516335440f137d60"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2094,8 +2104,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-keccak256-guest"
-version = "0.1.1-alpha"
-source = "git+https://github.com/openvm-org/openvm.git?tag=v0.1.1-alpha#ac2f61988f68621258fc84ea4589a7db8a85a873"
+version = "0.2.0-alpha"
+source = "git+https://github.com/openvm-org/openvm.git?rev=1ad4140#1ad41409577404a0a29c9474516335440f137d60"
 dependencies = [
  "openvm-platform",
  "serde",
@@ -2104,8 +2114,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-macros-common"
-version = "0.1.1-alpha"
-source = "git+https://github.com/openvm-org/openvm.git?tag=v0.1.1-alpha#ac2f61988f68621258fc84ea4589a7db8a85a873"
+version = "0.2.0-alpha"
+source = "git+https://github.com/openvm-org/openvm.git?rev=1ad4140#1ad41409577404a0a29c9474516335440f137d60"
 dependencies = [
  "syn 2.0.94",
 ]
@@ -2135,8 +2145,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-pairing-guest"
-version = "0.1.1-alpha"
-source = "git+https://github.com/openvm-org/openvm.git?tag=v0.1.1-alpha#ac2f61988f68621258fc84ea4589a7db8a85a873"
+version = "0.2.0-alpha"
+source = "git+https://github.com/openvm-org/openvm.git?rev=1ad4140#1ad41409577404a0a29c9474516335440f137d60"
 dependencies = [
  "group",
  "hex-literal",
@@ -2160,13 +2170,14 @@ dependencies = [
 
 [[package]]
 name = "openvm-platform"
-version = "0.1.1-alpha"
-source = "git+https://github.com/openvm-org/openvm.git?tag=v0.1.1-alpha#ac2f61988f68621258fc84ea4589a7db8a85a873"
+version = "0.2.0-alpha"
+source = "git+https://github.com/openvm-org/openvm.git?rev=1ad4140#1ad41409577404a0a29c9474516335440f137d60"
 dependencies = [
  "critical-section",
  "embedded-alloc",
  "getrandom",
  "libm",
+ "openvm-custom-insn",
  "stability",
  "strum_macros",
 ]
@@ -2192,8 +2203,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-rv32im-guest"
-version = "0.1.1-alpha"
-source = "git+https://github.com/openvm-org/openvm.git?tag=v0.1.1-alpha#ac2f61988f68621258fc84ea4589a7db8a85a873"
+version = "0.2.0-alpha"
+source = "git+https://github.com/openvm-org/openvm.git?rev=1ad4140#1ad41409577404a0a29c9474516335440f137d60"
 dependencies = [
  "openvm-platform",
  "strum_macros",
@@ -2941,7 +2952,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "14.0.1"
-source = "git+https://github.com/axiom-crypto/revm?branch=v43-openvm#57f2151b51e2664435828ed6139908c9fc94678c"
+source = "git+https://github.com/axiom-crypto/revm?branch=v43-openvm#120795dd0b2fc48073932eecfc37c6481c7aa790"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -2955,7 +2966,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "10.0.1"
-source = "git+https://github.com/axiom-crypto/revm?branch=v43-openvm#57f2151b51e2664435828ed6139908c9fc94678c"
+source = "git+https://github.com/axiom-crypto/revm?branch=v43-openvm#120795dd0b2fc48073932eecfc37c6481c7aa790"
 dependencies = [
  "revm-primitives",
  "serde",
@@ -2964,7 +2975,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "11.0.1"
-source = "git+https://github.com/axiom-crypto/revm?branch=v43-openvm#57f2151b51e2664435828ed6139908c9fc94678c"
+source = "git+https://github.com/axiom-crypto/revm?branch=v43-openvm#120795dd0b2fc48073932eecfc37c6481c7aa790"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -2986,7 +2997,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "9.0.1"
-source = "git+https://github.com/axiom-crypto/revm?branch=v43-openvm#57f2151b51e2664435828ed6139908c9fc94678c"
+source = "git+https://github.com/axiom-crypto/revm?branch=v43-openvm#120795dd0b2fc48073932eecfc37c6481c7aa790"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",

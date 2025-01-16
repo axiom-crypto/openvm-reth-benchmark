@@ -4,10 +4,11 @@ use openvm::io::{println, read, reveal};
 use openvm_client_executor::{io::ClientExecutorInput, ClientExecutor, EthereumVariant};
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
+    openvm_algebra_guest::IntMod,
     openvm_bigint_guest, // trigger extern u256 (this may be unneeded)
-    openvm_ecc_guest::k256::Secp256k1Coord,
+    openvm_ecc_guest::k256::Secp256k1Point,
     openvm_keccak256_guest, // trigger extern native-keccak256
-    openvm_pairing_guest::bn254::Bn254Fp,
+    openvm_pairing_guest::bn254::Bn254G1Affine,
 };
 
 openvm_algebra_guest::moduli_setup::moduli_init! {
@@ -17,8 +18,8 @@ openvm_algebra_guest::moduli_setup::moduli_init! {
     "0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364141" // secp256k1 Scalar field
 }
 openvm_ecc_guest::sw_setup::sw_init! {
-    Secp256k1Coord,
-    Bn254Fp
+    Secp256k1Point,
+    Bn254G1Affine
 }
 openvm_algebra_complex_macros::complex_init! {
     Bn254Fp2 { mod_idx = 0 },
