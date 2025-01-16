@@ -48,7 +48,7 @@ on:
           - execute
           - prove
           - prove-e2e
-        default: prove
+        default: prove-e2e
       collect_metrics:
         type: boolean
         required: false
