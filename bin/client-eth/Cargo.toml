@@ -16,20 +16,20 @@ revm-precompile = { version = "11.0.1", default-features = false, features = [
 ] }
 
 # openvm
-openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.1-alpha", features = [
+openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "66a8134", features = [
     "std",
 ] }
-openvm-platform = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.1-alpha" }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.1-alpha" }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.1-alpha" }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.1-alpha" }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.1-alpha", features = [
+openvm-platform = { git = "https://github.com/openvm-org/openvm.git", rev = "66a8134" }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "66a8134" }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "66a8134" }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "66a8134" }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "66a8134", features = [
     "k256",
 ] }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.1-alpha", features = [
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "66a8134", features = [
     "export-intrinsics",
 ] }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v0.1.1-alpha", features = [
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "66a8134", features = [
     "bn254",
 ] }
 

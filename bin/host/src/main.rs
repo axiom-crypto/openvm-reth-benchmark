@@ -10,19 +10,16 @@ use openvm_client_executor::{
 };
 use openvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
 use openvm_host_executor::HostExecutor;
-use openvm_native_compiler::conversion::CompilerOptions;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_pairing_circuit::{PairingCurve, PairingExtension};
 use openvm_rv32im_circuit::Rv32M;
 use openvm_sdk::{
     commit::commit_app_exe,
-    config::{AggConfig, AggStarkConfig, AppConfig, Halo2Config, SdkVmConfig},
+    config::SdkVmConfig,
     prover::{AppProver, ContinuationProver},
     Sdk, StdIn,
 };
-use openvm_stark_sdk::{
-    bench::run_with_metric_collection, config::FriParameters, p3_baby_bear::BabyBear,
-};
+use openvm_stark_sdk::{bench::run_with_metric_collection, p3_baby_bear::BabyBear};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 use std::{path::PathBuf, sync::Arc};
 
@@ -54,9 +51,6 @@ struct HostArgs {
     #[clap(long, group = "mode")]
     prove_e2e: bool,
 
-    #[clap(long)]
-    profiling: bool,
-
     /// Optional path to the directory containing cached client input. A new cache file will be
     /// created from RPC data if it doesn't already exist.
     #[clap(long)]
@@ -71,17 +65,12 @@ struct HostArgs {
 
 const OPENVM_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/openvm-client-eth");
 
-fn reth_vm_config(
-    app_log_blowup: usize,
-    max_segment_length: usize,
-    profiling: bool,
-) -> SdkVmConfig {
-    let mut system_config = SystemConfig::default()
+fn reth_vm_config(app_log_blowup: usize, max_segment_length: usize) -> SdkVmConfig {
+    let system_config = SystemConfig::default()
         .with_continuations()
         .with_max_constraint_degree((1 << app_log_blowup) + 1)
         .with_public_values(32)
         .with_max_segment_len(max_segment_length);
-    system_config.profiling = profiling;
     let int256 = Int256::default();
     let bn_config = PairingCurve::Bn254.curve_config();
     // The builder will do this automatically, but we set it just in case.
@@ -176,37 +165,22 @@ async fn main() -> eyre::Result<()> {
     stdin.write(&client_input);
 
     let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(2);
-    let agg_log_blowup = args.benchmark.agg_log_blowup.unwrap_or(2);
-    let internal_log_blowup = args.benchmark.internal_log_blowup.unwrap_or(2);
-    let root_log_blowup = args.benchmark.root_log_blowup.unwrap_or(3);
     let max_segment_length = args.benchmark.max_segment_length.unwrap_or((1 << 23) - 100);
 
-    let vm_config = reth_vm_config(app_log_blowup, max_segment_length, args.profiling);
+    let vm_config = reth_vm_config(app_log_blowup, max_segment_length);
     let sdk = Sdk;
     let elf = Elf::decode(OPENVM_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
     let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
-    let mut compiler_options = CompilerOptions::default();
-    if args.profiling {
-        compiler_options.enable_cycle_tracker = true;
-    }
-    let app_fri_params = FriParameters::standard_with_100_bits_conjectured_security(app_log_blowup);
-    let leaf_fri_params =
-        FriParameters::standard_with_100_bits_conjectured_security(agg_log_blowup);
-
     let program_name = "reth_block";
-    let app_config = AppConfig {
-        app_vm_config: vm_config.clone(),
-        app_fri_params: app_fri_params.into(),
-        leaf_fri_params: leaf_fri_params.into(),
-        compiler_options,
-    };
+    let app_config = args.benchmark.app_config(vm_config.clone());
+    let app_fri_params = app_config.app_fri_params.fri_params;
 
     run_with_metric_collection("OUTPUT_PATH", || {
         tracing::info_span!("reth-block", block_number = args.block_number).in_scope(
             || -> eyre::Result<()> {
                 if args.execute {
-                    let executor = VmExecutor::<_, _>::new(vm_config);
+                    let executor = VmExecutor::<_, _>::new(app_config.app_vm_config);
                     executor.execute(exe, stdin)?;
                 } else if args.prove {
                     let app_pk = sdk.app_keygen(app_config)?;
@@ -219,26 +193,12 @@ async fn main() -> eyre::Result<()> {
                     sdk.verify_app_proof(&app_vk, &proof)?;
                 } else {
                     let halo2_params_reader = CacheHalo2ParamsReader::new_with_default_params_dir();
-                    let full_agg_config = AggConfig {
-                        agg_stark_config: AggStarkConfig {
-                            max_num_user_public_values: VmConfig::<BabyBear>::system(&vm_config)
-                                .num_public_values,
-                            leaf_fri_params,
-                            internal_fri_params:
-                                FriParameters::standard_with_100_bits_conjectured_security(
-                                    internal_log_blowup,
-                                ),
-                            root_fri_params:
-                                FriParameters::standard_with_100_bits_conjectured_security(
-                                    root_log_blowup,
-                                ),
-                            compiler_options,
-                        },
-                        halo2_config: Halo2Config { verifier_k: 24, wrapper_k: None },
-                    };
+                    let mut agg_config = args.benchmark.agg_config();
+                    agg_config.agg_stark_config.max_num_user_public_values =
+                        VmConfig::<BabyBear>::system(&vm_config).num_public_values;
 
                     let app_pk = sdk.app_keygen(app_config)?;
-                    let full_agg_pk = sdk.agg_keygen(full_agg_config, &halo2_params_reader)?;
+                    let full_agg_pk = sdk.agg_keygen(agg_config, &halo2_params_reader)?;
                     let app_committed_exe = commit_app_exe(app_fri_params, exe);
 
                     let mut prover = ContinuationProver::new(
