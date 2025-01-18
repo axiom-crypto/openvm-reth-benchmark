@@ -18,7 +18,7 @@ openvm_algebra_guest::moduli_setup::moduli_init! {
     "0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364141", // secp256k1 Scalar field
 }
 openvm_ecc_guest::sw_setup::sw_init! {
-    Bn254G1Affine
+    Bn254G1Affine,
     Secp256k1Point,
 }
 openvm_algebra_complex_macros::complex_init! {
