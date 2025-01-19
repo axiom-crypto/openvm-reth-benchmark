@@ -14,8 +14,7 @@ use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_pairing_circuit::{PairingCurve, PairingExtension};
 use openvm_rv32im_circuit::Rv32M;
 use openvm_sdk::{
-    commit::commit_app_exe,
-    config::SdkVmConfig,
+    config::{SdkVmConfig, DEFAULT_APP_LOG_BLOWUP},
     prover::{AppProver, ContinuationProver},
     Sdk, StdIn,
 };
@@ -89,7 +88,7 @@ fn reth_vm_config(app_log_blowup: usize, max_segment_length: usize) -> SdkVmConf
             SECP256K1_CONFIG.scalar.clone(),
         ]))
         .fp2(Fp2Extension::new(vec![bn_config.modulus.clone()]))
-        .ecc(WeierstrassExtension::new(vec![SECP256K1_CONFIG.clone(), bn_config.clone()]))
+        .ecc(WeierstrassExtension::new(vec![bn_config.clone(), SECP256K1_CONFIG.clone()]))
         .pairing(PairingExtension::new(vec![PairingCurve::Bn254]))
         .build()
 }
@@ -164,7 +163,7 @@ async fn main() -> eyre::Result<()> {
     let mut stdin = StdIn::default();
     stdin.write(&client_input);
 
-    let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(2);
+    let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(DEFAULT_APP_LOG_BLOWUP);
     let max_segment_length = args.benchmark.max_segment_length.unwrap_or((1 << 23) - 100);
 
     let vm_config = reth_vm_config(app_log_blowup, max_segment_length);
@@ -174,7 +173,6 @@ async fn main() -> eyre::Result<()> {
 
     let program_name = "reth_block";
     let app_config = args.benchmark.app_config(vm_config.clone());
-    let app_fri_params = app_config.app_fri_params.fri_params;
 
     run_with_metric_collection("OUTPUT_PATH", || {
         tracing::info_span!("reth-block", block_number = args.block_number).in_scope(
@@ -184,7 +182,7 @@ async fn main() -> eyre::Result<()> {
                     executor.execute(exe, stdin)?;
                 } else if args.prove {
                     let app_pk = sdk.app_keygen(app_config)?;
-                    let app_committed_exe = sdk.commit_app_exe(app_fri_params, exe)?;
+                    let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
 
                     let app_prover = AppProver::new(app_pk.app_vm_pk.clone(), app_committed_exe)
                         .with_program_name(program_name);
@@ -199,7 +197,7 @@ async fn main() -> eyre::Result<()> {
 
                     let app_pk = sdk.app_keygen(app_config)?;
                     let full_agg_pk = sdk.agg_keygen(agg_config, &halo2_params_reader)?;
-                    let app_committed_exe = commit_app_exe(app_fri_params, exe);
+                    let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
 
                     let mut prover = ContinuationProver::new(
                         &halo2_params_reader,

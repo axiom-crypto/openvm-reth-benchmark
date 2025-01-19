@@ -30,4 +30,5 @@ exit 1
 ;;
 esac
 RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark --profile=$PROFILE --no-default-features --features=$FEATURES
-RUST_BACKTRACE=1 OUTPUT_PATH="metrics.json" ./target/$PROFILE/openvm-reth-benchmark --$MODE --block-number 18884864 --rpc-url $RPC_1 --cache-dir rpc-cache
+PARAMS_DIR="params"
+RUST_BACKTRACE=1 OUTPUT_PATH="metrics.json" ./target/$PROFILE/openvm-reth-benchmark --kzg-params-dir $PARAMS_DIR --$MODE --block-number 18884864 --rpc-url $RPC_1 --cache-dir rpc-cache

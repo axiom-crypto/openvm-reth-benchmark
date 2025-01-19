@@ -48,7 +48,7 @@ on:
           - execute
           - prove
           - prove-e2e
-        default: prove
+        default: prove-e2e
       collect_metrics:
         type: boolean
         required: false
@@ -88,11 +88,11 @@ jobs:
           cache-on-failure: true
       - name: Display workflow inputs
         run: echo "${{ toJSON(github.event.inputs) }}"
-      # - name: Load SSH key
-      #   uses: webfactory/ssh-agent@v0.9.0
-      #   with:
-      #     ssh-private-key: |
-      #       ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
 
       - name: Install cargo-openvm
         run: |
@@ -114,7 +114,8 @@ jobs:
         if: ${{ github.event.inputs.mode == 'prove-e2e' }}
         run: |
           bash openvm/extensions/native/recursion/trusted_setup_s3.sh
-          export PARAMS_DIR=$(pwd)/params
+          PARAMS_DIR=$(pwd)/params
+          echo "PARAMS_DIR=$PARAMS_DIR" >> $GITHUB_ENV
 
       - name: Set metric name
         run: |
@@ -147,7 +148,7 @@ jobs:
           PROFILE="release"
           FEATURES="bench-metrics,${{ inputs.memory_allocator }}"
           if [[ "${{ inputs.collect_metrics }}" == "true" ]]; then
-            OPTIONAL_ARGS="--profiling"
+            OPTIONAL_ARGS="--profiling --kzg-params-dir $PARAMS_DIR"
             PROFILE="profiling"
             FEATURES="${FEATURES},profiling"
           fi
@@ -165,7 +166,7 @@ jobs:
           ;;
           esac
           RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark --profile=$PROFILE --no-default-features --features=$FEATURES
-          OUTPUT_PATH=${METRIC_PATH} ./target/$PROFILE/openvm-reth-benchmark \
+          RUST_LOG=warn OUTPUT_PATH=${METRIC_PATH} ./target/$PROFILE/openvm-reth-benchmark \
             --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
             --app-log-blowup ${{ inputs.app_log_blowup }} \
             --leaf-log-blowup ${{ inputs.leaf_log_blowup }} \
