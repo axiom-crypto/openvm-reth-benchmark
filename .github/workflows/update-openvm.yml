@@ -1,4 +1,6 @@
 name: "Update openvm rev in dependencies"
+# Warning: this workflow will only work if openvm has also been updated in revm
+# Otherwise, use the update-patches.yml workflow instead
 
 on:
   workflow_dispatch:
