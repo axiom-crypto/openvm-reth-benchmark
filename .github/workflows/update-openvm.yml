@@ -1,41 +1,20 @@
-name: "Update openvm patches"
+name: "Update openvm rev in dependencies"
 
 on:
   workflow_dispatch:
     inputs:
-      STARK_BACKEND_REV:
-        description: "Optional ref for openvm-stark-backend (defaults to main head)"
-        required: false
       OPENVM_REV:
-        description: "Optional ref for openvm (defaults to main head)"
+        description: "New openvm rev (defaults to main head)"
         required: false
 
 jobs:
   update-config:
-    name: "Update .cargo/config.toml and open a pull request"
+    name: "Update workspace and guest Cargo.toml and open a pull request"
     runs-on:
       - ubuntu-latest
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
-
-      - name: Get default STARK_BACKEND_REV from main (if none provided)
-        id: get-stark-backend-rev
-        uses: actions/github-script@v6
-        with:
-          script: |
-            if ("${{ github.event.inputs.STARK_BACKEND_REV }}" !== "") {
-              // If provided by user, simply return it
-              return ${{ github.event.inputs.STARK_BACKEND_REV }};
-            } else {
-              // Otherwise fetch latest commit of main
-              const { data } = await github.rest.repos.getCommit({
-                owner: 'openvm-org',
-                repo: 'stark-backend',
-                ref: 'main'
-              });
-              return data.sha;
-            }
 
       - name: Get default OPENVM_REV from main (if none provided)
         id: get-openvm-rev
@@ -44,7 +23,7 @@ jobs:
           script: |
             if ("${{ github.event.inputs.OPENVM_REV }}" !== "") {
               // If provided by user, simply return it
-              return ${{ github.event.inputs.OPENVM_REV }};
+              return "${{ github.event.inputs.OPENVM_REV }}";
             } else {
               // Otherwise fetch latest commit of main
               const { data } = await github.rest.repos.getCommit({
@@ -55,18 +34,17 @@ jobs:
               return data.sha;
             }
 
-      - name: Replace placeholders in configuration
+      - name: Find & replace rev in all Cargo.toml files
         run: |
-          STARK_BACKEND_REV="${{ steps.get-stark-backend-rev.outputs.result }}"
-          OPENVM_REV="${{ steps.get-openvm-rev.outputs.result }}"
+          OLD_REV=$(grep '^openvm = { git = "https://github.com/openvm-org/openvm.git"' Cargo.toml | sed -E 's/.*rev = "([^"]+)".*/\1/')
+          bash ci/update_rev.sh $OLD_REV $OPENVM_REV
 
-          echo "Using STARK_BACKEND_REV=$STARK_BACKEND_REV"
-          echo "Using OPENVM_REV=$OPENVM_REV"
+      - name: Update workspace Cargo.lock
+        run: cargo check
 
-          # Replace placeholders in template
-          sed "s|\$STARK_BACKEND_REV|${STARK_BACKEND_REV}|g" .cargo/config.template.toml > .cargo/config.tmp.toml
-          sed "s|\$OPENVM_REV|${OPENVM_REV}|g" .cargo/config.tmp.toml > .cargo/config.toml
-          rm .cargo/config.tmp.toml
+      - name: Update guest Cargo.lock
+        working-directory: bin/client-eth
+        run: cargo check
 
       - name: Configure git
         run: |
@@ -75,10 +53,13 @@ jobs:
 
       - name: Create or update branch
         run: |
-          BRANCH_NAME="patch-openvm-$(date +%Y%m%d%H%M%S)"
+          BRANCH_NAME="update-openvm-$(date +%Y%m%d%H%M%S)"
           git checkout -b "$BRANCH_NAME"
-          git add -f .cargo/config.toml
-          git commit -m "Patch openvm commits in .cargo/config.toml"
+          git add -f Cargo.lock
+          git add -f Cargo.toml
+          git add -f bin/client-eth/Cargo.lock
+          git add -f bin/client-eth/Cargo.toml
+          git commit -m "Update openvm commits in dependencies"
           git push -u origin "$BRANCH_NAME"
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
@@ -89,8 +70,7 @@ jobs:
           destination_branch: ${{ github.ref_name }}
           pr_title: "Update .cargo/config.toml"
           pr_body: |
-            This pull request updates .cargo/config.toml using:
-            - STARK_BACKEND_REV = ${{ steps.get-stark-backend-rev.outputs.result }}
+            This pull request updates Cargo dependencies using:
             - OPENVM_REV        = ${{ steps.get-openvm-rev.outputs.result }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
         id: create-pr-branch
