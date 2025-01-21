@@ -46,7 +46,9 @@ jobs:
 
       - name: Update guest Cargo.lock
         working-directory: bin/client-eth
-        run: cargo check
+        run: |
+          cargo update -p revm
+          cargo check
 
       - name: Configure git
         run: |
