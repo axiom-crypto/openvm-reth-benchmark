@@ -25,7 +25,7 @@ jobs:
           script: |
             if ("${{ github.event.inputs.OPENVM_REV }}" !== "") {
               // If provided by user, simply return it
-              return ${{ github.event.inputs.OPENVM_REV }};
+              return "${{ github.event.inputs.OPENVM_REV }}";
             } else {
               // Otherwise fetch latest commit of main
               const { data } = await github.rest.repos.getCommit({
