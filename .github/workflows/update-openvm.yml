@@ -38,6 +38,7 @@ jobs:
 
       - name: Find & replace rev in all Cargo.toml files
         run: |
+          OPENVM_REV="${{ steps.get-openvm-rev.outputs.result }}"
           OLD_REV=$(grep '^openvm = { git = "https://github.com/openvm-org/openvm.git"' Cargo.toml | sed -E 's/.*rev = "([^"]+)".*/\1/')
           bash ci/update_rev.sh $OLD_REV $OPENVM_REV
 
