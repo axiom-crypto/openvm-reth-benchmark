@@ -25,7 +25,7 @@ jobs:
           script: |
             if ("${{ github.event.inputs.OPENVM_REV }}" !== "") {
               // If provided by user, simply return it
-              return "${{ github.event.inputs.OPENVM_REV }}";
+              return ${{ github.event.inputs.OPENVM_REV }};
             } else {
               // Otherwise fetch latest commit of main
               const { data } = await github.rest.repos.getCommit({
@@ -38,7 +38,7 @@ jobs:
 
       - name: Find & replace rev in all Cargo.toml files
         run: |
-          OPENVM_REV="${{ steps.get-openvm-rev.outputs.result }}"
+          OPENVM_REV=${{ steps.get-openvm-rev.outputs.result }}
           OLD_REV=$(grep '^openvm = { git = "https://github.com/openvm-org/openvm.git"' Cargo.toml | sed -E 's/.*rev = "([^"]+)".*/\1/')
           bash ci/update_rev.sh $OLD_REV $OPENVM_REV
 
