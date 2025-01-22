@@ -43,13 +43,13 @@ jobs:
           bash ci/update_rev.sh $OLD_REV $OPENVM_REV
 
       - name: Update workspace Cargo.lock
-        run: cargo check
+        run: cargo tree
 
       - name: Update guest Cargo.lock
         working-directory: bin/client-eth
         run: |
           cargo update -p revm
-          cargo check
+          cargo tree
 
       - name: Configure git
         run: |
