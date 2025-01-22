@@ -15,6 +15,7 @@ use openvm_pairing_circuit::{PairingCurve, PairingExtension};
 use openvm_rv32im_circuit::Rv32M;
 use openvm_sdk::{
     config::{SdkVmConfig, DEFAULT_APP_LOG_BLOWUP},
+    keygen::RootVerifierProvingKey,
     prover::{AppProver, ContinuationProver},
     Sdk, StdIn,
 };
@@ -196,7 +197,11 @@ async fn main() -> eyre::Result<()> {
                         VmConfig::<BabyBear>::system(&vm_config).num_public_values;
 
                     let app_pk = sdk.app_keygen(app_config)?;
-                    let full_agg_pk = sdk.agg_keygen(agg_config, &halo2_params_reader)?;
+                    let full_agg_pk = sdk.agg_keygen(
+                        agg_config,
+                        &halo2_params_reader,
+                        None::<&RootVerifierProvingKey>,
+                    )?;
                     let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
 
                     let mut prover = ContinuationProver::new(
