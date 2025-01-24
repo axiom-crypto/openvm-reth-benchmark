@@ -12,17 +12,17 @@ use {
 };
 
 openvm_algebra_guest::moduli_setup::moduli_init! {
-    "0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47", // Bn254Fp Coordinate field
-    "0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001", // Bn254 Scalar
     "0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE FFFFFC2F", // secp256k1 Coordinate field
     "0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364141", // secp256k1 Scalar field
 }
+    "0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47", // Bn254Fp Coordinate field
+    "0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001", // Bn254 Scalar
 openvm_ecc_guest::sw_setup::sw_init! {
     Bn254G1Affine,
     Secp256k1Point,
 }
 openvm_algebra_complex_macros::complex_init! {
-    Bn254Fp2 { mod_idx = 0 },
+    Bn254Fp2 { mod_idx = 2 },
 }
 
 pub fn main() {
