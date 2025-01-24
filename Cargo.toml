@@ -167,3 +167,4 @@ debug-assertions = true
 # better recompile times
 incremental = true
 lto = "thin"
+opt-level = 3
