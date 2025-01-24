@@ -145,7 +145,7 @@ jobs:
           MODE=${{ inputs.mode }}
           BLOCK_NUMBER=${{ inputs.block_number }}
           OPTIONAL_ARGS=""
-          PROFILE="release"
+          PROFILE="fast"
           FEATURES="bench-metrics,${{ inputs.memory_allocator }}"
           if [[ "${{ inputs.collect_metrics }}" == "true" ]]; then
             OPTIONAL_ARGS="--profiling --kzg-params-dir $PARAMS_DIR"
