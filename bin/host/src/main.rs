@@ -22,7 +22,7 @@ use openvm_sdk::{
 use openvm_stark_sdk::{bench::run_with_metric_collection, p3_baby_bear::BabyBear};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 use std::{path::PathBuf, sync::Arc};
-use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
+use tracing_subscriber::EnvFilter;
 
 pub use reth_primitives;
 
@@ -104,8 +104,6 @@ async fn main() -> eyre::Result<()> {
         std::env::set_var("RUST_LOG", "info");
     }
 
-    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
-
     // Parse the command line arguments.
     let args = HostArgs::parse();
     let provider_config = args.provider.into_provider().await?;
@@ -178,6 +176,8 @@ async fn main() -> eyre::Result<()> {
     let program_name = "reth_block";
     let app_config = args.benchmark.app_config(vm_config.clone());
 
+    let _ = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info,p3_poseidon2_air=warn"));
     run_with_metric_collection("OUTPUT_PATH", || {
         tracing::info_span!("reth-block", block_number = args.block_number).in_scope(
             || -> eyre::Result<()> {
