@@ -26,7 +26,7 @@ openvm-circuit-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", re
 openvm-algebra-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "d45b2260a8327192a161cee2d3c273acf23868d1" }
 openvm-algebra-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "d45b2260a8327192a161cee2d3c273acf23868d1" }
 openvm-algebra-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "d45b2260a8327192a161cee2d3c273acf23868d1" }
-openvm-algebra-moduli-setup = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "d45b2260a8327192a161cee2d3c273acf23868d1" }
+openvm-algebra-moduli-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "d45b2260a8327192a161cee2d3c273acf23868d1" }
 openvm-algebra-complex-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "d45b2260a8327192a161cee2d3c273acf23868d1" }
 openvm-bigint-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "d45b2260a8327192a161cee2d3c273acf23868d1" }
 openvm-bigint-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "d45b2260a8327192a161cee2d3c273acf23868d1" }
