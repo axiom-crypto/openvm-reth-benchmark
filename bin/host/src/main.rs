@@ -176,8 +176,6 @@ async fn main() -> eyre::Result<()> {
     let program_name = "reth_block";
     let app_config = args.benchmark.app_config(vm_config.clone());
 
-    let _ = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info,p3_poseidon2_air=warn"));
     run_with_metric_collection("OUTPUT_PATH", || {
         tracing::info_span!("reth-block", block_number = args.block_number).in_scope(
             || -> eyre::Result<()> {
@@ -221,7 +219,6 @@ async fn main() -> eyre::Result<()> {
             },
         )
     })?;
-
     Ok(())
 }
 
