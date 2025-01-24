@@ -3,7 +3,10 @@ use clap::{ArgGroup, Parser};
 use openvm_algebra_circuit::{Fp2Extension, ModularExtension};
 use openvm_benchmarks::utils::BenchmarkCli;
 use openvm_bigint_circuit::Int256;
-use openvm_circuit::arch::{instructions::exe::VmExe, SystemConfig, VmConfig, VmExecutor};
+use openvm_circuit::{
+    arch::{instructions::exe::VmExe, SystemConfig, VmConfig, VmExecutor},
+    openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config,
+};
 use openvm_client_executor::{
     io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET,
     CHAIN_ID_OP_MAINNET,
@@ -21,9 +24,8 @@ use openvm_sdk::{
 };
 use openvm_stark_sdk::{bench::run_with_metric_collection, p3_baby_bear::BabyBear};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
-use std::{path::PathBuf, sync::Arc};
-
 pub use reth_primitives;
+use std::{path::PathBuf, sync::Arc};
 
 mod execute;
 
@@ -35,7 +37,7 @@ use cli::ProviderArgs;
 #[clap(group(
     ArgGroup::new("mode")
         .required(true)
-        .args(&["prove", "execute", "prove_e2e"]),
+        .args(&["prove", "execute", "tracegen", "prove_e2e"]),
 ))]
 struct HostArgs {
     /// The block number of the block to execute.
@@ -46,6 +48,8 @@ struct HostArgs {
 
     #[clap(long, group = "mode")]
     execute: bool,
+    #[clap(long, group = "mode")]
+    tracegen: bool,
     #[clap(long, group = "mode")]
     prove: bool,
     #[clap(long, group = "mode")]
@@ -181,6 +185,9 @@ async fn main() -> eyre::Result<()> {
                 if args.execute {
                     let executor = VmExecutor::<_, _>::new(app_config.app_vm_config);
                     executor.execute(exe, stdin)?;
+                } else if args.tracegen {
+                    let executor = VmExecutor::<_, _>::new(app_config.app_vm_config);
+                    executor.execute_and_generate::<BabyBearPoseidon2Config>(exe, stdin)?;
                 } else if args.prove {
                     let app_pk = sdk.app_keygen(app_config)?;
                     let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
