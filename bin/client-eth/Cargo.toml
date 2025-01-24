@@ -16,22 +16,22 @@ revm-precompile = { version = "11.0.1", default-features = false, features = [
 ] }
 
 # openvm
-openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "354dd06", features = [
+openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "eb394e1", features = [
     "std",
 ] }
-openvm-platform = { git = "https://github.com/openvm-org/openvm.git", rev = "354dd06" }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "354dd06" }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "354dd06" }
-openvm-algebra-moduli-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "354dd06" }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "354dd06" }
-openvm-ecc-sw-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "354dd06" }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "354dd06", features = [
+openvm-platform = { git = "https://github.com/openvm-org/openvm.git", rev = "eb394e1" }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "eb394e1" }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "eb394e1" }
+openvm-algebra-moduli-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "eb394e1" }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "eb394e1" }
+openvm-ecc-sw-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "eb394e1" }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "eb394e1", features = [
     "k256",
 ] }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "354dd06", features = [
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "eb394e1", features = [
     "export-intrinsics",
 ] }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "354dd06", features = [
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "eb394e1", features = [
     "bn254",
 ] }
 
