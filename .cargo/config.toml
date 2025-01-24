@@ -26,7 +26,7 @@ openvm-circuit-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", re
 openvm-algebra-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
 openvm-algebra-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
 openvm-algebra-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
-openvm-algebra-moduli-setup = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
+openvm-algebra-moduli-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
 openvm-algebra-complex-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
 openvm-bigint-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
 openvm-bigint-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
@@ -34,7 +34,7 @@ openvm-bigint-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", rev 
 openvm-ecc-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
 openvm-ecc-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
 openvm-ecc-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
-openvm-ecc-sw-setup = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
+openvm-ecc-sw-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
 openvm-keccak256-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
 openvm-keccak256-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
 openvm-keccak256-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "48b600b363827646784794f83ab8bb7b3389db6b" }
