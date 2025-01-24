@@ -22,6 +22,7 @@ use openvm_sdk::{
 use openvm_stark_sdk::{bench::run_with_metric_collection, p3_baby_bear::BabyBear};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 use std::{path::PathBuf, sync::Arc};
+use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
 
 pub use reth_primitives;
 
@@ -102,6 +103,8 @@ async fn main() -> eyre::Result<()> {
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info");
     }
+
+    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
 
     // Parse the command line arguments.
     let args = HostArgs::parse();
