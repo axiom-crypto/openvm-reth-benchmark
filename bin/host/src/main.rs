@@ -83,10 +83,10 @@ fn reth_vm_config(app_log_blowup: usize, max_segment_length: usize) -> SdkVmConf
         .keccak(Default::default())
         .bigint(int256)
         .modular(ModularExtension::new(vec![
-            bn_config.modulus.clone(),
-            bn_config.scalar.clone(),
             SECP256K1_CONFIG.modulus.clone(),
             SECP256K1_CONFIG.scalar.clone(),
+            bn_config.modulus.clone(),
+            bn_config.scalar.clone(),
         ]))
         .fp2(Fp2Extension::new(vec![bn_config.modulus.clone()]))
         .ecc(WeierstrassExtension::new(vec![bn_config.clone(), SECP256K1_CONFIG.clone()]))
