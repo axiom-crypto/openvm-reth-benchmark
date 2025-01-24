@@ -28,7 +28,7 @@
 # openvm-algebra-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
 # openvm-algebra-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
 # openvm-algebra-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-algebra-moduli-setup = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-algebra-moduli-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
 # openvm-algebra-complex-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
 # openvm-bigint-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
 # openvm-bigint-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
@@ -36,7 +36,7 @@
 # openvm-ecc-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
 # openvm-ecc-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
 # openvm-ecc-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-ecc-sw-setup = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+# openvm-ecc-sw-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
 # openvm-keccak256-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
 # openvm-keccak256-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
 # openvm-keccak256-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
