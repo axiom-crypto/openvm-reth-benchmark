@@ -160,3 +160,10 @@ strip = false
 inherits = "release"
 lto = "fat"
 codegen-units = 1
+
+[profile.fast]
+inherits = "dev"
+debug-assertions = true
+# better recompile times
+incremental = true
+lto = "thin"
