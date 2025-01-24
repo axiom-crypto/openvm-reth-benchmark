@@ -22,7 +22,6 @@ use openvm_sdk::{
 use openvm_stark_sdk::{bench::run_with_metric_collection, p3_baby_bear::BabyBear};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 use std::{path::PathBuf, sync::Arc};
-use tracing_subscriber::EnvFilter;
 
 pub use reth_primitives;
 
