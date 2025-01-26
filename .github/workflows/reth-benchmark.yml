@@ -61,6 +61,10 @@ on:
         default: 8388508 # 2**23 - 100
   workflow_call:
     inputs:
+      ref:
+        type: string
+        required: false
+        description: Git ref to checkout
       instance_family:
         type: string
         required: false
@@ -138,7 +142,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref || github.ref }}
+          ref: ${{ inputs.ref || github.head_ref || github.ref }}
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
         with:

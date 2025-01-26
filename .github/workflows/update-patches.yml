@@ -9,12 +9,29 @@ on:
       OPENVM_REV:
         description: "Optional ref for openvm (defaults to main head)"
         required: false
+      run_benchmark:
+        description: "Run reth benchmark after patching"
+        type: boolean
+        required: false
+        default: false
+      benchmark_mode:
+        description: "Benchmark mode (if running benchmark)"
+        type: choice
+        required: false
+        options:
+          - execute
+          - prove
+          - prove-e2e
+        default: prove-e2e
 
 jobs:
   update-config:
     name: "Update .cargo/config.toml and open a pull request"
     runs-on:
       ["runs-on", "runner=2cpu-linux-arm64", "run-id=${{ github.run_id }}"]
+    outputs:
+      branch_name: ${{ steps.create-branch.outputs.branch_name }}
+      pr_number: ${{ steps.create-pr.outputs.pr_number }}
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
@@ -74,18 +91,20 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Create or update branch
+        id: create-branch
         run: |
           BRANCH_NAME="patch-openvm-$(date +%Y%m%d%H%M%S)"
           git checkout -b "$BRANCH_NAME"
           git add -f .cargo/config.toml
           git commit -m "Patch openvm commits in .cargo/config.toml"
           git push -u origin "$BRANCH_NAME"
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
       - name: Create pull request
         uses: repo-sync/pull-request@v2
+        id: create-pr
         with:
-          source_branch: ${{ env.BRANCH_NAME }}
+          source_branch: ${{ steps.create-branch.outputs.branch_name }}
           destination_branch: ${{ github.ref_name }}
           pr_title: "Update .cargo/config.toml"
           pr_body: |
@@ -93,4 +112,31 @@ jobs:
             - STARK_BACKEND_REV = ${{ steps.get-stark-backend-rev.outputs.result }}
             - OPENVM_REV        = ${{ steps.get-openvm-rev.outputs.result }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-        id: create-pr-branch
+
+  run-benchmark:
+    needs: update-config
+    if: ${{ github.event.inputs.run_benchmark == 'true' }}
+    uses: ./.github/workflows/reth-benchmark.yml
+    with:
+      mode: ${{ github.event.inputs.benchmark_mode }}
+      ref: ${{ needs.update-config.outputs.branch_name }}
+    secrets:
+      GH_ACTIONS_DEPLOY_PRIVATE_KEY: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
+      RPC_URL_1: ${{ secrets.RPC_URL_1 }}
+
+  close-pr:
+    needs: [update-config, run-benchmark]
+    if: ${{ github.event.inputs.run_benchmark == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close PR
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: ${{ needs.update-config.outputs.pr_number }},
+              state: 'closed'
+            });
