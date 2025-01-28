@@ -195,12 +195,12 @@ async fn main() -> eyre::Result<()> {
                 if args.execute {
                     let executor = VmExecutor::<_, _>::new(app_config.app_vm_config);
                     info_span!("execute", group = program_name)
-                        .in_scope(|| executor.execute(exe, stdin)?);
+                        .in_scope(|| executor.execute(exe, stdin))?;
                 } else if args.tracegen {
                     let executor = VmExecutor::<_, _>::new(app_config.app_vm_config);
                     info_span!("tracegen", group = program_name).in_scope(|| {
-                        executor.execute_and_generate::<BabyBearPoseidon2Config>(exe, stdin)?
-                    });
+                        executor.execute_and_generate::<BabyBearPoseidon2Config>(exe, stdin)
+                    })?;
                 } else if args.prove {
                     let app_pk = sdk.app_keygen(app_config)?;
                     let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
