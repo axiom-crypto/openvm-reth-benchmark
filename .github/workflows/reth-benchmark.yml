@@ -200,7 +200,7 @@ jobs:
         working-directory: bin/client-eth
         run: |
           PROFILE="release"
-          if [[ "${{ inputs.collect_metrics }}" == "true" ]]; then
+          if [[ "${{ github.event.inputs.collect_metrics || inputs.collect_metrics }}" == "true" ]]; then
             PROFILE="profiling"
           fi
           cargo openvm build --no-transpile --profile=$PROFILE
@@ -270,11 +270,11 @@ jobs:
             --file $BENCHER_METRIC_PATH
 
       - name: Install inferno-flamegraph
-        if: ${{ inputs.collect_metrics || github.event.inputs.collect_metrics }}
+        if: ${{ inputs.collect_metrics == true || github.event.inputs.collect_metrics == true }}
         run: cargo install inferno
 
       - name: Generate flamegraphs
-        if: ${{ inputs.collect_metrics || github.event.inputs.collect_metrics }}
+        if: ${{ inputs.collect_metrics == true || github.event.inputs.collect_metrics == true }}
         run: |
           python3 openvm/ci/scripts/metric_unify/flamegraph.py $METRIC_PATH
           s5cmd cp '.bench_metrics/flamegraphs/*.svg' "${{ env.S3_FLAMEGRAPHS_PATH }}/${current_sha}/"
