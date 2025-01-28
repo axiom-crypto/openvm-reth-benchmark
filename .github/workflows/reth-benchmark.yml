@@ -124,11 +124,13 @@ on:
 env:
   S3_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/results
   S3_METRICS_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/metrics
-  PUBLIC_S3_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/flamegraphs
+  S3_FLAMEGRAPHS_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/flamegraphs
+  S3_FLAMEGRAPHS_URL: https://axiom-public-data-sandbox-us-east-1.s3.us-east-1.amazonaws.com/benchmark/github/flamegraphs
   FEATURE_FLAGS: "bench-metrics,parallel,nightly-features"
   CMD_ARGS: ""
   INPUT_ARGS: ""
   CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+  BENCHER_PROJECT: openvm-reth-benchmark
 
 jobs:
   run-reth:
@@ -249,27 +251,43 @@ jobs:
 
       - name: Generate markdown # result path is hardcoded results.md
         run: |
-          openvm-prof --json-paths $METRIC_PATH
+          BENCHER_METRIC_PATH=bencher.json
+          openvm-prof --json-paths $METRIC_PATH --output-json $BENCHER_METRIC_PATH
           MD_PATH=${METRIC_PATH%.json}.md
           echo "MD_PATH=${MD_PATH}" >> $GITHUB_ENV
+          echo "BENCHER_METRIC_PATH=${BENCHER_METRIC_PATH}" >> $GITHUB_ENV
 
-      # - name: Install inferno-flamegraph
-      #   run: cargo install inferno
+      - name: Install inferno-flamegraph
+        if: ${{ inputs.collect_metrics || github.event.inputs.collect_metrics }}
+        run: cargo install inferno
 
-      # - name: Generate flamegraphs
-      #   run: |
-      #     if [[ -f $METRIC_PATH ]]; then
-      #       python3 openvm/ci/scripts/metric_unify/flamegraph.py $METRIC_PATH
-      #       s5cmd cp '.bench_metrics/flamegraphs/*.svg' "${{ env.PUBLIC_S3_PATH }}/${current_sha}/"
-      #       echo "UPLOAD_FLAMEGRAPHS=1" >> $GITHUB_ENV
-      #     fi
+      - name: Generate flamegraphs
+        if: ${{ inputs.collect_metrics || github.event.inputs.collect_metrics }}
+        run: |
+          python3 openvm/ci/scripts/metric_unify/flamegraph.py $METRIC_PATH
+          s5cmd cp '.bench_metrics/flamegraphs/*.svg' "${{ env.S3_FLAMEGRAPHS_PATH }}/${current_sha}/"
 
-      - name: Add benchmark metadata to markdown, and upload
+          echo "" >> $MD_PATH
+          echo "<details>" >> $MD_PATH
+          echo "<summary>Flamegraphs</summary>" >> $MD_PATH
+          echo "" >> $MD_PATH
+          for file in .bench_metrics/flamegraphs/*.svg; do
+            filename=$(basename "$file")
+            flamegraph_url=${{ env.S3_FLAMEGRAPHS_URL }}/${current_sha}/${filename}
+            echo "[![]($flamegraph_url)]($flamegraph_url)" >> $MD_PATH
+          done
+          rm -f .bench_metrics/flamegraphs/*.svg
+          echo "" >> $MD_PATH
+          echo "</details>" >> $MD_PATH
+          echo "" >> $MD_PATH
+
+      - name: Add benchmark metadata to markdown
         run: |
           COMMIT_URL=https://github.com/${{ github.repository }}/commit/${current_sha}
           BENCHMARK_WORKFLOW_URL=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
           source openvm/ci/scripts/utils.sh
+
           add_metadata $MD_PATH \
             ${{ inputs.max_segment_length || github.event.inputs.max_segment_length }} \
             ${{ inputs.instance_family || github.event.inputs.instance_family }} \
@@ -324,3 +342,12 @@ jobs:
       - name: Path to result
         run: |
           echo "https://github.com/axiom-crypto/openvm-reth-benchmark/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_NAME}.md"
+
+      - uses: bencherdev/bencher@main
+      - name: Upload bencher metrics
+        run: |
+          bencher run \
+            --project ${{ env.BENCHER_PROJECT }} \
+            --testbed ${{ inputs.instance_family || github.event.inputs.instance_family }} \
+            --adapter json \
+            --file $BENCHER_METRIC_PATH
