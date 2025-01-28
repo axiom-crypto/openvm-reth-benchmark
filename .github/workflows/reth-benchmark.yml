@@ -166,10 +166,10 @@ jobs:
 
       - name: Install cargo-openvm
         run: |
-          cargo install --git https://github.com/openvm-org/openvm.git cargo-openvm
+          cargo install --git https://github.com/openvm-org/openvm.git --force cargo-openvm
       - name: Install openvm-prof
         run: |
-          cargo install --git https://github.com/openvm-org/openvm.git --profile=dev openvm-prof
+          cargo install --git https://github.com/openvm-org/openvm.git --profile=dev --force openvm-prof
       - name: Checkout openvm (for scripts)
         run: |
           git clone https://github.com/openvm-org/openvm.git
