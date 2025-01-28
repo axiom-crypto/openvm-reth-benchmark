@@ -120,6 +120,8 @@ on:
         required: true
       RPC_URL_1:
         required: true
+      BENCHER_API_TOKEN:
+        required: true
 
 env:
   S3_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/results

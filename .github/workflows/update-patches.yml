@@ -126,6 +126,7 @@ jobs:
     secrets:
       GH_ACTIONS_DEPLOY_PRIVATE_KEY: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
       RPC_URL_1: ${{ secrets.RPC_URL_1 }}
+      BENCHER_API_TOKEN: ${{ secrets.BENCHER_API_TOKEN }}
 
   close-pr:
     needs: [update-config, run-benchmark]
