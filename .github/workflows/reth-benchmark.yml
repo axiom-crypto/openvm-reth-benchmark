@@ -215,7 +215,7 @@ jobs:
           OPTIONAL_ARGS=""
           PROFILE="release"
           FEATURES="bench-metrics,${{ inputs.memory_allocator || github.event.inputs.memory_allocator }}"
-          RUST_LOG="p3_=warn"
+          RUST_LOG="info,p3_=warn"
           if [[ "${{ inputs.collect_metrics || github.event.inputs.collect_metrics }}" == "true" ]]; then
             OPTIONAL_ARGS="--profiling --kzg-params-dir $PARAMS_DIR"
             PROFILE="profiling"
