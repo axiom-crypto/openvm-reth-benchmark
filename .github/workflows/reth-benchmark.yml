@@ -348,6 +348,7 @@ jobs:
         run: |
           bencher run \
             --project ${{ env.BENCHER_PROJECT }} \
+            --token '${{ secrets.BENCHER_API_TOKEN }}' \
             --testbed ${{ inputs.instance_family || github.event.inputs.instance_family }} \
             --adapter json \
             --file $BENCHER_METRIC_PATH
