@@ -23,6 +23,8 @@ on:
           - prove
           - prove-e2e
         default: prove-e2e
+  schedule:
+    - cron: "0 */12 * * *" # Run every 12 hours
 
 jobs:
   update-config:
@@ -93,7 +95,8 @@ jobs:
       - name: Create or update branch
         id: create-branch
         run: |
-          BRANCH_NAME="patch-openvm-$(date +%Y%m%d%H%M%S)"
+          PREFIX="${{ github.event_name == 'schedule' && 'nightly' || 'patch-openvm' }}"
+          BRANCH_NAME="${PREFIX}-$(date +%Y%m%d%H%M%S)"
           git checkout -b "$BRANCH_NAME"
           git add -f .cargo/config.toml
           git commit -m "Patch openvm commits in .cargo/config.toml"
@@ -106,7 +109,7 @@ jobs:
         with:
           source_branch: ${{ steps.create-branch.outputs.branch_name }}
           destination_branch: ${{ github.ref_name }}
-          pr_title: "Update .cargo/config.toml"
+          pr_title: "Patch openvm commits"
           pr_body: |
             This pull request updates .cargo/config.toml using:
             - STARK_BACKEND_REV = ${{ steps.get-stark-backend-rev.outputs.result }}
@@ -115,10 +118,10 @@ jobs:
 
   run-benchmark:
     needs: update-config
-    if: ${{ github.event.inputs.run_benchmark == 'true' }}
+    if: ${{ github.event.inputs.run_benchmark == 'true' || github.event_name == 'schedule' }}
     uses: ./.github/workflows/reth-benchmark.yml
     with:
-      mode: ${{ github.event.inputs.benchmark_mode }}
+      mode: ${{ github.event.inputs.benchmark_mode || 'prove-e2e' }}
       ref: ${{ needs.update-config.outputs.branch_name }}
     secrets:
       GH_ACTIONS_DEPLOY_PRIVATE_KEY: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
@@ -126,7 +129,7 @@ jobs:
 
   close-pr:
     needs: [update-config, run-benchmark]
-    if: ${{ github.event.inputs.run_benchmark == 'true' }}
+    if: ${{ github.event.inputs.run_benchmark == 'true' || github.event_name == 'schedule' }}
     runs-on: ubuntu-latest
     steps:
       - name: Close PR
