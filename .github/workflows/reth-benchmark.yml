@@ -259,6 +259,16 @@ jobs:
           echo "MD_PATH=${MD_PATH}" >> $GITHUB_ENV
           echo "BENCHER_METRIC_PATH=${BENCHER_METRIC_PATH}" >> $GITHUB_ENV
 
+      - uses: bencherdev/bencher@main
+      - name: Upload bencher metrics
+        run: |
+          bencher run \
+            --project ${{ env.BENCHER_PROJECT }} \
+            --token '${{ secrets.BENCHER_API_TOKEN }}' \
+            --testbed ${{ inputs.instance_family || github.event.inputs.instance_family }} \
+            --adapter json \
+            --file $BENCHER_METRIC_PATH
+
       - name: Install inferno-flamegraph
         if: ${{ inputs.collect_metrics || github.event.inputs.collect_metrics }}
         run: cargo install inferno
@@ -344,13 +354,3 @@ jobs:
       - name: Path to result
         run: |
           echo "https://github.com/axiom-crypto/openvm-reth-benchmark/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_NAME}.md"
-
-      - uses: bencherdev/bencher@main
-      - name: Upload bencher metrics
-        run: |
-          bencher run \
-            --project ${{ env.BENCHER_PROJECT }} \
-            --token '${{ secrets.BENCHER_API_TOKEN }}' \
-            --testbed ${{ inputs.instance_family || github.event.inputs.instance_family }} \
-            --adapter json \
-            --file $BENCHER_METRIC_PATH
