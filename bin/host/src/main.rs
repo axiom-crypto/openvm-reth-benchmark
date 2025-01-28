@@ -176,7 +176,16 @@ async fn main() -> eyre::Result<()> {
     let elf = Elf::decode(OPENVM_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
     let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
-    let program_name = "reth_block";
+    let mode = if args.execute {
+        "execute"
+    } else if args.tracegen {
+        "tracegen"
+    } else if args.prove {
+        "prove"
+    } else {
+        "prove_e2e"
+    };
+    let program_name = format!("reth.{}.block_{}", mode, args.block_number);
     let app_config = args.benchmark.app_config(vm_config.clone());
 
     run_with_metric_collection("OUTPUT_PATH", || {
@@ -217,7 +226,7 @@ async fn main() -> eyre::Result<()> {
                         app_committed_exe,
                         full_agg_pk,
                     );
-                    prover.set_program_name("reth_block");
+                    prover.set_program_name(program_name);
                     let _evm_proof = prover.generate_proof_for_evm(stdin);
                 }
 
