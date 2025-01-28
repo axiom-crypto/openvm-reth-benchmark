@@ -26,6 +26,7 @@ use openvm_stark_sdk::{bench::run_with_metric_collection, p3_baby_bear::BabyBear
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 pub use reth_primitives;
 use std::{path::PathBuf, sync::Arc};
+use tracing::info_span;
 
 mod execute;
 
@@ -189,14 +190,17 @@ async fn main() -> eyre::Result<()> {
     let app_config = args.benchmark.app_config(vm_config.clone());
 
     run_with_metric_collection("OUTPUT_PATH", || {
-        tracing::info_span!("reth-block", block_number = args.block_number).in_scope(
+        info_span!("reth-block", block_number = args.block_number).in_scope(
             || -> eyre::Result<()> {
                 if args.execute {
                     let executor = VmExecutor::<_, _>::new(app_config.app_vm_config);
-                    executor.execute(exe, stdin)?;
+                    info_span!("execute", group = program_name)
+                        .in_scope(|| executor.execute(exe, stdin)?);
                 } else if args.tracegen {
                     let executor = VmExecutor::<_, _>::new(app_config.app_vm_config);
-                    executor.execute_and_generate::<BabyBearPoseidon2Config>(exe, stdin)?;
+                    info_span!("tracegen", group = program_name).in_scope(|| {
+                        executor.execute_and_generate::<BabyBearPoseidon2Config>(exe, stdin)?
+                    });
                 } else if args.prove {
                     let app_pk = sdk.app_keygen(app_config)?;
                     let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
