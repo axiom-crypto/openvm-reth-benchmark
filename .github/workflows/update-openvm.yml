@@ -43,11 +43,15 @@ jobs:
           bash ci/update_rev.sh $OLD_REV $OPENVM_REV
 
       - name: Update workspace Cargo.lock
-        run: cargo tree
+        run: |
+          cargo update -p openvm-sdk
+          cargo update -p openvm-stark-sdk
+          cargo tree
 
       - name: Update guest Cargo.lock
         working-directory: bin/client-eth
         run: |
+          cargo update -p openvm
           cargo update -p revm
           cargo tree
 
@@ -73,7 +77,7 @@ jobs:
         with:
           source_branch: ${{ env.BRANCH_NAME }}
           destination_branch: ${{ github.ref_name }}
-          pr_title: "Update .cargo/config.toml"
+          pr_title: "Update openvm to ${{ steps.get-openvm-rev.outputs.result }}"
           pr_body: |
             This pull request updates Cargo dependencies using:
             - OPENVM_REV        = ${{ steps.get-openvm-rev.outputs.result }}
