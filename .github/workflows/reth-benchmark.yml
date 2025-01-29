@@ -14,7 +14,7 @@ on:
         type: string
         required: false
         description: Memory allocator to use (mimalloc or jemalloc)
-        default: mimalloc
+        default: jemalloc
       block_number:
         type: number
         required: false
@@ -74,7 +74,7 @@ on:
         type: string
         required: false
         description: Memory allocator to use (mimalloc or jemalloc)
-        default: mimalloc
+        default: jemalloc
       block_number:
         type: number
         required: false
