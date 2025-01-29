@@ -128,7 +128,6 @@ env:
   S3_METRICS_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/metrics
   S3_FLAMEGRAPHS_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/flamegraphs
   S3_FLAMEGRAPHS_URL: https://axiom-public-data-sandbox-us-east-1.s3.us-east-1.amazonaws.com/benchmark/github/flamegraphs
-  FEATURE_FLAGS: "bench-metrics,parallel,nightly-features"
   CMD_ARGS: ""
   INPUT_ARGS: ""
   CARGO_NET_GIT_FETCH_WITH_CLI: "true"
@@ -216,7 +215,7 @@ jobs:
           BLOCK_NUMBER=${{ inputs.block_number || github.event.inputs.block_number }}
           OPTIONAL_ARGS=""
           PROFILE="release"
-          FEATURES="bench-metrics,${{ inputs.memory_allocator || github.event.inputs.memory_allocator }}"
+          FEATURES="bench-metrics,nightly-features,${{ inputs.memory_allocator || github.event.inputs.memory_allocator }}"
           RUST_LOG="info,p3_=warn"
           if [[ "${{ inputs.collect_metrics || github.event.inputs.collect_metrics }}" == "true" ]]; then
             OPTIONAL_ARGS="--profiling --kzg-params-dir $PARAMS_DIR"
