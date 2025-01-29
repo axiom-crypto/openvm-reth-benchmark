@@ -3803,7 +3803,7 @@ dependencies = [
  "openvm-pairing-circuit",
  "openvm-rv32im-circuit",
  "openvm-sdk",
- "openvm-stark-sdk 0.2.0-alpha",
+ "openvm-stark-sdk 1.0.0-rc.0",
  "openvm-transpiler",
  "reth-primitives",
  "serde",
@@ -4012,29 +4012,6 @@ dependencies = [
 
 [[package]]
 name = "openvm-stark-backend"
-version = "0.2.0-alpha"
-source = "git+https://github.com/openvm-org/stark-backend.git?rev=47a0bda#47a0bdabb827bcb95eac0b3ff15c599b5e89236d"
-dependencies = [
- "async-trait",
- "cfg-if",
- "derivative",
- "itertools 0.13.0",
- "p3-air",
- "p3-challenger",
- "p3-commit",
- "p3-field",
- "p3-matrix",
- "p3-maybe-rayon",
- "p3-uni-stark",
- "p3-util",
- "rustc-hash 2.1.0",
- "serde",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "openvm-stark-backend"
 version = "0.4.0-alpha"
 source = "git+https://github.com/openvm-org/stark-backend.git?tag=v0.4.0-alpha#c7c12430185d29b06b26b053a940749d0d853833"
 dependencies = [
@@ -4062,17 +4039,42 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-stark-sdk"
-version = "0.2.0-alpha"
-source = "git+https://github.com/openvm-org/stark-backend.git?rev=47a0bda#47a0bdabb827bcb95eac0b3ff15c599b5e89236d"
+name = "openvm-stark-backend"
+version = "1.0.0-rc.0"
+source = "git+https://github.com/openvm-org/stark-backend.git?rev=18cf1c084ebeb3ca1163e55b87893f1d1fd7fc1f#18cf1c084ebeb3ca1163e55b87893f1d1fd7fc1f"
 dependencies = [
+ "async-trait",
+ "cfg-if",
+ "derivative",
+ "derive-new 0.7.0",
+ "itertools 0.13.0",
+ "p3-air",
+ "p3-challenger",
+ "p3-commit",
+ "p3-field",
+ "p3-matrix",
+ "p3-maybe-rayon",
+ "p3-uni-stark",
+ "p3-util",
+ "rustc-hash 2.1.0",
+ "serde",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "openvm-stark-sdk"
+version = "0.4.0-alpha"
+source = "git+https://github.com/openvm-org/stark-backend.git?tag=v0.4.0-alpha#c7c12430185d29b06b26b053a940749d0d853833"
+dependencies = [
+ "derivative",
  "derive_more 0.99.18",
  "ff 0.13.0",
  "itertools 0.13.0",
  "metrics",
  "metrics-tracing-context",
  "metrics-util",
- "openvm-stark-backend 0.2.0-alpha",
+ "openvm-stark-backend 0.4.0-alpha",
  "p3-baby-bear",
  "p3-blake3",
  "p3-bn254-fr",
@@ -4097,8 +4099,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-stark-sdk"
-version = "0.4.0-alpha"
-source = "git+https://github.com/openvm-org/stark-backend.git?tag=v0.4.0-alpha#c7c12430185d29b06b26b053a940749d0d853833"
+version = "1.0.0-rc.0"
+source = "git+https://github.com/openvm-org/stark-backend.git?rev=18cf1c084ebeb3ca1163e55b87893f1d1fd7fc1f#18cf1c084ebeb3ca1163e55b87893f1d1fd7fc1f"
 dependencies = [
  "derivative",
  "derive_more 0.99.18",
@@ -4107,7 +4109,7 @@ dependencies = [
  "metrics",
  "metrics-tracing-context",
  "metrics-util",
- "openvm-stark-backend 0.4.0-alpha",
+ "openvm-stark-backend 1.0.0-rc.0",
  "p3-baby-bear",
  "p3-blake3",
  "p3-bn254-fr",
