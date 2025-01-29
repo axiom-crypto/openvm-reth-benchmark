@@ -87,6 +87,11 @@ jobs:
           sed "s|\$OPENVM_REV|${OPENVM_REV}|g" .cargo/config.tmp.toml > .cargo/config.toml
           rm .cargo/config.tmp.toml
 
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
       - name: Update workspace Cargo.lock
         run: |
           cargo update -p openvm-sdk
