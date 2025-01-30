@@ -214,7 +214,7 @@ jobs:
           MODE=${{ inputs.mode || github.event.inputs.mode }}
           BLOCK_NUMBER=${{ inputs.block_number || github.event.inputs.block_number }}
           OPTIONAL_ARGS=""
-          PROFILE="release"
+          PROFILE="maxperf"
           FEATURES="bench-metrics,nightly-features,${{ inputs.memory_allocator || github.event.inputs.memory_allocator }}"
           RUST_LOG="info,p3_=warn"
           if [[ "${{ inputs.collect_metrics || github.event.inputs.collect_metrics }}" == "true" ]]; then
