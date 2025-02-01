@@ -79,3 +79,10 @@ jobs:
           MD_PATH=${TARGET_JSON%.json}.md
           # Inspired by https://github.com/rustls/rustls/blob/7159373401f253cbaacd276634508e0798a8849f/.github/workflows/icount-bench.yml#L37
           cat $MD_PATH >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Workflow Inputs" >> $GITHUB_STEP_SUMMARY
+          echo "Base OpenVM Revision: ${{ github.event.inputs.base_rev }}" >> $GITHUB_STEP_SUMMARY
+          echo "Target OpenVM Revision: ${{ github.event.inputs.target_rev }}" >> $GITHUB_STEP_SUMMARY
+          echo "Instance Family: ${{ github.event.inputs.instance_family }}" >> $GITHUB_STEP_SUMMARY
+          echo "Benchmark Mode: ${{ github.event.inputs.benchmark_mode }}" >> $GITHUB_STEP_SUMMARY
