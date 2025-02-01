@@ -165,10 +165,10 @@ jobs:
           cache-on-failure: true
       - name: Display workflow inputs
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "${{ toJSON(github.event.inputs) }}"
-          else
+          if [[ "${{ inputs.manual_call }}" == "true" ]]; then
             echo "${{ toJSON(inputs) }}"
+          else
+            echo "${{ toJSON(github.event.inputs) }}"
           fi
       - name: Get current commit hash
         run: echo "current_sha=$(git rev-parse HEAD)" >> $GITHUB_ENV

@@ -174,6 +174,7 @@ jobs:
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "${{ github.event_name }}"
       - name: Set tag
+        id: set-tag
         run: |
           CARGO_LOCK_HASH=$(sha256sum Cargo.lock | cut -f1)
           echo "tag=$(git rev-parse HEAD)-${CARGO_LOCK_HASH}" >> $GITHUB_OUTPUT
