@@ -122,6 +122,10 @@ on:
         required: true
       BENCHER_API_TOKEN:
         required: true
+    outputs:
+      metric_name:
+        description: "Name of the metric"
+        value: ${{ jobs.run-reth.outputs.metric_name }}
 
 env:
   S3_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/results

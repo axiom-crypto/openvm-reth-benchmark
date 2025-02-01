@@ -61,7 +61,7 @@ on:
     outputs:
       metric_name:
         description: "Name of the metric"
-        value: ${{ jobs.run-benchmark.outputs.metric_name }}
+        value: ${{ jobs.run-benchmark && jobs.run-benchmark.outputs.metric_name || '' }}
 
 jobs:
   update-config:
@@ -192,6 +192,14 @@ jobs:
       GH_ACTIONS_DEPLOY_PRIVATE_KEY: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
       RPC_URL_1: ${{ secrets.RPC_URL_1 }}
       BENCHER_API_TOKEN: ${{ secrets.BENCHER_API_TOKEN }}
+
+  debug-outputs:
+    needs: run-benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug benchmark outputs
+        run: |
+          echo "Debug: Benchmark metric name: ${{ needs.run-benchmark.outputs.metric_name }}"
 
   close-pr:
     needs: [update-config, run-benchmark]
