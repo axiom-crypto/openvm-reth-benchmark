@@ -167,7 +167,7 @@ jobs:
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
       - name: Create pull request
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event.inputs != null }}
         uses: repo-sync/pull-request@v2
         id: create-pr
         with:
@@ -195,7 +195,7 @@ jobs:
 
   close-pr:
     needs: [update-config, run-benchmark]
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event.inputs != null }}
     runs-on: ubuntu-latest
     steps:
       - name: Close PR
