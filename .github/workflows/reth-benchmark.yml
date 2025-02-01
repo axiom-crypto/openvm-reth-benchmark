@@ -142,9 +142,11 @@ jobs:
       - family=${{ inputs.instance_family || github.event.inputs.instance_family }}
       - disk=large
       - tag=bench-reth-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
+      - extras=s3-cache
     outputs:
       metric_name: ${{ steps.set-metric-name.outputs.name }}
     steps:
+      - uses: runs-on/action@v1
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || github.head_ref || github.ref }}
@@ -201,18 +203,8 @@ jobs:
           echo "METRIC_PATH=${METRIC_PATH}" >> $GITHUB_ENV
           echo "name=${METRIC_NAME}" >> $GITHUB_OUTPUT
 
-      - name: Build ELF
-        working-directory: bin/client-eth
-        run: |
-          PROFILE="release"
-          if [[ "${{ github.event.inputs.collect_metrics || inputs.collect_metrics }}" == "true" ]]; then
-            PROFILE="profiling"
-          fi
-          cargo openvm build --no-transpile --profile=$PROFILE
-          mkdir -p ../host/elf
-          cp target/riscv32im-risc0-zkvm-elf/$PROFILE/openvm-client-eth ../host/elf/
-
       - name: Run Reth
+        id: run-reth
         run: |
           mkdir -p rpc-cache
           mkdir -p .bench_metrics
@@ -222,12 +214,20 @@ jobs:
           OPTIONAL_ARGS=""
           PROFILE="maxperf"
           FEATURES="bench-metrics,nightly-features,${{ inputs.memory_allocator || github.event.inputs.memory_allocator }}"
-          RUST_LOG="info,p3_=warn"
-          if [[ "${{ inputs.collect_metrics || github.event.inputs.collect_metrics }}" == "true" ]]; then
-            OPTIONAL_ARGS="--profiling --kzg-params-dir $PARAMS_DIR"
-            PROFILE="profiling"
-            FEATURES="${FEATURES},profiling"
-          fi
+          echo "cache_key=reth-binary-${PROFILE}-${FEATURES}" >> $GITHUB_OUTPUT
+
+      - name: Cache Reth binary
+        id: cache-binary
+        uses: actions/cache@v4
+        with:
+          path: target/${{ steps.run-reth.outputs.profile }}/openvm-reth-benchmark
+          key: ${{ steps.run-reth.outputs.cache_key }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build Reth if not cached
+        if: steps.cache-binary.outputs.cache-hit != 'true'
+        run: |
+          PROFILE="${{ steps.run-reth.outputs.profile }}"
+          FEATURES="${{ steps.run-reth.outputs.features }}"
           arch=$(uname -m)
           case $arch in
           arm64|aarch64)
@@ -237,13 +237,16 @@ jobs:
               RUSTFLAGS="-Ctarget-cpu=native -C target-feature=+avx512f"
               ;;
           *)
-          echo "Unsupported architecture: $arch"
-          exit 1
-          ;;
+              echo "Unsupported architecture: $arch"
+              exit 1
+              ;;
           esac
           export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
           RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark --profile=$PROFILE --no-default-features --features=$FEATURES
-          RUST_LOG=$RUST_LOG OUTPUT_PATH=${METRIC_PATH} ./target/$PROFILE/openvm-reth-benchmark \
+
+      - name: Run benchmark
+        run: |
+          RUST_LOG=info,p3_=warn OUTPUT_PATH=${METRIC_PATH} ./target/$PROFILE/openvm-reth-benchmark \
             --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
             --app-log-blowup ${{ inputs.app_log_blowup || github.event.inputs.app_log_blowup }} \
             --leaf-log-blowup ${{ inputs.leaf_log_blowup || github.event.inputs.leaf_log_blowup }} \
