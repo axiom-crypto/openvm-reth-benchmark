@@ -80,7 +80,7 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const inputRef = inputs.STARK_BACKEND_REV || github.event.inputs.STARK_BACKEND_REV;
+            const inputRef = context.inputs?.STARK_BACKEND_REV || github.event.inputs?.STARK_BACKEND_REV;
             if (inputRef && inputRef.trim()) {
               return inputRef;
             } else {
@@ -97,7 +97,7 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const inputRef = inputs.OPENVM_REV || github.event.inputs.OPENVM_REV;
+            const inputRef = context.inputs?.OPENVM_REV || github.event.inputs?.OPENVM_REV;
             if (inputRef && inputRef.trim()) {
               return inputRef;
             } else {
