@@ -43,9 +43,10 @@ on:
       mode:
         type: choice
         required: false
-        description: Running mode, one of execute, prove, or prove-e2e
+        description: Running mode
         options:
           - execute
+          - tracegen
           - prove
           - prove-e2e
         default: prove-e2e
@@ -103,7 +104,7 @@ on:
       mode:
         type: string
         required: false
-        description: Running mode, one of execute, prove, or prove-e2e
+        description: Running mode, one of execute, tracegen, prove, or prove-e2e
         default: prove-e2e
       collect_metrics:
         type: boolean

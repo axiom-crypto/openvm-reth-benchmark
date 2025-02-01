@@ -12,9 +12,14 @@ on:
         required: true
         type: string
       benchmark_mode:
-        description: "Benchmark mode"
-        type: string
+        type: choice
         required: false
+        description: Running mode
+        options:
+          - execute
+          - tracegen
+          - prove
+          - prove-e2e
         default: prove-e2e
       instance_family:
         description: "Instance family to use for benchmark"
