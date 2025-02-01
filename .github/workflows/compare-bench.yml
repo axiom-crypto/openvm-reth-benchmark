@@ -25,7 +25,7 @@ on:
         description: "Instance family to use for benchmark"
         type: string
         required: false
-        default: m7a.48xlarge
+        default: c7a.48xlarge
 
 jobs:
   run-base-benchmark:

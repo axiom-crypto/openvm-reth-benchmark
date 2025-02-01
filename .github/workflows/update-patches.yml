@@ -23,7 +23,7 @@ on:
         description: "Instance family to use for benchmark"
         type: string
         required: false
-        default: m7a.48xlarge
+        default: c7a.48xlarge
   schedule:
     - cron: "0 */12 * * *" # Run every 12 hours
   workflow_call:
@@ -50,7 +50,7 @@ on:
         type: string
         required: false
         description: "Instance family to use for benchmark"
-        default: m7a.48xlarge
+        default: c7a.48xlarge
       # https://github.com/actions/runner/discussions/1884
       manual_call:
         description: "To distinguish workflow_call from workflow_dispatch"
