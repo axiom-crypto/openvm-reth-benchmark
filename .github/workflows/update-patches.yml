@@ -155,7 +155,7 @@ jobs:
       - name: Set tag
         id: set-tag
         run: |
-          CARGO_LOCK_HASH=$(sha256sum Cargo.lock | cut -f1)
+          CARGO_LOCK_HASH=$(sha256sum Cargo.lock | cut -d' ' -f1 | cut -c1-8)
           echo "tag=$(git rev-parse HEAD)-${CARGO_LOCK_HASH}" >> $GITHUB_OUTPUT
       - name: Create or update branch
         id: create-branch
