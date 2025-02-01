@@ -13,18 +13,55 @@ on:
         description: "Run reth benchmark after patching"
         type: boolean
         required: false
-        default: false
+        default: true
       benchmark_mode:
         description: "Benchmark mode (if running benchmark)"
-        type: choice
+        type: string
         required: false
-        options:
-          - execute
-          - prove
-          - prove-e2e
         default: prove-e2e
+      instance_family:
+        description: "Instance family to use for benchmark"
+        type: string
+        required: false
+        default: m7a.48xlarge
   schedule:
     - cron: "0 */12 * * *" # Run every 12 hours
+  workflow_call:
+    inputs:
+      STARK_BACKEND_REV:
+        type: string
+        required: false
+        description: "Optional ref for openvm-stark-backend (defaults to main head)"
+      OPENVM_REV:
+        type: string
+        required: false
+        description: "Optional ref for openvm (defaults to main head)"
+      run_benchmark:
+        type: boolean
+        required: false
+        description: "Run reth benchmark after patching"
+        default: true
+      benchmark_mode:
+        type: string
+        required: false
+        description: "Benchmark mode (if running benchmark)"
+        default: prove-e2e
+      instance_family:
+        type: string
+        required: false
+        description: "Instance family to use for benchmark"
+        default: m7a.48xlarge
+    secrets:
+      GH_ACTIONS_DEPLOY_PRIVATE_KEY:
+        required: true
+      RPC_URL_1:
+        required: true
+      BENCHER_API_TOKEN:
+        required: true
+    outputs:
+      metric_path:
+        description: "Path to the metric json file"
+        value: ${{ jobs.run-benchmark.outputs.metric_path }}
 
 jobs:
   update-config:
@@ -131,6 +168,7 @@ jobs:
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
       - name: Create pull request
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         uses: repo-sync/pull-request@v2
         id: create-pr
         with:
@@ -149,6 +187,7 @@ jobs:
     uses: ./.github/workflows/reth-benchmark.yml
     with:
       mode: ${{ github.event.inputs.benchmark_mode || 'prove-e2e' }}
+      instance_family: ${{ github.event.inputs.instance_family || 'm7a.48xlarge' }}
       ref: ${{ needs.update-config.outputs.branch_name }}
     secrets:
       GH_ACTIONS_DEPLOY_PRIVATE_KEY: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
@@ -157,7 +196,7 @@ jobs:
 
   close-pr:
     needs: [update-config, run-benchmark]
-    if: ${{ github.event.inputs.run_benchmark == 'true' || github.event_name == 'schedule' }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Close PR

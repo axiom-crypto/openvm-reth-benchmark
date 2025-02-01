@@ -142,6 +142,8 @@ jobs:
       - family=${{ inputs.instance_family || github.event.inputs.instance_family }}
       - disk=large
       - tag=bench-reth-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
+    outputs:
+      metric_path: ${{ steps.set-metric-path.outputs.path }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -186,14 +188,18 @@ jobs:
           PARAMS_DIR=$(pwd)/params
           echo "PARAMS_DIR=$PARAMS_DIR" >> $GITHUB_ENV
 
+      - name: Get current commit hash
+        run: echo "current_sha=$(git rev-parse HEAD)" >> $GITHUB_ENV
       - name: Set metric name
+        id: set-metric-path
         run: |
           input_json_str="${{ toJSON(github.event.inputs) }}"
           input_hash=$(echo $input_json_str | sha256sum | cut -d' ' -f1)
-          METRIC_NAME=reth-${input_hash}
+          METRIC_NAME=reth-$current_sha-${input_hash}
           echo "METRIC_NAME=${METRIC_NAME}" >> $GITHUB_ENV
           METRIC_PATH=".bench_metrics/${METRIC_NAME}.json"
           echo "METRIC_PATH=${METRIC_PATH}" >> $GITHUB_ENV
+          echo "path=${METRIC_PATH}" >> $GITHUB_OUTPUT
 
       - name: Build ELF
         working-directory: bin/client-eth
@@ -244,12 +250,19 @@ jobs:
             --root-log-blowup ${{ inputs.root_log_blowup || github.event.inputs.root_log_blowup }} \
             --max-segment-length ${{ inputs.max_segment_length || github.event.inputs.max_segment_length }} $OPTIONAL_ARGS
 
+      - name: Upload metric file
+        uses: actions/upload-artifact@v4
+        with:
+          name: metric-json
+          path: ${{ steps.set-metric-path.outputs.path }}
+          retention-days: 1
+
       - name: Upload Benchmark Metrics
         run: |
           current_sha=$(git rev-parse HEAD)
           echo "Current SHA: $current_sha"
           echo "current_sha=${current_sha}" >> $GITHUB_ENV
-          s5cmd cp ${METRIC_PATH} ${{ env.S3_METRICS_PATH }}/${current_sha}-${METRIC_NAME}.json
+          s5cmd cp ${METRIC_PATH} ${{ env.S3_METRICS_PATH }}/${METRIC_NAME}.json
 
       - name: Generate markdown # result path is hardcoded results.md
         run: |
@@ -310,7 +323,9 @@ jobs:
 
       - name: Upload markdown
         run: |
-          s5cmd cp $MD_PATH "${{ env.S3_PATH }}/${current_sha}-${METRIC_NAME}.md"
+          S3_MD_PATH="${{ env.S3_PATH }}/${METRIC_NAME}.md"
+          s5cmd cp $MD_PATH $S3_MD_PATH
+          echo "S3_MD_PATH=${S3_MD_PATH}" >> $GITHUB_ENV
 
       ### Update gh-pages
       - uses: actions/checkout@v4
@@ -327,7 +342,7 @@ jobs:
           GH_PAGES_PATH="benchmarks-dispatch/${{ github.head_ref || github.ref }}"
           echo "GH_PAGES_PATH=${GH_PAGES_PATH}" >> $GITHUB_ENV
           mkdir -p ${GH_PAGES_PATH}
-          s5cmd cp "${{ env.S3_PATH }}/${current_sha}-${METRIC_NAME}.md" "${GH_PAGES_PATH}/${METRIC_NAME}.md"
+          s5cmd cp $S3_MD_PATH "${GH_PAGES_PATH}/${METRIC_NAME}.md"
 
           git add ${GH_PAGES_PATH}/${METRIC_NAME}.md
           git commit --allow-empty -m "Update benchmark result at ${GH_PAGES_PATH}/${METRIC_NAME}.md"

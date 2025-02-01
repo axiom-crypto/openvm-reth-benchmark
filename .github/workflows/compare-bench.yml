@@ -1,0 +1,74 @@
+name: "Compare Benchmarks"
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_rev:
+        description: "Base OpenVM revision to compare"
+        required: true
+        type: string
+      target_rev:
+        description: "Target OpenVM revision to compare"
+        required: true
+        type: string
+      benchmark_mode:
+        description: "Benchmark mode"
+        type: string
+        required: false
+        default: prove-e2e
+      instance_family:
+        description: "Instance family to use for benchmark"
+        type: string
+        required: false
+        default: m7a.48xlarge
+
+jobs:
+  run-base-benchmark:
+    name: "Run Base Benchmark"
+    uses: ./.github/workflows/update-patches.yml
+    with:
+      OPENVM_REV: ${{ github.event.inputs.base_rev }}
+      run_benchmark: true
+      benchmark_mode: ${{ github.event.inputs.benchmark_mode }}
+      instance_family: ${{ github.event.inputs.instance_family }}
+    secrets: inherit
+
+  run-target-benchmark:
+    name: "Run Target Benchmark"
+    uses: ./.github/workflows/update-patches.yml
+    with:
+      OPENVM_REV: ${{ github.event.inputs.target_rev }}
+      run_benchmark: true
+      benchmark_mode: ${{ github.event.inputs.benchmark_mode }}
+      instance_family: ${{ github.event.inputs.instance_family }}
+    secrets: inherit
+
+  compare-results:
+    needs: [run-base-benchmark, run-target-benchmark]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download base benchmark results
+        uses: actions/download-artifact@v4
+        with:
+          name: metric-json
+          path: ${{ needs.run-base-benchmark.outputs.metric_path }}
+
+      - name: Download target benchmark results
+        uses: actions/download-artifact@v4
+        with:
+          name: metric-json
+          path: ${{ needs.run-target-benchmark.outputs.metric_path }}
+
+      - name: Install openvm-prof
+        run: |
+          cargo install --git https://github.com/openvm-org/openvm.git --profile=dev --force openvm-prof
+      - name: Compare metrics
+        run: |
+          METRICS_PATH=${{ needs.run-target-benchmark.outputs.metric_path }}
+          echo "Comparing $METRICS_PATH with ${{ needs.run-target-benchmark.outputs.metric_path }}"
+          openvm-prof --json-paths $METRICS_PATH --prev-json-paths ${{ needs.run-base-benchmark.outputs.metric_path }} 
+          MD_PATH=${METRICS_PATH%.json}.md
+          # Inspired by https://github.com/rustls/rustls/blob/7159373401f253cbaacd276634508e0798a8849f/.github/workflows/icount-bench.yml#L37
+          cat $MD_PATH >> $GITHUB_STEP_SUMMARY
