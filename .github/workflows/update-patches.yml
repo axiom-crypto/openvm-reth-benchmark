@@ -183,11 +183,11 @@ jobs:
 
   run-benchmark:
     needs: update-config
-    if: ${{ github.event.inputs.run_benchmark == 'true' || github.event_name == 'schedule' }}
+    if: ${{ github.event.inputs.run_benchmark == 'true' || github.event_name == 'schedule' || inputs.run_benchmark == 'true' }}
     uses: ./.github/workflows/reth-benchmark.yml
     with:
-      mode: ${{ github.event.inputs.benchmark_mode || 'prove-e2e' }}
-      instance_family: ${{ github.event.inputs.instance_family || 'm7a.48xlarge' }}
+      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode }}
+      instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family }}
       ref: ${{ needs.update-config.outputs.branch_name }}
     secrets:
       GH_ACTIONS_DEPLOY_PRIVATE_KEY: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
