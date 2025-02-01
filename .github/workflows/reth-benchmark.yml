@@ -185,13 +185,17 @@ jobs:
       - name: Set cache keys
         id: set-cache-keys
         run: |
-          input_json_str="${{ toJSON(github.event.inputs || inputs) }}"
-          input_hash=$(echo $input_json_str | sha256sum | cut -d' ' -f1)
+          arch=$(uname -m)
           # Use inputs.tag if defined, otherwise use current commit SHA
           TAG="${{ inputs.tag || env.current_sha }}"
-          dir_hash=$(git write-tree)
-          echo "elf_cache_key=elf-${TAG}-${input_hash}" >> $GITHUB_OUTPUT
-          echo "host_cache_key=host-${TAG}-${input_hash}" >> $GITHUB_OUTPUT
+          GUEST_PROFILE="release"
+          HOST_PROFILE="maxperf"
+          if [[ "${{ inputs.collect_metrics || github.event.inputs.collect_metrics }}" == "true" ]]; then
+            GUEST_PROFILE="profiling"
+            HOST_PROFILE="profiling"
+          fi
+          echo "elf_cache_key=elf-${TAG}-${arch}-${GUEST_PROFILE}" >> $GITHUB_OUTPUT
+          echo "host_cache_key=host-${TAG}-${arch}-${HOST_PROFILE}" >> $GITHUB_OUTPUT
       - name: Load SSH key
         uses: webfactory/ssh-agent@v0.9.0
         with:
