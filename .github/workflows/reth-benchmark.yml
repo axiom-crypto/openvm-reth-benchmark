@@ -143,7 +143,7 @@ jobs:
       - disk=large
       - tag=bench-reth-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
     outputs:
-      metric_path: ${{ steps.set-metric-path.outputs.path }}
+      metric_name: ${{ steps.set-metric-name.outputs.name }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -191,7 +191,7 @@ jobs:
       - name: Get current commit hash
         run: echo "current_sha=$(git rev-parse HEAD)" >> $GITHUB_ENV
       - name: Set metric name
-        id: set-metric-path
+        id: set-metric-name
         run: |
           input_json_str="${{ toJSON(github.event.inputs) }}"
           input_hash=$(echo $input_json_str | sha256sum | cut -d' ' -f1)
@@ -199,7 +199,7 @@ jobs:
           echo "METRIC_NAME=${METRIC_NAME}" >> $GITHUB_ENV
           METRIC_PATH=".bench_metrics/${METRIC_NAME}.json"
           echo "METRIC_PATH=${METRIC_PATH}" >> $GITHUB_ENV
-          echo "path=${METRIC_PATH}" >> $GITHUB_OUTPUT
+          echo "name=${METRIC_NAME}" >> $GITHUB_OUTPUT
 
       - name: Build ELF
         working-directory: bin/client-eth
@@ -251,10 +251,11 @@ jobs:
             --max-segment-length ${{ inputs.max_segment_length || github.event.inputs.max_segment_length }} $OPTIONAL_ARGS
 
       - name: Upload metric file
+        id: upload-metric-artifact
         uses: actions/upload-artifact@v4
         with:
-          name: metric-json
-          path: ${{ steps.set-metric-path.outputs.path }}
+          name: ${{ steps.set-metric-name.outputs.name }}
+          path: ${{ env.METRIC_PATH }}
           retention-days: 1
 
       - name: Upload Benchmark Metrics
