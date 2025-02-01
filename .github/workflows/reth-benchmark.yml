@@ -178,7 +178,7 @@ jobs:
         run: |
           input_json_str="${{ toJSON(github.event.inputs || inputs) }}"
           input_hash=$(echo $input_json_str | sha256sum | cut -d' ' -f1)
-          dir_hash=$(find . -type f -exec sha256sum {} \; | sha256sum | cut -d' ' -f1)
+          dir_hash=$(git write-tree)
           echo "elf_cache_key=elf-${dir_hash}-${input_hash}" >> $GITHUB_OUTPUT
           echo "host_cache_key=host-${dir_hash}-${input_hash}" >> $GITHUB_OUTPUT
       - name: Load SSH key
