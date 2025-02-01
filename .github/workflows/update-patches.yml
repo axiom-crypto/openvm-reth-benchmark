@@ -59,9 +59,9 @@ on:
       BENCHER_API_TOKEN:
         required: true
     outputs:
-      metric_path:
-        description: "Path to the metric json file"
-        value: ${{ jobs.run-benchmark.outputs.metric_path }}
+      metric_name:
+        description: "Name of the metric"
+        value: ${{ jobs.run-benchmark.outputs.metric_name }}
 
 jobs:
   update-config:

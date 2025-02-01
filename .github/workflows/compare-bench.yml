@@ -66,8 +66,10 @@ jobs:
           cargo install --git https://github.com/openvm-org/openvm.git --profile=dev --force openvm-prof
       - name: Compare metrics
         run: |
-          BASE_JSON=$(find base-metric -name "*.json")
-          TARGET_JSON=$(find target-metric -name "*.json")
+          ls base-metric
+          BASE_JSON=$(find base-metric -maxdepth 1 -type f -name "*.json")
+          ls target-metric
+          TARGET_JSON=$(find target-metric -maxdepth 1 -type f -name "*.json")
           openvm-prof --json-paths $TARGET_JSON --prev-json-paths $BASE_JSON 
           MD_PATH=${TARGET_JSON%.json}.md
           # Inspired by https://github.com/rustls/rustls/blob/7159373401f253cbaacd276634508e0798a8849f/.github/workflows/icount-bench.yml#L37
