@@ -51,6 +51,12 @@ on:
         required: false
         description: "Instance family to use for benchmark"
         default: m7a.48xlarge
+      # https://github.com/actions/runner/discussions/1884
+      manual_call:
+        description: "To distinguish workflow_call from workflow_dispatch"
+        type: boolean
+        required: false
+        default: true
     secrets:
       GH_ACTIONS_DEPLOY_PRIVATE_KEY:
         required: true
@@ -61,7 +67,7 @@ on:
     outputs:
       metric_name:
         description: "Name of the metric"
-        value: ${{ jobs.run-benchmark && jobs.run-benchmark.outputs.metric_name || '' }}
+        value: ${{ jobs.run-benchmark.outputs.metric_name }}
 
 jobs:
   update-config:
@@ -71,6 +77,7 @@ jobs:
     outputs:
       branch_name: ${{ steps.create-branch.outputs.branch_name }}
       pr_number: ${{ steps.create-pr.outputs.pr_number }}
+      tag: ${{ steps.set-tag.outputs.tag }}
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
@@ -165,9 +172,13 @@ jobs:
           git commit -m "Patch openvm commits in .cargo/config.toml"
           git push -f origin "$BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-
+          echo "${{ github.event_name }}"
+      - name: Set tag
+        run: |
+          CARGO_LOCK_HASH=$(sha256sum Cargo.lock | cut -f1)
+          echo "tag=$(git rev-parse HEAD)-${CARGO_LOCK_HASH}" >> $GITHUB_OUTPUT
       - name: Create pull request
-        if: ${{ github.event.inputs != null }}
+        if: ${{ !inputs.manual_call }}
         uses: repo-sync/pull-request@v2
         id: create-pr
         with:
@@ -188,22 +199,15 @@ jobs:
       mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode }}
       instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family }}
       ref: ${{ needs.update-config.outputs.branch_name }}
+      tag: ${{ needs.update-config.outputs.tag }}
     secrets:
       GH_ACTIONS_DEPLOY_PRIVATE_KEY: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
       RPC_URL_1: ${{ secrets.RPC_URL_1 }}
       BENCHER_API_TOKEN: ${{ secrets.BENCHER_API_TOKEN }}
 
-  debug-outputs:
-    needs: run-benchmark
-    runs-on: ubuntu-latest
-    steps:
-      - name: Debug benchmark outputs
-        run: |
-          echo "Debug: Benchmark metric name: ${{ needs.run-benchmark.outputs.metric_name }}"
-
   close-pr:
     needs: [update-config, run-benchmark]
-    if: ${{ github.event.inputs != null }}
+    if: ${{ !inputs.manual_call }}
     runs-on: ubuntu-latest
     steps:
       - name: Close PR
