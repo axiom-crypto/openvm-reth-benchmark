@@ -53,20 +53,22 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.run-base-benchmark.outputs.metric_name }}
-          path: base-metric.json
+          path: base-metric
 
       - name: Download target benchmark results
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.run-target-benchmark.outputs.metric_name }}
-          path: target-metric.json
+          path: target-metric
 
       - name: Install openvm-prof
         run: |
           cargo install --git https://github.com/openvm-org/openvm.git --profile=dev --force openvm-prof
       - name: Compare metrics
         run: |
-          openvm-prof --json-paths target-metric.json --prev-json-paths base-metric.json 
-          MD_PATH=target-metric.md
+          BASE_JSON=$(find base-metric -name "*.json")
+          TARGET_JSON=$(find target-metric -name "*.json")
+          openvm-prof --json-paths $TARGET_JSON --prev-json-paths $BASE_JSON 
+          MD_PATH=${TARGET_JSON%.json}.md
           # Inspired by https://github.com/rustls/rustls/blob/7159373401f253cbaacd276634508e0798a8849f/.github/workflows/icount-bench.yml#L37
           cat $MD_PATH >> $GITHUB_STEP_SUMMARY

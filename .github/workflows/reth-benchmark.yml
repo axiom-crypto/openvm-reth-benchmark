@@ -161,6 +161,26 @@ jobs:
           else
             echo "${{ toJSON(inputs) }}"
           fi
+      - name: Get current commit hash
+        run: echo "current_sha=$(git rev-parse HEAD)" >> $GITHUB_ENV
+      - name: Set metric name
+        id: set-metric-name
+        run: |
+          input_json_str="${{ toJSON(github.event.inputs || inputs) }}"
+          input_hash=$(echo $input_json_str | sha256sum | cut -d' ' -f1)
+          METRIC_NAME=reth-$current_sha-${input_hash}
+          echo "METRIC_NAME=${METRIC_NAME}" >> $GITHUB_ENV
+          METRIC_PATH=".bench_metrics/${METRIC_NAME}.json"
+          echo "METRIC_PATH=${METRIC_PATH}" >> $GITHUB_ENV
+          echo "name=${METRIC_NAME}" >> $GITHUB_OUTPUT
+      - name: Set cache keys
+        id: set-cache-keys
+        run: |
+          input_json_str="${{ toJSON(github.event.inputs || inputs) }}"
+          input_hash=$(echo $input_json_str | sha256sum | cut -d' ' -f1)
+          dir_hash=$(find . -type f -exec sha256sum {} \; | sha256sum | cut -d' ' -f1)
+          echo "elf_cache_key=elf-${dir_hash}-${input_hash}" >> $GITHUB_OUTPUT
+          echo "host_cache_key=host-${dir_hash}-${input_hash}" >> $GITHUB_OUTPUT
       - name: Load SSH key
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -190,27 +210,12 @@ jobs:
           PARAMS_DIR=$(pwd)/params
           echo "PARAMS_DIR=$PARAMS_DIR" >> $GITHUB_ENV
 
-      - name: Get current commit hash
-        run: echo "current_sha=$(git rev-parse HEAD)" >> $GITHUB_ENV
-      - name: Set metric name
-        id: set-metric-name
-        run: |
-          input_json_str="${{ toJSON(github.event.inputs) }}"
-          input_hash=$(echo $input_json_str | sha256sum | cut -d' ' -f1)
-          METRIC_NAME=reth-$current_sha-${input_hash}
-          echo "METRIC_NAME=${METRIC_NAME}" >> $GITHUB_ENV
-          METRIC_PATH=".bench_metrics/${METRIC_NAME}.json"
-          echo "METRIC_PATH=${METRIC_PATH}" >> $GITHUB_ENV
-          echo "name=${METRIC_NAME}" >> $GITHUB_OUTPUT
-          echo "elf_cache_key=elf-${METRIC_NAME}" >> $GITHUB_OUTPUT
-          echo "host_cache_key=host-${METRIC_NAME}" >> $GITHUB_OUTPUT
-
       - name: Restore Guest ELF from cache
         id: cache-guest-elf
         uses: runs-on/cache@v4
         with:
           path: host/elf/openvm-client-eth
-          key: ${{ steps.set-metric-name.outputs.elf_cache_key }}
+          key: ${{ steps.set-cache-keys.outputs.elf_cache_key }}
 
       - name: Build Guest ELF
         if: steps.cache-guest-elf.outputs.cache-hit != 'true'
@@ -245,7 +250,7 @@ jobs:
         uses: runs-on/cache@v4
         with:
           path: target/${{ steps.set-build-args.outputs.profile }}/openvm-reth-benchmark
-          key: ${{ steps.set-metric-name.outputs.host_cache_key }}
+          key: ${{ steps.set-cache-keys.outputs.host_cache_key }}
 
       - name: Build Host Binary
         if: steps.cache-host-binary.outputs.cache-hit != 'true'
