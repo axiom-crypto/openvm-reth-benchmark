@@ -187,9 +187,6 @@ jobs:
           ssh-private-key: |
             ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
 
-      - name: Install cargo-openvm
-        run: |
-          cargo install --git https://github.com/openvm-org/openvm.git --force cargo-openvm
       - name: Install openvm-prof
         run: |
           cargo install --git https://github.com/openvm-org/openvm.git --profile=dev --force openvm-prof
@@ -217,6 +214,10 @@ jobs:
           path: host/elf/openvm-client-eth
           key: ${{ steps.set-cache-keys.outputs.elf_cache_key }}
 
+      - name: Install cargo-openvm
+        if: steps.cache-guest-elf.outputs.cache-hit != 'true'
+        run: |
+          cargo install --git https://github.com/openvm-org/openvm.git --force cargo-openvm
       - name: Build Guest ELF
         if: steps.cache-guest-elf.outputs.cache-hit != 'true'
         working-directory: bin/client-eth
