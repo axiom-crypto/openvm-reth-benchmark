@@ -23,33 +23,11 @@ on:
         default: m7a.48xlarge
 
 jobs:
-  get-base-rev:
-    runs-on: ubuntu-latest
-    outputs:
-      rev: ${{ steps.get-rev.outputs.result }}
-    steps:
-      - name: Get default base rev from main
-        id: get-rev
-        uses: actions/github-script@v6
-        with:
-          script: |
-            if ("${{ github.event.inputs.base_rev }}" !== "") {
-              return "${{ github.event.inputs.base_rev }}";
-            } else {
-              const { data } = await github.rest.repos.getCommit({
-                owner: 'openvm-org',
-                repo: 'openvm',
-                ref: 'main'
-              });
-              return data.sha;
-            }
-
   run-base-benchmark:
-    needs: get-base-rev
     name: "Run Base Benchmark"
     uses: ./.github/workflows/update-patches.yml
     with:
-      OPENVM_REV: ${{ needs.get-base-rev.outputs.rev }}
+      OPENVM_REV: ${{ github.event.inputs.base_rev }}
       run_benchmark: true
       benchmark_mode: ${{ github.event.inputs.benchmark_mode }}
       instance_family: ${{ github.event.inputs.instance_family }}

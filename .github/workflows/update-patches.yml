@@ -80,10 +80,10 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            if ("${{ inputs.STARK_BACKEND_REV || github.event.inputs.STARK_BACKEND_REV }}" !== "") {
-              return "${{ inputs.STARK_BACKEND_REV || github.event.inputs.STARK_BACKEND_REV }}";
+            const inputRef = inputs.STARK_BACKEND_REV || github.event.inputs.STARK_BACKEND_REV;
+            if (inputRef && inputRef.trim()) {
+              return inputRef;
             } else {
-              // Otherwise fetch latest commit of main
               const { data } = await github.rest.repos.getCommit({
                 owner: 'openvm-org',
                 repo: 'stark-backend',
@@ -97,8 +97,9 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            if ("${{ inputs.OPENVM_REV || github.event.inputs.OPENVM_REV }}" !== "") {
-              return "${{ inputs.OPENVM_REV || github.event.inputs.OPENVM_REV }}";
+            const inputRef = inputs.OPENVM_REV || github.event.inputs.OPENVM_REV;
+            if (inputRef && inputRef.trim()) {
+              return inputRef;
             } else {
               // Otherwise fetch latest commit of main
               const { data } = await github.rest.repos.getCommit({
