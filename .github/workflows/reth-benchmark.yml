@@ -380,7 +380,6 @@ jobs:
           S3_MD_PATH="${{ env.S3_PATH }}/${METRIC_NAME}.md"
           s5cmd cp $MD_PATH $S3_MD_PATH
           echo "S3_MD_PATH=${S3_MD_PATH}" >> $GITHUB_ENV
-          cat $MD_PATH >> $GITHUB_SUMMARY
 
       ### Update gh-pages
       - uses: actions/checkout@v4
