@@ -152,6 +152,7 @@ jobs:
       - disk=large
       - tag=bench-reth-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
       - extras=s3-cache
+      - image=${{ (inputs.instance_family || github.event.inputs.instance_family)[2] == 'g' && 'ubuntu22-full-arm64' || 'ubuntu22-full-x64' }}
     outputs:
       metric_name: ${{ steps.set-metric-name.outputs.name }}
     steps:
