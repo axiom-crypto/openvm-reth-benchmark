@@ -425,15 +425,3 @@ jobs:
       - name: Path to result
         run: |
           echo "https://github.com/axiom-crypto/openvm-reth-benchmark/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_NAME}.md"
-
-      - name: Debug instance family
-        run: |
-          INSTANCE_FAMILY="${{ inputs.instance_family || github.event.inputs.instance_family }}"
-          echo "Instance family: $INSTANCE_FAMILY"
-          echo "Length: ${#INSTANCE_FAMILY}"
-          echo "First char: ${INSTANCE_FAMILY:0:1}"
-          echo "Second char: ${INSTANCE_FAMILY:1:1}"
-          echo "Third char: ${INSTANCE_FAMILY:2:1}"
-          echo "Fourth char: ${INSTANCE_FAMILY:3:1}"
-          echo "Expression result: ${{ contains(inputs.instance_family || github.event.inputs.instance_family, 'g.') }}"
-          echo "Full string: ${{ inputs.instance_family || github.event.inputs.instance_family }}"
