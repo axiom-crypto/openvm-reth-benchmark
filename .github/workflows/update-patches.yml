@@ -196,8 +196,8 @@ jobs:
     if: ${{ github.event.inputs.run_benchmark == 'true' || github.event_name == 'schedule' || inputs.run_benchmark }}
     uses: ./.github/workflows/reth-benchmark.yml
     with:
-      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode }}
-      instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family }}
+      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-e2e' }}
+      instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'c7a.48xlarge' }}
       ref: ${{ needs.update-config.outputs.branch_name }}
       tag: ${{ needs.update-config.outputs.tag }}
     secrets:
