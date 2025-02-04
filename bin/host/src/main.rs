@@ -222,6 +222,14 @@ async fn main() -> eyre::Result<()> {
                         &halo2_params_reader,
                         None::<&RootVerifierProvingKey>,
                     )?;
+                    tracing::info!(
+                        "halo2_outer_k: {}",
+                        full_agg_pk.halo2_pk.verifier.pinning.metadata.config_params.k
+                    );
+                    tracing::info!(
+                        "halo2_wrapper_k: {}",
+                        full_agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k
+                    );
                     let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
 
                     let mut prover = ContinuationProver::new(
