@@ -50,9 +50,5 @@ profiling = ["openvm-sdk/profiling", "openvm-benchmarks/profiling"]
 mimalloc = ["openvm-benchmarks/mimalloc"]
 jemalloc = ["openvm-benchmarks/jemalloc"]
 nightly-features = ["openvm-benchmarks/nightly-features"]
-
-[target.'cfg(target_arch = "x86_64")'.features]
-halo2-asm = ["halo2-axiom/asm"]
-
-[target.'cfg(target_arch = "x86")'.features]
+# x86 only:
 halo2-asm = ["halo2-axiom/asm"]
