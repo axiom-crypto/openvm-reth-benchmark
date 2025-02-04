@@ -280,6 +280,7 @@ jobs:
               ;;
             x86_64|amd64)
               RUSTFLAGS="-Ctarget-cpu=native -C target-feature=+avx512f"
+              FEATURES="${FEATURES},halo2-asm"
               ;;
             *)
               echo "Unsupported architecture: $arch"

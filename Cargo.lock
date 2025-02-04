@@ -3818,6 +3818,7 @@ dependencies = [
  "derive_more 1.0.0",
  "dotenv",
  "eyre",
+ "halo2-axiom",
  "metrics",
  "openvm-algebra-circuit",
  "openvm-benchmarks",

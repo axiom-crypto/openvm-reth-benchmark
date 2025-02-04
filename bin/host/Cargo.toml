@@ -40,6 +40,9 @@ openvm-sdk = { workspace = true }
 openvm-native-compiler = { workspace = true }
 derive_more = "1.0.0"
 
+# halo2
+halo2-axiom = { version = "0.4.5", default-features = false }
+
 [features]
 default = ["mimalloc", "bench-metrics"]
 bench-metrics = ["openvm-benchmarks/bench-metrics"]
@@ -47,3 +50,6 @@ profiling = ["openvm-sdk/profiling", "openvm-benchmarks/profiling"]
 mimalloc = ["openvm-benchmarks/mimalloc"]
 jemalloc = ["openvm-benchmarks/jemalloc"]
 nightly-features = ["openvm-benchmarks/nightly-features"]
+
+[target.'cfg(target_arch = "x86_64")'.features]
+halo2-asm = ["halo2-axiom/asm"]
