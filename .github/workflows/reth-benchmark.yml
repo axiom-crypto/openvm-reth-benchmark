@@ -257,6 +257,7 @@ jobs:
             PROFILE="profiling"
             FEATURES="${FEATURES},profiling"
           fi
+          OPTIONAL_ARGS="${OPTIONAL_ARGS} --halo2-outer-k 22"
           echo "OPTIONAL_ARGS=${OPTIONAL_ARGS}" >> $GITHUB_ENV
           echo "PROFILE=${PROFILE}" >> $GITHUB_ENV
           echo "FEATURES=${FEATURES}" >> $GITHUB_ENV
