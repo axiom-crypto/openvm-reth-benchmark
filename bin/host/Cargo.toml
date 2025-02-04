@@ -53,3 +53,6 @@ nightly-features = ["openvm-benchmarks/nightly-features"]
 
 [target.'cfg(target_arch = "x86_64")'.features]
 halo2-asm = ["halo2-axiom/asm"]
+
+[target.'cfg(target_arch = "x86")'.features]
+halo2-asm = ["halo2-axiom/asm"]
