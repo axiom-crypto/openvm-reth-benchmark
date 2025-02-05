@@ -227,10 +227,7 @@ jobs:
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
       profiling: none
-    secrets:
-      GH_ACTIONS_DEPLOY_PRIVATE_KEY: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
-      RPC_URL_1: ${{ secrets.RPC_URL_1 }}
-      BENCHER_API_TOKEN: ${{ secrets.BENCHER_API_TOKEN }}
+    secrets: inherit
 
   host-flamegraph:
     needs: patch
@@ -242,10 +239,7 @@ jobs:
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
       profiling: host
-    secrets:
-      GH_ACTIONS_DEPLOY_PRIVATE_KEY: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
-      RPC_URL_1: ${{ secrets.RPC_URL_1 }}
-      BENCHER_API_TOKEN: ${{ secrets.BENCHER_API_TOKEN }}
+    secrets: inherit
 
   guest-flamegraph:
     needs: patch
@@ -257,14 +251,11 @@ jobs:
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
       profiling: guest
-    secrets:
-      GH_ACTIONS_DEPLOY_PRIVATE_KEY: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
-      RPC_URL_1: ${{ secrets.RPC_URL_1 }}
-      BENCHER_API_TOKEN: ${{ secrets.BENCHER_API_TOKEN }}
+    secrets: inherit
 
   close-pr:
     needs: [patch, run-benchmark]
-    if: ${{ !inputs.manual_call }}
+    if: ${{ always() && !inputs.manual_call }}
     runs-on: ubuntu-latest
     steps:
       - name: Close PR
