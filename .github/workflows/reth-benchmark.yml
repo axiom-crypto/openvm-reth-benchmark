@@ -314,16 +314,6 @@ jobs:
             --max-segment-length ${{ inputs.max_segment_length || github.event.inputs.max_segment_length }} $OPTIONAL_ARGS
           EOF
           chmod +x run_benchmark.sh
-          if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
-            cargo install flamegraph
-
-            echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
-            # install custom addr2line: https://crates.io/crates/flamegraph
-            git clone https://github.com/gimli-rs/addr2line /tmp/addr2line
-            cd /tmp/addr2line
-            cargo build --release --bin addr2line --features bin
-            sudo mv target/release/addr2line /usr/local/bin/
-          fi
 
       - name: Run benchmark
         run: |
@@ -332,7 +322,15 @@ jobs:
           export OUTPUT_PATH=${METRIC_PATH}
 
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
-            flamegraph -c "record -F 99 --call-graph dwarf" -o flamegraph.svg -- ./run_benchmark.sh
+            echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
+
+            # install custom addr2line: https://crates.io/crates/flamegraph
+            git clone https://github.com/gimli-rs/addr2line /tmp/addr2line
+            cd /tmp/addr2line
+            cargo build --release --bin addr2line --features bin
+            sudo mv target/release/addr2line /usr/local/bin/
+
+            perf record -F 99 --call-graph dwarf -- ./run_benchmark.sh
           else
             ./run_benchmark.sh
           fi
@@ -421,11 +419,20 @@ jobs:
       - name: Upload host flamegraph
         if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
         run: |
+          cargo install inferno
+
+          perf script | inferno-collapse-perf > stacks.folded
+          cat stacks.folded | inferno-flamegraph > flamegraph.svg
+          cat stacks.folded | inferno-flamegraph --reverse > flamegraph-reverse.svg
+
+
           s5cmd cp flamegraph.svg ${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/host.svg
+          s5cmd cp flamegraph-reverse.svg ${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/host-reverse.svg
           flamegraph_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/host.svg
-          echo "Host Perf Flamegraph:" >> $GITHUB_STEP_SUMMARY
+          flamegraph_reverse_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/host-reverse.svg
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "[![]($flamegraph_url)]($flamegraph_url)" >> $GITHUB_STEP_SUMMARY
+          echo "Host Perf Flamegraph: $flamegraph_url" >> $GITHUB_STEP_SUMMARY
+          echo "Host Perf Reverse Flamegraph: $flamegraph_reverse_url" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
       ### Update gh-pages
