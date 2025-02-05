@@ -423,8 +423,7 @@ jobs:
 
           perf script | inferno-collapse-perf > stacks.folded
           cat stacks.folded | inferno-flamegraph > flamegraph.svg
-          cat stacks.folded | inferno-flamegraph --reverse > flamegraph-reverse.svg
-
+          cat stacks.folded | inferno-flamegraph --reverse --inverted > flamegraph-reverse.svg
 
           s5cmd cp flamegraph.svg ${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/host.svg
           s5cmd cp flamegraph-reverse.svg ${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/host-reverse.svg
