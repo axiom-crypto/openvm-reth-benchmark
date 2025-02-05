@@ -14,6 +14,16 @@ on:
         type: boolean
         required: false
         default: true
+      host_flamegraph:
+        description: "Run profiling benchmark for host flamegraph"
+        type: boolean
+        required: false
+        default: false
+      guest_flamegraph:
+        description: "Run profiling benchmark for circuit flamegraphs"
+        type: boolean
+        required: false
+        default: false
       benchmark_mode:
         description: "Benchmark mode (if running benchmark)"
         type: string
@@ -41,6 +51,16 @@ on:
         required: false
         description: "Run reth benchmark after patching"
         default: true
+      host_flamegraph:
+        description: "Run profiling benchmark for host flamegraph"
+        type: boolean
+        required: false
+        default: false
+      guest_flamegraph:
+        description: "Run profiling benchmark for circuit flamegraphs"
+        type: boolean
+        required: false
+        default: false
       benchmark_mode:
         type: string
         required: false
@@ -71,6 +91,9 @@ on:
       branch_name:
         description: "Name of the created branch"
         value: ${{ jobs.patch.outputs.branch_name }}
+      tag:
+        description: "Tag"
+        value: ${{ jobs.patch.outputs.tag }}
 
 jobs:
   patch:
@@ -196,13 +219,44 @@ jobs:
 
   run-benchmark:
     needs: patch
-    if: ${{ github.event.inputs.run_benchmark == 'true' || github.event_name == 'schedule' || inputs.run_benchmark }}
+    if: ${{ github.event.inputs.run_benchmark == 'true' || inputs.run_benchmark || github.event_name == 'schedule' }}
     uses: ./.github/workflows/reth-benchmark.yml
     with:
       mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-e2e' }}
       instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
+      profiling: none
+    secrets:
+      GH_ACTIONS_DEPLOY_PRIVATE_KEY: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
+      RPC_URL_1: ${{ secrets.RPC_URL_1 }}
+      BENCHER_API_TOKEN: ${{ secrets.BENCHER_API_TOKEN }}
+
+  host-flamegraph:
+    needs: patch
+    if: ${{ github.event.inputs.host_flamegraph == 'true' || inputs.host_flamegraph || github.event_name == 'schedule' }}
+    uses: ./.github/workflows/reth-benchmark.yml
+    with:
+      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-e2e' }}
+      instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
+      ref: ${{ needs.patch.outputs.branch_name }}
+      tag: ${{ needs.patch.outputs.tag }}
+      profiling: host
+    secrets:
+      GH_ACTIONS_DEPLOY_PRIVATE_KEY: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
+      RPC_URL_1: ${{ secrets.RPC_URL_1 }}
+      BENCHER_API_TOKEN: ${{ secrets.BENCHER_API_TOKEN }}
+
+  guest-flamegraph:
+    needs: patch
+    if: ${{ github.event.inputs.guest_flamegraph == 'true' || inputs.guest_flamegraph || github.event_name == 'schedule' }}
+    uses: ./.github/workflows/reth-benchmark.yml
+    with:
+      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-e2e' }}
+      instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
+      ref: ${{ needs.patch.outputs.branch_name }}
+      tag: ${{ needs.patch.outputs.tag }}
+      profiling: guest
     secrets:
       GH_ACTIONS_DEPLOY_PRIVATE_KEY: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
       RPC_URL_1: ${{ secrets.RPC_URL_1 }}

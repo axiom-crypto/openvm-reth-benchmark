@@ -109,9 +109,9 @@ rustdoc.all = "warn"
 lto = "thin"
 
 [profile.profiling]
-inherits = "bench"
-debug = 2
-strip = false
+inherits = "maxperf"
+debug = "full"
+strip = "none"
 
 [profile.maxperf]
 inherits = "release"

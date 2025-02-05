@@ -10,7 +10,7 @@ on:
         required: false
 
 jobs:
-  update-config:
+  update:
     name: "Update workspace and guest Cargo.toml and open a pull request"
     runs-on:
       - ubuntu-latest

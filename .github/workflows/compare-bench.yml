@@ -21,6 +21,16 @@ on:
           - prove
           - prove-e2e
         default: prove-e2e
+      host_flamegraph:
+        description: "Run target profiling benchmark for host flamegraph"
+        type: boolean
+        required: false
+        default: false
+      guest_flamegraph:
+        description: "Run target profiling benchmark for circuit flamegraphs"
+        type: boolean
+        required: false
+        default: false
       instance_family:
         description: "Instance family to use for benchmark"
         type: string
@@ -38,18 +48,57 @@ jobs:
       instance_family: ${{ github.event.inputs.instance_family }}
     secrets: inherit
 
-  run-target-benchmark:
-    name: "Run Target Benchmark"
+  # Only create branch because github workflow_call must run all jobs for "needs"
+  patch-target:
+    name: "Patch Target"
     uses: ./.github/workflows/update-patches.yml
     with:
       OPENVM_REV: ${{ github.event.inputs.target_rev }}
-      run_benchmark: true
-      benchmark_mode: ${{ github.event.inputs.benchmark_mode }}
+      run_benchmark: false
+    secrets: inherit
+
+  run-target-benchmark:
+    name: "Run Target Benchmark"
+    uses: ./.github/workflows/reth-benchmark.yml
+    needs: patch-target
+    with:
+      mode: ${{ github.event.inputs.benchmark_mode }}
       instance_family: ${{ github.event.inputs.instance_family }}
+      ref: ${{ needs.patch-target.outputs.branch_name }}
+      tag: ${{ needs.patch-target.outputs.tag }}
+      profiling: none
+    secrets: inherit
+
+  target-host-flamegraph:
+    name: "Target Host Perf Flamegraph"
+    uses: ./.github/workflows/reth-benchmark.yml
+    if: ${{ github.event.inputs.host_flamegraph }}
+    needs: patch-target
+    with:
+      mode: ${{ github.event.inputs.benchmark_mode }}
+      instance_family: ${{ github.event.inputs.instance_family }}
+      ref: ${{ needs.patch-target.outputs.branch_name }}
+      tag: ${{ needs.patch-target.outputs.tag }}
+      profiling: host
+    secrets: inherit
+
+  target-guest-flamegraph:
+    name: "Target Guest Circuit Flamegraphs"
+    uses: ./.github/workflows/reth-benchmark.yml
+    if: ${{ github.event.inputs.guest_flamegraph }}
+    needs: patch-target
+    with:
+      mode: ${{ github.event.inputs.benchmark_mode }}
+      instance_family: ${{ github.event.inputs.instance_family }}
+      ref: ${{ needs.patch-target.outputs.branch_name }}
+      tag: ${{ needs.patch-target.outputs.tag }}
+      profiling: guest
     secrets: inherit
 
   compare-results:
-    needs: [run-base-benchmark, run-target-benchmark]
+    needs:
+      - run-base-benchmark
+      - run-target-benchmark
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
