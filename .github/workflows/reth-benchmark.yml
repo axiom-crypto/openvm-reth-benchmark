@@ -314,7 +314,6 @@ jobs:
             --max-segment-length ${{ inputs.max_segment_length || github.event.inputs.max_segment_length }} $OPTIONAL_ARGS
           EOF
           chmod +x run_benchmark.sh
-          HARNESS=""
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
             cargo install flamegraph
 
@@ -324,16 +323,19 @@ jobs:
             cd /tmp/addr2line
             cargo build --release --bin addr2line --features bin
             sudo mv target/release/addr2line /usr/local/bin/
-            HARNESS="flamegraph -c \"record -F 99 --call-graph dwarf\" -o flamegraph.svg -- "
           fi
-          echo "HARNESS=${HARNESS}" >> $GITHUB_ENV
 
       - name: Run benchmark
         run: |
           export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
           export RUST_LOG="info,p3_=warn"
           export OUTPUT_PATH=${METRIC_PATH}
-          $HARNESS ./run_benchmark.sh
+
+          if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
+            flamegraph -c "record -F 99 --call-graph dwarf" -o flamegraph.svg -- ./run_benchmark.sh
+          else
+            ./run_benchmark.sh
+          fi
 
       - name: Upload metric file
         id: upload-metric-artifact
