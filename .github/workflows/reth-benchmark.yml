@@ -304,8 +304,9 @@ jobs:
           # 2. Enable Transparent Huge Pages always
           sudo sh -c 'echo always > /sys/kernel/mm/transparent_hugepage/enabled'
 
+          export RAYON_NUM_THREADS=192
           export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
-          RUST_LOG="info,p3_=warn" OUTPUT_PATH=${METRIC_PATH} ./target/$PROFILE/openvm-reth-benchmark \
+          RUST_LOG="info,p3_=warn" OUTPUT_PATH=${METRIC_PATH} numactl --interleave=all ./target/$PROFILE/openvm-reth-benchmark \
             --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
             --app-log-blowup ${{ inputs.app_log_blowup || github.event.inputs.app_log_blowup }} \
             --leaf-log-blowup ${{ inputs.leaf_log_blowup || github.event.inputs.leaf_log_blowup }} \
