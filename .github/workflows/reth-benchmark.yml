@@ -231,6 +231,8 @@ jobs:
           bash openvm/extensions/native/recursion/trusted_setup_s3.sh
           PARAMS_DIR=$(pwd)/params
           echo "PARAMS_DIR=$PARAMS_DIR" >> $GITHUB_ENV
+          OPTIONAL_ARGS="--kzg-params-dir $PARAMS_DIR --halo2-outer-k 22"
+          echo "OPTIONAL_ARGS=${OPTIONAL_ARGS}" >> $GITHUB_ENV
 
       - name: Restore Guest ELF from cache
         id: cache-guest-elf
@@ -255,7 +257,6 @@ jobs:
       - name: Set build args
         id: set-build-args
         run: |
-          OPTIONAL_ARGS="--kzg-params-dir $PARAMS_DIR --halo2-outer-k 22"
           FEATURES="bench-metrics,nightly-features,${{ inputs.memory_allocator || github.event.inputs.memory_allocator }}"
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
             OPTIONAL_ARGS="${OPTIONAL_ARGS} --profiling"
