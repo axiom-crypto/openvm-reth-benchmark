@@ -68,9 +68,12 @@ on:
       metric_name:
         description: "Name of the metric"
         value: ${{ jobs.run-benchmark.outputs.metric_name }}
+      branch_name:
+        description: "Name of the created branch"
+        value: ${{ jobs.patch.outputs.branch_name }}
 
 jobs:
-  update-config:
+  patch:
     name: "Update .cargo/config.toml and open a pull request"
     runs-on:
       ["runs-on", "runner=2cpu-linux-arm64", "run-id=${{ github.run_id }}"]
@@ -192,21 +195,21 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   run-benchmark:
-    needs: update-config
+    needs: patch
     if: ${{ github.event.inputs.run_benchmark == 'true' || github.event_name == 'schedule' || inputs.run_benchmark }}
     uses: ./.github/workflows/reth-benchmark.yml
     with:
       mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-e2e' }}
       instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
-      ref: ${{ needs.update-config.outputs.branch_name }}
-      tag: ${{ needs.update-config.outputs.tag }}
+      ref: ${{ needs.patch.outputs.branch_name }}
+      tag: ${{ needs.patch.outputs.tag }}
     secrets:
       GH_ACTIONS_DEPLOY_PRIVATE_KEY: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
       RPC_URL_1: ${{ secrets.RPC_URL_1 }}
       BENCHER_API_TOKEN: ${{ secrets.BENCHER_API_TOKEN }}
 
   close-pr:
-    needs: [update-config, run-benchmark]
+    needs: [patch, run-benchmark]
     if: ${{ !inputs.manual_call }}
     runs-on: ubuntu-latest
     steps:
@@ -218,6 +221,6 @@ jobs:
             await github.rest.pulls.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: ${{ needs.update-config.outputs.pr_number }},
+              pull_number: ${{ needs.patch.outputs.pr_number }},
               state: 'closed'
             });
