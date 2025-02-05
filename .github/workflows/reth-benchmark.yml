@@ -305,9 +305,6 @@ jobs:
           MODE=${{ inputs.mode || github.event.inputs.mode }}
           BLOCK_NUMBER=${{ inputs.block_number || github.event.inputs.block_number }}
           HOST_PROFILE=${{ steps.set-cache-keys.outputs.host_profile }}
-          export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
-          export RUST_LOG="info,p3_=warn"
-          export OUTPUT_PATH=${METRIC_PATH}
           cat > run_benchmark.sh <<EOF
           ./target/$HOST_PROFILE/openvm-reth-benchmark \
             --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
@@ -332,7 +329,11 @@ jobs:
           echo "HARNESS=${HARNESS}" >> $GITHUB_ENV
 
       - name: Run benchmark
-        run: $HARNESS ./run_benchmark.sh
+        run: |
+          export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
+          export RUST_LOG="info,p3_=warn"
+          export OUTPUT_PATH=${METRIC_PATH}
+          $HARNESS ./run_benchmark.sh
 
       - name: Upload metric file
         id: upload-metric-artifact
