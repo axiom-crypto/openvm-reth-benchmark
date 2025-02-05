@@ -326,9 +326,11 @@ jobs:
 
             # install custom addr2line: https://crates.io/crates/flamegraph
             git clone https://github.com/gimli-rs/addr2line /tmp/addr2line
+            work_dir=$(pwd)
             cd /tmp/addr2line
             cargo build --release --bin addr2line --features bin
             sudo mv target/release/addr2line /usr/local/bin/
+            cd $work_dir
 
             perf record -F 99 --call-graph dwarf -- ./run_benchmark.sh
           else
