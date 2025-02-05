@@ -326,7 +326,8 @@ jobs:
             git clone https://github.com/gimli-rs/addr2line /tmp/addr2line
             cd /tmp/addr2line
             cargo build --release --bin addr2line --features bin
-            HARNESS="PATH=$PWD/target/release:$PATH flamegraph -c 'record -F 100 --call-graph dwarf' -o flamegraph.svg -- "
+            sudo mv target/release/addr2line /usr/local/bin/
+            HARNESS="flamegraph -c 'record -F 100 --call-graph dwarf' -o flamegraph.svg -- "
           fi
           echo "HARNESS=${HARNESS}" >> $GITHUB_ENV
 
