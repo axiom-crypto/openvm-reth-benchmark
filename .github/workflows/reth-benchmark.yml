@@ -332,6 +332,7 @@ jobs:
             sudo mv target/release/addr2line /usr/local/bin/
             cd $work_dir
 
+            perf --version
             perf record -F 99 --call-graph dwarf -- ./run_benchmark.sh
           else
             ./run_benchmark.sh
