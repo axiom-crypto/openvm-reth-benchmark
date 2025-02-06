@@ -326,9 +326,9 @@ jobs:
             echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
 
             # install custom addr2line: https://crates.io/crates/flamegraph
+            rm -rf /tmp/addr2line
             git clone https://github.com/gimli-rs/addr2line /tmp/addr2line
             work_dir=$(pwd)
-            rm -rf /tmp/addr2line
             cd /tmp/addr2line
             cargo build --release --bin addr2line --features bin
             sudo mv target/release/addr2line /usr/local/bin/
