@@ -323,17 +323,19 @@ jobs:
 
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
             echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
+            echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
 
             # install custom addr2line: https://crates.io/crates/flamegraph
             git clone https://github.com/gimli-rs/addr2line /tmp/addr2line
             work_dir=$(pwd)
+            rm -rf /tmp/addr2line
             cd /tmp/addr2line
             cargo build --release --bin addr2line --features bin
             sudo mv target/release/addr2line /usr/local/bin/
             cd $work_dir
 
             perf --version
-            perf record -F 99 --call-graph dwarf -- ./run_benchmark.sh
+            perf record -F 99 --call-graph dwarf -o perf.data -- ./run_benchmark.sh
           else
             ./run_benchmark.sh
           fi
