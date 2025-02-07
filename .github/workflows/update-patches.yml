@@ -255,7 +255,10 @@ jobs:
 
   close-pr:
     needs: [patch, run-benchmark]
-    if: ${{ always() && !inputs.manual_call }}
+    if: |
+      always() &&
+      !inputs.manual_call &&
+      (github.event.inputs.run_benchmark == 'true' || inputs.run_benchmark || github.event_name == 'schedule')
     runs-on: ubuntu-latest
     steps:
       - name: Close PR
