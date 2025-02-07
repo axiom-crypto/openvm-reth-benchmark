@@ -20,12 +20,13 @@ use openvm_sdk::{
     config::{SdkVmConfig, DEFAULT_APP_LOG_BLOWUP},
     keygen::RootVerifierProvingKey,
     prover::{AppProver, ContinuationProver},
+    fs::write_object_to_file,
     Sdk, StdIn,
 };
 use openvm_stark_sdk::{bench::run_with_metric_collection, p3_baby_bear::BabyBear};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 pub use reth_primitives;
-use std::{path::PathBuf, sync::Arc};
+use std::{path::{PathBuf, Path}, sync::Arc};
 use tracing::info_span;
 
 mod execute;
@@ -38,7 +39,7 @@ use cli::ProviderArgs;
 #[clap(group(
     ArgGroup::new("mode")
         .required(true)
-        .args(&["prove", "execute", "tracegen", "prove_e2e"]),
+        .args(&["prove", "execute", "tracegen", "prove_e2e", "download_program"]),
 ))]
 struct HostArgs {
     /// The block number of the block to execute.
@@ -55,6 +56,8 @@ struct HostArgs {
     prove: bool,
     #[clap(long, group = "mode")]
     prove_e2e: bool,
+    #[clap(long, group = "mode")]
+    download_program: bool,
 
     /// Optional path to the directory containing cached client input. A new cache file will be
     /// created from RPC data if it doesn't already exist.
@@ -63,6 +66,9 @@ struct HostArgs {
     /// The path to the CSV file containing the execution data.
     #[clap(long, default_value = "report.csv")]
     report_path: PathBuf,
+    /// Optional path to the directory to save the program and input
+    #[clap(long)]
+    download_dir: Option<PathBuf>,
 
     #[clap(flatten)]
     benchmark: BenchmarkCli,
@@ -183,6 +189,8 @@ async fn main() -> eyre::Result<()> {
         "tracegen"
     } else if args.prove {
         "prove"
+    } else if args.download_program {
+        "download_program"
     } else {
         "prove_e2e"
     };
@@ -210,6 +218,27 @@ async fn main() -> eyre::Result<()> {
                     let proof = app_prover.generate_app_proof(stdin);
                     let app_vk = app_pk.get_app_vk();
                     sdk.verify_app_proof(&app_vk, &proof)?;
+                } else if args.download_program {
+                    if let Some(download_dir) = args.download_dir {
+                        let halo2_params_reader = CacheHalo2ParamsReader::new_with_default_params_dir();
+                        let mut agg_config = args.benchmark.agg_config();
+                        agg_config.agg_stark_config.max_num_user_public_values =
+                            VmConfig::<BabyBear>::system(&vm_config).num_public_values;
+    
+                        let app_pk = sdk.app_keygen(app_config)?;
+                        let full_agg_pk = sdk.agg_keygen(
+                            agg_config,
+                            &halo2_params_reader,
+                            None::<&RootVerifierProvingKey>,
+                        )?;
+                        let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
+
+                        write_object_to_file(<PathBuf as AsRef<Path>>::as_ref(&download_dir).join("committed_exe.bc"), app_committed_exe).unwrap();
+                        write_object_to_file(<PathBuf as AsRef<Path>>::as_ref(&download_dir).join("app_pk.bc"), app_pk).unwrap();
+                        write_object_to_file(<PathBuf as AsRef<Path>>::as_ref(&download_dir).join("agg_stark_pk.bc"), full_agg_pk.agg_stark_pk).unwrap();
+                        write_object_to_file(<PathBuf as AsRef<Path>>::as_ref(&download_dir).join("halo2_pk.bc"), full_agg_pk.halo2_pk).unwrap();
+                        write_object_to_file(<PathBuf as AsRef<Path>>::as_ref(&download_dir).join("reth_input.bc"), stdin).unwrap();
+                    }
                 } else {
                     let halo2_params_reader = CacheHalo2ParamsReader::new_with_default_params_dir();
                     let mut agg_config = args.benchmark.agg_config();
