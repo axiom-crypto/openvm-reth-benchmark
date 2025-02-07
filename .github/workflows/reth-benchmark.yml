@@ -426,7 +426,7 @@ jobs:
         run: |
           cargo install inferno
 
-          perf script -v -i perf.data | inferno-collapse-perf > stacks.folded
+          perf script -i perf.data | inferno-collapse-perf > stacks.folded
           cat stacks.folded | inferno-flamegraph > flamegraph.svg
           cat stacks.folded | inferno-flamegraph --reverse --inverted > flamegraph-reverse.svg
 
