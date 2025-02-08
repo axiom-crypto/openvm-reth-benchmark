@@ -64,6 +64,11 @@ on:
         required: false
         description: Max segment length for continuations, must be larger than 524288
         default: 8388508 # 2**23 - 100
+      max_cells_per_chip_in_segment:
+        type: number
+        required: false
+        description: Max cells per chip in segment for continuations
+        default: 1006620960 # ((2**23 - 100) * 120)
   workflow_call:
     inputs:
       ref:
@@ -120,6 +125,11 @@ on:
         required: false
         description: Max segment length for continuations, must be larger than 524288
         default: 8388508
+      max_cells_per_chip_in_segment:
+        type: number
+        required: false
+        description: Max cells per chip in segment for continuations
+        default: 1006620960
       tag:
         type: string
         required: false
