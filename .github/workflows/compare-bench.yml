@@ -72,7 +72,7 @@ jobs:
   target-host-flamegraph:
     name: "Target Host Perf Flamegraph"
     uses: ./.github/workflows/reth-benchmark.yml
-    if: ${{ github.event.inputs.host_flamegraph }}
+    if: ${{ github.event.inputs.host_flamegraph == 'true' }}
     needs: patch-target
     with:
       mode: ${{ github.event.inputs.benchmark_mode }}
@@ -85,7 +85,7 @@ jobs:
   target-guest-flamegraph:
     name: "Target Guest Circuit Flamegraphs"
     uses: ./.github/workflows/reth-benchmark.yml
-    if: ${{ github.event.inputs.guest_flamegraph }}
+    if: ${{ github.event.inputs.guest_flamegraph == 'true' }}
     needs: patch-target
     with:
       mode: ${{ github.event.inputs.benchmark_mode }}
