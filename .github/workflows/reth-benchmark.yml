@@ -10,11 +10,6 @@ on:
         required: false
         description: The family of the instance, can be multiple ones concat with "+" e.g. r8g+r7g
         default: m8g.24xlarge
-      memory_allocator:
-        type: string
-        required: false
-        description: Memory allocator to use (mimalloc or jemalloc)
-        default: jemalloc
       block_number:
         type: number
         required: false
