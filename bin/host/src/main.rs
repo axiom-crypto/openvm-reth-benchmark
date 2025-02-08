@@ -4,7 +4,9 @@ use openvm_algebra_circuit::{Fp2Extension, ModularExtension};
 use openvm_benchmarks::utils::BenchmarkCli;
 use openvm_bigint_circuit::Int256;
 use openvm_circuit::{
-    arch::{instructions::exe::VmExe, SystemConfig, VmConfig, VmExecutor},
+    arch::{
+        instructions::exe::VmExe, DefaultSegmentationStrategy, SystemConfig, VmConfig, VmExecutor,
+    },
     openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config,
 };
 use openvm_client_executor::{
@@ -70,12 +72,19 @@ struct HostArgs {
 
 const OPENVM_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/openvm-client-eth");
 
-fn reth_vm_config(app_log_blowup: usize, max_segment_length: usize) -> SdkVmConfig {
-    let system_config = SystemConfig::default()
+fn reth_vm_config(
+    app_log_blowup: usize,
+    max_segment_length: usize,
+    max_cells_per_chip_in_segment: usize,
+) -> SdkVmConfig {
+    let mut system_config = SystemConfig::default()
         .with_continuations()
         .with_max_constraint_degree((1 << app_log_blowup) + 1)
-        .with_public_values(32)
-        .with_max_segment_len(max_segment_length);
+        .with_public_values(32);
+    system_config.set_segmentation_strategy(DefaultSegmentationStrategy::new(
+        max_segment_length,
+        max_cells_per_chip_in_segment,
+    ));
     let int256 = Int256::default();
     let bn_config = PairingCurve::Bn254.curve_config();
     // The builder will do this automatically, but we set it just in case.
@@ -171,8 +180,11 @@ async fn main() -> eyre::Result<()> {
 
     let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(DEFAULT_APP_LOG_BLOWUP);
     let max_segment_length = args.benchmark.max_segment_length.unwrap_or((1 << 23) - 100);
+    let max_cells_per_chip_in_segment =
+        args.benchmark.max_cells_per_chip_in_segment.unwrap_or(((1 << 23) - 100) * 120);
 
-    let vm_config = reth_vm_config(app_log_blowup, max_segment_length);
+    let vm_config =
+        reth_vm_config(app_log_blowup, max_segment_length, max_cells_per_chip_in_segment);
     let sdk = Sdk;
     let elf = Elf::decode(OPENVM_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
     let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
