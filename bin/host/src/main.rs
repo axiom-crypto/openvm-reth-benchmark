@@ -68,6 +68,10 @@ struct HostArgs {
 
     #[clap(flatten)]
     benchmark: BenchmarkCli,
+
+    /// Max cells per chip in segment for continuations
+    #[arg(short, long, alias = "max_cells_per_chip_in_segment")]
+    pub max_cells_per_chip_in_segment: Option<usize>,
 }
 
 const OPENVM_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/openvm-client-eth");
@@ -181,7 +185,7 @@ async fn main() -> eyre::Result<()> {
     let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(DEFAULT_APP_LOG_BLOWUP);
     let max_segment_length = args.benchmark.max_segment_length.unwrap_or((1 << 23) - 100);
     let max_cells_per_chip_in_segment =
-        args.benchmark.max_cells_per_chip_in_segment.unwrap_or(((1 << 23) - 100) * 120);
+        args.max_cells_per_chip_in_segment.unwrap_or(((1 << 23) - 100) * 120);
 
     let vm_config =
         reth_vm_config(app_log_blowup, max_segment_length, max_cells_per_chip_in_segment);
