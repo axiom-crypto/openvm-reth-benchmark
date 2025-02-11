@@ -16,22 +16,22 @@ revm-precompile = { version = "11.0.1", default-features = false, features = [
 ] }
 
 # openvm
-openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "442a9df3937fc47f64b6be8552b6be743c017092", features = [
+openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "30576cc6ce838f213bf05b2e4ad035d95498c8b3", features = [
     "std",
 ] }
-openvm-platform = { git = "https://github.com/openvm-org/openvm.git", rev = "442a9df3937fc47f64b6be8552b6be743c017092" }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "442a9df3937fc47f64b6be8552b6be743c017092" }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "442a9df3937fc47f64b6be8552b6be743c017092" }
-openvm-algebra-moduli-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "442a9df3937fc47f64b6be8552b6be743c017092" }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "442a9df3937fc47f64b6be8552b6be743c017092" }
-openvm-ecc-sw-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "442a9df3937fc47f64b6be8552b6be743c017092" }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "442a9df3937fc47f64b6be8552b6be743c017092", features = [
+openvm-platform = { git = "https://github.com/openvm-org/openvm.git", rev = "30576cc6ce838f213bf05b2e4ad035d95498c8b3" }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "30576cc6ce838f213bf05b2e4ad035d95498c8b3" }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "30576cc6ce838f213bf05b2e4ad035d95498c8b3" }
+openvm-algebra-moduli-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "30576cc6ce838f213bf05b2e4ad035d95498c8b3" }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "30576cc6ce838f213bf05b2e4ad035d95498c8b3" }
+openvm-ecc-sw-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "30576cc6ce838f213bf05b2e4ad035d95498c8b3" }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "30576cc6ce838f213bf05b2e4ad035d95498c8b3", features = [
     "k256",
 ] }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "442a9df3937fc47f64b6be8552b6be743c017092", features = [
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "30576cc6ce838f213bf05b2e4ad035d95498c8b3", features = [
     "export-intrinsics",
 ] }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "442a9df3937fc47f64b6be8552b6be743c017092", features = [
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "30576cc6ce838f213bf05b2e4ad035d95498c8b3", features = [
     "bn254",
 ] }
 
