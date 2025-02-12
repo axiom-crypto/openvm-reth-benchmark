@@ -368,7 +368,7 @@ jobs:
 
       - uses: bencherdev/bencher@main
       - name: Upload bencher metrics
-        if: ${{ inputs.profiling || github.event.inputs.profiling || 'none' }} == 'none'
+        if: ${{ inputs.profiling == 'none' || github.event.inputs.profiling == 'none' }}
         run: |
           current_branch=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$current_branch" == nightly* ]]; then
