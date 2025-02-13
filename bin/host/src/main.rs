@@ -255,7 +255,9 @@ async fn main() -> eyre::Result<()> {
                         full_agg_pk,
                     );
                     prover.set_program_name(program_name);
+                    let start = std::time::Instant::now();
                     let _evm_proof = prover.generate_proof_for_evm(stdin);
+                    println!("Wall clock time: {:?}", start.elapsed());
                 }
 
                 Ok(())
