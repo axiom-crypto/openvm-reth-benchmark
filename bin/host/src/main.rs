@@ -103,6 +103,7 @@ fn reth_vm_config(
         .rv32m(rv32m)
         .io(Default::default())
         .keccak(Default::default())
+        .sha256(Default::default())
         .bigint(int256)
         .modular(ModularExtension::new(vec![
             bn_config.modulus.clone(),
