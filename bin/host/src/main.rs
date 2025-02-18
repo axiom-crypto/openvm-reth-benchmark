@@ -7,7 +7,10 @@ use openvm_circuit::{
     arch::{
         instructions::exe::VmExe, DefaultSegmentationStrategy, SystemConfig, VmConfig, VmExecutor,
     },
-    openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Config,
+    openvm_stark_sdk::{
+        bench::run_with_metric_collection, config::baby_bear_poseidon2::BabyBearPoseidon2Config,
+        openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear,
+    },
 };
 use openvm_client_executor::{
     io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET,
@@ -24,9 +27,9 @@ use openvm_sdk::{
     prover::{AppProver, ContinuationProver},
     Sdk, StdIn,
 };
-use openvm_stark_sdk::{bench::run_with_metric_collection, p3_baby_bear::BabyBear};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 pub use reth_primitives;
+use reth_primitives::hex::ToHexExt;
 use std::{path::PathBuf, sync::Arc};
 use tracing::info_span;
 
@@ -216,9 +219,13 @@ async fn main() -> eyre::Result<()> {
         info_span!("reth-block", block_number = args.block_number).in_scope(
             || -> eyre::Result<()> {
                 if args.execute {
-                    let executor = VmExecutor::<_, _>::new(app_config.app_vm_config);
-                    info_span!("execute", group = program_name)
-                        .in_scope(|| executor.execute(exe, stdin))?;
+                    let pvs = info_span!("execute", group = program_name)
+                        .in_scope(|| sdk.execute(exe, app_config.app_vm_config, stdin))?;
+                    let block_hash: Vec<u8> = pvs
+                        .iter()
+                        .map(|x| x.as_canonical_u32().try_into().unwrap())
+                        .collect::<Vec<_>>();
+                    println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
                 } else if args.tracegen {
                     let executor = VmExecutor::<_, _>::new(app_config.app_vm_config);
                     info_span!("tracegen", group = program_name).in_scope(|| {
@@ -262,7 +269,13 @@ async fn main() -> eyre::Result<()> {
                         full_agg_pk,
                     );
                     prover.set_program_name(program_name);
-                    let _evm_proof = prover.generate_proof_for_evm(stdin);
+                    let evm_proof = prover.generate_proof_for_evm(stdin);
+                    let instances = &evm_proof.instances[0];
+                    let block_hash = instances[instances.len() - 32..]
+                        .iter()
+                        .map(|x| x.to_bytes()[0])
+                        .collect::<Vec<_>>();
+                    println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
                 }
 
                 Ok(())
