@@ -91,6 +91,7 @@ fn reth_vm_config(
     ));
     let int256 = Int256::default();
     let bn_config = PairingCurve::Bn254.curve_config();
+    let bls_config = PairingCurve::Bls12_381.curve_config();
     // The builder will do this automatically, but we set it just in case.
     let rv32m = Rv32M { range_tuple_checker_sizes: int256.range_tuple_checker_sizes };
     SdkVmConfig::builder()
@@ -105,10 +106,16 @@ fn reth_vm_config(
             bn_config.scalar.clone(),
             SECP256K1_CONFIG.modulus.clone(),
             SECP256K1_CONFIG.scalar.clone(),
+            bls_config.modulus.clone(),
+            bls_config.scalar.clone(),
         ]))
-        .fp2(Fp2Extension::new(vec![bn_config.modulus.clone()]))
-        .ecc(WeierstrassExtension::new(vec![bn_config.clone(), SECP256K1_CONFIG.clone()]))
-        .pairing(PairingExtension::new(vec![PairingCurve::Bn254]))
+        .fp2(Fp2Extension::new(vec![bn_config.modulus.clone(), bls_config.modulus.clone()]))
+        .ecc(WeierstrassExtension::new(vec![
+            bn_config.clone(),
+            SECP256K1_CONFIG.clone(),
+            bls_config.clone(),
+        ]))
+        .pairing(PairingExtension::new(vec![PairingCurve::Bn254, PairingCurve::Bls12_381]))
         .build()
 }
 
