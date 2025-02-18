@@ -31,9 +31,12 @@ openvm_algebra_complex_macros::complex_init! {
 
 pub fn main() {
     println("client-eth starting");
-    setup_all_moduli();
-    setup_all_curves();
-    setup_all_complex_extensions();
+    setup_2();
+    setup_3();
+    setup_sw_Secp256k1Point();
+    // setup_all_moduli();
+    // setup_all_curves();
+    // setup_all_complex_extensions();
 
     // Read the input.
     let input: ClientExecutorInput = read();
