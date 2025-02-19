@@ -15,31 +15,23 @@ jobs:
     runs-on:
       - ubuntu-latest
     steps:
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
       - name: Check out the repository
         uses: actions/checkout@v4
 
       - name: Get default OPENVM_REV from main (if none provided)
         id: get-openvm-rev
-        uses: actions/github-script@v6
-        with:
-          script: |
-            if ("${{ github.event.inputs.OPENVM_REV }}" !== "") {
-              // If provided by user, simply return it
-              return "${{ github.event.inputs.OPENVM_REV }}";
-            } else {
-              // Otherwise fetch latest commit of main
-              const { data } = await github.rest.repos.getCommit({
-                owner: 'openvm-org',
-                repo: 'openvm',
-                ref: 'main'
-              });
-              return data.sha;
-            }
+        env:
+          OPENVM_REV: "${{ inputs.OPENVM_REV || github.event.inputs.OPENVM_REV }}"
+        run: |
+          echo "result=${OPENVM_REV:-$(git ls-remote git@github.com:axiom-crypto/openvm-private.git refs/heads/main | cut -f1)}" >> "$GITHUB_OUTPUT"
 
       - name: Find & replace rev in all Cargo.toml files
         run: |
           OPENVM_REV=${{ steps.get-openvm-rev.outputs.result }}
-          OLD_REV=$(grep '^openvm = { git = "https://github.com/openvm-org/openvm.git"' Cargo.toml | sed -E 's/.*rev = "([^"]+)".*/\1/')
+          OLD_REV=$(grep '^openvm = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git"' Cargo.toml | sed -E 's/.*rev = "([^"]+)".*/\1/')
           bash ci/update_rev.sh $OLD_REV $OPENVM_REV
 
       - name: Update workspace Cargo.lock
