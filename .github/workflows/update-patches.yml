@@ -105,6 +105,9 @@ jobs:
       pr_number: ${{ steps.create-pr.outputs.pr_number }}
       tag: ${{ steps.set-tag.outputs.tag }}
     steps:
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
       - name: Check out the repository
         uses: actions/checkout@v4
 
@@ -118,8 +121,8 @@ jobs:
               return inputRef;
             } else {
               const { data } = await github.rest.repos.getCommit({
-                owner: 'openvm-org',
-                repo: 'stark-backend',
+                owner: 'axiom-crypto',
+                repo: 'stark-backend-private',
                 ref: 'main'
               });
               return data.sha;
@@ -136,8 +139,8 @@ jobs:
             } else {
               // Otherwise fetch latest commit of main
               const { data } = await github.rest.repos.getCommit({
-                owner: 'openvm-org',
-                repo: 'openvm',
+                owner: 'axiom-crypto',
+                repo: 'openvm-private',
                 ref: 'main'
               });
               return data.sha;

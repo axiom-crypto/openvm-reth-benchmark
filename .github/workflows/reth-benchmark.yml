@@ -219,10 +219,10 @@ jobs:
 
       - name: Install openvm-prof
         run: |
-          cargo install --git https://github.com/openvm-org/openvm.git --profile=dev --force openvm-prof
+          cargo install --git ssh://git@github.com/axiom-crypto/openvm-private.git --profile=dev --force openvm-prof
       - name: Checkout openvm (for scripts)
         run: |
-          git clone https://github.com/openvm-org/openvm.git
+          git clone ssh://git@github.com/axiom-crypto/openvm-private.git
 
       - name: Install architecture specific tools
         run: |
@@ -249,7 +249,7 @@ jobs:
       - name: Install cargo-openvm
         if: steps.cache-guest-elf.outputs.cache-hit != 'true'
         run: |
-          cargo install --git https://github.com/openvm-org/openvm.git --force cargo-openvm
+          cargo install --git ssh://git@github.com/axiom-crypto/openvm-private.git --force cargo-openvm
       - name: Build Guest ELF
         if: steps.cache-guest-elf.outputs.cache-hit != 'true'
         working-directory: bin/client-eth
