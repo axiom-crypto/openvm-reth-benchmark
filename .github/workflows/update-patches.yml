@@ -43,10 +43,6 @@ on:
     - cron: "0 */12 * * *" # Run every 12 hours
   workflow_call:
     inputs:
-      STARK_BACKEND_REV:
-        type: string
-        required: false
-        description: "Optional ref for openvm-stark-backend (defaults to main head)"
       OPENVM_REV:
         type: string
         required: false
@@ -115,44 +111,32 @@ jobs:
       pr_number: ${{ steps.create-pr.outputs.pr_number }}
       tag: ${{ steps.set-tag.outputs.tag }}
     steps:
-      - name: Check out the repository
-        uses: actions/checkout@v4
-
-      - name: Get default STARK_BACKEND_REV from main (if none provided)
-        id: get-stark-backend-rev
-        uses: actions/github-script@v6
+      - uses: webfactory/ssh-agent@v0.9.0
         with:
-          script: |
-            const inputRef = "${{ inputs.STARK_BACKEND_REV || github.event.inputs.STARK_BACKEND_REV }}";
-            if (inputRef && inputRef.trim()) {
-              return inputRef;
-            } else {
-              const { data } = await github.rest.repos.getCommit({
-                owner: 'openvm-org',
-                repo: 'stark-backend',
-                ref: 'main'
-              });
-              return data.sha;
-            }
+          ssh-private-key: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
 
       - name: Get default OPENVM_REV from main (if none provided)
         id: get-openvm-rev
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const inputRef = "${{ inputs.OPENVM_REV || github.event.inputs.OPENVM_REV }}";
-            if (inputRef && inputRef.trim()) {
-              return inputRef;
-            } else {
-              // Otherwise fetch latest commit of main
-              const { data } = await github.rest.repos.getCommit({
-                owner: 'openvm-org',
-                repo: 'openvm',
-                ref: 'main'
-              });
-              return data.sha;
-            }
+        env:
+          OPENVM_REV: "${{ inputs.OPENVM_REV || github.event.inputs.OPENVM_REV }}"
+        run: |
+          echo "result=${OPENVM_REV:-$(git ls-remote git@github.com:axiom-crypto/openvm-private.git refs/heads/main | cut -f1)}" >> "$GITHUB_OUTPUT"
 
+      - name: Check out openvm-private repository
+        uses: actions/checkout@v4
+        with:
+          repository: 'axiom-crypto/openvm-private'
+          ref: ${{ steps.get-openvm-rev.outputs.result }}
+          ssh-key: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
+      - name: Get STARK_BACKEND_REV from openvm
+        id: get-stark-backend-rev
+        run: |
+          STARK_BACKEND_REV=$(cargo metadata --format-version=1 | jq -r '.packages[] | select(.name=="openvm-stark-sdk") | .source | split("#") | .[1]')
+          echo "result=${STARK_BACKEND_REV}" >> "$GITHUB_OUTPUT"
+
+
+      - name: Check out the repository
+        uses: actions/checkout@v4
       - name: Replace placeholders in configuration
         run: |
           STARK_BACKEND_REV="${{ steps.get-stark-backend-rev.outputs.result }}"
@@ -166,15 +150,10 @@ jobs:
           sed "s|\$OPENVM_REV|${OPENVM_REV}|g" .cargo/config.tmp.toml > .cargo/config.toml
           rm .cargo/config.tmp.toml
 
-      - name: Load SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: |
-            ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
       - name: Update workspace Cargo.lock
         run: |
-          cargo update -p openvm-sdk
           cargo update -p openvm-stark-sdk
+          cargo update -p openvm-sdk
           cargo tree
 
       - name: Update guest Cargo.lock

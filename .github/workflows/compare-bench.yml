@@ -46,6 +46,8 @@ jobs:
       run_benchmark: true
       benchmark_mode: ${{ github.event.inputs.benchmark_mode }}
       instance_family: ${{ github.event.inputs.instance_family }}
+      guest_flamegraph: false
+      host_flamegraph: false
     secrets: inherit
 
   # Only create branch because github workflow_call must run all jobs for "needs"
@@ -101,6 +103,9 @@ jobs:
       - run-target-benchmark
     runs-on: ubuntu-latest
     steps:
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
       - uses: actions/checkout@v4
 
       - name: Download base benchmark results
@@ -115,7 +120,7 @@ jobs:
 
       - name: Install openvm-prof
         run: |
-          cargo install --git https://github.com/openvm-org/openvm.git --profile=dev --force openvm-prof
+          cargo install --git ssh://git@github.com/axiom-crypto/openvm-private.git --profile=dev --force openvm-prof
       - name: Compare metrics
         run: |
           ls

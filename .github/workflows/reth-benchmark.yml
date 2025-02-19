@@ -167,6 +167,11 @@ jobs:
       metric_name: ${{ steps.set-metric-name.outputs.name }}
     steps:
       - uses: runs-on/action@v1
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || github.head_ref || github.ref }}
@@ -186,9 +191,8 @@ jobs:
       - name: Set metric name
         id: set-metric-name
         run: |
-          input_json_str="${{ toJSON(inputs || github.event.inputs) }}"
-          input_hash=$(echo $input_json_str | sha256sum | cut -d' ' -f1)
-          METRIC_NAME=reth-$current_sha-${input_hash}
+          run_id="${{github.run_id}}"
+          METRIC_NAME=reth-$current_sha-${run_id}
           echo "METRIC_NAME=${METRIC_NAME}" >> $GITHUB_ENV
           METRIC_PATH=".bench_metrics/${METRIC_NAME}.json"
           echo "METRIC_PATH=${METRIC_PATH}" >> $GITHUB_ENV
@@ -212,18 +216,14 @@ jobs:
           echo "host_cache_key=host-${TAG}-${arch}-${HOST_PROFILE}" >> $GITHUB_OUTPUT
           echo "guest_profile=${GUEST_PROFILE}" >> $GITHUB_OUTPUT
           echo "host_profile=${HOST_PROFILE}" >> $GITHUB_OUTPUT
-      - name: Load SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: |
-            ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
 
       - name: Install openvm-prof
         run: |
-          cargo install --git https://github.com/openvm-org/openvm.git --profile=dev --force openvm-prof
+          cargo install --git ssh://git@github.com/axiom-crypto/openvm-private.git --profile=dev --force openvm-prof
       - name: Checkout openvm (for scripts)
         run: |
-          git clone https://github.com/openvm-org/openvm.git
+          git clone ssh://git@github.com/axiom-crypto/openvm-private.git
+          mv openvm-private openvm
 
       - name: Install architecture specific tools
         run: |
@@ -252,7 +252,7 @@ jobs:
       - name: Install cargo-openvm
         if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
         run: |
-          cargo install --git https://github.com/openvm-org/openvm.git --locked --force cargo-openvm
+          cargo install --git ssh://git@github.com/axiom-crypto/openvm-private.git --force cargo-openvm
       - name: Build Guest ELF
         if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
         working-directory: bin/client-eth
@@ -371,6 +371,7 @@ jobs:
         with:
           name: ${{ steps.set-metric-name.outputs.name }}
           path: ${{ env.METRIC_PATH }}
+          overwrite: "true"
           retention-days: 1
       - name: Upload memory usage graph
         if: ${{ (inputs.profiling || github.event.inputs.profiling) == 'none' }}
