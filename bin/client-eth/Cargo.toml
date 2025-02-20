@@ -8,7 +8,7 @@ edition = "2021"
 rustc-hash = "2.1.0"
 
 # workspace
-openvm-client-executor = { path = "../../crates/executor/client", features = ["kzg"] }
+openvm-client-executor = { path = "../../crates/executor/client" }
 
 revm-precompile = { version = "11.0.1", default-features = false, features = ["openvm"] }
 
@@ -22,7 +22,7 @@ openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.gi
 openvm-ecc-sw-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938" }
 openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", features = ["k256"] }
 openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", features = ["export-intrinsics"] }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", features = ["bn254"] }
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", features = ["bn254", "bls12_381"] }
 
 # Statically turns off logging
 log = { version = "0.4", features = ["max_level_off", "release_max_level_off"] }

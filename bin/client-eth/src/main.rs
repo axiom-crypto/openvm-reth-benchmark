@@ -1,7 +1,12 @@
 use core::mem::transmute;
 
 use openvm::io::{println, read, reveal};
-use openvm_client_executor::{io::ClientExecutorInput, ClientExecutor, EthereumVariant};
+use openvm_client_executor::{
+    custom::{USED_BN_ADD, USED_BN_MUL, USED_BN_PAIR, USED_KZG_PROOF},
+    io::ClientExecutorInput,
+    reth_primitives::revm_primitives::FixedBytes,
+    ClientExecutor, EthereumVariant,
+};
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
     openvm_algebra_guest::IntMod,
@@ -31,12 +36,10 @@ openvm_algebra_complex_macros::complex_init! {
 
 pub fn main() {
     println("client-eth starting");
+    // Setup secp256k1 because it is always used for recover_signers
     setup_2();
     setup_3();
     setup_sw_Secp256k1Point();
-    // setup_all_moduli();
-    // setup_all_curves();
-    // setup_all_complex_extensions();
 
     // Read the input.
     let input: ClientExecutorInput = read();
@@ -48,7 +51,29 @@ pub fn main() {
     let block_hash = header.hash_slow();
 
     // Commit the block hash.
-    let block_hash = unsafe { transmute::<_, [u32; 8]>(block_hash) };
+    // SAFETY: 32 bytes = 8 u32s
+    let block_hash = unsafe { transmute::<FixedBytes<32>, [u32; 8]>(block_hash) };
 
     block_hash.into_iter().enumerate().for_each(|(i, x)| reveal(x, i));
+
+    // Setup can be called at any time.
+    if unsafe { USED_BN_ADD || USED_BN_MUL || USED_BN_PAIR } {
+        setup_0(); // Bn254 coordinate field
+    }
+    if unsafe { USED_BN_ADD || USED_BN_MUL } {
+        // pairing does not use ecc extension
+        setup_sw_Bn254G1Affine();
+    }
+    if unsafe { USED_BN_MUL || USED_BN_PAIR } {
+        setup_1(); // Bn254 scalar field
+    }
+    if unsafe { USED_BN_PAIR } {
+        setup_complex_0(); // Bn254 complex extension of coordinate field
+    }
+    if unsafe { USED_KZG_PROOF } {
+        setup_4(); // Bls12-381 coordinate field
+        setup_5(); // Bls12-381 scalar field
+        setup_sw_Bls12_381G1Affine();
+        setup_complex_1(); // Bls12-381 complex extension of coordinate field
+    }
 }
