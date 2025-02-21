@@ -255,7 +255,7 @@ jobs:
         working-directory: bin/client-eth
         run: |
           GUEST_PROFILE=${{ steps.set-cache-keys.outputs.guest_profile }}
-          cargo openvm build --no-transpile --profile=$GUEST_PROFILE
+          cargo openvm build --no-transpile --profile=$GUEST_PROFILE --features=kzg-intrinsics
           mkdir -p ../host/elf
           cp target/riscv32im-risc0-zkvm-elf/$GUEST_PROFILE/openvm-client-eth ../host/elf/
 
@@ -318,6 +318,7 @@ jobs:
             --root-log-blowup ${{ inputs.root_log_blowup || github.event.inputs.root_log_blowup }} \
             --max-segment-length ${{ inputs.max_segment_length || github.event.inputs.max_segment_length }} \
             --max-cells-per-chip-in-segment ${{ inputs.max_cells_per_chip_in_segment || github.event.inputs.max_cells_per_chip_in_segment }} \
+            --kzg-intrinsics \
             $OPTIONAL_ARGS
           EOF
           chmod +x run_benchmark.sh
