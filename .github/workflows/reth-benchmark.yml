@@ -301,7 +301,6 @@ jobs:
           fi
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "heap" ]]; then
               export JEMALLOC_SYS_WITH_MALLOC_CONF="prof:true,prof_active:true,prof_prefix:/tmp/jeprof.out,retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
-              FEATURES="${FEATURES},jemalloc-prof"
           else
               export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
           fi
