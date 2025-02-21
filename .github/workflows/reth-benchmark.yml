@@ -53,6 +53,7 @@ on:
           - none
           - host # host profiling (samply, flamegraphs, etc)
           - guest # guest profiling (circuit flamegraphs)
+          - heap # heap profiling with jemalloc
         default: none
       max_segment_length:
         type: number
@@ -298,7 +299,12 @@ jobs:
           if [[ "$HOST_PROFILE" == "profiling" ]]; then
               RUSTFLAGS="${RUSTFLAGS} -g -C force-frame-pointers=yes"
           fi
-          export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
+          if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "heap" ]]; then
+              export JEMALLOC_SYS_WITH_MALLOC_CONF="prof:true,prof_active:true,prof_prefix:/tmp/jeprof.out,retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
+              FEATURES="${FEATURES},jemalloc-prof"
+          else
+              export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
+          fi
           RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark --profile=$HOST_PROFILE --no-default-features --features=$FEATURES
           echo "JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}" >> $GITHUB_ENV
 
@@ -427,6 +433,49 @@ jobs:
           S3_MD_PATH="${{ env.S3_PATH }}/${METRIC_NAME}.md"
           s5cmd cp $MD_PATH $S3_MD_PATH
           echo "S3_MD_PATH=${S3_MD_PATH}" >> $GITHUB_ENV
+
+      - name: Generate and upload heap profiles
+        if: ${{ inputs.profiling == 'heap' || github.event.inputs.profiling == 'heap' }}
+        run: |
+          # Install jeprof dependencies
+          sudo apt-get update && sudo apt-get install -y graphviz
+
+          # Generate SVG profiles
+          for profile in /tmp/jeprof.out.*; do
+            jeprof --svg ./target/${{ steps.set-cache-keys.outputs.host_profile }}/openvm-reth-benchmark $profile > "${profile}.svg"
+          done
+
+          # Upload to S3
+          s5cmd cp '/tmp/jeprof.out.*' "${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/"
+          s5cmd cp '/tmp/jeprof.out.*.svg' "${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/"
+
+          # Add to markdown
+          echo "" >> $MD_PATH
+          echo "<details>" >> $MD_PATH
+          echo "<summary>Heap Profiles</summary>" >> $MD_PATH
+          echo "" >> $MD_PATH
+          for file in /tmp/jeprof.out.*; do
+            filename=$(basename "$file")
+            profile_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/${filename}
+            svg_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/${filename}.svg
+            echo "- Raw profile: [$filename]($profile_url)" >> $MD_PATH
+            echo "- SVG visualization: [${filename}.svg]($svg_url)" >> $MD_PATH
+          done
+          echo "" >> $MD_PATH
+          echo "</details>" >> $MD_PATH
+          echo "" >> $MD_PATH
+
+          # Add to step summary
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Heap Profiles:" >> $GITHUB_STEP_SUMMARY
+          for file in /tmp/jeprof.out.*; do
+            filename=$(basename "$file")
+            profile_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/${filename}
+            svg_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/${filename}.svg
+            echo "- Raw profile: $profile_url" >> $GITHUB_STEP_SUMMARY
+            echo "- SVG visualization: $svg_url" >> $GITHUB_STEP_SUMMARY
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload host flamegraph
         if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
