@@ -442,7 +442,7 @@ jobs:
 
           # Generate SVG profiles
           for profile in /tmp/jeprof.out.*; do
-            jeprof --svg ./target/${{ steps.set-cache-keys.outputs.host_profile }}/openvm-reth-benchmark $profile > "${profile}.svg"
+            jeprof --svg ./run_benchmark.sh $profile > "${profile}.svg"
           done
 
           # Upload to S3
