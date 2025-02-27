@@ -1,11 +1,16 @@
 const { spawn } = require('child_process');
-const path = require('path');
+const fs = require('fs');
 
 const urlRegex = /(https:\/\/profiler\.firefox\.com[^\s]+)/;
 
 function runScript() {
-  // Get the path to run.sh relative to this script
-  const shellScriptPath = 'run.sh';
+  // Script must be run from the root of the repository
+  if (!fs.existsSync('rust-toolchain.toml')) {
+    console.error('Error: This script must be run from the repository root');
+    process.exit(1);
+  }
+
+  const shellScriptPath = 'run-profiling.sh';
   
   // Spawn the shell script process
   const shellProcess = spawn('sh', [shellScriptPath], {
@@ -15,24 +20,23 @@ function runScript() {
   // Listen for data on stdout
   shellProcess.stdout.on('data', (data) => {
     const output = data.toString();
-    process.stdout.write(output);
+    process.stdout.write(output)
 
     // Check if the output contains a URL and we haven't processed it yet
     const match = output.match(urlRegex);
     if (match) {
       const url = match[1];
-      console.log('Found URL:', url);
       const urlData = url.split('127.0.0.1%3A')[1].split('%2F');
       const port = urlData[0];
       const id = urlData[1];
-      console.log('id', id);
-      console.log(`http://localhost:${port}/${id}`);
+      const serverUrl = `http://localhost:${port}/${id}`;
+      console.log('server url:', serverUrl);
 
       // Wait for the shell script to complete before running follow-up commands
       const commands = [
         {
           cmd: 'gzip',
-          args: ['-d', 'profile.json.gz'],
+          args: ['-d', '-f', 'profile.json.gz'],
         },
         {
           cmd: 'node',
@@ -43,7 +47,7 @@ function runScript() {
             '--output',
             'profile-symbolicated.json',
             '--server',
-            `http://localhost:${port}/${id}`
+            serverUrl
           ],
         },
       ];
@@ -53,7 +57,16 @@ function runScript() {
 
         const command = commands[index];
         const nextCommand = spawn(command.cmd, command.args, {
-          stdio: 'inherit'
+          stdio: ['inherit', 'pipe', 'pipe'],
+        });
+
+        nextCommand.stdout.on('data', (data) => {
+          const output = data.toString();
+          process.stdout.write(output);
+          if (output.includes('Finished.')) {
+            console.log('Exiting symbolicator.');
+            process.exit(0);
+          }
         });
 
         nextCommand.on('error', (error) => {
@@ -75,8 +88,6 @@ function runScript() {
       executeSequential(commands);
     }
   });
-
-  
 
   // Handle errors
   shellProcess.stderr.on('data', (data) => {
