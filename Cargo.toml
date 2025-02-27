@@ -1,5 +1,13 @@
 [workspace]
-members = ["bin/host", "crates/executor/client", "crates/executor/host", "crates/mpt", "crates/primitives", "crates/storage/rpc-db", "crates/storage/witness-db"]
+members = [
+    "bin/host",
+    "crates/executor/client",
+    "crates/executor/host",
+    "crates/mpt",
+    "crates/primitives",
+    "crates/storage/rpc-db",
+    "crates/storage/witness-db",
+]
 exclude = []
 resolver = "2"
 
@@ -14,10 +22,10 @@ version = "0.1.0"
 eyre = "0.6"
 anyhow = { version = "1.0.86", default-features = false }
 tracing = { version = "0.1.40", default-features = false }
-cfg-if = "1.0.0"
-spin = { version = "0.9.8", features = ["mutex"] }
-async-trait = "0.1.80"
-tokio = { version = "1.21", default-features = false, features = ["rt", "rt-multi-thread"] }
+tokio = { version = "1.21", default-features = false, features = [
+    "rt",
+    "rt-multi-thread",
+] }
 serde_json = "1.0.94"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 futures = "0.3"
@@ -26,7 +34,11 @@ thiserror = "1.0.61"
 hex-literal = "0.4.1"
 rayon = "1.10.0"
 rlp = "0.5.2"
-bincode = { version = "2.0.0-rc", default-features = false, features = ["derive", "alloc", "serde"] }
+bincode = { version = "2.0.0-rc", default-features = false, features = [
+    "derive",
+    "alloc",
+    "serde",
+] }
 rustc-hash = "2.1.0"
 
 # workspace
@@ -38,61 +50,71 @@ openvm-mpt = { path = "./crates/mpt" }
 openvm-primitives = { path = "./crates/primitives" }
 
 # reth
-reth-primitives = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false, features = ["alloy-compat", "std", "ecrecover"] }
+reth-primitives = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false, features = [
+    "alloy-compat",
+    "std",
+    "ecrecover",
+] }
 reth-codecs = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false }
-reth-consensus = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false }
 reth-evm = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false }
-reth-revm = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false, features = ["std"] }
-reth-node-ethereum = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false }
-reth-evm-ethereum = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false, features = ["std"] }
-reth-evm-optimism = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false, features = ["optimism"] }
-reth-storage-errors = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false, features = ["std"] }
+reth-revm = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false, features = [
+    "std",
+] }
+reth-evm-ethereum = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false, features = [
+    "std",
+] }
+reth-evm-optimism = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false, features = [
+    "optimism",
+] }
+reth-storage-errors = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false, features = [
+    "std",
+] }
 reth-trie = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false }
-reth-trie-common = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false }
 reth-chainspec = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false }
 reth-optimism-chainspec = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false }
-reth-execution-errors = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false }
 reth-execution-types = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false }
-reth-db = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false }
 reth-errors = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false }
 reth-ethereum-consensus = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false }
-reth-optimism-consensus = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false, features = ["optimism"] }
+reth-optimism-consensus = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false, features = [
+    "optimism",
+] }
 
 # revm
-revm = { version = "14.0.0", features = ["optimism", "std", "serde"], default-features = false }
-revm-primitives = { version = "9.0.0", features = ["std", "serde"], default-features = false }
-revm-inspectors = "0.6"
+revm = { version = "14.0.0", features = [
+    "optimism",
+    "std",
+    "serde",
+], default-features = false }
+revm-primitives = { version = "9.0.0", features = [
+    "std",
+    "serde",
+], default-features = false }
 revm-interpreter = { version = "=10.0.1", default-features = false }
 revm-precompile = { version = "=11.0.1", default-features = false }
 
 # alloy
 alloy-primitives = { version = "0.8.4", default-features = false }
-alloy-provider = { version = "0.3", default-features = false, features = ["reqwest", "reqwest-rustls-tls"] }
-alloy-rpc-types = { version = "0.3", default-features = false, features = ["eth"] }
+alloy-provider = { version = "0.3", default-features = false, features = [
+    "reqwest",
+    "reqwest-rustls-tls",
+] }
+alloy-rpc-types = { version = "0.3", default-features = false, features = [
+    "eth",
+] }
 alloy-rlp = "0.3.4"
-alloy-consensus = { version = "0.3", default-features = false }
 alloy-transport = { version = "0.3" }
-alloy-transport-http = { version = "0.3", features = ["reqwest-rustls-tls"], default-features = false }
-alloy-eips = { version = "0.3", default-features = false }
 alloy-trie = "0.5.0"
 
 # openvm
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.0.0-rc.0", default-features = false }
 openvm-build = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
-openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
 openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
 openvm-benchmarks = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
-openvm-keccak256-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
-openvm-keccak256-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
 openvm-rv32im-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
-openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
 openvm-bigint-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
-openvm-bigint-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
 openvm-algebra-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
-openvm-algebra-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
 openvm-ecc-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
-openvm-ecc-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
 openvm-pairing-circuit = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
 openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
 openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", rev = "91496503cb9a214ce7f8cef3a4a6e35fc6f0d938", default-features = false }
@@ -112,6 +134,7 @@ lto = "thin"
 inherits = "maxperf"
 debug = "full"
 strip = "none"
+split-debuginfo = "packed"
 
 [profile.maxperf]
 inherits = "release"
