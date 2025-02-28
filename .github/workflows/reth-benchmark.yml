@@ -54,6 +54,15 @@ on:
           - host # host profiling (samply, flamegraphs, etc)
           - guest # guest profiling (circuit flamegraphs)
         default: none
+      memory_allocator:
+        type: choice
+        required: false
+        description: Memory allocator to use (jemalloc-prof for memory profiling)
+        options:
+          - jemalloc
+          - jemalloc-prof
+          - mimalloc
+        default: jemalloc
       max_segment_length:
         type: number
         required: false

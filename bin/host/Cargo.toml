@@ -49,6 +49,7 @@ bench-metrics = ["openvm-benchmarks/bench-metrics"]
 profiling = ["openvm-sdk/profiling", "openvm-benchmarks/profiling"]
 mimalloc = ["openvm-benchmarks/mimalloc"]
 jemalloc = ["openvm-benchmarks/jemalloc"]
+jemalloc-prof = ["openvm-benchmarks/jemalloc-prof"]
 nightly-features = ["openvm-benchmarks/nightly-features"]
 # x86 only:
 halo2-asm = ["halo2-axiom/asm"]
