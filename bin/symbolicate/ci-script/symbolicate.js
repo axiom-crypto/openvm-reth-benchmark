@@ -10,7 +10,15 @@ function runScript() {
     process.exit(1);
   }
 
-  const shellScriptPath = 'run-profiling.sh';
+  // Get the shell script path from command line arguments, or use default
+  if (process.argv.length < 3) {
+    console.error('Error: Please provide the path to the shell script (from repo root) that runs `samply record` as the first argument');
+    process.exit(1);
+  }
+  const shellScriptPath = process.argv[2];
+  
+  // Get the metric name from command line arguments, or use default `profile` name
+  const metricName = process.argv[3] || "profile"; 
   
   // Spawn the shell script process
   const shellProcess = spawn('sh', [shellScriptPath], {
@@ -39,13 +47,17 @@ function runScript() {
           args: ['-d', '-f', 'profile.json.gz'],
         },
         {
+          cmd: 'mv',
+          args: ['profile.json', `${metricName}.json`],
+        },
+        {
           cmd: 'node',
           args: [
             'bin/symbolicate/symbolicator-cli/symbolicator-cli.js',
             '--input',
-            'profile.json',
+            `${metricName}.json`,
             '--output',
-            'profile-symbolicated.json',
+            `${metricName}-symbolicated.json`,
             '--server',
             serverUrl
           ],

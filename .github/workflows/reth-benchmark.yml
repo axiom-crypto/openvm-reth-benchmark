@@ -311,7 +311,7 @@ jobs:
           BLOCK_NUMBER=${{ inputs.block_number || github.event.inputs.block_number }}
           HOST_PROFILE=${{ steps.set-cache-keys.outputs.host_profile }}
           cat > run_benchmark.sh <<EOF
-          ./target/$HOST_PROFILE/openvm-reth-benchmark \
+          OUTPUT_PATH="metrics.json" samply record --no-open -- ./target/$HOST_PROFILE/openvm-reth-benchmark \
             --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
             --app-log-blowup ${{ inputs.app_log_blowup || github.event.inputs.app_log_blowup }} \
             --leaf-log-blowup ${{ inputs.leaf_log_blowup || github.event.inputs.leaf_log_blowup }} \
@@ -320,6 +320,7 @@ jobs:
             --max-cells-per-chip-in-segment ${{ inputs.max_cells_per_chip_in_segment || github.event.inputs.max_cells_per_chip_in_segment }} \
             $OPTIONAL_ARGS
           EOF
+          cat run_benchmark.sh
           chmod +x run_benchmark.sh
 
       - name: Run benchmark
@@ -329,20 +330,7 @@ jobs:
           export OUTPUT_PATH=${METRIC_PATH}
 
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
-            echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
-            echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
-
-            # install custom addr2line: https://crates.io/crates/flamegraph
-            rm -rf /tmp/addr2line
-            git clone https://github.com/gimli-rs/addr2line /tmp/addr2line
-            work_dir=$(pwd)
-            cd /tmp/addr2line
-            cargo build --release --bin addr2line --features bin
-            sudo mv target/release/addr2line /usr/local/bin/
-            cd $work_dir
-
-            perf --version
-            perf record -F 99 --call-graph dwarf -o perf.data -- ./run_benchmark.sh
+            node bin/symbolicate/ci-script/symbolicate.js run_benchmark.sh ${METRIC_NAME}
           else
             ./run_benchmark.sh
           fi
@@ -428,23 +416,28 @@ jobs:
           s5cmd cp $MD_PATH $S3_MD_PATH
           echo "S3_MD_PATH=${S3_MD_PATH}" >> $GITHUB_ENV
 
-      - name: Upload host flamegraph
+      # - name: Upload host flamegraph
+      #   if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
+      #   run: |
+      #     cargo install inferno
+
+      #     perf script -i perf.data | inferno-collapse-perf > stacks.folded
+      #     cat stacks.folded | inferno-flamegraph > flamegraph.svg
+      #     cat stacks.folded | inferno-flamegraph --reverse --inverted > flamegraph-reverse.svg
+
+      #     s5cmd cp flamegraph.svg ${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/host.svg
+      #     s5cmd cp flamegraph-reverse.svg ${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/host-reverse.svg
+      #     flamegraph_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/host.svg
+      #     flamegraph_reverse_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/host-reverse.svg
+      #     echo "" >> $GITHUB_STEP_SUMMARY
+      #     echo "Host Perf Flamegraph: $flamegraph_url" >> $GITHUB_STEP_SUMMARY
+      #     echo "Host Perf Reverse Flamegraph: $flamegraph_reverse_url" >> $GITHUB_STEP_SUMMARY
+      #     echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload symbolicated samply profile
         if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
         run: |
-          cargo install inferno
-
-          perf script -i perf.data | inferno-collapse-perf > stacks.folded
-          cat stacks.folded | inferno-flamegraph > flamegraph.svg
-          cat stacks.folded | inferno-flamegraph --reverse --inverted > flamegraph-reverse.svg
-
-          s5cmd cp flamegraph.svg ${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/host.svg
-          s5cmd cp flamegraph-reverse.svg ${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/host-reverse.svg
-          flamegraph_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/host.svg
-          flamegraph_reverse_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/host-reverse.svg
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Host Perf Flamegraph: $flamegraph_url" >> $GITHUB_STEP_SUMMARY
-          echo "Host Perf Reverse Flamegraph: $flamegraph_reverse_url" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          s5cmd cp ${METRIC_NAME}-symbolicated.json ${{ env.S3_PATH }}/${METRIC_NAME}-symbolicated.json
 
       ### Update gh-pages
       - uses: actions/checkout@v4
