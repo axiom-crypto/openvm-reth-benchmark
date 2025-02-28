@@ -225,6 +225,7 @@ jobs:
       - name: Install samply
         run: |
           cargo install --locked samply
+          echo '1' | sudo tee /proc/sys/kernel/perf_event_paranoid
 
       - name: Install openvm-prof
         run: |
