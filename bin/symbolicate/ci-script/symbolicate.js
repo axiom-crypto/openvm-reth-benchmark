@@ -43,12 +43,21 @@ function runScript() {
       // Wait for the shell script to complete before running follow-up commands
       const commands = [
         {
+          cmd: 'ls -lF',
+        },
+        {
           cmd: 'gzip',
           args: ['-d', '-f', 'profile.json.gz'],
         },
         {
+          cmd: 'ls -lF',
+        },
+        {
           cmd: 'mv',
           args: ['profile.json', `${metricName}.json`],
+        },
+        {
+          cmd: 'ls -lF',
         },
         {
           cmd: 'node',
