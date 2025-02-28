@@ -32,7 +32,6 @@ exit 1
 ;;
 esac
 export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
-export _RJEM_MALLOC_CONF="prof:true,prof_accum:true,prof_final:true,prof_prefix:./target/tmp/jem_prof.out"
 RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark --profile=$PROFILE --no-default-features --features=$FEATURES
 PARAMS_DIR="params"
 RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics.json" ./target/$PROFILE/openvm-reth-benchmark --kzg-params-dir $PARAMS_DIR --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache

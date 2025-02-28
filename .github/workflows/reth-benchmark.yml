@@ -337,6 +337,13 @@ jobs:
           export RUST_LOG="info,p3_=warn"
           export OUTPUT_PATH=${METRIC_PATH}
 
+          if [[ "${{inputs.memory_allocator || github.event.inputs.memory_allocator }}" == "jemalloc-prof" ]]; then
+            echo "using _RJEM_MALLOC_CONF"
+            mkdir jemalloc_prof
+            # The memory profiler output will be written to "./jemalloc_prof/${METRIC_NAME}.*.heap"
+            export _RJEM_MALLOC_CONF="prof:true,prof_accum:true,prof_final:true,prof_prefix:./tmp/${METRIC_NAME}"
+          fi
+
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
             echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
             echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
@@ -355,6 +362,11 @@ jobs:
           else
             ./run_benchmark.sh
           fi
+
+      - name: Upload jemalloc profiler output to S3
+        if: ${{ inputs.memory_allocator == 'jemalloc-prof' }}
+        run: |
+          s5cmd cp ./jemalloc_prof/* ${{ env.S3_PATH }}/.
 
       - name: Upload metric file
         id: upload-metric-artifact
