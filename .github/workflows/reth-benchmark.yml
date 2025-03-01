@@ -339,9 +339,9 @@ jobs:
           cat run_benchmark.sh
           chmod +x run_benchmark.sh
 
-      - name: Symbolicate profile.json
-        run: |
-          node bin/symbolicate/symbolicator-cli/symbolicator-cli.js --input profile.json --output profile-symbolicated.json --server http://localhost:3000
+      # - name: Symbolicate profile.json
+      #   run: |
+      #     node bin/symbolicate/symbolicator-cli/symbolicator-cli.js --input profile.json --output profile-symbolicated.json --server http://localhost:3000
 
       - name: Run benchmark
         run: |
