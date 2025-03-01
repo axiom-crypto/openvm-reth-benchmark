@@ -55,8 +55,8 @@ function runScript() {
           args: ['-lF'],
         },
         {
-          cmd: 'ping',
-          args: ['-c', '1', serverUrl],
+          cmd: 'sleep',
+          args: ['5'],
         },
         {
           cmd: 'node',
