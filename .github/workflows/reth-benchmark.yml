@@ -342,7 +342,6 @@ jobs:
       - name: Symbolicate profile.json
         run: |
           node bin/symbolicate/symbolicator-cli/symbolicator-cli.js --input profile.json --output profile-symbolicated.json --server http://localhost:3000
-          exit 0
 
       - name: Run benchmark
         run: |

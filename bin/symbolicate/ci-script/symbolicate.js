@@ -55,6 +55,10 @@ function runScript() {
           args: ['-lF'],
         },
         {
+          cmd: 'ping',
+          args: ['-c', '1', serverUrl],
+        },
+        {
           cmd: 'node',
           args: [
             'bin/symbolicate/symbolicator-cli/symbolicator-cli.js',
