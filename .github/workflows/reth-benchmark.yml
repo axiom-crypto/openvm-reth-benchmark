@@ -339,6 +339,11 @@ jobs:
           cat run_benchmark.sh
           chmod +x run_benchmark.sh
 
+      - name: Symbolicate profile.json
+        run: |
+          node bin/symbolicate/ci-script/symbolicate.js run_benchmark.sh profile
+          exit 0
+
       - name: Run benchmark
         run: |
           export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
