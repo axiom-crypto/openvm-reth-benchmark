@@ -54,15 +54,6 @@ on:
           - host # host profiling (samply, flamegraphs, etc)
           - guest # guest profiling (circuit flamegraphs)
         default: none
-      memory_allocator:
-        type: choice
-        required: false
-        description: Memory allocator to use (jemalloc-prof for memory profiling)
-        options:
-          - jemalloc
-          - jemalloc-prof
-          - mimalloc
-        default: jemalloc
       max_segment_length:
         type: number
         required: false
@@ -337,14 +328,12 @@ jobs:
           export RUST_LOG="info,p3_=warn"
           export OUTPUT_PATH=${METRIC_PATH}
 
-          if [[ "${{inputs.memory_allocator || github.event.inputs.memory_allocator }}" == "jemalloc-prof" ]]; then
+          if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
             echo "using _RJEM_MALLOC_CONF"
             mkdir jemalloc_prof
             # The memory profiler output will be written to "./jemalloc_prof/${METRIC_NAME}.*.heap"
             export _RJEM_MALLOC_CONF="prof:true,prof_accum:true,prof_final:true,prof_prefix:./tmp/${METRIC_NAME}"
-          fi
 
-          if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
             echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
             echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
 
@@ -364,7 +353,7 @@ jobs:
           fi
 
       - name: Upload jemalloc profiler output to S3
-        if: ${{ inputs.memory_allocator == 'jemalloc-prof' }}
+        if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
         run: |
           s5cmd cp ./jemalloc_prof/* ${{ env.S3_PATH }}/.
 
