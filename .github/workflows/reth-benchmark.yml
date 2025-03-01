@@ -334,20 +334,22 @@ jobs:
             # The memory profiler output will be written to "./jemalloc_prof/${METRIC_NAME}.*.heap"
             export _RJEM_MALLOC_CONF="prof:true,prof_accum:true,prof_final:true,prof_prefix:./tmp/${METRIC_NAME}"
 
-            echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
-            echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
+            ./run_benchmark.sh
 
-            # install custom addr2line: https://crates.io/crates/flamegraph
-            rm -rf /tmp/addr2line
-            git clone https://github.com/gimli-rs/addr2line /tmp/addr2line
-            work_dir=$(pwd)
-            cd /tmp/addr2line
-            cargo build --release --bin addr2line --features bin
-            sudo mv target/release/addr2line /usr/local/bin/
-            cd $work_dir
+            # echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
+            # echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
 
-            perf --version
-            perf record -F 99 --call-graph dwarf -o perf.data -- ./run_benchmark.sh
+            # # install custom addr2line: https://crates.io/crates/flamegraph
+            # rm -rf /tmp/addr2line
+            # git clone https://github.com/gimli-rs/addr2line /tmp/addr2line
+            # work_dir=$(pwd)
+            # cd /tmp/addr2line
+            # cargo build --release --bin addr2line --features bin
+            # sudo mv target/release/addr2line /usr/local/bin/
+            # cd $work_dir
+
+            # perf --version
+            # perf record -F 99 --call-graph dwarf -o perf.data -- ./run_benchmark.sh
           else
             ./run_benchmark.sh
           fi
