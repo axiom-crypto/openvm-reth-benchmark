@@ -51,10 +51,6 @@ function runScript() {
           args: ['profile.json', `${metricName}.json`],
         },
         {
-          cmd: 'ls',
-          args: ['-lF'],
-        },
-        {
           cmd: 'sleep',
           args: ['5'],
         },
