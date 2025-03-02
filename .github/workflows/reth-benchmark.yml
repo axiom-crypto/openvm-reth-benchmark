@@ -192,7 +192,9 @@ jobs:
           input_hash=$(echo $input_json_str | sha256sum | cut -d' ' -f1)
           METRIC_NAME=reth-$current_sha-${input_hash}
           echo "METRIC_NAME=${METRIC_NAME}" >> $GITHUB_ENV
-          METRIC_PATH=".bench_metrics/${METRIC_NAME}.json"
+          METRIC_NAME_SYMBOLICATED=${METRIC_NAME}-symbolicated
+          echo "METRIC_NAME_SYMBOLICATED=${METRIC_NAME_SYMBOLICATED}" >> $GITHUB_ENV
+          METRIC_PATH=".bench_metrics"
           echo "METRIC_PATH=${METRIC_PATH}" >> $GITHUB_ENV
           echo "name=${METRIC_NAME}" >> $GITHUB_OUTPUT
 
@@ -339,18 +341,13 @@ jobs:
           cat run_benchmark.sh
           chmod +x run_benchmark.sh
 
-      # - name: Symbolicate profile.json
-      #   run: |
-      #     node bin/symbolicate/symbolicator-cli/symbolicator-cli.js --input profile.json --output profile-symbolicated.json --server http://localhost:3000
-
       - name: Run benchmark
         run: |
           export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
           export RUST_LOG="info,p3_=warn"
-          # export OUTPUT_PATH=${METRIC_PATH}
 
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
-            node bin/symbolicate/ci-script/symbolicate.js run_benchmark.sh ${METRIC_NAME}
+            node bin/symbolicate/ci-script/symbolicate.js run_benchmark.sh "${METRIC_PATH}/${METRIC_NAME}"
           else
             ./run_benchmark.sh
           fi
@@ -360,17 +357,17 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.set-metric-name.outputs.name }}
-          path: ${{ env.METRIC_PATH }}
+          path: ${{ env.METRIC_PATH }}/${{ env.METRIC_NAME_SYMBOLICATED }}.json
           retention-days: 1
 
       - name: Upload Benchmark Metrics
-        run: s5cmd cp ${METRIC_PATH} ${{ env.S3_METRICS_PATH }}/${METRIC_NAME}.json
+        run: s5cmd cp "${METRIC_PATH}/${METRIC_NAME_SYMBOLICATED}.json" ${{ env.S3_METRICS_PATH }}/${METRIC_NAME}.json
 
       - name: Generate markdown
         run: |
           BENCHER_METRIC_PATH=bencher.json
-          openvm-prof --json-paths $METRIC_PATH --output-json $BENCHER_METRIC_PATH
-          MD_PATH=${METRIC_PATH%.json}.md
+          openvm-prof --json-paths "${METRIC_PATH}/${METRIC_NAME_SYMBOLICATED}.json" --output-json $BENCHER_METRIC_PATH
+          MD_PATH="${METRIC_PATH}/${METRIC_NAME_SYMBOLICATED}.md"
           echo "MD_PATH=${MD_PATH}" >> $GITHUB_ENV
           echo "BENCHER_METRIC_PATH=${BENCHER_METRIC_PATH}" >> $GITHUB_ENV
 
@@ -399,7 +396,7 @@ jobs:
         run: |
           cargo install inferno
 
-          python3 openvm/ci/scripts/metric_unify/flamegraph.py $METRIC_PATH
+          python3 openvm/ci/scripts/metric_unify/flamegraph.py "${METRIC_PATH}/${METRIC_NAME}.json"
           s5cmd cp '.bench_metrics/flamegraphs/*.svg' "${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/"
 
           echo "" >> $MD_PATH
