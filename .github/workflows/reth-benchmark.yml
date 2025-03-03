@@ -332,7 +332,7 @@ jobs:
             echo "using _RJEM_MALLOC_CONF"
             mkdir jemalloc_prof
             # The memory profiler output will be written to "./jemalloc_prof/${METRIC_NAME}.*.heap"
-            export _RJEM_MALLOC_CONF="prof:true,prof_accum:true,prof_final:true,prof_prefix:./tmp/${METRIC_NAME}"
+            export _RJEM_MALLOC_CONF="prof:true,prof_accum:true,prof_final:true,prof_prefix:./jemalloc_prof/${METRIC_NAME}"
 
             ./run_benchmark.sh
 
