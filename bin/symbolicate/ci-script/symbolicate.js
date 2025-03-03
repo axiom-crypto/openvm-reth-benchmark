@@ -41,6 +41,7 @@ function runScript() {
       const id = urlData[1];
       const serverUrl = `http://localhost:${port}/${id}`;
       console.log("server url:", serverUrl);
+      console.log("metricName", metricName);
 
       let folder = metricName.split("/")[0];
 
