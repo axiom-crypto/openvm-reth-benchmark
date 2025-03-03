@@ -40,6 +40,8 @@ function runScript() {
       const serverUrl = `http://localhost:${port}/${id}`;
       console.log('server url:', serverUrl);
 
+      let folder = metricName.split('/')[0];
+
       // Wait for the shell script to complete before running follow-up commands
       const commands = [
         {
@@ -53,6 +55,10 @@ function runScript() {
         {
           cmd: 'sleep',
           args: ['5'],
+        },
+        {
+          cmd: 'ls',
+          args: ['-lFa', folder],
         },
         {
           cmd: 'node',
