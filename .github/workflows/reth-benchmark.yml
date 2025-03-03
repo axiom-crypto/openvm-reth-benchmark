@@ -173,6 +173,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
+
       - name: Display workflow inputs
         run: |
           if [[ "${{ inputs.manual_call }}" == "true" ]]; then
@@ -180,18 +181,25 @@ jobs:
           else
             echo "${{ toJSON(github.event.inputs) }}"
           fi
+
       - name: Get current commit hash
         run: echo "current_sha=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
       - name: Set metric name
         id: set-metric-name
         run: |
           input_json_str="${{ toJSON(inputs || github.event.inputs) }}"
           input_hash=$(echo $input_json_str | sha256sum | cut -d' ' -f1)
-          METRIC_NAME=reth-$current_sha-${input_hash}
+          METRIC_PREFIX=reth-$current_sha-${input_hash}
+          echo "METRIC_PREFIX=${METRIC_PREFIX}" >> $GITHUB_ENV
+          METRIC_NAME=metrics
           echo "METRIC_NAME=${METRIC_NAME}" >> $GITHUB_ENV
-          METRIC_PATH=".bench_metrics/${METRIC_NAME}.json"
-          echo "METRIC_PATH=${METRIC_PATH}" >> $GITHUB_ENV
-          echo "name=${METRIC_NAME}" >> $GITHUB_OUTPUT
+          PROFILE_NAME=profile
+          echo "PROFILE_NAME=${PROFILE_NAME}" >> $GITHUB_ENV
+          PROFILE_NAME_SYMBOLICATED=profile-symbolicated
+          echo "PROFILE_NAME_SYMBOLICATED=${PROFILE_NAME_SYMBOLICATED}" >> $GITHUB_ENV
+          echo "name=${METRIC_PREFIX}" >> $GITHUB_OUTPUT
+
       - name: Set cache keys
         id: set-cache-keys
         run: |
@@ -211,15 +219,27 @@ jobs:
           echo "host_cache_key=host-${TAG}-${arch}-${HOST_PROFILE}" >> $GITHUB_OUTPUT
           echo "guest_profile=${GUEST_PROFILE}" >> $GITHUB_OUTPUT
           echo "host_profile=${HOST_PROFILE}" >> $GITHUB_OUTPUT
+
       - name: Load SSH key
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: |
             ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install samply
+        run: |
+          cargo install --locked samply
+          echo '-1' | sudo tee /proc/sys/kernel/perf_event_paranoid
+
       - name: Install openvm-prof
         run: |
           cargo install --git https://github.com/openvm-org/openvm.git --profile=dev --force openvm-prof
+
       - name: Checkout openvm (for scripts)
         run: |
           git clone https://github.com/openvm-org/openvm.git
@@ -305,13 +325,14 @@ jobs:
       - name: Set up run benchmark script
         run: |
           mkdir -p rpc-cache
-          mkdir -p .bench_metrics
+          mkdir -p ${METRIC_PREFIX}
+          ls ${PARAMS_DIR}
           RPC_1=${{ secrets.RPC_URL_1 }}
           MODE=${{ inputs.mode || github.event.inputs.mode }}
           BLOCK_NUMBER=${{ inputs.block_number || github.event.inputs.block_number }}
           HOST_PROFILE=${{ steps.set-cache-keys.outputs.host_profile }}
           cat > run_benchmark.sh <<EOF
-          ./target/$HOST_PROFILE/openvm-reth-benchmark \
+          OUTPUT_PATH="${METRIC_PREFIX}/${METRIC_NAME}.json" samply record --no-open -- ./target/$HOST_PROFILE/openvm-reth-benchmark \
             --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
             --app-log-blowup ${{ inputs.app_log_blowup || github.event.inputs.app_log_blowup }} \
             --leaf-log-blowup ${{ inputs.leaf_log_blowup || github.event.inputs.leaf_log_blowup }} \
@@ -320,29 +341,16 @@ jobs:
             --max-cells-per-chip-in-segment ${{ inputs.max_cells_per_chip_in_segment || github.event.inputs.max_cells_per_chip_in_segment }} \
             $OPTIONAL_ARGS
           EOF
+          cat run_benchmark.sh
           chmod +x run_benchmark.sh
 
       - name: Run benchmark
         run: |
           export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
           export RUST_LOG="info,p3_=warn"
-          export OUTPUT_PATH=${METRIC_PATH}
 
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
-            echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
-            echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
-
-            # install custom addr2line: https://crates.io/crates/flamegraph
-            rm -rf /tmp/addr2line
-            git clone https://github.com/gimli-rs/addr2line /tmp/addr2line
-            work_dir=$(pwd)
-            cd /tmp/addr2line
-            cargo build --release --bin addr2line --features bin
-            sudo mv target/release/addr2line /usr/local/bin/
-            cd $work_dir
-
-            perf --version
-            perf record -F 99 --call-graph dwarf -o perf.data -- ./run_benchmark.sh
+            node bin/symbolicate/ci-script/symbolicate.js run_benchmark.sh "${METRIC_PREFIX}/${PROFILE_NAME}"
           else
             ./run_benchmark.sh
           fi
@@ -352,19 +360,21 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.set-metric-name.outputs.name }}
-          path: ${{ env.METRIC_PATH }}
+          path: ${{ env.METRIC_PREFIX }}/${{ env.METRIC_NAME }}.json
           retention-days: 1
 
-      - name: Upload Benchmark Metrics
-        run: s5cmd cp ${METRIC_PATH} ${{ env.S3_METRICS_PATH }}/${METRIC_NAME}.json
+      # - name: Upload output to S3
+      #   run: |
+      #     ls -lFa ${METRIC_PREFIX}
+      #     s5cmd cp -r "${METRIC_PREFIX}" ${{ env.S3_METRICS_PATH }}/${METRIC_PREFIX}
 
       - name: Generate markdown
         run: |
-          BENCHER_METRIC_PATH=bencher.json
-          openvm-prof --json-paths $METRIC_PATH --output-json $BENCHER_METRIC_PATH
-          MD_PATH=${METRIC_PATH%.json}.md
+          BENCHER_METRIC_PREFIX=bencher.json
+          openvm-prof --json-paths "${METRIC_PREFIX}/${METRIC_NAME}.json" --output-json $BENCHER_METRIC_PREFIX
+          MD_PATH="${METRIC_PREFIX}/${METRIC_NAME}.md"
           echo "MD_PATH=${MD_PATH}" >> $GITHUB_ENV
-          echo "BENCHER_METRIC_PATH=${BENCHER_METRIC_PATH}" >> $GITHUB_ENV
+          echo "BENCHER_METRIC_PREFIX=${BENCHER_METRIC_PREFIX}" >> $GITHUB_ENV
 
       - uses: bencherdev/bencher@main
       - name: Upload bencher metrics
@@ -384,14 +394,14 @@ jobs:
             --branch $BRANCH \
             --testbed ${{ inputs.instance_family || github.event.inputs.instance_family }} \
             --adapter json \
-            --file $BENCHER_METRIC_PATH
+            --file $BENCHER_METRIC_PREFIX
 
       - name: Generate circuit flamegraphs
         if: ${{ inputs.profiling == 'guest' || github.event.inputs.profiling == 'guest' }}
         run: |
           cargo install inferno
 
-          python3 openvm/ci/scripts/metric_unify/flamegraph.py $METRIC_PATH
+          python3 openvm/ci/scripts/metric_unify/flamegraph.py "${METRIC_PREFIX}/${METRIC_NAME}.json"
           s5cmd cp '.bench_metrics/flamegraphs/*.svg' "${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/"
 
           echo "" >> $MD_PATH
@@ -428,23 +438,28 @@ jobs:
           s5cmd cp $MD_PATH $S3_MD_PATH
           echo "S3_MD_PATH=${S3_MD_PATH}" >> $GITHUB_ENV
 
-      - name: Upload host flamegraph
+      # - name: Upload host flamegraph
+      #   if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
+      #   run: |
+      #     cargo install inferno
+
+      #     perf script -i perf.data | inferno-collapse-perf > stacks.folded
+      #     cat stacks.folded | inferno-flamegraph > flamegraph.svg
+      #     cat stacks.folded | inferno-flamegraph --reverse --inverted > flamegraph-reverse.svg
+
+      #     s5cmd cp flamegraph.svg ${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/host.svg
+      #     s5cmd cp flamegraph-reverse.svg ${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/host-reverse.svg
+      #     flamegraph_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/host.svg
+      #     flamegraph_reverse_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/host-reverse.svg
+      #     echo "" >> $GITHUB_STEP_SUMMARY
+      #     echo "Host Perf Flamegraph: $flamegraph_url" >> $GITHUB_STEP_SUMMARY
+      #     echo "Host Perf Reverse Flamegraph: $flamegraph_reverse_url" >> $GITHUB_STEP_SUMMARY
+      #     echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload symbolicated samply profile
         if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
         run: |
-          cargo install inferno
-
-          perf script -i perf.data | inferno-collapse-perf > stacks.folded
-          cat stacks.folded | inferno-flamegraph > flamegraph.svg
-          cat stacks.folded | inferno-flamegraph --reverse --inverted > flamegraph-reverse.svg
-
-          s5cmd cp flamegraph.svg ${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/host.svg
-          s5cmd cp flamegraph-reverse.svg ${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/host-reverse.svg
-          flamegraph_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/host.svg
-          flamegraph_reverse_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/host-reverse.svg
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Host Perf Flamegraph: $flamegraph_url" >> $GITHUB_STEP_SUMMARY
-          echo "Host Perf Reverse Flamegraph: $flamegraph_reverse_url" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          s5cmd cp ${METRIC_PREFIX}/${PROFILE_NAME_SYMBOLICATED}.json ${{ env.S3_PATH }}/${METRIC_PREFIX}-${PROFILE_NAME_SYMBOLICATED}.json
 
       ### Update gh-pages
       - uses: actions/checkout@v4
@@ -461,10 +476,10 @@ jobs:
           GH_PAGES_PATH="benchmarks-dispatch/${{ github.head_ref || github.ref }}"
           echo "GH_PAGES_PATH=${GH_PAGES_PATH}" >> $GITHUB_ENV
           mkdir -p ${GH_PAGES_PATH}
-          s5cmd cp $S3_MD_PATH "${GH_PAGES_PATH}/${METRIC_NAME}.md"
+          s5cmd cp $S3_MD_PATH "${GH_PAGES_PATH}/${METRIC_PREFIX}.md"
 
-          git add ${GH_PAGES_PATH}/${METRIC_NAME}.md
-          git commit --allow-empty -m "Update benchmark result at ${GH_PAGES_PATH}/${METRIC_NAME}.md"
+          git add ${GH_PAGES_PATH}/${METRIC_PREFIX}.md
+          git commit --allow-empty -m "Update benchmark result at ${GH_PAGES_PATH}/${METRIC_PREFIX}.md"
           MAX_RETRIES=10
           RETRY_DELAY=5
           ATTEMPT=0
@@ -488,4 +503,4 @@ jobs:
           fi
       - name: Path to result
         run: |
-          echo "https://github.com/axiom-crypto/openvm-reth-benchmark/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_NAME}.md"
+          echo "https://github.com/axiom-crypto/openvm-reth-benchmark/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_PREFIX}.md"
