@@ -190,15 +190,15 @@ jobs:
         run: |
           input_json_str="${{ toJSON(inputs || github.event.inputs) }}"
           input_hash=$(echo $input_json_str | sha256sum | cut -d' ' -f1)
-          METRIC_NAME=reth-$current_sha-${input_hash}
+          METRIC_PREFIX=reth-$current_sha-${input_hash}
+          echo "METRIC_PREFIX=${METRIC_PREFIX}" >> $GITHUB_ENV
+          METRIC_NAME=metrics
           echo "METRIC_NAME=${METRIC_NAME}" >> $GITHUB_ENV
-          PROFILE_NAME=reth-$current_sha-${input_hash}-profile
+          PROFILE_NAME=profile
           echo "PROFILE_NAME=${PROFILE_NAME}" >> $GITHUB_ENV
-          PROFILE_NAME_SYMBOLICATED=${PROFILE_NAME}-profile-symbolicated
+          PROFILE_NAME_SYMBOLICATED=profile-symbolicated
           echo "PROFILE_NAME_SYMBOLICATED=${PROFILE_NAME_SYMBOLICATED}" >> $GITHUB_ENV
-          METRIC_PATH=".bench_metrics"
-          echo "METRIC_PATH=${METRIC_PATH}" >> $GITHUB_ENV
-          echo "name=${METRIC_NAME}" >> $GITHUB_OUTPUT
+          echo "name=${METRIC_PREFIX}" >> $GITHUB_OUTPUT
 
       - name: Set cache keys
         id: set-cache-keys
@@ -325,13 +325,13 @@ jobs:
       - name: Set up run benchmark script
         run: |
           mkdir -p rpc-cache
-          mkdir -p .bench_metrics
+          mkdir -p ${METRIC_PREFIX}
           RPC_1=${{ secrets.RPC_URL_1 }}
           MODE=${{ inputs.mode || github.event.inputs.mode }}
           BLOCK_NUMBER=${{ inputs.block_number || github.event.inputs.block_number }}
           HOST_PROFILE=${{ steps.set-cache-keys.outputs.host_profile }}
           cat > run_benchmark.sh <<EOF
-          OUTPUT_PATH="${METRIC_PATH}/${METRIC_NAME}.json" samply record --no-open -- ./target/$HOST_PROFILE/openvm-reth-benchmark \
+          OUTPUT_PATH="${METRIC_PREFIX}/${METRIC_NAME}.json" samply record --no-open -- ./target/$HOST_PROFILE/openvm-reth-benchmark \
             --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
             --app-log-blowup ${{ inputs.app_log_blowup || github.event.inputs.app_log_blowup }} \
             --leaf-log-blowup ${{ inputs.leaf_log_blowup || github.event.inputs.leaf_log_blowup }} \
@@ -349,7 +349,7 @@ jobs:
           export RUST_LOG="info,p3_=warn"
 
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
-            node bin/symbolicate/ci-script/symbolicate.js run_benchmark.sh "${METRIC_PATH}/${PROFILE_NAME}"
+            node bin/symbolicate/ci-script/symbolicate.js run_benchmark.sh "${METRIC_PREFIX}/${PROFILE_NAME}"
           else
             ./run_benchmark.sh
           fi
@@ -359,19 +359,21 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.set-metric-name.outputs.name }}
-          path: ${{ env.METRIC_PATH }}/${{ env.METRIC_NAME }}.json
+          path: ${{ env.METRIC_PREFIX }}/${{ env.METRIC_NAME }}.json
           retention-days: 1
 
-      - name: Upload Benchmark Metrics
-        run: s5cmd cp "${METRIC_PATH}/${METRIC_NAME}.json" ${{ env.S3_METRICS_PATH }}/${METRIC_NAME}.json
+      # - name: Upload output to S3
+      #   run: |
+      #     ls -lFa ${METRIC_PREFIX}
+      #     s5cmd cp -r "${METRIC_PREFIX}" ${{ env.S3_METRICS_PATH }}/${METRIC_PREFIX}
 
       - name: Generate markdown
         run: |
-          BENCHER_METRIC_PATH=bencher.json
-          openvm-prof --json-paths "${METRIC_PATH}/${METRIC_NAME}.json" --output-json $BENCHER_METRIC_PATH
-          MD_PATH="${METRIC_PATH}/${METRIC_NAME}.md"
+          BENCHER_METRIC_PREFIX=bencher.json
+          openvm-prof --json-paths "${METRIC_PREFIX}/${METRIC_NAME}.json" --output-json $BENCHER_METRIC_PREFIX
+          MD_PATH="${METRIC_PREFIX}/${METRIC_NAME}.md"
           echo "MD_PATH=${MD_PATH}" >> $GITHUB_ENV
-          echo "BENCHER_METRIC_PATH=${BENCHER_METRIC_PATH}" >> $GITHUB_ENV
+          echo "BENCHER_METRIC_PREFIX=${BENCHER_METRIC_PREFIX}" >> $GITHUB_ENV
 
       - uses: bencherdev/bencher@main
       - name: Upload bencher metrics
@@ -391,14 +393,14 @@ jobs:
             --branch $BRANCH \
             --testbed ${{ inputs.instance_family || github.event.inputs.instance_family }} \
             --adapter json \
-            --file $BENCHER_METRIC_PATH
+            --file $BENCHER_METRIC_PREFIX
 
       - name: Generate circuit flamegraphs
         if: ${{ inputs.profiling == 'guest' || github.event.inputs.profiling == 'guest' }}
         run: |
           cargo install inferno
 
-          python3 openvm/ci/scripts/metric_unify/flamegraph.py "${METRIC_PATH}/${METRIC_NAME}.json"
+          python3 openvm/ci/scripts/metric_unify/flamegraph.py "${METRIC_PREFIX}/${METRIC_NAME}.json"
           s5cmd cp '.bench_metrics/flamegraphs/*.svg' "${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/"
 
           echo "" >> $MD_PATH
@@ -456,7 +458,7 @@ jobs:
       - name: Upload symbolicated samply profile
         if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
         run: |
-          s5cmd cp ${METRIC_PATH}/${PROFILE_NAME_SYMBOLICATED}.json ${{ env.S3_PATH }}/${PROFILE_NAME_SYMBOLICATED}.json
+          s5cmd cp ${METRIC_PREFIX}/${PROFILE_NAME_SYMBOLICATED}.json ${{ env.S3_PATH }}/${METRIC_PREFIX}-${PROFILE_NAME_SYMBOLICATED}.json
 
       ### Update gh-pages
       - uses: actions/checkout@v4
@@ -473,10 +475,10 @@ jobs:
           GH_PAGES_PATH="benchmarks-dispatch/${{ github.head_ref || github.ref }}"
           echo "GH_PAGES_PATH=${GH_PAGES_PATH}" >> $GITHUB_ENV
           mkdir -p ${GH_PAGES_PATH}
-          s5cmd cp $S3_MD_PATH "${GH_PAGES_PATH}/${METRIC_NAME}.md"
+          s5cmd cp $S3_MD_PATH "${GH_PAGES_PATH}/${METRIC_PREFIX}.md"
 
-          git add ${GH_PAGES_PATH}/${METRIC_NAME}.md
-          git commit --allow-empty -m "Update benchmark result at ${GH_PAGES_PATH}/${METRIC_NAME}.md"
+          git add ${GH_PAGES_PATH}/${METRIC_PREFIX}.md
+          git commit --allow-empty -m "Update benchmark result at ${GH_PAGES_PATH}/${METRIC_PREFIX}.md"
           MAX_RETRIES=10
           RETRY_DELAY=5
           ATTEMPT=0
@@ -500,4 +502,4 @@ jobs:
           fi
       - name: Path to result
         run: |
-          echo "https://github.com/axiom-crypto/openvm-reth-benchmark/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_NAME}.md"
+          echo "https://github.com/axiom-crypto/openvm-reth-benchmark/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_PREFIX}.md"
