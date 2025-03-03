@@ -79,7 +79,7 @@ on:
         type: string
         required: false
         description: Memory allocator to use (mimalloc or jemalloc)
-        default: jemalloc
+        default: jemalloc-prof
       block_number:
         type: number
         required: false
