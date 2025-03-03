@@ -51,6 +51,10 @@ function runScript() {
           args: ['profile.json', `${metricName}.json`],
         },
         {
+          cmd: 'ls',
+          args: ['-lF'],
+        },
+        {
           cmd: 'sleep',
           args: ['5'],
         },
@@ -59,7 +63,7 @@ function runScript() {
           args: [
             'bin/symbolicate/symbolicator-cli/symbolicator-cli.js',
             '--input',
-            `${metricName}.json`,
+            `${metricName}-profile.json`,
             '--output',
             `${metricName}-symbolicated.json`,
             '--server',
