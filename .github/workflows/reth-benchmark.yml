@@ -326,6 +326,7 @@ jobs:
         run: |
           mkdir -p rpc-cache
           mkdir -p ${METRIC_PREFIX}
+          ls ${PARAMS_DIR}
           RPC_1=${{ secrets.RPC_URL_1 }}
           MODE=${{ inputs.mode || github.event.inputs.mode }}
           BLOCK_NUMBER=${{ inputs.block_number || github.event.inputs.block_number }}
