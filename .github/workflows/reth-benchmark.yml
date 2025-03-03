@@ -194,7 +194,7 @@ jobs:
           echo "METRIC_NAME=${METRIC_NAME}" >> $GITHUB_ENV
           PROFILE_NAME=reth-$current_sha-${input_hash}-profile
           echo "PROFILE_NAME=${PROFILE_NAME}" >> $GITHUB_ENV
-          PROFILE_NAME_SYMBOLICATED=${PROFILE_NAME}-symbolicated
+          PROFILE_NAME_SYMBOLICATED=${PROFILE_NAME}-profile-symbolicated
           echo "PROFILE_NAME_SYMBOLICATED=${PROFILE_NAME_SYMBOLICATED}" >> $GITHUB_ENV
           METRIC_PATH=".bench_metrics"
           echo "METRIC_PATH=${METRIC_PATH}" >> $GITHUB_ENV

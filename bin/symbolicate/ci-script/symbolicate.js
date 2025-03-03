@@ -52,7 +52,7 @@ function runScript() {
         },
         {
           cmd: 'ls',
-          args: ['-lF'],
+          args: ['-lFa', '.bench_metrics'],
         },
         {
           cmd: 'sleep',
@@ -63,7 +63,7 @@ function runScript() {
           args: [
             'bin/symbolicate/symbolicator-cli/symbolicator-cli.js',
             '--input',
-            `${metricName}-profile.json`,
+            `${metricName}.json`,
             '--output',
             `${metricName}-symbolicated.json`,
             '--server',
