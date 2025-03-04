@@ -2550,6 +2550,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3067,7 +3076,7 @@ dependencies = [
 [[package]]
 name = "openvm"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "bytemuck",
  "hex-literal",
@@ -3081,11 +3090,11 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-circuit"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "num-bigint 0.4.6",
  "num-traits",
  "openvm-algebra-transpiler",
@@ -3097,8 +3106,8 @@ dependencies = [
  "openvm-mod-circuit-builder",
  "openvm-rv32-adapters",
  "openvm-rv32im-circuit",
- "openvm-stark-backend",
- "openvm-stark-sdk",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
+ "openvm-stark-sdk 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "rand",
  "serde",
  "serde-big-array",
@@ -3110,7 +3119,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-complex-macros"
 version = "0.1.0"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -3120,7 +3129,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-guest"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "halo2curves-axiom 0.5.3",
  "num-bigint 0.4.6",
@@ -3136,7 +3145,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-moduli-macros"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -3146,12 +3155,12 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-transpiler"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "openvm-algebra-guest",
  "openvm-instructions",
  "openvm-instructions-derive",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "openvm-transpiler",
  "rrs-lib",
  "strum 0.26.3",
@@ -3161,7 +3170,7 @@ dependencies = [
 [[package]]
 name = "openvm-benchmarks"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "bincode 2.0.0-rc.3",
  "clap",
@@ -3190,8 +3199,8 @@ dependencies = [
  "openvm-rv32im-transpiler",
  "openvm-sdk",
  "openvm-sha256-transpiler",
- "openvm-stark-backend",
- "openvm-stark-sdk",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
+ "openvm-stark-sdk 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "openvm-transpiler",
  "rand_chacha",
  "serde",
@@ -3204,7 +3213,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-circuit"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -3217,8 +3226,8 @@ dependencies = [
  "openvm-rv32-adapters",
  "openvm-rv32im-circuit",
  "openvm-rv32im-transpiler",
- "openvm-stark-backend",
- "openvm-stark-sdk",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
+ "openvm-stark-sdk 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "rand",
  "serde",
 ]
@@ -3226,7 +3235,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-guest"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "num-bigint 0.4.6",
  "num-traits",
@@ -3239,13 +3248,13 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-transpiler"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "openvm-bigint-guest",
  "openvm-instructions",
  "openvm-instructions-derive",
  "openvm-rv32im-transpiler",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "openvm-transpiler",
  "rrs-lib",
  "strum 0.26.3",
@@ -3254,7 +3263,7 @@ dependencies = [
 [[package]]
 name = "openvm-build"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "cargo_metadata",
  "dirs",
@@ -3269,7 +3278,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "async-trait",
  "backtrace",
@@ -3281,7 +3290,7 @@ dependencies = [
  "enum_dispatch",
  "eyre",
  "getset",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "metrics",
  "metrics-derive",
  "once_cell",
@@ -3290,8 +3299,8 @@ dependencies = [
  "openvm-circuit-primitives-derive",
  "openvm-instructions",
  "openvm-poseidon2-air",
- "openvm-stark-backend",
- "openvm-stark-sdk",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
+ "openvm-stark-sdk 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "p3-baby-bear",
  "p3-symmetric",
  "rand",
@@ -3307,9 +3316,9 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-derive"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "proc-macro2",
  "quote",
  "syn 2.0.98",
@@ -3318,16 +3327,16 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "bitcode",
  "derive-new 0.6.0",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "lazy_static",
  "num-bigint 0.4.6",
  "num-traits",
  "openvm-circuit-primitives-derive",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "rand",
  "serde",
  "tracing",
@@ -3336,9 +3345,9 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives-derive"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "proc-macro2",
  "quote",
  "syn 2.0.98",
@@ -3383,7 +3392,7 @@ dependencies = [
 [[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3393,12 +3402,12 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-circuit"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
  "eyre",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "num-bigint 0.4.6",
  "num-integer",
  "num-traits",
@@ -3415,7 +3424,7 @@ dependencies = [
  "openvm-mod-circuit-builder",
  "openvm-rv32-adapters",
  "openvm-rv32im-circuit",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "serde",
  "serde_with",
  "strum 0.26.3",
@@ -3424,14 +3433,14 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-guest"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
  "group 0.13.0",
  "halo2curves-axiom 0.5.3",
  "hex-literal",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "k256",
  "lazy_static",
  "num-bigint 0.4.6",
@@ -3450,7 +3459,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-sw-macros"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -3460,12 +3469,12 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-transpiler"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "openvm-ecc-guest",
  "openvm-instructions",
  "openvm-instructions-derive",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "openvm-transpiler",
  "rrs-lib",
  "strum 0.26.3",
@@ -3510,15 +3519,15 @@ dependencies = [
 [[package]]
 name = "openvm-instructions"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "backtrace",
  "derive-new 0.6.0",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "num-bigint 0.4.6",
  "num-traits",
  "openvm-instructions-derive",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "serde",
  "strum 0.26.3",
  "strum_macros 0.26.4",
@@ -3527,7 +3536,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions-derive"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3537,14 +3546,14 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-circuit"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "bitcode",
  "derive-new 0.6.0",
  "derive_more 1.0.0",
  "eyre",
  "hex-literal",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "openvm-circuit",
  "openvm-circuit-derive",
  "openvm-circuit-primitives",
@@ -3552,8 +3561,8 @@ dependencies = [
  "openvm-instructions",
  "openvm-keccak256-transpiler",
  "openvm-rv32im-circuit",
- "openvm-stark-backend",
- "openvm-stark-sdk",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
+ "openvm-stark-sdk 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "p3-keccak-air",
  "rand",
  "serde",
@@ -3566,7 +3575,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-guest"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "openvm-platform",
  "serde",
@@ -3576,12 +3585,12 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-transpiler"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
  "openvm-keccak256-guest",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "openvm-transpiler",
  "rrs-lib",
  "strum 0.26.3",
@@ -3590,7 +3599,7 @@ dependencies = [
 [[package]]
 name = "openvm-macros-common"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "syn 2.0.98",
 ]
@@ -3598,16 +3607,16 @@ dependencies = [
 [[package]]
 name = "openvm-mod-circuit-builder"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "num-bigint 0.4.6",
  "num-traits",
  "openvm-circuit",
  "openvm-circuit-primitives",
  "openvm-instructions",
- "openvm-stark-backend",
- "openvm-stark-sdk",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
+ "openvm-stark-sdk 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "rand",
  "serde",
  "serde_with",
@@ -3644,13 +3653,13 @@ dependencies = [
 [[package]]
 name = "openvm-native-circuit"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "bitcode",
  "derive-new 0.6.0",
  "derive_more 1.0.0",
  "eyre",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "openvm-circuit",
  "openvm-circuit-derive",
  "openvm-circuit-primitives",
@@ -3659,8 +3668,8 @@ dependencies = [
  "openvm-native-compiler",
  "openvm-poseidon2-air",
  "openvm-rv32im-circuit",
- "openvm-stark-backend",
- "openvm-stark-sdk",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
+ "openvm-stark-sdk 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "rand",
  "serde",
  "serde-big-array",
@@ -3672,10 +3681,10 @@ dependencies = [
 [[package]]
 name = "openvm-native-compiler"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "backtrace",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "metrics",
  "num-bigint 0.4.6",
  "num-integer",
@@ -3684,8 +3693,8 @@ dependencies = [
  "openvm-instructions-derive",
  "openvm-native-compiler-derive",
  "openvm-rv32im-transpiler",
- "openvm-stark-backend",
- "openvm-stark-sdk",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
+ "openvm-stark-sdk 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "serde",
  "snark-verifier-sdk",
  "strum 0.26.3",
@@ -3696,7 +3705,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-compiler-derive"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3706,10 +3715,10 @@ dependencies = [
 [[package]]
 name = "openvm-native-recursion"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "cfg-if",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "lazy_static",
  "metrics",
  "once_cell",
@@ -3717,8 +3726,8 @@ dependencies = [
  "openvm-native-circuit",
  "openvm-native-compiler",
  "openvm-native-compiler-derive",
- "openvm-stark-backend",
- "openvm-stark-sdk",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
+ "openvm-stark-sdk 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "p3-dft",
  "p3-fri",
  "p3-merkle-tree",
@@ -3733,12 +3742,12 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-circuit"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
  "eyre",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "num-bigint 0.4.6",
  "num-traits",
  "once_cell",
@@ -3755,7 +3764,7 @@ dependencies = [
  "openvm-pairing-transpiler",
  "openvm-rv32-adapters",
  "openvm-rv32im-circuit",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "rand",
  "serde",
  "strum 0.26.3",
@@ -3764,12 +3773,12 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-guest"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "group 0.13.0",
  "halo2curves-axiom 0.5.3",
  "hex-literal",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "lazy_static",
  "num-bigint 0.4.6",
  "num-traits",
@@ -3789,12 +3798,12 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-transpiler"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
  "openvm-pairing-guest",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "openvm-transpiler",
  "rrs-lib",
  "strum 0.26.3",
@@ -3803,7 +3812,7 @@ dependencies = [
 [[package]]
 name = "openvm-platform"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "getrandom 0.2.15",
  "libm",
@@ -3815,14 +3824,14 @@ dependencies = [
 [[package]]
 name = "openvm-poseidon2-air"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "derivative",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "lazy_static",
  "openvm-circuit-primitives",
- "openvm-stark-backend",
- "openvm-stark-sdk",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
+ "openvm-stark-sdk 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "p3-monty-31",
  "p3-poseidon2",
  "p3-poseidon2-air",
@@ -3876,7 +3885,7 @@ dependencies = [
  "openvm-pairing-circuit",
  "openvm-rv32im-circuit",
  "openvm-sdk",
- "openvm-stark-sdk",
+ "openvm-stark-sdk 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c24da4a5c98033ae2e875267c5d5a2d)",
  "openvm-transpiler",
  "reth-primitives",
  "serde",
@@ -3911,17 +3920,17 @@ dependencies = [
 [[package]]
 name = "openvm-rv32-adapters"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "derive-new 0.6.0",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "openvm-circuit",
  "openvm-circuit-primitives",
  "openvm-circuit-primitives-derive",
  "openvm-instructions",
  "openvm-rv32im-circuit",
- "openvm-stark-backend",
- "openvm-stark-sdk",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
+ "openvm-stark-sdk 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "rand",
  "serde",
  "serde-big-array",
@@ -3932,13 +3941,13 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-circuit"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "bitcode",
  "derive-new 0.6.0",
  "derive_more 1.0.0",
  "eyre",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "num-bigint 0.4.6",
  "num-integer",
  "once_cell",
@@ -3948,7 +3957,7 @@ dependencies = [
  "openvm-circuit-primitives-derive",
  "openvm-instructions",
  "openvm-rv32im-transpiler",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "rand",
  "serde",
  "serde-big-array",
@@ -3959,7 +3968,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-guest"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "openvm-platform",
  "strum_macros 0.26.4",
@@ -3968,12 +3977,12 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-transpiler"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
  "openvm-rv32im-guest",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "openvm-transpiler",
  "rrs-lib",
  "serde",
@@ -3984,7 +3993,7 @@ dependencies = [
 [[package]]
 name = "openvm-sdk"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "async-trait",
  "bitcode",
@@ -3994,7 +4003,7 @@ dependencies = [
  "derive_more 1.0.0",
  "eyre",
  "getset",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "metrics",
  "openvm",
  "openvm-algebra-circuit",
@@ -4016,8 +4025,8 @@ dependencies = [
  "openvm-rv32im-transpiler",
  "openvm-sha256-circuit",
  "openvm-sha256-transpiler",
- "openvm-stark-backend",
- "openvm-stark-sdk",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
+ "openvm-stark-sdk 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "openvm-transpiler",
  "serde",
  "static_assertions",
@@ -4027,10 +4036,10 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-air"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "openvm-circuit-primitives",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "rand",
  "sha2",
 ]
@@ -4038,7 +4047,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-circuit"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "bitcode",
  "derive-new 0.6.0",
@@ -4051,8 +4060,8 @@ dependencies = [
  "openvm-rv32im-circuit",
  "openvm-sha256-air",
  "openvm-sha256-transpiler",
- "openvm-stark-backend",
- "openvm-stark-sdk",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
+ "openvm-stark-sdk 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "rand",
  "serde",
  "sha2",
@@ -4062,7 +4071,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-guest"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "openvm",
  "openvm-platform",
@@ -4072,12 +4081,12 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-transpiler"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
  "openvm-sha256-guest",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "openvm-transpiler",
  "rrs-lib",
  "strum 0.26.3",
@@ -4085,14 +4094,14 @@ dependencies = [
 
 [[package]]
 name = "openvm-stark-backend"
-version = "1.0.0-rc.0"
-source = "git+https://github.com/openvm-org/stark-backend.git?tag=v1.0.0-rc.0#18cf1c084ebeb3ca1163e55b87893f1d1fd7fc1f"
+version = "1.0.0-rc.2"
+source = "git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2#97433ebd5c24da4a5c98033ae2e875267c5d5a2d"
 dependencies = [
  "async-trait",
  "cfg-if",
  "derivative",
  "derive-new 0.7.0",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "metrics",
  "mimalloc",
  "p3-air",
@@ -4112,18 +4121,77 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm-stark-backend"
+version = "1.0.0-rc.2"
+source = "git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c24da4a5c98033ae2e875267c5d5a2d#97433ebd5c24da4a5c98033ae2e875267c5d5a2d"
+dependencies = [
+ "async-trait",
+ "cfg-if",
+ "derivative",
+ "derive-new 0.7.0",
+ "itertools 0.14.0",
+ "p3-air",
+ "p3-challenger",
+ "p3-commit",
+ "p3-field",
+ "p3-matrix",
+ "p3-maybe-rayon",
+ "p3-uni-stark",
+ "p3-util",
+ "rustc-hash 2.1.1",
+ "serde",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
 name = "openvm-stark-sdk"
-version = "1.0.0-rc.0"
-source = "git+https://github.com/openvm-org/stark-backend.git?tag=v1.0.0-rc.0#18cf1c084ebeb3ca1163e55b87893f1d1fd7fc1f"
+version = "1.0.0-rc.2"
+source = "git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2#97433ebd5c24da4a5c98033ae2e875267c5d5a2d"
 dependencies = [
  "derivative",
  "derive_more 0.99.19",
  "ff 0.13.0",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "metrics",
  "metrics-tracing-context",
  "metrics-util",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
+ "p3-baby-bear",
+ "p3-blake3",
+ "p3-bn254-fr",
+ "p3-dft",
+ "p3-fri",
+ "p3-goldilocks",
+ "p3-keccak",
+ "p3-merkle-tree",
+ "p3-poseidon",
+ "p3-poseidon2",
+ "p3-symmetric",
+ "rand",
+ "serde",
+ "serde_json",
+ "static_assertions",
+ "toml",
+ "tracing",
+ "tracing-forest",
+ "tracing-subscriber",
+ "zkhash",
+]
+
+[[package]]
+name = "openvm-stark-sdk"
+version = "1.0.0-rc.2"
+source = "git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c24da4a5c98033ae2e875267c5d5a2d#97433ebd5c24da4a5c98033ae2e875267c5d5a2d"
+dependencies = [
+ "derivative",
+ "derive_more 0.99.19",
+ "ff 0.13.0",
+ "itertools 0.14.0",
+ "metrics",
+ "metrics-tracing-context",
+ "metrics-util",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c24da4a5c98033ae2e875267c5d5a2d)",
  "p3-baby-bear",
  "p3-blake3",
  "p3-bn254-fr",
@@ -4149,14 +4217,14 @@ dependencies = [
 [[package]]
 name = "openvm-transpiler"
 version = "1.0.0-rc.1"
-source = "git+https://github.com/openvm-org/openvm.git?rev=91496503cb9a214ce7f8cef3a4a6e35fc6f0d938#91496503cb9a214ce7f8cef3a4a6e35fc6f0d938"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
 dependencies = [
  "derive_more 1.0.0",
  "elf",
  "eyre",
  "openvm-instructions",
  "openvm-platform",
- "openvm-stark-backend",
+ "openvm-stark-backend 1.0.0-rc.2 (git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=97433ebd5c2)",
  "rrs-lib",
  "strum 0.26.3",
  "thiserror 1.0.69",
@@ -4210,7 +4278,7 @@ dependencies = [
 [[package]]
 name = "p3-air"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
  "p3-field",
  "p3-matrix",
@@ -4219,7 +4287,7 @@ dependencies = [
 [[package]]
 name = "p3-baby-bear"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
  "p3-field",
  "p3-mds",
@@ -4233,7 +4301,7 @@ dependencies = [
 [[package]]
 name = "p3-blake3"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
  "blake3",
  "p3-symmetric",
@@ -4243,7 +4311,7 @@ dependencies = [
 [[package]]
 name = "p3-bn254-fr"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
  "ff 0.13.0",
  "halo2curves",
@@ -4258,7 +4326,7 @@ dependencies = [
 [[package]]
 name = "p3-challenger"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
  "p3-field",
  "p3-maybe-rayon",
@@ -4270,9 +4338,9 @@ dependencies = [
 [[package]]
 name = "p3-commit"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "p3-challenger",
  "p3-dft",
  "p3-field",
@@ -4284,9 +4352,9 @@ dependencies = [
 [[package]]
 name = "p3-dft"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "p3-field",
  "p3-matrix",
  "p3-maybe-rayon",
@@ -4297,9 +4365,9 @@ dependencies = [
 [[package]]
 name = "p3-field"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "num-bigint 0.4.6",
  "num-integer",
  "num-traits",
@@ -4314,9 +4382,9 @@ dependencies = [
 [[package]]
 name = "p3-fri"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "p3-challenger",
  "p3-commit",
  "p3-dft",
@@ -4333,7 +4401,7 @@ dependencies = [
 [[package]]
 name = "p3-goldilocks"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
  "num-bigint 0.4.6",
  "p3-dft",
@@ -4350,7 +4418,7 @@ dependencies = [
 [[package]]
 name = "p3-interpolation"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
  "p3-field",
  "p3-matrix",
@@ -4361,9 +4429,9 @@ dependencies = [
 [[package]]
 name = "p3-keccak"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "p3-field",
  "p3-symmetric",
  "p3-util",
@@ -4373,7 +4441,7 @@ dependencies = [
 [[package]]
 name = "p3-keccak-air"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
  "p3-air",
  "p3-field",
@@ -4387,9 +4455,9 @@ dependencies = [
 [[package]]
 name = "p3-matrix"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "p3-field",
  "p3-maybe-rayon",
  "p3-util",
@@ -4402,7 +4470,7 @@ dependencies = [
 [[package]]
 name = "p3-maybe-rayon"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
  "rayon",
 ]
@@ -4410,9 +4478,9 @@ dependencies = [
 [[package]]
 name = "p3-mds"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "p3-dft",
  "p3-field",
  "p3-matrix",
@@ -4424,9 +4492,9 @@ dependencies = [
 [[package]]
 name = "p3-merkle-tree"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "p3-commit",
  "p3-field",
  "p3-matrix",
@@ -4441,9 +4509,9 @@ dependencies = [
 [[package]]
 name = "p3-monty-31"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "num-bigint 0.4.6",
  "p3-dft",
  "p3-field",
@@ -4462,7 +4530,7 @@ dependencies = [
 [[package]]
 name = "p3-poseidon"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
  "p3-field",
  "p3-mds",
@@ -4473,7 +4541,7 @@ dependencies = [
 [[package]]
 name = "p3-poseidon2"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
  "gcd",
  "p3-field",
@@ -4485,7 +4553,7 @@ dependencies = [
 [[package]]
 name = "p3-poseidon2-air"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
  "p3-air",
  "p3-field",
@@ -4501,9 +4569,9 @@ dependencies = [
 [[package]]
 name = "p3-symmetric"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "p3-field",
  "serde",
 ]
@@ -4511,9 +4579,9 @@ dependencies = [
 [[package]]
 name = "p3-uni-stark"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "p3-air",
  "p3-challenger",
  "p3-commit",
@@ -4529,7 +4597,7 @@ dependencies = [
 [[package]]
 name = "p3-util"
 version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=b0591e9#b0591e9b82d58d10f86359875b5d5fa96433b4cf"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=88d7f05#88d7f059500fd956a7c1eb121e08653e5974728d"
 dependencies = [
  "serde",
 ]
@@ -7401,3 +7469,8 @@ dependencies = [
  "sha3",
  "subtle",
 ]
+
+[[patch.unused]]
+name = "cargo-openvm"
+version = "1.0.0-rc.1"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=b3606e4b1c4998b835b5a76fe541254d762fdcca#b3606e4b1c4998b835b5a76fe541254d762fdcca"
