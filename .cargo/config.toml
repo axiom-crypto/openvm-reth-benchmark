@@ -1,60 +1,59 @@
-# [net]
-# git-fetch-with-cli = true
+[net]
+git-fetch-with-cli = true
 
-# [patch."https://github.com/openvm-org/stark-backend.git"]
-# openvm-stark-backend = { git = "ssh://git@github.com/openvm-org/stark-backend.git" }
-# openvm-stark-sdk = { git = "ssh://git@github.com/openvm-org/stark-backend.git" }
+[patch."https://github.com/openvm-org/stark-backend.git"]
+openvm-stark-backend = { git = "ssh://git@github.com/axiom-crypto/stark-backend-private.git", rev = "97433ebd5c24da4a5c98033ae2e875267c5d5a2d" }
+openvm-stark-sdk = { git = "ssh://git@github.com/axiom-crypto/stark-backend-private.git", rev = "97433ebd5c24da4a5c98033ae2e875267c5d5a2d" }
 
-# [patch."https://github.com/openvm-org/openvm.git"]
-# openvm-benchmarks = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# # OpenVM
-# openvm-sdk = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# cargo-openvm = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-mod-circuit-builder = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-poseidon2-air = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-circuit-primitives = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-circuit-primitives-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-build = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-instructions = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-instructions-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-macros-common = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-platform = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-circuit-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+[patch."https://github.com/openvm-org/openvm.git"]
+openvm-benchmarks = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-sdk = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+cargo-openvm = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-mod-circuit-builder = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-poseidon2-air = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-circuit-primitives = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-circuit-primitives-derive = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-build = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-instructions = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-instructions-derive = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-macros-common = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-platform = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-transpiler = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-circuit = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-circuit-derive = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
 
-# # Extensions
-# openvm-algebra-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-algebra-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-algebra-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-algebra-moduli-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-algebra-complex-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-bigint-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-bigint-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-bigint-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-ecc-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-ecc-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-ecc-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-ecc-sw-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-keccak256-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-keccak256-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-keccak256-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-native-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-native-compiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-native-compiler-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-native-recursion = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-pairing-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-pairing-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-pairing-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-rv32-adapters = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-rv32im-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-rv32im-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
-# openvm-rv32im-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", default-features = false }
+openvm-algebra-circuit = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-algebra-transpiler = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-algebra-guest = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-algebra-moduli-macros = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-algebra-complex-macros = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-bigint-circuit = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-bigint-transpiler = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-bigint-guest = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-ecc-circuit = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-ecc-transpiler = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-ecc-guest = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-ecc-sw-macros = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-keccak256-circuit = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-keccak256-transpiler = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-keccak256-guest = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-native-circuit = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-native-compiler = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-native-compiler-derive = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-native-recursion = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-pairing-circuit = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-pairing-transpiler = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-pairing-guest = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-rv32-adapters = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-rv32im-circuit = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-rv32im-transpiler = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
+openvm-rv32im-guest = { git = "ssh://git@github.com/axiom-crypto/openvm-private.git", rev = "fa9877d3701f5a20356d2d66528586a2c155e17c" }
 
-
-# # [patch.crates-io]
-# # revm = { path = "../revm/crates/revm" }
-# # revm-primitives = { path = "../revm/crates/primitives" }
-# # revm-interpreter = { path = "../revm/crates/interpreter" }
-# # revm-precompile = { path = "../revm/crates/precompile" }
+# OpenVM
+# Extensions
+# [patch.crates-io]
+# revm = { path = "../revm/crates/revm" }
+# revm-primitives = { path = "../revm/crates/primitives" }
+# revm-interpreter = { path = "../revm/crates/interpreter" }
+# revm-precompile = { path = "../revm/crates/precompile" }
