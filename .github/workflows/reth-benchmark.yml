@@ -89,22 +89,22 @@ on:
         type: number
         required: false
         description: Application level log blowup
-        default: 2
+        default: 1
       leaf_log_blowup:
         type: number
         required: false
         description: Aggregation (leaf) level log blowup
+        default: 1
+      internal_log_blowup:
+        type: number
+        required: false
+        description: Internal level log blowup (only for e2e)
         default: 2
       root_log_blowup:
         type: number
         required: false
         description: Root level log blowup (only for e2e)
         default: 3
-      internal_log_blowup:
-        type: number
-        required: false
-        description: Internal level log blowup (only for e2e)
-        default: 2
       mode:
         type: string
         required: false
