@@ -22,7 +22,7 @@ use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_pairing_circuit::{PairingCurve, PairingExtension};
 use openvm_rv32im_circuit::Rv32M;
 use openvm_sdk::{
-    config::{SdkVmConfig, DEFAULT_APP_LOG_BLOWUP},
+    config::SdkVmConfig,
     keygen::RootVerifierProvingKey,
     prover::{AppProver, ContinuationProver},
     Sdk, StdIn,
@@ -82,7 +82,7 @@ struct HostArgs {
 
 const OPENVM_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/openvm-client-eth");
 
-fn reth_vm_config(
+pub fn reth_vm_config(
     app_log_blowup: usize,
     max_segment_length: usize,
     max_cells_per_chip_in_segment: usize,
@@ -132,6 +132,9 @@ fn reth_vm_config(
         .build()
 }
 
+pub const RETH_DEFAULT_APP_LOG_BLOWUP: usize = 1;
+pub const RETH_DEFAULT_LEAF_LOG_BLOWUP: usize = 1;
+
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
     // Initialize the environment variables.
@@ -142,7 +145,7 @@ async fn main() -> eyre::Result<()> {
     }
 
     // Parse the command line arguments.
-    let args = HostArgs::parse();
+    let mut args = HostArgs::parse();
     let provider_config = args.provider.into_provider().await?;
 
     let variant = match provider_config.chain_id {
@@ -202,10 +205,13 @@ async fn main() -> eyre::Result<()> {
     let mut stdin = StdIn::default();
     stdin.write(&client_input);
 
-    let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(DEFAULT_APP_LOG_BLOWUP);
+    let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(RETH_DEFAULT_APP_LOG_BLOWUP);
+    args.benchmark.app_log_blowup = Some(app_log_blowup);
     let max_segment_length = args.benchmark.max_segment_length.unwrap_or((1 << 23) - 100);
     let max_cells_per_chip_in_segment =
         args.max_cells_per_chip_in_segment.unwrap_or(((1 << 23) - 100) * 120);
+    let leaf_log_blowup = args.benchmark.leaf_log_blowup.unwrap_or(RETH_DEFAULT_LEAF_LOG_BLOWUP);
+    args.benchmark.leaf_log_blowup = Some(leaf_log_blowup);
 
     let vm_config = reth_vm_config(
         app_log_blowup,
