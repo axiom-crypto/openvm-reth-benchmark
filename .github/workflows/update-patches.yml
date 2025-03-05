@@ -204,7 +204,7 @@ jobs:
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "${{ github.event_name }}"
       - name: Create pull request
-        if: ${{ !inputs.manual_call }}
+        if: ${{ !inputs.manual_call && github.event_name != 'schedule' }}
         uses: repo-sync/pull-request@v2
         id: create-pr
         with:
@@ -257,8 +257,8 @@ jobs:
     needs: [patch, run-benchmark]
     if: |
       always() &&
-      !inputs.manual_call &&
-      (github.event.inputs.run_benchmark == 'true' || inputs.run_benchmark || github.event_name == 'schedule')
+      needs.patch.outputs.pr_number != '' &&
+      needs.patch.outputs.pr_number != null
     runs-on: ubuntu-latest
     steps:
       - name: Close PR
