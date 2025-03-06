@@ -229,7 +229,7 @@ jobs:
           rustup install nightly-2024-10-30
           source openvm/ci/scripts/utils.sh
           install_s5cmd
-          sudo apt-get install -y gnuplot
+          sudo apt install -y gnuplot
 
       - name: Setup halo2
         if: ${{ (github.event.inputs.mode == 'prove-e2e') || (inputs.mode == 'prove-e2e') }}
