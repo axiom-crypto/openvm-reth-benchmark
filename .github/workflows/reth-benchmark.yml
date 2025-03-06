@@ -344,7 +344,8 @@ jobs:
             perf --version
             perf record -F 99 --call-graph dwarf -o perf.data -- ./run_benchmark.sh
           else
-            ./run_benchmark.sh
+            ./ci/monitor_memory.sh ./run_benchmark.sh
+            echo "MEM_USAGE_PATH=memory_usage.png" >> $GITHUB_ENV
           fi
 
       - name: Upload metric file
@@ -353,6 +354,13 @@ jobs:
         with:
           name: ${{ steps.set-metric-name.outputs.name }}
           path: ${{ env.METRIC_PATH }}
+          retention-days: 1
+      - name: Upload memory usage graph
+        if: ${{ (inputs.profiling || github.event.inputs.profiling) == 'none' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.set-metric-name.outputs.name }}-memory-usage
+          path: ${{ env.MEM_USAGE_PATH }}
           retention-days: 1
 
       - name: Upload Benchmark Metrics
