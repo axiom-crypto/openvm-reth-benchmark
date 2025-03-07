@@ -5452,16 +5452,6 @@ dependencies = [
 ]
 
 [[patch.unused]]
-name = "openvm-stark-backend"
-version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=738c68157058a0f95d4b9e96deb01b1f36309bfa#738c68157058a0f95d4b9e96deb01b1f36309bfa"
-
-[[patch.unused]]
-name = "openvm-stark-sdk"
-version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=738c68157058a0f95d4b9e96deb01b1f36309bfa#738c68157058a0f95d4b9e96deb01b1f36309bfa"
-
-[[patch.unused]]
 name = "cargo-openvm"
 version = "1.0.0-rc.1"
 source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
