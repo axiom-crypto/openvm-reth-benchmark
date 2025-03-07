@@ -34,10 +34,10 @@ heap-embedded-alloc = ["openvm/heap-embedded-alloc"]
 kzg-intrinsics = ["revm-precompile/openvm-kzg-intrinsics"] # uses OpenVM BLS12-381 intrinsic functions
 
 [patch.crates-io]
-revm = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm" }
-revm-primitives = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm" }
-revm-interpreter = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm" }
-revm-precompile = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm" }
+revm = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm-fix" }
+revm-primitives = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm-fix" }
+revm-interpreter = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm-fix" }
+revm-precompile = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm-fix" }
 ruint = { git = "https://github.com/axiom-crypto/uint", branch = "v1.12.3-openvm" }
 # revm = { path = "../../../revm/crates/revm" }
 # revm-primitives = { path = "../../../revm/crates/primitives" }
