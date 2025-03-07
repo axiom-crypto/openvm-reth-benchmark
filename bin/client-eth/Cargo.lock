@@ -2394,7 +2394,7 @@ dependencies = [
 [[package]]
 name = "openvm"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "bytemuck",
  "hex-literal",
@@ -2408,7 +2408,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-complex-macros"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2418,7 +2418,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-guest"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "halo2curves-axiom",
  "num-bigint 0.4.6",
@@ -2434,7 +2434,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-moduli-macros"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2444,7 +2444,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-guest"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "num-bigint 0.4.6",
  "num-traits",
@@ -2457,7 +2457,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "async-trait",
  "backtrace",
@@ -2470,7 +2470,6 @@ dependencies = [
  "eyre",
  "getset",
  "itertools 0.14.0",
- "once_cell",
  "openvm-circuit-derive",
  "openvm-circuit-primitives",
  "openvm-circuit-primitives-derive",
@@ -2492,7 +2491,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-derive"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "itertools 0.14.0",
  "proc-macro2",
@@ -2503,7 +2502,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "bitcode",
  "derive-new 0.6.0",
@@ -2521,7 +2520,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives-derive"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "itertools 0.14.0",
  "proc-macro2",
@@ -2589,7 +2588,7 @@ dependencies = [
 [[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2599,7 +2598,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-guest"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -2611,6 +2610,7 @@ dependencies = [
  "lazy_static",
  "num-bigint 0.4.6",
  "num-traits",
+ "once_cell",
  "openvm",
  "openvm-algebra-guest",
  "openvm-algebra-moduli-macros",
@@ -2625,7 +2625,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-sw-macros"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2635,7 +2635,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "backtrace",
  "derive-new 0.6.0",
@@ -2652,7 +2652,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions-derive"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2662,7 +2662,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-guest"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "openvm-platform",
  "serde",
@@ -2694,7 +2694,7 @@ dependencies = [
 [[package]]
 name = "openvm-macros-common"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "syn 2.0.98",
 ]
@@ -2725,7 +2725,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-guest"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "group 0.13.0",
  "halo2curves-axiom",
@@ -2750,7 +2750,7 @@ dependencies = [
 [[package]]
 name = "openvm-platform"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "critical-section",
  "embedded-alloc",
@@ -2764,7 +2764,7 @@ dependencies = [
 [[package]]
 name = "openvm-poseidon2-air"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "derivative",
  "itertools 0.14.0",
@@ -2803,7 +2803,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-guest"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "openvm-platform",
  "strum_macros",
@@ -2822,7 +2822,7 @@ dependencies = [
 [[package]]
 name = "openvm-stark-backend"
 version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=518633d9de2d6cf63a8b134a8ceae210af936ad1#518633d9de2d6cf63a8b134a8ceae210af936ad1"
+source = "git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=1d6ce480898d9aa1bb7d6f5de62ce3f9eb34b961#1d6ce480898d9aa1bb7d6f5de62ce3f9eb34b961"
 dependencies = [
  "async-trait",
  "cfg-if",
@@ -2846,7 +2846,7 @@ dependencies = [
 [[package]]
 name = "openvm-stark-sdk"
 version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=518633d9de2d6cf63a8b134a8ceae210af936ad1#518633d9de2d6cf63a8b134a8ceae210af936ad1"
+source = "git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=1d6ce480898d9aa1bb7d6f5de62ce3f9eb34b961#1d6ce480898d9aa1bb7d6f5de62ce3f9eb34b961"
 dependencies = [
  "derivative",
  "derive_more 0.99.19",
@@ -2881,7 +2881,7 @@ dependencies = [
 [[package]]
 name = "openvm-transpiler"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 dependencies = [
  "derive_more 1.0.0",
  "elf",
@@ -5452,121 +5452,111 @@ dependencies = [
 ]
 
 [[patch.unused]]
-name = "openvm-stark-backend"
-version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=738c68157058a0f95d4b9e96deb01b1f36309bfa#738c68157058a0f95d4b9e96deb01b1f36309bfa"
-
-[[patch.unused]]
-name = "openvm-stark-sdk"
-version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/axiom-crypto/stark-backend-private.git?rev=738c68157058a0f95d4b9e96deb01b1f36309bfa#738c68157058a0f95d4b9e96deb01b1f36309bfa"
-
-[[patch.unused]]
 name = "cargo-openvm"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-algebra-circuit"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-algebra-transpiler"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-benchmarks"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-bigint-circuit"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-bigint-transpiler"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-build"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-ecc-circuit"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-ecc-transpiler"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-keccak256-circuit"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-keccak256-transpiler"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-mod-circuit-builder"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-native-circuit"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-native-compiler"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-native-compiler-derive"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-native-recursion"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-pairing-circuit"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-pairing-transpiler"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-rv32-adapters"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-rv32im-circuit"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-rv32im-transpiler"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
 
 [[patch.unused]]
 name = "openvm-sdk"
 version = "1.0.0-rc.1"
-source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=f4501c7e787bdbe7611fdd2a963925b3938298f2#f4501c7e787bdbe7611fdd2a963925b3938298f2"
+source = "git+ssh://git@github.com/axiom-crypto/openvm-private.git?rev=d6a0c065807417f1aace984340c05e6407b68705#d6a0c065807417f1aace984340c05e6407b68705"
