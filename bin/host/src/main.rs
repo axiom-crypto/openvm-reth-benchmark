@@ -23,6 +23,7 @@ use openvm_pairing_circuit::{PairingCurve, PairingExtension};
 use openvm_rv32im_circuit::Rv32M;
 use openvm_sdk::{
     config::SdkVmConfig,
+    fs::write_object_to_file,
     keygen::RootVerifierProvingKey,
     prover::{AppProver, ContinuationProver},
     Sdk, StdIn,
@@ -60,6 +61,8 @@ struct HostArgs {
     prove: bool,
     #[clap(long, group = "mode")]
     prove_e2e: bool,
+    #[clap(long, group = "mode")]
+    make_input: bool,
 
     /// Optional path to the directory containing cached client input. A new cache file will be
     /// created from RPC data if it doesn't already exist.
@@ -78,6 +81,10 @@ struct HostArgs {
 
     #[arg(long)]
     pub kzg_intrinsics: bool,
+
+    /// Optional path to write the input to. Only needed for mode=make_input
+    #[arg(long)]
+    pub input_path: Option<PathBuf>,
 }
 
 const OPENVM_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/openvm-client-eth");
@@ -204,6 +211,11 @@ async fn main() -> eyre::Result<()> {
 
     let mut stdin = StdIn::default();
     stdin.write(&client_input);
+
+    if args.make_input {
+        write_object_to_file(args.input_path.unwrap(), stdin)?;
+        return Ok(());
+    }
 
     let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(RETH_DEFAULT_APP_LOG_BLOWUP);
     args.benchmark.app_log_blowup = Some(app_log_blowup);

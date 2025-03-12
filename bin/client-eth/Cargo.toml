@@ -10,7 +10,9 @@ rustc-hash = "2.1.0"
 # workspace
 openvm-client-executor = { path = "../../crates/executor/client" }
 
-revm-precompile = { version = "11.0.1", default-features = false, features = ["openvm"] }
+revm-precompile = { version = "11.0.1", default-features = false, features = [
+    "openvm",
+] }
 
 # openvm
 openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "c79ce5498da2edbe060d0e141b942c88f0bd226b", features = ["std"] }
@@ -26,12 +28,17 @@ openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev =
 
 # Statically turns off logging
 log = { version = "0.4", features = ["max_level_off", "release_max_level_off"] }
-tracing = { version = "0.1", features = ["max_level_off", "release_max_level_off"] }
+tracing = { version = "0.1", features = [
+    "max_level_off",
+    "release_max_level_off",
+] }
 
 [features]
 default = []
 heap-embedded-alloc = ["openvm/heap-embedded-alloc"]
-kzg-intrinsics = ["revm-precompile/openvm-kzg-intrinsics"] # uses OpenVM BLS12-381 intrinsic functions
+kzg-intrinsics = [
+    "revm-precompile/openvm-kzg-intrinsics",
+] # uses OpenVM BLS12-381 intrinsic functions
 
 [patch.crates-io]
 revm = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm" }

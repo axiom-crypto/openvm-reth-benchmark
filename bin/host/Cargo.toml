@@ -17,6 +17,8 @@ metrics = "0.23.0"
 # workspace
 openvm-host-executor.workspace = true
 openvm-client-executor.workspace = true
+toml = "0.8.14"
+bitcode = { version = "0.6.3", default-features = false, features = ["serde"] }
 
 # alloy
 alloy-provider.workspace = true
