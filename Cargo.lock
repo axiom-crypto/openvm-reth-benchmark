@@ -3861,7 +3861,6 @@ version = "0.1.0"
 dependencies = [
  "alloy-provider",
  "bincode 2.0.0-rc.3",
- "bitcode",
  "clap",
  "derive_more 1.0.0",
  "dotenv",
@@ -3886,7 +3885,6 @@ dependencies = [
  "reth-primitives",
  "serde",
  "tokio",
- "toml",
  "tracing",
  "tracing-subscriber",
  "url",
