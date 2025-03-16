@@ -13,7 +13,7 @@ cd ../..
 
 mkdir -p rpc-cache
 source .env
-MODE=prove # can be execute, tracegen, prove, or prove-e2e
+MODE=execute # can be execute, tracegen, prove, or prove-e2e
 PROFILE="release"
 FEATURES="bench-metrics,nightly-features,jemalloc"
 BLOCK_NUMBER=21882667
