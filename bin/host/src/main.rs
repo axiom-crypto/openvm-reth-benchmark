@@ -24,9 +24,8 @@ use openvm_rv32im_circuit::Rv32M;
 use openvm_sdk::{
     config::SdkVmConfig,
     fs::write_object_to_file,
-    keygen::RootVerifierProvingKey,
     prover::{AppProver, ContinuationProver},
-    Sdk, StdIn,
+    DefaultStaticVerifierPvHandler, Sdk, StdIn,
 };
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 pub use reth_primitives;
@@ -282,7 +281,7 @@ async fn main() -> eyre::Result<()> {
                     let full_agg_pk = sdk.agg_keygen(
                         agg_config,
                         &halo2_params_reader,
-                        None::<&RootVerifierProvingKey>,
+                        &DefaultStaticVerifierPvHandler,
                     )?;
                     tracing::info!(
                         "halo2_outer_k: {}",
