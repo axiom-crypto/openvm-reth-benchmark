@@ -79,7 +79,7 @@ on:
         type: string
         required: false
         description: Memory allocator to use (mimalloc or jemalloc)
-        default: jemalloc
+        default: jemalloc-prof
       block_number:
         type: number
         required: false
@@ -264,7 +264,7 @@ jobs:
       - name: Set build args
         id: set-build-args
         run: |
-          FEATURES="bench-metrics,nightly-features,${{ inputs.memory_allocator || github.event.inputs.memory_allocator || 'jemalloc' }}"
+          FEATURES="bench-metrics,nightly-features,${{ inputs.memory_allocator || github.event.inputs.memory_allocator || 'jemalloc-prof' }}"
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
             OPTIONAL_ARGS="${OPTIONAL_ARGS} --profiling"
             FEATURES="${FEATURES},profiling"
@@ -331,24 +331,36 @@ jobs:
           export OUTPUT_PATH=${METRIC_PATH}
 
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
-            echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
-            echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
+            echo "using _RJEM_MALLOC_CONF"
+            mkdir jemalloc_prof
+            # The memory profiler output will be written to "./jemalloc_prof/${METRIC_NAME}.*.heap"
+            export _RJEM_MALLOC_CONF="prof:true,prof_accum:true,prof_final:true,prof_prefix:./jemalloc_prof/${METRIC_NAME}"
 
-            # install custom addr2line: https://crates.io/crates/flamegraph
-            rm -rf /tmp/addr2line
-            git clone https://github.com/gimli-rs/addr2line /tmp/addr2line
-            work_dir=$(pwd)
-            cd /tmp/addr2line
-            cargo build --release --bin addr2line --features bin
-            sudo mv target/release/addr2line /usr/local/bin/
-            cd $work_dir
+            ./run_benchmark.sh
 
-            perf --version
-            perf record -F 99 --call-graph dwarf -o perf.data -- ./run_benchmark.sh
+            # echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
+            # echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
+
+            # # install custom addr2line: https://crates.io/crates/flamegraph
+            # rm -rf /tmp/addr2line
+            # git clone https://github.com/gimli-rs/addr2line /tmp/addr2line
+            # work_dir=$(pwd)
+            # cd /tmp/addr2line
+            # cargo build --release --bin addr2line --features bin
+            # sudo mv target/release/addr2line /usr/local/bin/
+            # cd $work_dir
+
+            # perf --version
+            # perf record -F 99 --call-graph dwarf -o perf.data -- ./run_benchmark.sh
           else
             ./ci/monitor_memory.sh ./run_benchmark.sh
             echo "MEM_USAGE_PATH=memory_usage.png" >> $GITHUB_ENV
           fi
+
+      - name: Upload jemalloc profiler output to S3
+        if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
+        run: |
+          s5cmd cp ./jemalloc_prof/* ${{ env.S3_PATH }}/.
 
       - name: Upload metric file
         id: upload-metric-artifact
