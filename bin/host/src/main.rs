@@ -75,7 +75,7 @@ struct HostArgs {
     benchmark: BenchmarkCli,
 
     /// Max cells per chip in segment for continuations
-    #[arg(short, long, alias = "max_cells_per_chip_in_segment")]
+    #[arg(long, alias = "max_cells_per_chip_in_segment")]
     pub max_cells_per_chip_in_segment: Option<usize>,
 
     #[arg(long)]
