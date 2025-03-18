@@ -236,7 +236,7 @@ jobs:
       instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
-      block_number: ${{ inputs.benchmark_block_number || github.event.inputs.benchmark_block_number }}
+      block_number: ${{ fromJSON(inputs.benchmark_block_number || github.event.inputs.benchmark_block_number) }}
       profiling: none
     secrets: inherit
 
@@ -249,7 +249,7 @@ jobs:
       instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
-      block_number: ${{ inputs.benchmark_block_number || github.event.inputs.benchmark_block_number }}
+      block_number: ${{ fromJSON(inputs.benchmark_block_number || github.event.inputs.benchmark_block_number) }}
       profiling: host
     secrets: inherit
 
@@ -262,7 +262,7 @@ jobs:
       instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
-      block_number: ${{ inputs.benchmark_block_number || github.event.inputs.benchmark_block_number }}
+      block_number: ${{ fromJSON(inputs.benchmark_block_number || github.event.inputs.benchmark_block_number) }}
       profiling: guest
     secrets: inherit
 
