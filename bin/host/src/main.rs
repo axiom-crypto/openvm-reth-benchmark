@@ -79,7 +79,7 @@ struct HostArgs {
     pub max_cells_per_chip_in_segment: Option<usize>,
 
     #[arg(long)]
-    pub kzg_intrinsics: bool,
+    pub no_kzg_intrinsics: bool,
 
     /// Optional path to write the input to. Only needed for mode=make_input
     #[arg(long)]
@@ -228,7 +228,7 @@ async fn main() -> eyre::Result<()> {
         app_log_blowup,
         max_segment_length,
         max_cells_per_chip_in_segment,
-        args.kzg_intrinsics,
+        !args.no_kzg_intrinsics,
     );
     let sdk = Sdk;
     let elf = Elf::decode(OPENVM_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
