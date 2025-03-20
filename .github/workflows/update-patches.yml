@@ -237,7 +237,7 @@ jobs:
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
       # workflow call gives number, workflow dispatch gives string...
-      block_number: ${{ inputs.benchmark_block_number || (github.event.inputs.benchmark_block_number && fromJSON(github.event.inputs.benchmark_block_number)) || 21000000 }}
+      block_number: ${{ inputs.benchmark_block_number || fromJSON(github.event.inputs.benchmark_block_number || '21000000') }}
       profiling: none
     secrets: inherit
 
@@ -251,7 +251,7 @@ jobs:
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
       # workflow call gives number, workflow dispatch gives string...
-      block_number: ${{ inputs.benchmark_block_number || (github.event.inputs.benchmark_block_number && fromJSON(github.event.inputs.benchmark_block_number)) || 21000000 }}
+      block_number: ${{ inputs.benchmark_block_number || fromJSON(github.event.inputs.benchmark_block_number || '21000000') }}
       profiling: host
     secrets: inherit
 
@@ -265,7 +265,7 @@ jobs:
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
       # workflow call gives number, workflow dispatch gives string...
-      block_number: ${{ inputs.benchmark_block_number || (github.event.inputs.benchmark_block_number && fromJSON(github.event.inputs.benchmark_block_number)) || 21000000 }}
+      block_number: ${{ inputs.benchmark_block_number || fromJSON(github.event.inputs.benchmark_block_number || '21000000') }}
       profiling: guest
     secrets: inherit
 
