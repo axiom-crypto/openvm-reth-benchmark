@@ -301,12 +301,8 @@ async fn main() -> eyre::Result<()> {
                     );
                     prover.set_program_name(program_name);
                     let evm_proof = prover.generate_proof_for_evm(stdin);
-                    let instances = &evm_proof.instances[0];
-                    let block_hash = instances[instances.len() - 32..]
-                        .iter()
-                        .map(|x| x.to_bytes()[0])
-                        .collect::<Vec<_>>();
-                    println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+                    let block_hash = &evm_proof.user_public_values;
+                    println!("block_hash: {}", ToHexExt::encode_hex(block_hash));
                 }
 
                 Ok(())

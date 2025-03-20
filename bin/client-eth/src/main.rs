@@ -1,6 +1,4 @@
-use core::mem::transmute;
-
-use openvm::io::{println, read, reveal};
+use openvm::io::{println, read, reveal_bytes32};
 #[allow(unused_imports)]
 use openvm_client_executor::{
     custom::{USED_BN_ADD, USED_BN_MUL, USED_BN_PAIR, USED_KZG_PROOF},
@@ -71,11 +69,8 @@ pub fn main() {
     let header = executor.execute::<EthereumVariant>(input).expect("failed to execute client");
     let block_hash = header.hash_slow();
 
-    // Commit the block hash.
-    // SAFETY: 32 bytes = 8 u32s
-    let block_hash = unsafe { transmute::<FixedBytes<32>, [u32; 8]>(block_hash) };
-
-    block_hash.into_iter().enumerate().for_each(|(i, x)| reveal(x, i));
+    // Reveal the block hash.
+    reveal_bytes32(*block_hash);
 
     // Setup can be called at any time.
     if unsafe { USED_BN_ADD || USED_BN_MUL || USED_BN_PAIR } {
