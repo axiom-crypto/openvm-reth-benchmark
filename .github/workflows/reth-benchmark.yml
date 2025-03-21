@@ -242,24 +242,31 @@ jobs:
           echo "OPTIONAL_ARGS=${OPTIONAL_ARGS}" >> $GITHUB_ENV
 
       - name: Restore Guest ELF from cache
-        id: cache-guest-elf
-        uses: runs-on/cache@v4
+        id: cache-guest-elf-restore
+        uses: runs-on/cache/restore@v4
         with:
           path: host/elf/openvm-client-eth
           key: ${{ steps.set-cache-keys.outputs.elf_cache_key }}
 
       - name: Install cargo-openvm
-        if: steps.cache-guest-elf.outputs.cache-hit != 'true'
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
         run: |
           cargo install --git https://github.com/openvm-org/openvm.git --force cargo-openvm
       - name: Build Guest ELF
-        if: steps.cache-guest-elf.outputs.cache-hit != 'true'
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
         working-directory: bin/client-eth
         run: |
           GUEST_PROFILE=${{ steps.set-cache-keys.outputs.guest_profile }}
           cargo openvm build --no-transpile --profile=$GUEST_PROFILE
           mkdir -p ../host/elf
           cp target/riscv32im-risc0-zkvm-elf/$GUEST_PROFILE/openvm-client-eth ../host/elf/
+
+      - name: Save Guest ELF to cache
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
+        uses: runs-on/cache/save@v4
+        with:
+          path: host/elf/openvm-client-eth
+          key: ${{ steps.cache-guest-elf-restore.outputs.cache-primary-key }}
 
       - name: Set build args
         id: set-build-args
@@ -273,14 +280,14 @@ jobs:
           echo "FEATURES=${FEATURES}" >> $GITHUB_ENV
 
       - name: Restore Host Binary from cache
-        id: cache-host-binary
-        uses: runs-on/cache@v4
+        id: cache-host-binary-restore
+        uses: runs-on/cache/restore@v4
         with:
           path: target/${{ steps.set-cache-keys.outputs.host_profile }}/openvm-reth-benchmark
           key: ${{ steps.set-cache-keys.outputs.host_cache_key }}
 
       - name: Build Host Binary
-        if: steps.cache-host-binary.outputs.cache-hit != 'true'
+        if: steps.cache-host-binary-restore.outputs.cache-hit != 'true'
         run: |
           arch=$(uname -m)
           case $arch in
@@ -303,6 +310,13 @@ jobs:
           export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
           RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark --profile=$HOST_PROFILE --no-default-features --features=$FEATURES
           echo "JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}" >> $GITHUB_ENV
+
+      - name: Save Host Binary to cache
+        if: steps.cache-host-binary-restore.outputs.cache-hit != 'true'
+        uses: runs-on/cache/save@v4
+        with:
+          path: target/${{ steps.set-cache-keys.outputs.host_profile }}/openvm-reth-benchmark
+          key: ${{ steps.cache-host-binary-restore.outputs.cache-primary-key }}
 
       - name: Set up run benchmark script
         run: |
