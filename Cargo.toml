@@ -68,6 +68,7 @@ revm-precompile = { version = "=11.0.1", default-features = false }
 # alloy
 alloy-primitives = { version = "0.8.4", default-features = false }
 alloy-provider = { version = "0.3", default-features = false, features = ["reqwest", "reqwest-rustls-tls"] }
+alloy-rpc-client = { version = "0.3", default-features = false, features = ["reqwest"] }
 alloy-rpc-types = { version = "0.3", default-features = false, features = ["eth"] }
 alloy-rlp = "0.3.4"
 alloy-consensus = { version = "0.3", default-features = false }

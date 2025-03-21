@@ -3898,6 +3898,8 @@ name = "openvm-reth-benchmark"
 version = "0.1.0"
 dependencies = [
  "alloy-provider",
+ "alloy-rpc-client",
+ "alloy-transport",
  "bincode 2.0.0-rc.3",
  "clap",
  "derive_more 1.0.0",

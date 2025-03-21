@@ -24,3 +24,6 @@ elf
 **/params
 
 **/rpc-cache
+
+# Metrics
+metrics.json

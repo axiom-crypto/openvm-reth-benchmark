@@ -1,4 +1,6 @@
-use alloy_provider::ReqwestProvider;
+use alloy_provider::RootProvider;
+use alloy_rpc_client::RpcClient;
+use alloy_transport::layers::RetryBackoffLayer;
 use clap::{ArgGroup, Parser};
 use openvm_algebra_circuit::{Fp2Extension, ModularExtension};
 use openvm_benchmarks::utils::BenchmarkCli;
@@ -174,7 +176,9 @@ async fn main() -> eyre::Result<()> {
         (None, Some(rpc_url)) => {
             // Cache not found but we have RPC
             // Setup the provider.
-            let provider = ReqwestProvider::new_http(rpc_url);
+            let client =
+                RpcClient::builder().layer(RetryBackoffLayer::new(5, 1000, 100)).http(rpc_url);
+            let provider = RootProvider::new(client);
 
             // Setup the host executor.
             let host_executor = HostExecutor::new(provider);

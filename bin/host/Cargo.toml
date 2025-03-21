@@ -20,6 +20,8 @@ openvm-client-executor.workspace = true
 
 # alloy
 alloy-provider.workspace = true
+alloy-rpc-client.workspace = true
+alloy-transport.workspace = true
 
 # reth
 reth-primitives.workspace = true
