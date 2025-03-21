@@ -245,7 +245,7 @@ jobs:
         id: cache-guest-elf-restore
         uses: runs-on/cache/restore@v4
         with:
-          path: host/elf/openvm-client-eth
+          path: bin/host/elf/openvm-client-eth
           key: ${{ steps.set-cache-keys.outputs.elf_cache_key }}
 
       - name: Install cargo-openvm
@@ -265,7 +265,7 @@ jobs:
         if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
         uses: runs-on/cache/save@v4
         with:
-          path: host/elf/openvm-client-eth
+          path: bin/host/elf/openvm-client-eth
           key: ${{ steps.cache-guest-elf-restore.outputs.cache-primary-key }}
 
       - name: Set build args
