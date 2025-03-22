@@ -342,7 +342,7 @@ jobs:
       - name: Run benchmark
         run: |
           export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
-          export RUST_LOG="info,p3_=warn"
+          export RUST_LOG="debug"
           export OUTPUT_PATH=${METRIC_PATH}
 
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
