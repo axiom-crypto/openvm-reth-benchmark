@@ -3,6 +3,9 @@ version = "0.1.0"
 name = "openvm-reth-benchmark"
 edition = "2021"
 
+[lib]
+path = "src/lib.rs"
+
 [dependencies]
 tokio.workspace = true
 eyre.workspace = true

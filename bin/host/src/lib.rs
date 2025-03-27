@@ -27,8 +27,9 @@ use openvm_sdk::{
     config::SdkVmConfig,
     fs::write_object_to_file,
     prover::{AppProver, ContinuationProver},
-    DefaultStaticVerifierPvHandler, Sdk, StdIn,
+    DefaultStaticVerifierPvHandler, GenericSdk, StdIn, SC,
 };
+use openvm_stark_sdk::engine::StarkFriEngine;
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 pub use reth_primitives;
 use reth_primitives::hex::ToHexExt;
@@ -108,7 +109,9 @@ pub fn reth_vm_config(
     let bn_config = PairingCurve::Bn254.curve_config();
     let bls_config = PairingCurve::Bls12_381.curve_config();
     // The builder will do this automatically, but we set it just in case.
-    let rv32m = Rv32M { range_tuple_checker_sizes: int256.range_tuple_checker_sizes };
+    let rv32m = Rv32M {
+        range_tuple_checker_sizes: int256.range_tuple_checker_sizes,
+    };
     let mut supported_moduli = vec![
         bn_config.modulus.clone(),
         bn_config.scalar.clone(),
@@ -144,7 +147,7 @@ pub const RETH_DEFAULT_APP_LOG_BLOWUP: usize = 1;
 pub const RETH_DEFAULT_LEAF_LOG_BLOWUP: usize = 1;
 
 #[tokio::main]
-async fn main() -> eyre::Result<()> {
+async fn run_reth_benchmark<E: StarkFriEngine<SC>>(args: HostArgs) -> eyre::Result<()> {
     // Initialize the environment variables.
     dotenv::dotenv().ok();
 
@@ -153,7 +156,7 @@ async fn main() -> eyre::Result<()> {
     }
 
     // Parse the command line arguments.
-    let mut args = HostArgs::parse();
+    let mut args = args;
     let provider_config = args.provider.into_provider().await?;
 
     let variant = match provider_config.chain_id {
@@ -176,8 +179,9 @@ async fn main() -> eyre::Result<()> {
         (None, Some(rpc_url)) => {
             // Cache not found but we have RPC
             // Setup the provider.
-            let client =
-                RpcClient::builder().layer(RetryBackoffLayer::new(5, 1000, 100)).http(rpc_url);
+            let client = RpcClient::builder()
+                .layer(RetryBackoffLayer::new(5, 1000, 100))
+                .http(rpc_url);
             let provider = RootProvider::new(client);
 
             // Setup the host executor.
@@ -220,12 +224,19 @@ async fn main() -> eyre::Result<()> {
         return Ok(());
     }
 
-    let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(RETH_DEFAULT_APP_LOG_BLOWUP);
+    let app_log_blowup = args
+        .benchmark
+        .app_log_blowup
+        .unwrap_or(RETH_DEFAULT_APP_LOG_BLOWUP);
     args.benchmark.app_log_blowup = Some(app_log_blowup);
     let max_segment_length = args.benchmark.max_segment_length.unwrap_or((1 << 23) - 100);
-    let max_cells_per_chip_in_segment =
-        args.max_cells_per_chip_in_segment.unwrap_or(((1 << 23) - 100) * 120);
-    let leaf_log_blowup = args.benchmark.leaf_log_blowup.unwrap_or(RETH_DEFAULT_LEAF_LOG_BLOWUP);
+    let max_cells_per_chip_in_segment = args
+        .max_cells_per_chip_in_segment
+        .unwrap_or(((1 << 23) - 100) * 120);
+    let leaf_log_blowup = args
+        .benchmark
+        .leaf_log_blowup
+        .unwrap_or(RETH_DEFAULT_LEAF_LOG_BLOWUP);
     args.benchmark.leaf_log_blowup = Some(leaf_log_blowup);
 
     let vm_config = reth_vm_config(
@@ -234,7 +245,7 @@ async fn main() -> eyre::Result<()> {
         max_cells_per_chip_in_segment,
         !args.no_kzg_intrinsics,
     );
-    let sdk = Sdk::new();
+    let sdk = GenericSdk::<E>::new();
     let elf = Elf::decode(OPENVM_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
     let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
@@ -289,11 +300,23 @@ async fn main() -> eyre::Result<()> {
                     )?;
                     tracing::info!(
                         "halo2_outer_k: {}",
-                        full_agg_pk.halo2_pk.verifier.pinning.metadata.config_params.k
+                        full_agg_pk
+                            .halo2_pk
+                            .verifier
+                            .pinning
+                            .metadata
+                            .config_params
+                            .k
                     );
                     tracing::info!(
                         "halo2_wrapper_k: {}",
-                        full_agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k
+                        full_agg_pk
+                            .halo2_pk
+                            .wrapper
+                            .pinning
+                            .metadata
+                            .config_params
+                            .k
                     );
                     let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
 
