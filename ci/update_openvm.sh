@@ -9,7 +9,7 @@ usage() {
 }
 
 # Check arguments
-if [ $# -ne 2 ]; then
+if [ $# -ne 1 ]; then
     usage
 fi
 
