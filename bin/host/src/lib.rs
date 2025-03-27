@@ -147,7 +147,7 @@ pub const RETH_DEFAULT_APP_LOG_BLOWUP: usize = 1;
 pub const RETH_DEFAULT_LEAF_LOG_BLOWUP: usize = 1;
 
 #[tokio::main]
-async fn run_reth_benchmark<E: StarkFriEngine<SC>>(args: HostArgs) -> eyre::Result<()> {
+async pub fn run_reth_benchmark<E: StarkFriEngine<SC>>(args: HostArgs) -> eyre::Result<()> {
     // Initialize the environment variables.
     dotenv::dotenv().ok();
 
