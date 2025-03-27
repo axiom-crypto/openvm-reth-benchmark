@@ -48,7 +48,7 @@ use cli::ProviderArgs;
         .required(true)
         .args(&["prove", "execute", "tracegen", "prove_e2e"]),
 ))]
-struct HostArgs {
+pub struct HostArgs {
     /// The block number of the block to execute.
     #[clap(long)]
     block_number: u64,
