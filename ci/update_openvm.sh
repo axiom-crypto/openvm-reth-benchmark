@@ -66,18 +66,6 @@ else
     echo "Warning: Could not determine stark-backend revision from openvm repo. Not updating stark-backend dependencies."
 fi
 
-# # Step 4: Update the KZG dependency
-# echo "Updating openvm-kzg dependencies to $NEW_KZG_REV..."
-# if [[ "$OSTYPE" == "darwin"* ]]; then
-#     # macOS
-#     find . -name "*.toml" -type f -exec sed -i '' "s/openvm-kzg *= *{ *git *= *\"[^\"]*\", *rev *= *\"[^\"]*\"/openvm-kzg = { git = \"https:\/\/github.com\/axiom-crypto\/openvm-kzg.git\", rev = \"$NEW_KZG_REV\"/g" {} \;
-#     find . -name "*.lock" -type f -exec sed -i '' "s/openvm-kzg.git?rev=[^#]*#/openvm-kzg.git?rev=$NEW_KZG_REV#/g" {} \;
-# else
-#     # Linux and others
-#     find . -name "*.toml" -type f -exec sed -i "s/openvm-kzg *= *{ *git *= *\"[^\"]*\", *rev *= *\"[^\"]*\"/openvm-kzg = { git = \"https:\/\/github.com\/axiom-crypto\/openvm-kzg.git\", rev = \"$NEW_KZG_REV\"/g" {} \;
-#     find . -name "*.lock" -type f -exec sed -i "s/openvm-kzg.git?rev=[^#]*#/openvm-kzg.git?rev=$NEW_KZG_REV#/g" {} \;
-# fi
-
 echo "Dependencies updated successfully!"
 
 exit 0 
