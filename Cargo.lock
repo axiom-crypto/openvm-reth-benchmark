@@ -1948,28 +1948,6 @@ dependencies = [
 
 [[package]]
 name = "halo2-axiom"
-version = "0.4.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f81aee7974478f9e3ea0cfd349d2a59a3482f7844386486a98e4af9ed8bada6"
-dependencies = [
- "blake2b_simd",
- "crossbeam",
- "ff 0.13.0",
- "group 0.13.0",
- "halo2curves-axiom",
- "itertools 0.11.0",
- "maybe-rayon",
- "pairing 0.23.0",
- "rand",
- "rand_core",
- "rayon",
- "rustc-hash 1.1.0",
- "sha3",
- "tracing",
-]
-
-[[package]]
-name = "halo2-axiom"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62f0ca78d12ac5c893f286d7cdfe3869290305ab8cac376e2592cdc8396da102"
@@ -1997,7 +1975,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "678cf3adc0a39d7b4d9b82315a655201aa24a430dd1902b162c508047f56ac69"
 dependencies = [
  "getset",
- "halo2-axiom 0.5.0",
+ "halo2-axiom",
  "itertools 0.11.0",
  "log",
  "num-bigint 0.4.6",
@@ -3805,7 +3783,7 @@ dependencies = [
  "derive_more 1.0.0",
  "dotenv",
  "eyre",
- "halo2-axiom 0.4.5",
+ "halo2-axiom",
  "metrics",
  "openvm-algebra-circuit",
  "openvm-benchmarks",

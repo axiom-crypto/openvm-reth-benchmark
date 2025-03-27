@@ -100,10 +100,10 @@ pub fn reth_vm_config(
         .with_continuations()
         .with_max_constraint_degree((1 << app_log_blowup) + 1)
         .with_public_values(32);
-    system_config.set_segmentation_strategy(DefaultSegmentationStrategy::new(
+    system_config.set_segmentation_strategy(Arc::new(DefaultSegmentationStrategy::new(
         max_segment_length,
         max_cells_per_chip_in_segment,
-    ));
+    )));
     let int256 = Int256::default();
     let bn_config = PairingCurve::Bn254.curve_config();
     let bls_config = PairingCurve::Bls12_381.curve_config();
@@ -234,7 +234,7 @@ async fn main() -> eyre::Result<()> {
         max_cells_per_chip_in_segment,
         !args.no_kzg_intrinsics,
     );
-    let sdk = Sdk;
+    let sdk = Sdk::new();
     let elf = Elf::decode(OPENVM_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
     let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
