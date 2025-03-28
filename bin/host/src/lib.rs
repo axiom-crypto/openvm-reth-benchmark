@@ -89,7 +89,7 @@ pub struct HostArgs {
     pub input_path: Option<PathBuf>,
 }
 
-const OPENVM_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/openvm-client-eth");
+// const OPENVM_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/openvm-client-eth");
 
 pub fn reth_vm_config(
     app_log_blowup: usize,
@@ -147,7 +147,7 @@ pub const RETH_DEFAULT_APP_LOG_BLOWUP: usize = 1;
 pub const RETH_DEFAULT_LEAF_LOG_BLOWUP: usize = 1;
 
 #[tokio::main]
-pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(args: HostArgs) -> eyre::Result<()> {
+pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(args: HostArgs, openvm_client_eth_elf: &[u8]) -> eyre::Result<()> {
     // Initialize the environment variables.
     dotenv::dotenv().ok();
 
@@ -246,7 +246,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(args: HostArgs) -> eyre::
         !args.no_kzg_intrinsics,
     );
     let sdk = GenericSdk::<E>::new();
-    let elf = Elf::decode(OPENVM_CLIENT_ETH_ELF, MEM_SIZE as u32)?;
+    let elf = Elf::decode(openvm_client_eth_elf, MEM_SIZE as u32)?;
     let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
     let mode = if args.execute {
