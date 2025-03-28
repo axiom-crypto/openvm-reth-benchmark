@@ -10,28 +10,44 @@ rustc-hash = "2.1.0"
 # workspace
 openvm-client-executor = { path = "../../crates/executor/client" }
 
-revm-precompile = { version = "11.0.1", default-features = false, features = ["openvm"] }
+revm-precompile = { version = "11.0.1", default-features = false, features = [
+    "openvm",
+] }
 
 # openvm
-openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f369da8dee065a089fb72f3580af7dcaf9", features = ["std"] }
-openvm-platform = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f369da8dee065a089fb72f3580af7dcaf9" }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f369da8dee065a089fb72f3580af7dcaf9" }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f369da8dee065a089fb72f3580af7dcaf9" }
-openvm-algebra-moduli-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f369da8dee065a089fb72f3580af7dcaf9" }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f369da8dee065a089fb72f3580af7dcaf9" }
-openvm-ecc-sw-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f369da8dee065a089fb72f3580af7dcaf9" }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f369da8dee065a089fb72f3580af7dcaf9", features = ["k256"] }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f369da8dee065a089fb72f3580af7dcaf9", features = ["export-intrinsics"] }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "3c35e9f369da8dee065a089fb72f3580af7dcaf9", features = ["bn254", "bls12_381"] }
+openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "f41640c37bc5468a0775a38098053fe37ea3538a", features = [
+    "std",
+] }
+openvm-platform = { git = "https://github.com/openvm-org/openvm.git", rev = "f41640c37bc5468a0775a38098053fe37ea3538a" }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "f41640c37bc5468a0775a38098053fe37ea3538a" }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "f41640c37bc5468a0775a38098053fe37ea3538a" }
+openvm-algebra-moduli-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "f41640c37bc5468a0775a38098053fe37ea3538a" }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "f41640c37bc5468a0775a38098053fe37ea3538a" }
+openvm-ecc-sw-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "f41640c37bc5468a0775a38098053fe37ea3538a" }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "f41640c37bc5468a0775a38098053fe37ea3538a", features = [
+    "k256",
+] }
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "f41640c37bc5468a0775a38098053fe37ea3538a", features = [
+    "export-intrinsics",
+] }
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "f41640c37bc5468a0775a38098053fe37ea3538a", features = [
+    "bn254",
+    "bls12_381",
+] }
 
 # Statically turns off logging
 log = { version = "0.4", features = ["max_level_off", "release_max_level_off"] }
-tracing = { version = "0.1", features = ["max_level_off", "release_max_level_off"] }
+tracing = { version = "0.1", features = [
+    "max_level_off",
+    "release_max_level_off",
+] }
 
 [features]
 default = ["kzg-intrinsics"]
 heap-embedded-alloc = ["openvm/heap-embedded-alloc"]
-kzg-intrinsics = ["revm-precompile/openvm-kzg-intrinsics"] # uses OpenVM BLS12-381 intrinsic functions
+kzg-intrinsics = [
+    "revm-precompile/openvm-kzg-intrinsics",
+] # uses OpenVM BLS12-381 intrinsic functions
 
 [patch.crates-io]
 revm = { git = "https://github.com/axiom-crypto/revm", branch = "v43-openvm" }
