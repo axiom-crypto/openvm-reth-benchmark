@@ -15,6 +15,9 @@ pgo-data.profdata
 # Env
 .env
 
+# ELF files
+elf
+
 **.csv
 
 # KZG trusted setup
