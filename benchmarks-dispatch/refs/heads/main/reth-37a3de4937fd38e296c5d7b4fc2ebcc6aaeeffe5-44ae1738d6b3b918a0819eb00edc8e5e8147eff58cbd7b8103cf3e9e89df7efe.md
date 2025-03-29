@@ -1,0 +1,1400 @@
+| Summary | Proof Time (s) | Parallel Proof Time (s) |
+|:---|---:|---:|
+| Total |  559.32 |  176 |
+| reth.prove_e2e.block_21000000 |  291.93 |  36 |
+| leaf |  92.10 |  10.23 |
+| internal.0 |  42.27 |  7.100 |
+| internal.1 |  12.100 |  4.35 |
+| internal.2 |  6.83 |  4.24 |
+| internal.3 |  4.28 |  4.28 |
+| root |  23.39 |  23.39 |
+| halo2_outer |  49.82 |  49.82 |
+| halo2_wrapper |  35.70 |  35.70 |
+| agg_keygen |  23.46 |  23.01 |
+
+
+| reth.prove_e2e.block_21000000 |||||
+|:---|---:|---:|---:|---:|
+|metric|avg|sum|max|min|
+| `total_proof_time_ms ` |  26,539.18 |  291,931 |  36,001 |  7,395 |
+| `main_cells_used     ` |  1,154,861,063.18 |  12,703,471,695 |  1,946,260,208 |  310,297,137 |
+| `total_cycles        ` |  18,582,206.09 |  204,404,267 |  24,897,308 |  2,108,135 |
+| `execute_time_ms     ` |  2,810.73 |  30,918 |  5,916 |  293 |
+| `trace_gen_time_ms   ` |  8,646.55 |  95,112 |  10,821 |  3,225 |
+| `stark_prove_excluding_trace_time_ms` |  15,081.91 |  165,901 |  24,183 |  3,877 |
+| `main_trace_commit_time_ms` |  3,505.09 |  38,556 |  7,504 |  894 |
+| `generate_perm_trace_time_ms` |  821.55 |  9,037 |  1,125 |  139 |
+| `perm_trace_commit_time_ms` |  3,792.91 |  41,722 |  5,161 |  724 |
+| `quotient_poly_compute_time_ms` |  2,786.55 |  30,652 |  5,775 |  644 |
+| `quotient_poly_commit_time_ms` |  1,190.27 |  13,093 |  1,446 |  419 |
+| `pcs_opening_time_ms ` |  2,972.91 |  32,702 |  3,586 |  1,049 |
+
+| leaf |||||
+|:---|---:|---:|---:|---:|
+|metric|avg|sum|max|min|
+| `total_proof_time_ms ` |  8,372.91 |  92,102 |  10,226 |  5,873 |
+| `main_cells_used     ` |  221,623,985 |  2,437,863,835 |  278,430,904 |  155,251,480 |
+| `total_cycles        ` |  2,795,058.36 |  30,745,642 |  3,459,095 |  2,024,319 |
+| `execute_time_ms     ` |  925.64 |  10,182 |  1,105 |  712 |
+| `trace_gen_time_ms   ` |  1,730.27 |  19,033 |  2,162 |  1,219 |
+| `stark_prove_excluding_trace_time_ms` |  5,717 |  62,887 |  6,987 |  3,942 |
+| `main_trace_commit_time_ms` |  861.64 |  9,478 |  1,057 |  562 |
+| `generate_perm_trace_time_ms` |  331.73 |  3,649 |  416 |  217 |
+| `perm_trace_commit_time_ms` |  1,647.91 |  18,127 |  2,025 |  1,080 |
+| `quotient_poly_compute_time_ms` |  830.18 |  9,132 |  1,022 |  570 |
+| `quotient_poly_commit_time_ms` |  609.18 |  6,701 |  737 |  450 |
+| `pcs_opening_time_ms ` |  1,431.64 |  15,748 |  1,755 |  1,055 |
+
+| internal.0 |||||
+|:---|---:|---:|---:|---:|
+|metric|avg|sum|max|min|
+| `total_proof_time_ms ` |  7,044.17 |  42,265 |  7,998 |  4,303 |
+| `main_cells_used     ` |  130,401,273.50 |  782,407,641 |  143,365,613 |  70,990,990 |
+| `total_cycles        ` |  2,184,615.83 |  13,107,695 |  2,397,962 |  1,183,121 |
+| `execute_time_ms     ` |  848.33 |  5,090 |  946 |  454 |
+| `trace_gen_time_ms   ` |  989 |  5,934 |  1,099 |  561 |
+| `stark_prove_excluding_trace_time_ms` |  5,206.83 |  31,241 |  5,971 |  3,288 |
+| `main_trace_commit_time_ms` |  939.17 |  5,635 |  1,136 |  532 |
+| `generate_perm_trace_time_ms` |  178.33 |  1,070 |  227 |  102 |
+| `perm_trace_commit_time_ms` |  853.83 |  5,123 |  992 |  502 |
+| `quotient_poly_compute_time_ms` |  860 |  5,160 |  1,017 |  518 |
+| `quotient_poly_commit_time_ms` |  998.33 |  5,990 |  1,101 |  710 |
+| `pcs_opening_time_ms ` |  1,372 |  8,232 |  1,523 |  919 |
+
+| internal.1 |||||
+|:---|---:|---:|---:|---:|
+|metric|avg|sum|max|min|
+| `total_proof_time_ms ` |  4,333 |  12,999 |  4,349 |  4,317 |
+| `main_cells_used     ` |  74,873,125.33 |  224,619,376 |  75,082,363 |  74,509,536 |
+| `total_cycles        ` |  1,529,403 |  4,588,209 |  1,532,215 |  1,524,186 |
+| `execute_time_ms     ` |  430 |  1,290 |  434 |  423 |
+| `trace_gen_time_ms   ` |  613 |  1,839 |  614 |  612 |
+| `stark_prove_excluding_trace_time_ms` |  3,290 |  9,870 |  3,301 |  3,272 |
+| `main_trace_commit_time_ms` |  532.33 |  1,597 |  537 |  523 |
+| `generate_perm_trace_time_ms` |  97.67 |  293 |  101 |  95 |
+| `perm_trace_commit_time_ms` |  495.67 |  1,487 |  509 |  484 |
+| `quotient_poly_compute_time_ms` |  493.67 |  1,481 |  503 |  489 |
+| `quotient_poly_commit_time_ms` |  704.33 |  2,113 |  721 |  687 |
+| `pcs_opening_time_ms ` |  961.33 |  2,884 |  1,014 |  930 |
+
+| internal.2 |||||
+|:---|---:|---:|---:|---:|
+|metric|avg|sum|max|min|
+| `total_proof_time_ms ` |  3,414 |  6,828 |  4,239 |  2,589 |
+| `main_cells_used     ` |  55,570,885.50 |  111,141,771 |  73,641,339 |  37,500,432 |
+| `total_cycles        ` |  1,137,735.50 |  2,275,471 |  1,516,742 |  758,729 |
+| `execute_time_ms     ` |  313 |  626 |  416 |  210 |
+| `trace_gen_time_ms   ` |  453 |  906 |  581 |  325 |
+| `stark_prove_excluding_trace_time_ms` |  2,648 |  5,296 |  3,242 |  2,054 |
+| `main_trace_commit_time_ms` |  421.50 |  843 |  526 |  317 |
+| `generate_perm_trace_time_ms` |  81.50 |  163 |  111 |  52 |
+| `perm_trace_commit_time_ms` |  396.50 |  793 |  503 |  290 |
+| `quotient_poly_compute_time_ms` |  387.50 |  775 |  491 |  284 |
+| `quotient_poly_commit_time_ms` |  587.50 |  1,175 |  689 |  486 |
+| `pcs_opening_time_ms ` |  769.50 |  1,539 |  918 |  621 |
+
+| internal.3 |||||
+|:---|---:|---:|---:|---:|
+|metric|avg|sum|max|min|
+| `total_proof_time_ms ` |  4,282 |  4,282 |  4,282 |  4,282 |
+| `main_cells_used     ` |  73,142,229 |  73,142,229 |  73,142,229 |  73,142,229 |
+| `total_cycles        ` |  1,508,937 |  1,508,937 |  1,508,937 |  1,508,937 |
+| `execute_time_ms     ` |  409 |  409 |  409 |  409 |
+| `trace_gen_time_ms   ` |  604 |  604 |  604 |  604 |
+| `stark_prove_excluding_trace_time_ms` |  3,269 |  3,269 |  3,269 |  3,269 |
+| `main_trace_commit_time_ms` |  525 |  525 |  525 |  525 |
+| `generate_perm_trace_time_ms` |  112 |  112 |  112 |  112 |
+| `perm_trace_commit_time_ms` |  482 |  482 |  482 |  482 |
+| `quotient_poly_compute_time_ms` |  488 |  488 |  488 |  488 |
+| `quotient_poly_commit_time_ms` |  735 |  735 |  735 |  735 |
+| `pcs_opening_time_ms ` |  923 |  923 |  923 |  923 |
+
+| root |||||
+|:---|---:|---:|---:|---:|
+|metric|avg|sum|max|min|
+| `total_proof_time_ms ` |  23,387 |  23,387 |  23,387 |  23,387 |
+| `main_cells_used     ` |  37,486,611 |  37,486,611 |  37,486,611 |  37,486,611 |
+| `total_cycles        ` |  759,148 |  759,148 |  759,148 |  759,148 |
+| `execute_time_ms     ` |  208 |  208 |  208 |  208 |
+| `trace_gen_time_ms   ` |  304 |  304 |  304 |  304 |
+| `stark_prove_excluding_trace_time_ms` |  22,875 |  22,875 |  22,875 |  22,875 |
+| `main_trace_commit_time_ms` |  6,866 |  6,866 |  6,866 |  6,866 |
+| `generate_perm_trace_time_ms` |  47 |  47 |  47 |  47 |
+| `perm_trace_commit_time_ms` |  4,394 |  4,394 |  4,394 |  4,394 |
+| `quotient_poly_compute_time_ms` |  578 |  578 |  578 |  578 |
+| `quotient_poly_commit_time_ms` |  8,401 |  8,401 |  8,401 |  8,401 |
+| `pcs_opening_time_ms ` |  2,572 |  2,572 |  2,572 |  2,572 |
+
+| halo2_outer |||||
+|:---|---:|---:|---:|---:|
+|metric|avg|sum|max|min|
+| `total_proof_time_ms ` |  49,824 |  49,824 |  49,824 |  49,824 |
+| `main_cells_used     ` |  62,800,919 |  62,800,919 |  62,800,919 |  62,800,919 |
+
+| halo2_wrapper |||||
+|:---|---:|---:|---:|---:|
+|metric|avg|sum|max|min|
+| `total_proof_time_ms ` |  35,697 |  35,697 |  35,697 |  35,697 |
+
+| agg_keygen |||||
+|:---|---:|---:|---:|---:|
+|metric|avg|sum|max|min|
+| `total_proof_time_ms ` |  11,729 |  23,458 |  23,011 |  447 |
+| `main_cells_used     ` |  43,773,649.50 |  87,547,299 |  86,881,383 |  665,916 |
+| `total_cycles        ` |  1,636,746 |  1,636,746 |  1,636,746 |  1,636,746 |
+| `execute_time_ms     ` |  104.50 |  209 |  209 |  0 |
+| `trace_gen_time_ms   ` |  173.50 |  347 |  319 |  28 |
+| `stark_prove_excluding_trace_time_ms` |  11,451 |  22,902 |  22,483 |  419 |
+| `main_trace_commit_time_ms` |  3,461 |  6,922 |  6,872 |  50 |
+| `generate_perm_trace_time_ms` |  31 |  62 |  52 |  10 |
+| `perm_trace_commit_time_ms` |  2,158.50 |  4,317 |  4,267 |  50 |
+| `quotient_poly_compute_time_ms` |  303.50 |  607 |  578 |  29 |
+| `quotient_poly_commit_time_ms` |  4,131.50 |  8,263 |  8,205 |  58 |
+| `pcs_opening_time_ms ` |  1,360 |  2,720 |  2,504 |  216 |
+
+
+
+<details>
+<summary>Detailed Metrics</summary>
+
+| air_name | block_number | quotient_deg | interactions | constraints |
+| --- | --- | --- | --- | --- |
+| AccessAdapterAir<16> | 21000000 | 2 | 5 | 12 | 
+| AccessAdapterAir<2> | 21000000 | 2 | 5 | 12 | 
+| AccessAdapterAir<32> | 21000000 | 2 | 5 | 12 | 
+| AccessAdapterAir<4> | 21000000 | 2 | 5 | 12 | 
+| AccessAdapterAir<8> | 21000000 | 2 | 5 | 12 | 
+| BitwiseOperationLookupAir<8> | 21000000 | 2 | 2 | 4 | 
+| KeccakVmAir | 21000000 | 2 | 321 | 4,513 | 
+| MemoryMerkleAir<8> | 21000000 | 2 | 4 | 39 | 
+| PersistentBoundaryAir<8> | 21000000 | 2 | 3 | 7 | 
+| PhantomAir | 21000000 | 2 | 3 | 5 | 
+| Poseidon2PeripheryAir<BabyBearParameters>, 1> | 21000000 | 2 | 1 | 286 | 
+| ProgramAir | 21000000 | 1 | 1 | 4 | 
+| RangeTupleCheckerAir<2> | 21000000 | 1 | 1 | 4 | 
+| Rv32HintStoreAir | 21000000 | 2 | 18 | 28 | 
+| Sha256VmAir | 21000000 | 2 | 50 | 663 | 
+| VariableRangeCheckerAir | 21000000 | 1 | 1 | 4 | 
+| VmAirWrapper<Rv32BaseAluAdapterAir, BaseAluCoreAir<4, 8> | 21000000 | 2 | 20 | 37 | 
+| VmAirWrapper<Rv32BaseAluAdapterAir, LessThanCoreAir<4, 8> | 21000000 | 2 | 18 | 40 | 
+| VmAirWrapper<Rv32BaseAluAdapterAir, ShiftCoreAir<4, 8> | 21000000 | 2 | 24 | 91 | 
+| VmAirWrapper<Rv32BranchAdapterAir, BranchEqualCoreAir<4> | 21000000 | 2 | 11 | 20 | 
+| VmAirWrapper<Rv32BranchAdapterAir, BranchLessThanCoreAir<4, 8> | 21000000 | 2 | 13 | 35 | 
+| VmAirWrapper<Rv32CondRdWriteAdapterAir, Rv32JalLuiCoreAir> | 21000000 | 2 | 10 | 18 | 
+| VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, BaseAluCoreAir<32, 8> | 21000000 | 2 | 61 | 126 | 
+| VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, LessThanCoreAir<32, 8> | 21000000 | 2 | 31 | 129 | 
+| VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, MultiplicationCoreAir<32, 8> | 21000000 | 2 | 61 | 57 | 
+| VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, ShiftCoreAir<32, 8> | 21000000 | 2 | 79 | 2,161 | 
+| VmAirWrapper<Rv32HeapBranchAdapterAir<2, 32>, BranchEqualCoreAir<32> | 21000000 | 2 | 20 | 55 | 
+| VmAirWrapper<Rv32HeapBranchAdapterAir<2, 32>, BranchLessThanCoreAir<32, 8> | 21000000 | 2 | 22 | 126 | 
+| VmAirWrapper<Rv32IsEqualModAdapterAir<2, 1, 32, 32>, ModularIsEqualCoreAir<32, 4, 8> | 21000000 | 2 | 25 | 225 | 
+| VmAirWrapper<Rv32IsEqualModAdapterAir<2, 3, 16, 48>, ModularIsEqualCoreAir<48, 4, 8> | 21000000 | 2 | 41 | 333 | 
+| VmAirWrapper<Rv32JalrAdapterAir, Rv32JalrCoreAir> | 21000000 | 2 | 16 | 20 | 
+| VmAirWrapper<Rv32LoadStoreAdapterAir, LoadSignExtendCoreAir<4, 8> | 21000000 | 2 | 18 | 33 | 
+| VmAirWrapper<Rv32LoadStoreAdapterAir, LoadStoreCoreAir<4> | 21000000 | 2 | 17 | 40 | 
+| VmAirWrapper<Rv32MultAdapterAir, DivRemCoreAir<4, 8> | 21000000 | 2 | 25 | 84 | 
+| VmAirWrapper<Rv32MultAdapterAir, MulHCoreAir<4, 8> | 21000000 | 2 | 24 | 31 | 
+| VmAirWrapper<Rv32MultAdapterAir, MultiplicationCoreAir<4, 8> | 21000000 | 2 | 19 | 19 | 
+| VmAirWrapper<Rv32RdWriteAdapterAir, Rv32AuipcCoreAir> | 21000000 | 2 | 12 | 14 | 
+| VmAirWrapper<Rv32VecHeapAdapterAir<1, 2, 2, 32, 32>, FieldExpressionCoreAir> | 21000000 | 2 | 415 | 480 | 
+| VmAirWrapper<Rv32VecHeapAdapterAir<1, 6, 6, 16, 16>, FieldExpressionCoreAir> | 21000000 | 2 | 832 | 921 | 
+| VmAirWrapper<Rv32VecHeapAdapterAir<2, 1, 1, 32, 32>, FieldExpressionCoreAir> | 21000000 | 2 | 158 | 190 | 
+| VmAirWrapper<Rv32VecHeapAdapterAir<2, 2, 2, 32, 32>, FieldExpressionCoreAir> | 21000000 | 2 | 428 | 457 | 
+| VmAirWrapper<Rv32VecHeapAdapterAir<2, 3, 3, 16, 16>, FieldExpressionCoreAir> | 21000000 | 2 | 246 | 288 | 
+| VmAirWrapper<Rv32VecHeapAdapterAir<2, 6, 6, 16, 16>, FieldExpressionCoreAir> | 21000000 | 2 | 668 | 701 | 
+| VmConnectorAir | 21000000 | 2 | 5 | 11 | 
+
+| block_number | execute_time_ms |
+| --- | --- |
+| 21000000 | 209 | 
+
+| group | air_name | block_number | rows | quotient_deg | prep_cols | perm_cols | main_cols | interactions | constraints | cells |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| agg_keygen | AccessAdapterAir<16> | 21000000 |  | 2 |  |  |  | 5 | 12 |  | 
+| agg_keygen | AccessAdapterAir<2> | 21000000 | 524,288 | 8 |  | 16 | 11 | 5 | 12 | 14,155,776 | 
+| agg_keygen | AccessAdapterAir<32> | 21000000 |  | 2 |  |  |  | 5 | 12 |  | 
+| agg_keygen | AccessAdapterAir<4> | 21000000 | 262,144 | 8 |  | 16 | 13 | 5 | 12 | 7,602,176 | 
+| agg_keygen | AccessAdapterAir<8> | 21000000 | 8,192 | 8 |  | 16 | 17 | 5 | 12 | 270,336 | 
+| agg_keygen | BitwiseOperationLookupAir<8> | 21000000 |  | 2 |  |  |  | 2 | 4 |  | 
+| agg_keygen | FriReducedOpeningAir | 21000000 | 524,288 | 8 |  | 84 | 27 | 39 | 71 | 58,195,968 | 
+| agg_keygen | JalRangeCheckAir | 21000000 | 65,536 | 8 |  | 28 | 12 | 9 | 14 | 2,621,440 | 
+| agg_keygen | MemoryMerkleAir<8> | 21000000 |  | 2 |  |  |  | 4 | 39 |  | 
+| agg_keygen | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 65,536 | 8 |  | 312 | 398 | 136 | 572 | 46,530,560 | 
+| agg_keygen | PersistentBoundaryAir<8> | 21000000 |  | 2 |  |  |  | 3 | 7 |  | 
+| agg_keygen | PhantomAir | 21000000 | 32,768 | 4 |  | 12 | 6 | 3 | 5 | 589,824 | 
+| agg_keygen | Poseidon2PeripheryAir<BabyBearParameters>, 1> | 21000000 |  | 2 |  |  |  | 1 | 286 |  | 
+| agg_keygen | ProgramAir | 21000000 | 131,072 | 1 |  | 8 | 10 | 1 | 4 | 2,359,296 | 
+| agg_keygen | RangeTupleCheckerAir<2> | 21000000 |  | 1 |  |  |  | 1 | 4 |  | 
+| agg_keygen | Rv32HintStoreAir | 21000000 |  | 2 |  |  |  | 18 | 28 |  | 
+| agg_keygen | VariableRangeCheckerAir | 21000000 | 262,144 | 1 | 2 | 8 | 1 | 1 | 4 | 2,359,296 | 
+| agg_keygen | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 1,048,576 | 8 |  | 36 | 29 | 15 | 27 | 68,157,440 | 
+| agg_keygen | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 262,144 | 8 |  | 28 | 23 | 11 | 25 | 13,369,344 | 
+| agg_keygen | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 64 | 8 |  | 28 | 27 | 11 | 30 | 3,520 | 
+| agg_keygen | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 524,288 | 8 |  | 40 | 21 | 15 | 20 | 31,981,568 | 
+| agg_keygen | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 131,072 | 8 |  | 40 | 27 | 15 | 20 | 8,781,824 | 
+| agg_keygen | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 131,072 | 8 |  | 36 | 38 | 15 | 27 | 9,699,328 | 
+| agg_keygen | VmAirWrapper<Rv32BaseAluAdapterAir, BaseAluCoreAir<4, 8> | 21000000 |  | 2 |  |  |  | 20 | 37 |  | 
+| agg_keygen | VmAirWrapper<Rv32BaseAluAdapterAir, LessThanCoreAir<4, 8> | 21000000 |  | 2 |  |  |  | 18 | 40 |  | 
+| agg_keygen | VmAirWrapper<Rv32BaseAluAdapterAir, ShiftCoreAir<4, 8> | 21000000 |  | 2 |  |  |  | 24 | 91 |  | 
+| agg_keygen | VmAirWrapper<Rv32BranchAdapterAir, BranchEqualCoreAir<4> | 21000000 |  | 2 |  |  |  | 11 | 20 |  | 
+| agg_keygen | VmAirWrapper<Rv32BranchAdapterAir, BranchLessThanCoreAir<4, 8> | 21000000 |  | 2 |  |  |  | 13 | 35 |  | 
+| agg_keygen | VmAirWrapper<Rv32CondRdWriteAdapterAir, Rv32JalLuiCoreAir> | 21000000 |  | 2 |  |  |  | 10 | 18 |  | 
+| agg_keygen | VmAirWrapper<Rv32JalrAdapterAir, Rv32JalrCoreAir> | 21000000 |  | 2 |  |  |  | 16 | 20 |  | 
+| agg_keygen | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadSignExtendCoreAir<4, 8> | 21000000 |  | 2 |  |  |  | 18 | 33 |  | 
+| agg_keygen | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadStoreCoreAir<4> | 21000000 |  | 2 |  |  |  | 17 | 40 |  | 
+| agg_keygen | VmAirWrapper<Rv32MultAdapterAir, DivRemCoreAir<4, 8> | 21000000 |  | 2 |  |  |  | 25 | 84 |  | 
+| agg_keygen | VmAirWrapper<Rv32MultAdapterAir, MulHCoreAir<4, 8> | 21000000 |  | 2 |  |  |  | 24 | 31 |  | 
+| agg_keygen | VmAirWrapper<Rv32MultAdapterAir, MultiplicationCoreAir<4, 8> | 21000000 |  | 2 |  |  |  | 19 | 19 |  | 
+| agg_keygen | VmAirWrapper<Rv32RdWriteAdapterAir, Rv32AuipcCoreAir> | 21000000 |  | 2 |  |  |  | 12 | 14 |  | 
+| agg_keygen | VmConnectorAir | 21000000 | 2 | 8 | 1 | 16 | 5 | 5 | 11 | 42 | 
+| agg_keygen | VolatileBoundaryAir | 21000000 | 131,072 | 8 |  | 20 | 12 | 7 | 19 | 4,194,304 | 
+
+| group | air_name | block_number | idx | rows | prep_cols | perm_cols | main_cols | cells |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| internal.0 | AccessAdapterAir<2> | 21000000 | 0 | 524,288 |  | 12 | 11 | 12,058,624 | 
+| internal.0 | AccessAdapterAir<2> | 21000000 | 1 | 524,288 |  | 12 | 11 | 12,058,624 | 
+| internal.0 | AccessAdapterAir<2> | 21000000 | 2 | 1,048,576 |  | 12 | 11 | 24,117,248 | 
+| internal.0 | AccessAdapterAir<2> | 21000000 | 3 | 1,048,576 |  | 12 | 11 | 24,117,248 | 
+| internal.0 | AccessAdapterAir<2> | 21000000 | 4 | 524,288 |  | 12 | 11 | 12,058,624 | 
+| internal.0 | AccessAdapterAir<2> | 21000000 | 5 | 524,288 |  | 12 | 11 | 12,058,624 | 
+| internal.0 | AccessAdapterAir<4> | 21000000 | 0 | 262,144 |  | 12 | 13 | 6,553,600 | 
+| internal.0 | AccessAdapterAir<4> | 21000000 | 1 | 262,144 |  | 12 | 13 | 6,553,600 | 
+| internal.0 | AccessAdapterAir<4> | 21000000 | 2 | 262,144 |  | 12 | 13 | 6,553,600 | 
+| internal.0 | AccessAdapterAir<4> | 21000000 | 3 | 262,144 |  | 12 | 13 | 6,553,600 | 
+| internal.0 | AccessAdapterAir<4> | 21000000 | 4 | 262,144 |  | 12 | 13 | 6,553,600 | 
+| internal.0 | AccessAdapterAir<4> | 21000000 | 5 | 262,144 |  | 12 | 13 | 6,553,600 | 
+| internal.0 | AccessAdapterAir<8> | 21000000 | 0 | 8,192 |  | 12 | 17 | 237,568 | 
+| internal.0 | AccessAdapterAir<8> | 21000000 | 1 | 8,192 |  | 12 | 17 | 237,568 | 
+| internal.0 | AccessAdapterAir<8> | 21000000 | 2 | 8,192 |  | 12 | 17 | 237,568 | 
+| internal.0 | AccessAdapterAir<8> | 21000000 | 3 | 8,192 |  | 12 | 17 | 237,568 | 
+| internal.0 | AccessAdapterAir<8> | 21000000 | 4 | 8,192 |  | 12 | 17 | 237,568 | 
+| internal.0 | AccessAdapterAir<8> | 21000000 | 5 | 4,096 |  | 12 | 17 | 118,784 | 
+| internal.0 | FriReducedOpeningAir | 21000000 | 0 | 1,048,576 |  | 44 | 27 | 74,448,896 | 
+| internal.0 | FriReducedOpeningAir | 21000000 | 1 | 1,048,576 |  | 44 | 27 | 74,448,896 | 
+| internal.0 | FriReducedOpeningAir | 21000000 | 2 | 1,048,576 |  | 44 | 27 | 74,448,896 | 
+| internal.0 | FriReducedOpeningAir | 21000000 | 3 | 1,048,576 |  | 44 | 27 | 74,448,896 | 
+| internal.0 | FriReducedOpeningAir | 21000000 | 4 | 1,048,576 |  | 44 | 27 | 74,448,896 | 
+| internal.0 | FriReducedOpeningAir | 21000000 | 5 | 524,288 |  | 44 | 27 | 37,224,448 | 
+| internal.0 | JalRangeCheckAir | 21000000 | 0 | 131,072 |  | 16 | 12 | 3,670,016 | 
+| internal.0 | JalRangeCheckAir | 21000000 | 1 | 131,072 |  | 16 | 12 | 3,670,016 | 
+| internal.0 | JalRangeCheckAir | 21000000 | 2 | 131,072 |  | 16 | 12 | 3,670,016 | 
+| internal.0 | JalRangeCheckAir | 21000000 | 3 | 131,072 |  | 16 | 12 | 3,670,016 | 
+| internal.0 | JalRangeCheckAir | 21000000 | 4 | 131,072 |  | 16 | 12 | 3,670,016 | 
+| internal.0 | JalRangeCheckAir | 21000000 | 5 | 65,536 |  | 16 | 12 | 1,835,008 | 
+| internal.0 | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 0 | 131,072 |  | 160 | 398 | 73,138,176 | 
+| internal.0 | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 1 | 131,072 |  | 160 | 398 | 73,138,176 | 
+| internal.0 | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 2 | 262,144 |  | 160 | 398 | 146,276,352 | 
+| internal.0 | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 3 | 262,144 |  | 160 | 398 | 146,276,352 | 
+| internal.0 | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 4 | 131,072 |  | 160 | 398 | 73,138,176 | 
+| internal.0 | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 5 | 65,536 |  | 160 | 398 | 36,569,088 | 
+| internal.0 | PhantomAir | 21000000 | 0 | 65,536 |  | 8 | 6 | 917,504 | 
+| internal.0 | PhantomAir | 21000000 | 1 | 32,768 |  | 8 | 6 | 458,752 | 
+| internal.0 | PhantomAir | 21000000 | 2 | 65,536 |  | 8 | 6 | 917,504 | 
+| internal.0 | PhantomAir | 21000000 | 3 | 65,536 |  | 8 | 6 | 917,504 | 
+| internal.0 | PhantomAir | 21000000 | 4 | 65,536 |  | 8 | 6 | 917,504 | 
+| internal.0 | PhantomAir | 21000000 | 5 | 16,384 |  | 8 | 6 | 229,376 | 
+| internal.0 | ProgramAir | 21000000 | 0 | 131,072 |  | 8 | 10 | 2,359,296 | 
+| internal.0 | ProgramAir | 21000000 | 1 | 131,072 |  | 8 | 10 | 2,359,296 | 
+| internal.0 | ProgramAir | 21000000 | 2 | 131,072 |  | 8 | 10 | 2,359,296 | 
+| internal.0 | ProgramAir | 21000000 | 3 | 131,072 |  | 8 | 10 | 2,359,296 | 
+| internal.0 | ProgramAir | 21000000 | 4 | 131,072 |  | 8 | 10 | 2,359,296 | 
+| internal.0 | ProgramAir | 21000000 | 5 | 131,072 |  | 8 | 10 | 2,359,296 | 
+| internal.0 | VariableRangeCheckerAir | 21000000 | 0 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| internal.0 | VariableRangeCheckerAir | 21000000 | 1 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| internal.0 | VariableRangeCheckerAir | 21000000 | 2 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| internal.0 | VariableRangeCheckerAir | 21000000 | 3 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| internal.0 | VariableRangeCheckerAir | 21000000 | 4 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| internal.0 | VariableRangeCheckerAir | 21000000 | 5 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| internal.0 | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 0 | 2,097,152 |  | 20 | 29 | 102,760,448 | 
+| internal.0 | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 1 | 2,097,152 |  | 20 | 29 | 102,760,448 | 
+| internal.0 | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 2 | 2,097,152 |  | 20 | 29 | 102,760,448 | 
+| internal.0 | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 3 | 2,097,152 |  | 20 | 29 | 102,760,448 | 
+| internal.0 | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 4 | 2,097,152 |  | 20 | 29 | 102,760,448 | 
+| internal.0 | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 5 | 1,048,576 |  | 20 | 29 | 51,380,224 | 
+| internal.0 | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 0 | 262,144 |  | 16 | 23 | 10,223,616 | 
+| internal.0 | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 1 | 262,144 |  | 16 | 23 | 10,223,616 | 
+| internal.0 | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 2 | 262,144 |  | 16 | 23 | 10,223,616 | 
+| internal.0 | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 3 | 262,144 |  | 16 | 23 | 10,223,616 | 
+| internal.0 | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 4 | 262,144 |  | 16 | 23 | 10,223,616 | 
+| internal.0 | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 5 | 131,072 |  | 16 | 23 | 5,111,808 | 
+| internal.0 | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 0 | 64 |  | 16 | 23 | 2,496 | 
+| internal.0 | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 1 | 64 |  | 16 | 23 | 2,496 | 
+| internal.0 | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 2 | 64 |  | 16 | 23 | 2,496 | 
+| internal.0 | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 3 | 64 |  | 16 | 23 | 2,496 | 
+| internal.0 | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 4 | 64 |  | 16 | 23 | 2,496 | 
+| internal.0 | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 5 | 64 |  | 16 | 23 | 2,496 | 
+| internal.0 | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 0 | 524,288 |  | 24 | 21 | 23,592,960 | 
+| internal.0 | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 1 | 524,288 |  | 24 | 21 | 23,592,960 | 
+| internal.0 | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 2 | 524,288 |  | 24 | 21 | 23,592,960 | 
+| internal.0 | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 3 | 524,288 |  | 24 | 21 | 23,592,960 | 
+| internal.0 | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 4 | 524,288 |  | 24 | 21 | 23,592,960 | 
+| internal.0 | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 5 | 262,144 |  | 24 | 21 | 11,796,480 | 
+| internal.0 | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 0 | 262,144 |  | 24 | 27 | 13,369,344 | 
+| internal.0 | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 1 | 262,144 |  | 24 | 27 | 13,369,344 | 
+| internal.0 | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 2 | 262,144 |  | 24 | 27 | 13,369,344 | 
+| internal.0 | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 3 | 262,144 |  | 24 | 27 | 13,369,344 | 
+| internal.0 | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 4 | 262,144 |  | 24 | 27 | 13,369,344 | 
+| internal.0 | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 5 | 131,072 |  | 24 | 27 | 6,684,672 | 
+| internal.0 | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 0 | 262,144 |  | 20 | 38 | 15,204,352 | 
+| internal.0 | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 1 | 262,144 |  | 20 | 38 | 15,204,352 | 
+| internal.0 | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 2 | 262,144 |  | 20 | 38 | 15,204,352 | 
+| internal.0 | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 3 | 262,144 |  | 20 | 38 | 15,204,352 | 
+| internal.0 | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 4 | 262,144 |  | 20 | 38 | 15,204,352 | 
+| internal.0 | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 5 | 131,072 |  | 20 | 38 | 7,602,176 | 
+| internal.0 | VmConnectorAir | 21000000 | 0 | 2 | 1 | 12 | 5 | 34 | 
+| internal.0 | VmConnectorAir | 21000000 | 1 | 2 | 1 | 12 | 5 | 34 | 
+| internal.0 | VmConnectorAir | 21000000 | 2 | 2 | 1 | 12 | 5 | 34 | 
+| internal.0 | VmConnectorAir | 21000000 | 3 | 2 | 1 | 12 | 5 | 34 | 
+| internal.0 | VmConnectorAir | 21000000 | 4 | 2 | 1 | 12 | 5 | 34 | 
+| internal.0 | VmConnectorAir | 21000000 | 5 | 2 | 1 | 12 | 5 | 34 | 
+| internal.0 | VolatileBoundaryAir | 21000000 | 0 | 262,144 |  | 12 | 12 | 6,291,456 | 
+| internal.0 | VolatileBoundaryAir | 21000000 | 1 | 262,144 |  | 12 | 12 | 6,291,456 | 
+| internal.0 | VolatileBoundaryAir | 21000000 | 2 | 262,144 |  | 12 | 12 | 6,291,456 | 
+| internal.0 | VolatileBoundaryAir | 21000000 | 3 | 262,144 |  | 12 | 12 | 6,291,456 | 
+| internal.0 | VolatileBoundaryAir | 21000000 | 4 | 262,144 |  | 12 | 12 | 6,291,456 | 
+| internal.0 | VolatileBoundaryAir | 21000000 | 5 | 262,144 |  | 12 | 12 | 6,291,456 | 
+| internal.1 | AccessAdapterAir<2> | 21000000 | 6 | 524,288 |  | 12 | 11 | 12,058,624 | 
+| internal.1 | AccessAdapterAir<2> | 21000000 | 7 | 524,288 |  | 12 | 11 | 12,058,624 | 
+| internal.1 | AccessAdapterAir<2> | 21000000 | 8 | 524,288 |  | 12 | 11 | 12,058,624 | 
+| internal.1 | AccessAdapterAir<4> | 21000000 | 6 | 262,144 |  | 12 | 13 | 6,553,600 | 
+| internal.1 | AccessAdapterAir<4> | 21000000 | 7 | 262,144 |  | 12 | 13 | 6,553,600 | 
+| internal.1 | AccessAdapterAir<4> | 21000000 | 8 | 262,144 |  | 12 | 13 | 6,553,600 | 
+| internal.1 | AccessAdapterAir<8> | 21000000 | 6 | 8,192 |  | 12 | 17 | 237,568 | 
+| internal.1 | AccessAdapterAir<8> | 21000000 | 7 | 8,192 |  | 12 | 17 | 237,568 | 
+| internal.1 | AccessAdapterAir<8> | 21000000 | 8 | 8,192 |  | 12 | 17 | 237,568 | 
+| internal.1 | FriReducedOpeningAir | 21000000 | 6 | 262,144 |  | 44 | 27 | 18,612,224 | 
+| internal.1 | FriReducedOpeningAir | 21000000 | 7 | 262,144 |  | 44 | 27 | 18,612,224 | 
+| internal.1 | FriReducedOpeningAir | 21000000 | 8 | 262,144 |  | 44 | 27 | 18,612,224 | 
+| internal.1 | JalRangeCheckAir | 21000000 | 6 | 65,536 |  | 16 | 12 | 1,835,008 | 
+| internal.1 | JalRangeCheckAir | 21000000 | 7 | 65,536 |  | 16 | 12 | 1,835,008 | 
+| internal.1 | JalRangeCheckAir | 21000000 | 8 | 65,536 |  | 16 | 12 | 1,835,008 | 
+| internal.1 | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 6 | 65,536 |  | 160 | 398 | 36,569,088 | 
+| internal.1 | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 7 | 65,536 |  | 160 | 398 | 36,569,088 | 
+| internal.1 | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 8 | 65,536 |  | 160 | 398 | 36,569,088 | 
+| internal.1 | PhantomAir | 21000000 | 6 | 16,384 |  | 8 | 6 | 229,376 | 
+| internal.1 | PhantomAir | 21000000 | 7 | 16,384 |  | 8 | 6 | 229,376 | 
+| internal.1 | PhantomAir | 21000000 | 8 | 16,384 |  | 8 | 6 | 229,376 | 
+| internal.1 | ProgramAir | 21000000 | 6 | 131,072 |  | 8 | 10 | 2,359,296 | 
+| internal.1 | ProgramAir | 21000000 | 7 | 131,072 |  | 8 | 10 | 2,359,296 | 
+| internal.1 | ProgramAir | 21000000 | 8 | 131,072 |  | 8 | 10 | 2,359,296 | 
+| internal.1 | VariableRangeCheckerAir | 21000000 | 6 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| internal.1 | VariableRangeCheckerAir | 21000000 | 7 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| internal.1 | VariableRangeCheckerAir | 21000000 | 8 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| internal.1 | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 6 | 1,048,576 |  | 20 | 29 | 51,380,224 | 
+| internal.1 | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 7 | 1,048,576 |  | 20 | 29 | 51,380,224 | 
+| internal.1 | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 8 | 1,048,576 |  | 20 | 29 | 51,380,224 | 
+| internal.1 | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 6 | 262,144 |  | 16 | 23 | 10,223,616 | 
+| internal.1 | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 7 | 262,144 |  | 16 | 23 | 10,223,616 | 
+| internal.1 | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 8 | 262,144 |  | 16 | 23 | 10,223,616 | 
+| internal.1 | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 6 | 64 |  | 16 | 23 | 2,496 | 
+| internal.1 | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 7 | 64 |  | 16 | 23 | 2,496 | 
+| internal.1 | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 8 | 64 |  | 16 | 23 | 2,496 | 
+| internal.1 | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 6 | 524,288 |  | 24 | 21 | 23,592,960 | 
+| internal.1 | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 7 | 524,288 |  | 24 | 21 | 23,592,960 | 
+| internal.1 | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 8 | 524,288 |  | 24 | 21 | 23,592,960 | 
+| internal.1 | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 6 | 131,072 |  | 24 | 27 | 6,684,672 | 
+| internal.1 | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 7 | 131,072 |  | 24 | 27 | 6,684,672 | 
+| internal.1 | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 8 | 131,072 |  | 24 | 27 | 6,684,672 | 
+| internal.1 | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 6 | 131,072 |  | 20 | 38 | 7,602,176 | 
+| internal.1 | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 7 | 131,072 |  | 20 | 38 | 7,602,176 | 
+| internal.1 | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 8 | 131,072 |  | 20 | 38 | 7,602,176 | 
+| internal.1 | VmConnectorAir | 21000000 | 6 | 2 | 1 | 12 | 5 | 34 | 
+| internal.1 | VmConnectorAir | 21000000 | 7 | 2 | 1 | 12 | 5 | 34 | 
+| internal.1 | VmConnectorAir | 21000000 | 8 | 2 | 1 | 12 | 5 | 34 | 
+| internal.1 | VolatileBoundaryAir | 21000000 | 6 | 131,072 |  | 12 | 12 | 3,145,728 | 
+| internal.1 | VolatileBoundaryAir | 21000000 | 7 | 131,072 |  | 12 | 12 | 3,145,728 | 
+| internal.1 | VolatileBoundaryAir | 21000000 | 8 | 262,144 |  | 12 | 12 | 6,291,456 | 
+| internal.2 | AccessAdapterAir<2> | 21000000 | 10 | 262,144 |  | 12 | 11 | 6,029,312 | 
+| internal.2 | AccessAdapterAir<2> | 21000000 | 9 | 524,288 |  | 12 | 11 | 12,058,624 | 
+| internal.2 | AccessAdapterAir<4> | 21000000 | 10 | 131,072 |  | 12 | 13 | 3,276,800 | 
+| internal.2 | AccessAdapterAir<4> | 21000000 | 9 | 262,144 |  | 12 | 13 | 6,553,600 | 
+| internal.2 | AccessAdapterAir<8> | 21000000 | 10 | 4,096 |  | 12 | 17 | 118,784 | 
+| internal.2 | AccessAdapterAir<8> | 21000000 | 9 | 8,192 |  | 12 | 17 | 237,568 | 
+| internal.2 | FriReducedOpeningAir | 21000000 | 10 | 131,072 |  | 44 | 27 | 9,306,112 | 
+| internal.2 | FriReducedOpeningAir | 21000000 | 9 | 262,144 |  | 44 | 27 | 18,612,224 | 
+| internal.2 | JalRangeCheckAir | 21000000 | 10 | 32,768 |  | 16 | 12 | 917,504 | 
+| internal.2 | JalRangeCheckAir | 21000000 | 9 | 65,536 |  | 16 | 12 | 1,835,008 | 
+| internal.2 | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 10 | 32,768 |  | 160 | 398 | 18,284,544 | 
+| internal.2 | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 9 | 65,536 |  | 160 | 398 | 36,569,088 | 
+| internal.2 | PhantomAir | 21000000 | 10 | 8,192 |  | 8 | 6 | 114,688 | 
+| internal.2 | PhantomAir | 21000000 | 9 | 16,384 |  | 8 | 6 | 229,376 | 
+| internal.2 | ProgramAir | 21000000 | 10 | 131,072 |  | 8 | 10 | 2,359,296 | 
+| internal.2 | ProgramAir | 21000000 | 9 | 131,072 |  | 8 | 10 | 2,359,296 | 
+| internal.2 | VariableRangeCheckerAir | 21000000 | 10 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| internal.2 | VariableRangeCheckerAir | 21000000 | 9 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| internal.2 | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 10 | 524,288 |  | 20 | 29 | 25,690,112 | 
+| internal.2 | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 9 | 1,048,576 |  | 20 | 29 | 51,380,224 | 
+| internal.2 | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 10 | 131,072 |  | 16 | 23 | 5,111,808 | 
+| internal.2 | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 9 | 262,144 |  | 16 | 23 | 10,223,616 | 
+| internal.2 | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 10 | 64 |  | 16 | 23 | 2,496 | 
+| internal.2 | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 9 | 64 |  | 16 | 23 | 2,496 | 
+| internal.2 | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 10 | 262,144 |  | 24 | 21 | 11,796,480 | 
+| internal.2 | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 9 | 524,288 |  | 24 | 21 | 23,592,960 | 
+| internal.2 | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 10 | 65,536 |  | 24 | 27 | 3,342,336 | 
+| internal.2 | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 9 | 131,072 |  | 24 | 27 | 6,684,672 | 
+| internal.2 | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 10 | 65,536 |  | 20 | 38 | 3,801,088 | 
+| internal.2 | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 9 | 131,072 |  | 20 | 38 | 7,602,176 | 
+| internal.2 | VmConnectorAir | 21000000 | 10 | 2 | 1 | 12 | 5 | 34 | 
+| internal.2 | VmConnectorAir | 21000000 | 9 | 2 | 1 | 12 | 5 | 34 | 
+| internal.2 | VolatileBoundaryAir | 21000000 | 10 | 131,072 |  | 12 | 12 | 3,145,728 | 
+| internal.2 | VolatileBoundaryAir | 21000000 | 9 | 131,072 |  | 12 | 12 | 3,145,728 | 
+| internal.3 | AccessAdapterAir<2> | 21000000 | 11 | 524,288 |  | 12 | 11 | 12,058,624 | 
+| internal.3 | AccessAdapterAir<4> | 21000000 | 11 | 262,144 |  | 12 | 13 | 6,553,600 | 
+| internal.3 | AccessAdapterAir<8> | 21000000 | 11 | 8,192 |  | 12 | 17 | 237,568 | 
+| internal.3 | FriReducedOpeningAir | 21000000 | 11 | 262,144 |  | 44 | 27 | 18,612,224 | 
+| internal.3 | JalRangeCheckAir | 21000000 | 11 | 65,536 |  | 16 | 12 | 1,835,008 | 
+| internal.3 | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 11 | 65,536 |  | 160 | 398 | 36,569,088 | 
+| internal.3 | PhantomAir | 21000000 | 11 | 16,384 |  | 8 | 6 | 229,376 | 
+| internal.3 | ProgramAir | 21000000 | 11 | 131,072 |  | 8 | 10 | 2,359,296 | 
+| internal.3 | VariableRangeCheckerAir | 21000000 | 11 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| internal.3 | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 11 | 1,048,576 |  | 20 | 29 | 51,380,224 | 
+| internal.3 | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 11 | 262,144 |  | 16 | 23 | 10,223,616 | 
+| internal.3 | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 11 | 64 |  | 16 | 23 | 2,496 | 
+| internal.3 | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 11 | 524,288 |  | 24 | 21 | 23,592,960 | 
+| internal.3 | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 11 | 131,072 |  | 24 | 27 | 6,684,672 | 
+| internal.3 | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 11 | 131,072 |  | 20 | 38 | 7,602,176 | 
+| internal.3 | VmConnectorAir | 21000000 | 11 | 2 | 1 | 12 | 5 | 34 | 
+| internal.3 | VolatileBoundaryAir | 21000000 | 11 | 131,072 |  | 12 | 12 | 3,145,728 | 
+| leaf | AccessAdapterAir<2> | 21000000 | 0 | 1,048,576 |  | 16 | 11 | 28,311,552 | 
+| leaf | AccessAdapterAir<2> | 21000000 | 1 | 1,048,576 |  | 16 | 11 | 28,311,552 | 
+| leaf | AccessAdapterAir<2> | 21000000 | 10 | 1,048,576 |  | 16 | 11 | 28,311,552 | 
+| leaf | AccessAdapterAir<2> | 21000000 | 2 | 1,048,576 |  | 16 | 11 | 28,311,552 | 
+| leaf | AccessAdapterAir<2> | 21000000 | 3 | 1,048,576 |  | 16 | 11 | 28,311,552 | 
+| leaf | AccessAdapterAir<2> | 21000000 | 4 | 2,097,152 |  | 16 | 11 | 56,623,104 | 
+| leaf | AccessAdapterAir<2> | 21000000 | 5 | 2,097,152 |  | 16 | 11 | 56,623,104 | 
+| leaf | AccessAdapterAir<2> | 21000000 | 6 | 2,097,152 |  | 16 | 11 | 56,623,104 | 
+| leaf | AccessAdapterAir<2> | 21000000 | 7 | 2,097,152 |  | 16 | 11 | 56,623,104 | 
+| leaf | AccessAdapterAir<2> | 21000000 | 8 | 2,097,152 |  | 16 | 11 | 56,623,104 | 
+| leaf | AccessAdapterAir<2> | 21000000 | 9 | 1,048,576 |  | 16 | 11 | 28,311,552 | 
+| leaf | AccessAdapterAir<4> | 21000000 | 0 | 524,288 |  | 16 | 13 | 15,204,352 | 
+| leaf | AccessAdapterAir<4> | 21000000 | 1 | 524,288 |  | 16 | 13 | 15,204,352 | 
+| leaf | AccessAdapterAir<4> | 21000000 | 10 | 524,288 |  | 16 | 13 | 15,204,352 | 
+| leaf | AccessAdapterAir<4> | 21000000 | 2 | 524,288 |  | 16 | 13 | 15,204,352 | 
+| leaf | AccessAdapterAir<4> | 21000000 | 3 | 524,288 |  | 16 | 13 | 15,204,352 | 
+| leaf | AccessAdapterAir<4> | 21000000 | 4 | 1,048,576 |  | 16 | 13 | 30,408,704 | 
+| leaf | AccessAdapterAir<4> | 21000000 | 5 | 1,048,576 |  | 16 | 13 | 30,408,704 | 
+| leaf | AccessAdapterAir<4> | 21000000 | 6 | 1,048,576 |  | 16 | 13 | 30,408,704 | 
+| leaf | AccessAdapterAir<4> | 21000000 | 7 | 1,048,576 |  | 16 | 13 | 30,408,704 | 
+| leaf | AccessAdapterAir<4> | 21000000 | 8 | 1,048,576 |  | 16 | 13 | 30,408,704 | 
+| leaf | AccessAdapterAir<4> | 21000000 | 9 | 524,288 |  | 16 | 13 | 15,204,352 | 
+| leaf | AccessAdapterAir<8> | 21000000 | 0 | 32,768 |  | 16 | 17 | 1,081,344 | 
+| leaf | AccessAdapterAir<8> | 21000000 | 1 | 16,384 |  | 16 | 17 | 540,672 | 
+| leaf | AccessAdapterAir<8> | 21000000 | 10 | 16,384 |  | 16 | 17 | 540,672 | 
+| leaf | AccessAdapterAir<8> | 21000000 | 2 | 16,384 |  | 16 | 17 | 540,672 | 
+| leaf | AccessAdapterAir<8> | 21000000 | 3 | 16,384 |  | 16 | 17 | 540,672 | 
+| leaf | AccessAdapterAir<8> | 21000000 | 4 | 32,768 |  | 16 | 17 | 1,081,344 | 
+| leaf | AccessAdapterAir<8> | 21000000 | 5 | 32,768 |  | 16 | 17 | 1,081,344 | 
+| leaf | AccessAdapterAir<8> | 21000000 | 6 | 32,768 |  | 16 | 17 | 1,081,344 | 
+| leaf | AccessAdapterAir<8> | 21000000 | 7 | 32,768 |  | 16 | 17 | 1,081,344 | 
+| leaf | AccessAdapterAir<8> | 21000000 | 8 | 32,768 |  | 16 | 17 | 1,081,344 | 
+| leaf | AccessAdapterAir<8> | 21000000 | 9 | 16,384 |  | 16 | 17 | 540,672 | 
+| leaf | FriReducedOpeningAir | 21000000 | 0 | 4,194,304 |  | 84 | 27 | 465,567,744 | 
+| leaf | FriReducedOpeningAir | 21000000 | 1 | 2,097,152 |  | 84 | 27 | 232,783,872 | 
+| leaf | FriReducedOpeningAir | 21000000 | 10 | 2,097,152 |  | 84 | 27 | 232,783,872 | 
+| leaf | FriReducedOpeningAir | 21000000 | 2 | 2,097,152 |  | 84 | 27 | 232,783,872 | 
+| leaf | FriReducedOpeningAir | 21000000 | 3 | 2,097,152 |  | 84 | 27 | 232,783,872 | 
+| leaf | FriReducedOpeningAir | 21000000 | 4 | 4,194,304 |  | 84 | 27 | 465,567,744 | 
+| leaf | FriReducedOpeningAir | 21000000 | 5 | 4,194,304 |  | 84 | 27 | 465,567,744 | 
+| leaf | FriReducedOpeningAir | 21000000 | 6 | 4,194,304 |  | 84 | 27 | 465,567,744 | 
+| leaf | FriReducedOpeningAir | 21000000 | 7 | 4,194,304 |  | 84 | 27 | 465,567,744 | 
+| leaf | FriReducedOpeningAir | 21000000 | 8 | 4,194,304 |  | 84 | 27 | 465,567,744 | 
+| leaf | FriReducedOpeningAir | 21000000 | 9 | 2,097,152 |  | 84 | 27 | 232,783,872 | 
+| leaf | JalRangeCheckAir | 21000000 | 0 | 65,536 |  | 28 | 12 | 2,621,440 | 
+| leaf | JalRangeCheckAir | 21000000 | 1 | 65,536 |  | 28 | 12 | 2,621,440 | 
+| leaf | JalRangeCheckAir | 21000000 | 10 | 65,536 |  | 28 | 12 | 2,621,440 | 
+| leaf | JalRangeCheckAir | 21000000 | 2 | 65,536 |  | 28 | 12 | 2,621,440 | 
+| leaf | JalRangeCheckAir | 21000000 | 3 | 65,536 |  | 28 | 12 | 2,621,440 | 
+| leaf | JalRangeCheckAir | 21000000 | 4 | 65,536 |  | 28 | 12 | 2,621,440 | 
+| leaf | JalRangeCheckAir | 21000000 | 5 | 65,536 |  | 28 | 12 | 2,621,440 | 
+| leaf | JalRangeCheckAir | 21000000 | 6 | 65,536 |  | 28 | 12 | 2,621,440 | 
+| leaf | JalRangeCheckAir | 21000000 | 7 | 65,536 |  | 28 | 12 | 2,621,440 | 
+| leaf | JalRangeCheckAir | 21000000 | 8 | 65,536 |  | 28 | 12 | 2,621,440 | 
+| leaf | JalRangeCheckAir | 21000000 | 9 | 65,536 |  | 28 | 12 | 2,621,440 | 
+| leaf | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 0 | 262,144 |  | 312 | 398 | 186,122,240 | 
+| leaf | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 1 | 262,144 |  | 312 | 398 | 186,122,240 | 
+| leaf | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 10 | 131,072 |  | 312 | 398 | 93,061,120 | 
+| leaf | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 2 | 262,144 |  | 312 | 398 | 186,122,240 | 
+| leaf | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 3 | 131,072 |  | 312 | 398 | 93,061,120 | 
+| leaf | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 4 | 262,144 |  | 312 | 398 | 186,122,240 | 
+| leaf | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 5 | 262,144 |  | 312 | 398 | 186,122,240 | 
+| leaf | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 6 | 262,144 |  | 312 | 398 | 186,122,240 | 
+| leaf | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 7 | 262,144 |  | 312 | 398 | 186,122,240 | 
+| leaf | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 8 | 262,144 |  | 312 | 398 | 186,122,240 | 
+| leaf | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 9 | 262,144 |  | 312 | 398 | 186,122,240 | 
+| leaf | PhantomAir | 21000000 | 0 | 32,768 |  | 12 | 6 | 589,824 | 
+| leaf | PhantomAir | 21000000 | 1 | 32,768 |  | 12 | 6 | 589,824 | 
+| leaf | PhantomAir | 21000000 | 10 | 32,768 |  | 12 | 6 | 589,824 | 
+| leaf | PhantomAir | 21000000 | 2 | 32,768 |  | 12 | 6 | 589,824 | 
+| leaf | PhantomAir | 21000000 | 3 | 32,768 |  | 12 | 6 | 589,824 | 
+| leaf | PhantomAir | 21000000 | 4 | 32,768 |  | 12 | 6 | 589,824 | 
+| leaf | PhantomAir | 21000000 | 5 | 32,768 |  | 12 | 6 | 589,824 | 
+| leaf | PhantomAir | 21000000 | 6 | 32,768 |  | 12 | 6 | 589,824 | 
+| leaf | PhantomAir | 21000000 | 7 | 32,768 |  | 12 | 6 | 589,824 | 
+| leaf | PhantomAir | 21000000 | 8 | 32,768 |  | 12 | 6 | 589,824 | 
+| leaf | PhantomAir | 21000000 | 9 | 32,768 |  | 12 | 6 | 589,824 | 
+| leaf | ProgramAir | 21000000 | 0 | 2,097,152 |  | 8 | 10 | 37,748,736 | 
+| leaf | ProgramAir | 21000000 | 1 | 2,097,152 |  | 8 | 10 | 37,748,736 | 
+| leaf | ProgramAir | 21000000 | 10 | 2,097,152 |  | 8 | 10 | 37,748,736 | 
+| leaf | ProgramAir | 21000000 | 2 | 2,097,152 |  | 8 | 10 | 37,748,736 | 
+| leaf | ProgramAir | 21000000 | 3 | 2,097,152 |  | 8 | 10 | 37,748,736 | 
+| leaf | ProgramAir | 21000000 | 4 | 2,097,152 |  | 8 | 10 | 37,748,736 | 
+| leaf | ProgramAir | 21000000 | 5 | 2,097,152 |  | 8 | 10 | 37,748,736 | 
+| leaf | ProgramAir | 21000000 | 6 | 2,097,152 |  | 8 | 10 | 37,748,736 | 
+| leaf | ProgramAir | 21000000 | 7 | 2,097,152 |  | 8 | 10 | 37,748,736 | 
+| leaf | ProgramAir | 21000000 | 8 | 2,097,152 |  | 8 | 10 | 37,748,736 | 
+| leaf | ProgramAir | 21000000 | 9 | 2,097,152 |  | 8 | 10 | 37,748,736 | 
+| leaf | VariableRangeCheckerAir | 21000000 | 0 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| leaf | VariableRangeCheckerAir | 21000000 | 1 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| leaf | VariableRangeCheckerAir | 21000000 | 10 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| leaf | VariableRangeCheckerAir | 21000000 | 2 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| leaf | VariableRangeCheckerAir | 21000000 | 3 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| leaf | VariableRangeCheckerAir | 21000000 | 4 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| leaf | VariableRangeCheckerAir | 21000000 | 5 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| leaf | VariableRangeCheckerAir | 21000000 | 6 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| leaf | VariableRangeCheckerAir | 21000000 | 7 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| leaf | VariableRangeCheckerAir | 21000000 | 8 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| leaf | VariableRangeCheckerAir | 21000000 | 9 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| leaf | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 0 | 2,097,152 |  | 36 | 29 | 136,314,880 | 
+| leaf | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 1 | 1,048,576 |  | 36 | 29 | 68,157,440 | 
+| leaf | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 10 | 2,097,152 |  | 36 | 29 | 136,314,880 | 
+| leaf | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 2 | 1,048,576 |  | 36 | 29 | 68,157,440 | 
+| leaf | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 3 | 1,048,576 |  | 36 | 29 | 68,157,440 | 
+| leaf | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 4 | 2,097,152 |  | 36 | 29 | 136,314,880 | 
+| leaf | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 5 | 2,097,152 |  | 36 | 29 | 136,314,880 | 
+| leaf | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 6 | 2,097,152 |  | 36 | 29 | 136,314,880 | 
+| leaf | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 7 | 2,097,152 |  | 36 | 29 | 136,314,880 | 
+| leaf | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 8 | 2,097,152 |  | 36 | 29 | 136,314,880 | 
+| leaf | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 9 | 2,097,152 |  | 36 | 29 | 136,314,880 | 
+| leaf | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 0 | 524,288 |  | 28 | 23 | 26,738,688 | 
+| leaf | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 1 | 262,144 |  | 28 | 23 | 13,369,344 | 
+| leaf | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 10 | 262,144 |  | 28 | 23 | 13,369,344 | 
+| leaf | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 2 | 262,144 |  | 28 | 23 | 13,369,344 | 
+| leaf | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 3 | 262,144 |  | 28 | 23 | 13,369,344 | 
+| leaf | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 4 | 524,288 |  | 28 | 23 | 26,738,688 | 
+| leaf | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 5 | 524,288 |  | 28 | 23 | 26,738,688 | 
+| leaf | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 6 | 524,288 |  | 28 | 23 | 26,738,688 | 
+| leaf | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 7 | 524,288 |  | 28 | 23 | 26,738,688 | 
+| leaf | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 8 | 524,288 |  | 28 | 23 | 26,738,688 | 
+| leaf | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 9 | 524,288 |  | 28 | 23 | 26,738,688 | 
+| leaf | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 0 | 64 |  | 28 | 27 | 3,520 | 
+| leaf | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 1 | 64 |  | 28 | 27 | 3,520 | 
+| leaf | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 10 | 64 |  | 28 | 27 | 3,520 | 
+| leaf | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 2 | 64 |  | 28 | 27 | 3,520 | 
+| leaf | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 3 | 64 |  | 28 | 27 | 3,520 | 
+| leaf | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 4 | 64 |  | 28 | 27 | 3,520 | 
+| leaf | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 5 | 64 |  | 28 | 27 | 3,520 | 
+| leaf | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 6 | 64 |  | 28 | 27 | 3,520 | 
+| leaf | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 7 | 64 |  | 28 | 27 | 3,520 | 
+| leaf | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 8 | 64 |  | 28 | 27 | 3,520 | 
+| leaf | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 9 | 64 |  | 28 | 27 | 3,520 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 0 | 1,048,576 |  | 40 | 21 | 63,963,136 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 1 | 524,288 |  | 40 | 21 | 31,981,568 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 10 | 524,288 |  | 40 | 21 | 31,981,568 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 2 | 524,288 |  | 40 | 21 | 31,981,568 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 3 | 524,288 |  | 40 | 21 | 31,981,568 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 4 | 1,048,576 |  | 40 | 21 | 63,963,136 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 5 | 1,048,576 |  | 40 | 21 | 63,963,136 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 6 | 1,048,576 |  | 40 | 21 | 63,963,136 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 7 | 1,048,576 |  | 40 | 21 | 63,963,136 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 8 | 1,048,576 |  | 40 | 21 | 63,963,136 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 9 | 524,288 |  | 40 | 21 | 31,981,568 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 0 | 262,144 |  | 40 | 27 | 17,563,648 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 1 | 131,072 |  | 40 | 27 | 8,781,824 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 10 | 131,072 |  | 40 | 27 | 8,781,824 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 2 | 131,072 |  | 40 | 27 | 8,781,824 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 3 | 131,072 |  | 40 | 27 | 8,781,824 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 4 | 262,144 |  | 40 | 27 | 17,563,648 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 5 | 262,144 |  | 40 | 27 | 17,563,648 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 6 | 262,144 |  | 40 | 27 | 17,563,648 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 7 | 262,144 |  | 40 | 27 | 17,563,648 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 8 | 262,144 |  | 40 | 27 | 17,563,648 | 
+| leaf | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 9 | 131,072 |  | 40 | 27 | 8,781,824 | 
+| leaf | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 0 | 262,144 |  | 36 | 38 | 19,398,656 | 
+| leaf | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 1 | 262,144 |  | 36 | 38 | 19,398,656 | 
+| leaf | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 10 | 262,144 |  | 36 | 38 | 19,398,656 | 
+| leaf | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 2 | 262,144 |  | 36 | 38 | 19,398,656 | 
+| leaf | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 3 | 262,144 |  | 36 | 38 | 19,398,656 | 
+| leaf | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 4 | 524,288 |  | 36 | 38 | 38,797,312 | 
+| leaf | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 5 | 524,288 |  | 36 | 38 | 38,797,312 | 
+| leaf | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 6 | 524,288 |  | 36 | 38 | 38,797,312 | 
+| leaf | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 7 | 524,288 |  | 36 | 38 | 38,797,312 | 
+| leaf | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 8 | 524,288 |  | 36 | 38 | 38,797,312 | 
+| leaf | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 9 | 262,144 |  | 36 | 38 | 19,398,656 | 
+| leaf | VmConnectorAir | 21000000 | 0 | 2 | 1 | 16 | 5 | 42 | 
+| leaf | VmConnectorAir | 21000000 | 1 | 2 | 1 | 16 | 5 | 42 | 
+| leaf | VmConnectorAir | 21000000 | 10 | 2 | 1 | 16 | 5 | 42 | 
+| leaf | VmConnectorAir | 21000000 | 2 | 2 | 1 | 16 | 5 | 42 | 
+| leaf | VmConnectorAir | 21000000 | 3 | 2 | 1 | 16 | 5 | 42 | 
+| leaf | VmConnectorAir | 21000000 | 4 | 2 | 1 | 16 | 5 | 42 | 
+| leaf | VmConnectorAir | 21000000 | 5 | 2 | 1 | 16 | 5 | 42 | 
+| leaf | VmConnectorAir | 21000000 | 6 | 2 | 1 | 16 | 5 | 42 | 
+| leaf | VmConnectorAir | 21000000 | 7 | 2 | 1 | 16 | 5 | 42 | 
+| leaf | VmConnectorAir | 21000000 | 8 | 2 | 1 | 16 | 5 | 42 | 
+| leaf | VmConnectorAir | 21000000 | 9 | 2 | 1 | 16 | 5 | 42 | 
+| leaf | VolatileBoundaryAir | 21000000 | 0 | 1,048,576 |  | 20 | 12 | 33,554,432 | 
+| leaf | VolatileBoundaryAir | 21000000 | 1 | 524,288 |  | 20 | 12 | 16,777,216 | 
+| leaf | VolatileBoundaryAir | 21000000 | 10 | 524,288 |  | 20 | 12 | 16,777,216 | 
+| leaf | VolatileBoundaryAir | 21000000 | 2 | 524,288 |  | 20 | 12 | 16,777,216 | 
+| leaf | VolatileBoundaryAir | 21000000 | 3 | 524,288 |  | 20 | 12 | 16,777,216 | 
+| leaf | VolatileBoundaryAir | 21000000 | 4 | 1,048,576 |  | 20 | 12 | 33,554,432 | 
+| leaf | VolatileBoundaryAir | 21000000 | 5 | 1,048,576 |  | 20 | 12 | 33,554,432 | 
+| leaf | VolatileBoundaryAir | 21000000 | 6 | 1,048,576 |  | 20 | 12 | 33,554,432 | 
+| leaf | VolatileBoundaryAir | 21000000 | 7 | 1,048,576 |  | 20 | 12 | 33,554,432 | 
+| leaf | VolatileBoundaryAir | 21000000 | 8 | 1,048,576 |  | 20 | 12 | 33,554,432 | 
+| leaf | VolatileBoundaryAir | 21000000 | 9 | 524,288 |  | 20 | 12 | 16,777,216 | 
+| root | AccessAdapterAir<2> | 21000000 | 0 | 262,144 |  | 8 | 11 | 4,980,736 | 
+| root | AccessAdapterAir<4> | 21000000 | 0 | 131,072 |  | 8 | 13 | 2,752,512 | 
+| root | AccessAdapterAir<8> | 21000000 | 0 | 4,096 |  | 8 | 17 | 102,400 | 
+| root | FriReducedOpeningAir | 21000000 | 0 | 131,072 |  | 24 | 27 | 6,684,672 | 
+| root | JalRangeCheckAir | 21000000 | 0 | 32,768 |  | 12 | 12 | 786,432 | 
+| root | NativePoseidon2Air<BabyBearParameters>, 1> | 21000000 | 0 | 32,768 |  | 84 | 398 | 15,794,176 | 
+| root | PhantomAir | 21000000 | 0 | 8,192 |  | 8 | 6 | 114,688 | 
+| root | ProgramAir | 21000000 | 0 | 131,072 |  | 8 | 10 | 2,359,296 | 
+| root | VariableRangeCheckerAir | 21000000 | 0 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| root | VmAirWrapper<AluNativeAdapterAir, FieldArithmeticCoreAir> | 21000000 | 0 | 524,288 |  | 12 | 29 | 21,495,808 | 
+| root | VmAirWrapper<BranchNativeAdapterAir, BranchEqualCoreAir<1> | 21000000 | 0 | 131,072 |  | 12 | 23 | 4,587,520 | 
+| root | VmAirWrapper<NativeAdapterAir<2, 0>, PublicValuesCoreAir> | 21000000 | 0 | 64 |  | 12 | 22 | 2,176 | 
+| root | VmAirWrapper<NativeLoadStoreAdapterAir<1>, NativeLoadStoreCoreAir<1> | 21000000 | 0 | 262,144 |  | 16 | 21 | 9,699,328 | 
+| root | VmAirWrapper<NativeLoadStoreAdapterAir<4>, NativeLoadStoreCoreAir<4> | 21000000 | 0 | 65,536 |  | 16 | 27 | 2,818,048 | 
+| root | VmAirWrapper<NativeVectorizedAdapterAir<4>, FieldExtensionCoreAir> | 21000000 | 0 | 65,536 |  | 12 | 38 | 3,276,800 | 
+| root | VmConnectorAir | 21000000 | 0 | 2 | 1 | 8 | 5 | 26 | 
+| root | VolatileBoundaryAir | 21000000 | 0 | 131,072 |  | 8 | 12 | 2,621,440 | 
+
+| group | air_name | block_number | segment | rows | prep_cols | perm_cols | main_cols | cells |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| agg_keygen | AccessAdapterAir<16> | 21000000 | 0 | 1 |  | 16 | 25 | 41 | 
+| agg_keygen | AccessAdapterAir<2> | 21000000 | 0 | 1 |  | 16 | 11 | 27 | 
+| agg_keygen | AccessAdapterAir<32> | 21000000 | 0 | 1 |  | 16 | 41 | 57 | 
+| agg_keygen | AccessAdapterAir<4> | 21000000 | 0 | 1 |  | 16 | 13 | 29 | 
+| agg_keygen | AccessAdapterAir<8> | 21000000 | 0 | 1 |  | 16 | 17 | 33 | 
+| agg_keygen | BitwiseOperationLookupAir<8> | 21000000 | 0 | 65,536 | 3 | 8 | 2 | 655,360 | 
+| agg_keygen | MemoryMerkleAir<8> | 21000000 | 0 | 64 |  | 16 | 32 | 3,072 | 
+| agg_keygen | PersistentBoundaryAir<8> | 21000000 | 0 | 1 |  | 12 | 20 | 32 | 
+| agg_keygen | PhantomAir | 21000000 | 0 | 1 |  | 12 | 6 | 18 | 
+| agg_keygen | Poseidon2PeripheryAir<BabyBearParameters>, 1> | 21000000 | 0 | 32 |  | 8 | 300 | 9,856 | 
+| agg_keygen | ProgramAir | 21000000 | 0 | 1 |  | 8 | 10 | 18 | 
+| agg_keygen | RangeTupleCheckerAir<2> | 21000000 | 0 | 524,288 | 2 | 8 | 1 | 4,718,592 | 
+| agg_keygen | Rv32HintStoreAir | 21000000 | 0 | 1 |  | 44 | 32 | 76 | 
+| agg_keygen | VariableRangeCheckerAir | 21000000 | 0 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| agg_keygen | VmAirWrapper<Rv32BaseAluAdapterAir, BaseAluCoreAir<4, 8> | 21000000 | 0 | 1 |  | 52 | 36 | 88 | 
+| agg_keygen | VmAirWrapper<Rv32BaseAluAdapterAir, LessThanCoreAir<4, 8> | 21000000 | 0 | 1 |  | 40 | 37 | 77 | 
+| agg_keygen | VmAirWrapper<Rv32BaseAluAdapterAir, ShiftCoreAir<4, 8> | 21000000 | 0 | 1 |  | 52 | 53 | 105 | 
+| agg_keygen | VmAirWrapper<Rv32BranchAdapterAir, BranchEqualCoreAir<4> | 21000000 | 0 | 1 |  | 28 | 26 | 54 | 
+| agg_keygen | VmAirWrapper<Rv32BranchAdapterAir, BranchLessThanCoreAir<4, 8> | 21000000 | 0 | 1 |  | 32 | 32 | 64 | 
+| agg_keygen | VmAirWrapper<Rv32CondRdWriteAdapterAir, Rv32JalLuiCoreAir> | 21000000 | 0 | 1 |  | 28 | 18 | 46 | 
+| agg_keygen | VmAirWrapper<Rv32JalrAdapterAir, Rv32JalrCoreAir> | 21000000 | 0 | 1 |  | 36 | 28 | 64 | 
+| agg_keygen | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadSignExtendCoreAir<4, 8> | 21000000 | 0 | 1 |  | 52 | 36 | 88 | 
+| agg_keygen | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadStoreCoreAir<4> | 21000000 | 0 | 1 |  | 52 | 41 | 93 | 
+| agg_keygen | VmAirWrapper<Rv32MultAdapterAir, DivRemCoreAir<4, 8> | 21000000 | 0 | 1 |  | 72 | 59 | 131 | 
+| agg_keygen | VmAirWrapper<Rv32MultAdapterAir, MulHCoreAir<4, 8> | 21000000 | 0 | 1 |  | 72 | 39 | 111 | 
+| agg_keygen | VmAirWrapper<Rv32MultAdapterAir, MultiplicationCoreAir<4, 8> | 21000000 | 0 | 1 |  | 52 | 31 | 83 | 
+| agg_keygen | VmAirWrapper<Rv32RdWriteAdapterAir, Rv32AuipcCoreAir> | 21000000 | 0 | 1 |  | 28 | 20 | 48 | 
+| agg_keygen | VmConnectorAir | 21000000 | 0 | 2 | 1 | 16 | 5 | 42 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<16> | 21000000 | 0 | 64 |  | 16 | 25 | 2,624 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<16> | 21000000 | 10 | 16 |  | 16 | 25 | 656 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<16> | 21000000 | 4 | 1,048,576 |  | 16 | 25 | 42,991,616 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<16> | 21000000 | 5 | 262,144 |  | 16 | 25 | 10,747,904 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<16> | 21000000 | 6 | 262,144 |  | 16 | 25 | 10,747,904 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<16> | 21000000 | 7 | 262,144 |  | 16 | 25 | 10,747,904 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<16> | 21000000 | 8 | 262,144 |  | 16 | 25 | 10,747,904 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<16> | 21000000 | 9 | 8,192 |  | 16 | 25 | 335,872 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<2> | 21000000 | 4 | 1,024 |  | 16 | 11 | 27,648 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<2> | 21000000 | 5 | 1,024 |  | 16 | 11 | 27,648 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<2> | 21000000 | 6 | 4,096 |  | 16 | 11 | 110,592 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<2> | 21000000 | 9 | 262,144 |  | 16 | 11 | 7,077,888 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<32> | 21000000 | 0 | 32 |  | 16 | 41 | 1,824 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<32> | 21000000 | 10 | 8 |  | 16 | 41 | 456 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<32> | 21000000 | 4 | 524,288 |  | 16 | 41 | 29,884,416 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<32> | 21000000 | 5 | 131,072 |  | 16 | 41 | 7,471,104 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<32> | 21000000 | 6 | 131,072 |  | 16 | 41 | 7,471,104 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<32> | 21000000 | 7 | 131,072 |  | 16 | 41 | 7,471,104 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<32> | 21000000 | 8 | 131,072 |  | 16 | 41 | 7,471,104 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<32> | 21000000 | 9 | 4,096 |  | 16 | 41 | 233,472 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<4> | 21000000 | 0 | 64 |  | 16 | 13 | 1,856 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<4> | 21000000 | 4 | 512 |  | 16 | 13 | 14,848 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<4> | 21000000 | 5 | 512 |  | 16 | 13 | 14,848 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<4> | 21000000 | 6 | 4,096 |  | 16 | 13 | 118,784 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<4> | 21000000 | 8 | 256 |  | 16 | 13 | 7,424 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<4> | 21000000 | 9 | 131,072 |  | 16 | 13 | 3,801,088 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<8> | 21000000 | 0 | 1,048,576 |  | 16 | 17 | 34,603,008 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<8> | 21000000 | 1 | 1,048,576 |  | 16 | 17 | 34,603,008 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<8> | 21000000 | 10 | 262,144 |  | 16 | 17 | 8,650,752 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<8> | 21000000 | 2 | 1,048,576 |  | 16 | 17 | 34,603,008 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<8> | 21000000 | 3 | 1,048,576 |  | 16 | 17 | 34,603,008 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<8> | 21000000 | 4 | 2,097,152 |  | 16 | 17 | 69,206,016 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<8> | 21000000 | 5 | 2,097,152 |  | 16 | 17 | 69,206,016 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<8> | 21000000 | 6 | 2,097,152 |  | 16 | 17 | 69,206,016 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<8> | 21000000 | 7 | 2,097,152 |  | 16 | 17 | 69,206,016 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<8> | 21000000 | 8 | 2,097,152 |  | 16 | 17 | 69,206,016 | 
+| reth.prove_e2e.block_21000000 | AccessAdapterAir<8> | 21000000 | 9 | 1,048,576 |  | 16 | 17 | 34,603,008 | 
+| reth.prove_e2e.block_21000000 | BitwiseOperationLookupAir<8> | 21000000 | 0 | 65,536 | 3 | 8 | 2 | 655,360 | 
+| reth.prove_e2e.block_21000000 | BitwiseOperationLookupAir<8> | 21000000 | 1 | 65,536 | 3 | 8 | 2 | 655,360 | 
+| reth.prove_e2e.block_21000000 | BitwiseOperationLookupAir<8> | 21000000 | 10 | 65,536 | 3 | 8 | 2 | 655,360 | 
+| reth.prove_e2e.block_21000000 | BitwiseOperationLookupAir<8> | 21000000 | 2 | 65,536 | 3 | 8 | 2 | 655,360 | 
+| reth.prove_e2e.block_21000000 | BitwiseOperationLookupAir<8> | 21000000 | 3 | 65,536 | 3 | 8 | 2 | 655,360 | 
+| reth.prove_e2e.block_21000000 | BitwiseOperationLookupAir<8> | 21000000 | 4 | 65,536 | 3 | 8 | 2 | 655,360 | 
+| reth.prove_e2e.block_21000000 | BitwiseOperationLookupAir<8> | 21000000 | 5 | 65,536 | 3 | 8 | 2 | 655,360 | 
+| reth.prove_e2e.block_21000000 | BitwiseOperationLookupAir<8> | 21000000 | 6 | 65,536 | 3 | 8 | 2 | 655,360 | 
+| reth.prove_e2e.block_21000000 | BitwiseOperationLookupAir<8> | 21000000 | 7 | 65,536 | 3 | 8 | 2 | 655,360 | 
+| reth.prove_e2e.block_21000000 | BitwiseOperationLookupAir<8> | 21000000 | 8 | 65,536 | 3 | 8 | 2 | 655,360 | 
+| reth.prove_e2e.block_21000000 | BitwiseOperationLookupAir<8> | 21000000 | 9 | 65,536 | 3 | 8 | 2 | 655,360 | 
+| reth.prove_e2e.block_21000000 | KeccakVmAir | 21000000 | 0 | 1 |  | 1,056 | 3,163 | 4,219 | 
+| reth.prove_e2e.block_21000000 | KeccakVmAir | 21000000 | 1 | 1 |  | 1,056 | 3,163 | 4,219 | 
+| reth.prove_e2e.block_21000000 | KeccakVmAir | 21000000 | 10 | 16,384 |  | 1,056 | 3,163 | 69,124,096 | 
+| reth.prove_e2e.block_21000000 | KeccakVmAir | 21000000 | 2 | 1 |  | 1,056 | 3,163 | 4,219 | 
+| reth.prove_e2e.block_21000000 | KeccakVmAir | 21000000 | 3 | 524,288 |  | 1,056 | 3,163 | 2,211,971,072 | 
+| reth.prove_e2e.block_21000000 | KeccakVmAir | 21000000 | 4 | 131,072 |  | 1,056 | 3,163 | 552,992,768 | 
+| reth.prove_e2e.block_21000000 | KeccakVmAir | 21000000 | 5 | 16,384 |  | 1,056 | 3,163 | 69,124,096 | 
+| reth.prove_e2e.block_21000000 | KeccakVmAir | 21000000 | 6 | 16,384 |  | 1,056 | 3,163 | 69,124,096 | 
+| reth.prove_e2e.block_21000000 | KeccakVmAir | 21000000 | 7 | 16,384 |  | 1,056 | 3,163 | 69,124,096 | 
+| reth.prove_e2e.block_21000000 | KeccakVmAir | 21000000 | 8 | 65,536 |  | 1,056 | 3,163 | 276,496,384 | 
+| reth.prove_e2e.block_21000000 | KeccakVmAir | 21000000 | 9 | 524,288 |  | 1,056 | 3,163 | 2,211,971,072 | 
+| reth.prove_e2e.block_21000000 | MemoryMerkleAir<8> | 21000000 | 0 | 1,048,576 |  | 16 | 32 | 50,331,648 | 
+| reth.prove_e2e.block_21000000 | MemoryMerkleAir<8> | 21000000 | 1 | 1,048,576 |  | 16 | 32 | 50,331,648 | 
+| reth.prove_e2e.block_21000000 | MemoryMerkleAir<8> | 21000000 | 10 | 1,048,576 |  | 16 | 32 | 50,331,648 | 
+| reth.prove_e2e.block_21000000 | MemoryMerkleAir<8> | 21000000 | 2 | 1,048,576 |  | 16 | 32 | 50,331,648 | 
+| reth.prove_e2e.block_21000000 | MemoryMerkleAir<8> | 21000000 | 3 | 1,048,576 |  | 16 | 32 | 50,331,648 | 
+| reth.prove_e2e.block_21000000 | MemoryMerkleAir<8> | 21000000 | 4 | 1,048,576 |  | 16 | 32 | 50,331,648 | 
+| reth.prove_e2e.block_21000000 | MemoryMerkleAir<8> | 21000000 | 5 | 1,048,576 |  | 16 | 32 | 50,331,648 | 
+| reth.prove_e2e.block_21000000 | MemoryMerkleAir<8> | 21000000 | 6 | 1,048,576 |  | 16 | 32 | 50,331,648 | 
+| reth.prove_e2e.block_21000000 | MemoryMerkleAir<8> | 21000000 | 7 | 1,048,576 |  | 16 | 32 | 50,331,648 | 
+| reth.prove_e2e.block_21000000 | MemoryMerkleAir<8> | 21000000 | 8 | 1,048,576 |  | 16 | 32 | 50,331,648 | 
+| reth.prove_e2e.block_21000000 | MemoryMerkleAir<8> | 21000000 | 9 | 2,097,152 |  | 16 | 32 | 100,663,296 | 
+| reth.prove_e2e.block_21000000 | PersistentBoundaryAir<8> | 21000000 | 0 | 1,048,576 |  | 12 | 20 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | PersistentBoundaryAir<8> | 21000000 | 1 | 1,048,576 |  | 12 | 20 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | PersistentBoundaryAir<8> | 21000000 | 10 | 262,144 |  | 12 | 20 | 8,388,608 | 
+| reth.prove_e2e.block_21000000 | PersistentBoundaryAir<8> | 21000000 | 2 | 1,048,576 |  | 12 | 20 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | PersistentBoundaryAir<8> | 21000000 | 3 | 1,048,576 |  | 12 | 20 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | PersistentBoundaryAir<8> | 21000000 | 4 | 1,048,576 |  | 12 | 20 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | PersistentBoundaryAir<8> | 21000000 | 5 | 1,048,576 |  | 12 | 20 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | PersistentBoundaryAir<8> | 21000000 | 6 | 1,048,576 |  | 12 | 20 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | PersistentBoundaryAir<8> | 21000000 | 7 | 1,048,576 |  | 12 | 20 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | PersistentBoundaryAir<8> | 21000000 | 8 | 1,048,576 |  | 12 | 20 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | PersistentBoundaryAir<8> | 21000000 | 9 | 1,048,576 |  | 12 | 20 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | PhantomAir | 21000000 | 0 | 4 |  | 12 | 6 | 72 | 
+| reth.prove_e2e.block_21000000 | PhantomAir | 21000000 | 1 | 1 |  | 12 | 6 | 18 | 
+| reth.prove_e2e.block_21000000 | PhantomAir | 21000000 | 10 | 1 |  | 12 | 6 | 18 | 
+| reth.prove_e2e.block_21000000 | PhantomAir | 21000000 | 2 | 1 |  | 12 | 6 | 18 | 
+| reth.prove_e2e.block_21000000 | PhantomAir | 21000000 | 3 | 2 |  | 12 | 6 | 36 | 
+| reth.prove_e2e.block_21000000 | PhantomAir | 21000000 | 4 | 256 |  | 12 | 6 | 4,608 | 
+| reth.prove_e2e.block_21000000 | PhantomAir | 21000000 | 5 | 4 |  | 12 | 6 | 72 | 
+| reth.prove_e2e.block_21000000 | PhantomAir | 21000000 | 6 | 32 |  | 12 | 6 | 576 | 
+| reth.prove_e2e.block_21000000 | PhantomAir | 21000000 | 7 | 8 |  | 12 | 6 | 144 | 
+| reth.prove_e2e.block_21000000 | PhantomAir | 21000000 | 8 | 32 |  | 12 | 6 | 576 | 
+| reth.prove_e2e.block_21000000 | PhantomAir | 21000000 | 9 | 8 |  | 12 | 6 | 144 | 
+| reth.prove_e2e.block_21000000 | Poseidon2PeripheryAir<BabyBearParameters>, 1> | 21000000 | 0 | 1,048,576 |  | 8 | 300 | 322,961,408 | 
+| reth.prove_e2e.block_21000000 | Poseidon2PeripheryAir<BabyBearParameters>, 1> | 21000000 | 1 | 1,048,576 |  | 8 | 300 | 322,961,408 | 
+| reth.prove_e2e.block_21000000 | Poseidon2PeripheryAir<BabyBearParameters>, 1> | 21000000 | 10 | 524,288 |  | 8 | 300 | 161,480,704 | 
+| reth.prove_e2e.block_21000000 | Poseidon2PeripheryAir<BabyBearParameters>, 1> | 21000000 | 2 | 1,048,576 |  | 8 | 300 | 322,961,408 | 
+| reth.prove_e2e.block_21000000 | Poseidon2PeripheryAir<BabyBearParameters>, 1> | 21000000 | 3 | 524,288 |  | 8 | 300 | 161,480,704 | 
+| reth.prove_e2e.block_21000000 | Poseidon2PeripheryAir<BabyBearParameters>, 1> | 21000000 | 4 | 524,288 |  | 8 | 300 | 161,480,704 | 
+| reth.prove_e2e.block_21000000 | Poseidon2PeripheryAir<BabyBearParameters>, 1> | 21000000 | 5 | 524,288 |  | 8 | 300 | 161,480,704 | 
+| reth.prove_e2e.block_21000000 | Poseidon2PeripheryAir<BabyBearParameters>, 1> | 21000000 | 6 | 524,288 |  | 8 | 300 | 161,480,704 | 
+| reth.prove_e2e.block_21000000 | Poseidon2PeripheryAir<BabyBearParameters>, 1> | 21000000 | 7 | 524,288 |  | 8 | 300 | 161,480,704 | 
+| reth.prove_e2e.block_21000000 | Poseidon2PeripheryAir<BabyBearParameters>, 1> | 21000000 | 8 | 524,288 |  | 8 | 300 | 161,480,704 | 
+| reth.prove_e2e.block_21000000 | Poseidon2PeripheryAir<BabyBearParameters>, 1> | 21000000 | 9 | 2,097,152 |  | 8 | 300 | 645,922,816 | 
+| reth.prove_e2e.block_21000000 | ProgramAir | 21000000 | 0 | 524,288 |  | 8 | 10 | 9,437,184 | 
+| reth.prove_e2e.block_21000000 | ProgramAir | 21000000 | 1 | 524,288 |  | 8 | 10 | 9,437,184 | 
+| reth.prove_e2e.block_21000000 | ProgramAir | 21000000 | 10 | 524,288 |  | 8 | 10 | 9,437,184 | 
+| reth.prove_e2e.block_21000000 | ProgramAir | 21000000 | 2 | 524,288 |  | 8 | 10 | 9,437,184 | 
+| reth.prove_e2e.block_21000000 | ProgramAir | 21000000 | 3 | 524,288 |  | 8 | 10 | 9,437,184 | 
+| reth.prove_e2e.block_21000000 | ProgramAir | 21000000 | 4 | 524,288 |  | 8 | 10 | 9,437,184 | 
+| reth.prove_e2e.block_21000000 | ProgramAir | 21000000 | 5 | 524,288 |  | 8 | 10 | 9,437,184 | 
+| reth.prove_e2e.block_21000000 | ProgramAir | 21000000 | 6 | 524,288 |  | 8 | 10 | 9,437,184 | 
+| reth.prove_e2e.block_21000000 | ProgramAir | 21000000 | 7 | 524,288 |  | 8 | 10 | 9,437,184 | 
+| reth.prove_e2e.block_21000000 | ProgramAir | 21000000 | 8 | 524,288 |  | 8 | 10 | 9,437,184 | 
+| reth.prove_e2e.block_21000000 | ProgramAir | 21000000 | 9 | 524,288 |  | 8 | 10 | 9,437,184 | 
+| reth.prove_e2e.block_21000000 | RangeTupleCheckerAir<2> | 21000000 | 0 | 2,097,152 | 2 | 8 | 1 | 18,874,368 | 
+| reth.prove_e2e.block_21000000 | RangeTupleCheckerAir<2> | 21000000 | 1 | 2,097,152 | 2 | 8 | 1 | 18,874,368 | 
+| reth.prove_e2e.block_21000000 | RangeTupleCheckerAir<2> | 21000000 | 10 | 2,097,152 | 2 | 8 | 1 | 18,874,368 | 
+| reth.prove_e2e.block_21000000 | RangeTupleCheckerAir<2> | 21000000 | 2 | 2,097,152 | 2 | 8 | 1 | 18,874,368 | 
+| reth.prove_e2e.block_21000000 | RangeTupleCheckerAir<2> | 21000000 | 3 | 2,097,152 | 2 | 8 | 1 | 18,874,368 | 
+| reth.prove_e2e.block_21000000 | RangeTupleCheckerAir<2> | 21000000 | 4 | 2,097,152 | 2 | 8 | 1 | 18,874,368 | 
+| reth.prove_e2e.block_21000000 | RangeTupleCheckerAir<2> | 21000000 | 5 | 2,097,152 | 2 | 8 | 1 | 18,874,368 | 
+| reth.prove_e2e.block_21000000 | RangeTupleCheckerAir<2> | 21000000 | 6 | 2,097,152 | 2 | 8 | 1 | 18,874,368 | 
+| reth.prove_e2e.block_21000000 | RangeTupleCheckerAir<2> | 21000000 | 7 | 2,097,152 | 2 | 8 | 1 | 18,874,368 | 
+| reth.prove_e2e.block_21000000 | RangeTupleCheckerAir<2> | 21000000 | 8 | 2,097,152 | 2 | 8 | 1 | 18,874,368 | 
+| reth.prove_e2e.block_21000000 | RangeTupleCheckerAir<2> | 21000000 | 9 | 2,097,152 | 2 | 8 | 1 | 18,874,368 | 
+| reth.prove_e2e.block_21000000 | Rv32HintStoreAir | 21000000 | 0 | 524,288 |  | 44 | 32 | 39,845,888 | 
+| reth.prove_e2e.block_21000000 | Rv32HintStoreAir | 21000000 | 1 | 524,288 |  | 44 | 32 | 39,845,888 | 
+| reth.prove_e2e.block_21000000 | Rv32HintStoreAir | 21000000 | 2 | 524,288 |  | 44 | 32 | 39,845,888 | 
+| reth.prove_e2e.block_21000000 | Rv32HintStoreAir | 21000000 | 3 | 1,048,576 |  | 44 | 32 | 79,691,776 | 
+| reth.prove_e2e.block_21000000 | Rv32HintStoreAir | 21000000 | 4 | 2,048 |  | 44 | 32 | 155,648 | 
+| reth.prove_e2e.block_21000000 | Rv32HintStoreAir | 21000000 | 5 | 16 |  | 44 | 32 | 1,216 | 
+| reth.prove_e2e.block_21000000 | Rv32HintStoreAir | 21000000 | 6 | 64 |  | 44 | 32 | 4,864 | 
+| reth.prove_e2e.block_21000000 | Rv32HintStoreAir | 21000000 | 7 | 32 |  | 44 | 32 | 2,432 | 
+| reth.prove_e2e.block_21000000 | Rv32HintStoreAir | 21000000 | 8 | 64 |  | 44 | 32 | 4,864 | 
+| reth.prove_e2e.block_21000000 | VariableRangeCheckerAir | 21000000 | 0 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| reth.prove_e2e.block_21000000 | VariableRangeCheckerAir | 21000000 | 1 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| reth.prove_e2e.block_21000000 | VariableRangeCheckerAir | 21000000 | 10 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| reth.prove_e2e.block_21000000 | VariableRangeCheckerAir | 21000000 | 2 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| reth.prove_e2e.block_21000000 | VariableRangeCheckerAir | 21000000 | 3 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| reth.prove_e2e.block_21000000 | VariableRangeCheckerAir | 21000000 | 4 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| reth.prove_e2e.block_21000000 | VariableRangeCheckerAir | 21000000 | 5 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| reth.prove_e2e.block_21000000 | VariableRangeCheckerAir | 21000000 | 6 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| reth.prove_e2e.block_21000000 | VariableRangeCheckerAir | 21000000 | 7 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| reth.prove_e2e.block_21000000 | VariableRangeCheckerAir | 21000000 | 8 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| reth.prove_e2e.block_21000000 | VariableRangeCheckerAir | 21000000 | 9 | 262,144 | 2 | 8 | 1 | 2,359,296 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, BaseAluCoreAir<4, 8> | 21000000 | 0 | 8,388,608 |  | 52 | 36 | 738,197,504 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, BaseAluCoreAir<4, 8> | 21000000 | 1 | 8,388,608 |  | 52 | 36 | 738,197,504 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, BaseAluCoreAir<4, 8> | 21000000 | 10 | 1,048,576 |  | 52 | 36 | 92,274,688 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, BaseAluCoreAir<4, 8> | 21000000 | 2 | 8,388,608 |  | 52 | 36 | 738,197,504 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, BaseAluCoreAir<4, 8> | 21000000 | 3 | 2,097,152 |  | 52 | 36 | 184,549,376 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, BaseAluCoreAir<4, 8> | 21000000 | 4 | 8,388,608 |  | 52 | 36 | 738,197,504 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, BaseAluCoreAir<4, 8> | 21000000 | 5 | 8,388,608 |  | 52 | 36 | 738,197,504 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, BaseAluCoreAir<4, 8> | 21000000 | 6 | 8,388,608 |  | 52 | 36 | 738,197,504 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, BaseAluCoreAir<4, 8> | 21000000 | 7 | 8,388,608 |  | 52 | 36 | 738,197,504 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, BaseAluCoreAir<4, 8> | 21000000 | 8 | 8,388,608 |  | 52 | 36 | 738,197,504 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, BaseAluCoreAir<4, 8> | 21000000 | 9 | 8,388,608 |  | 52 | 36 | 738,197,504 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, LessThanCoreAir<4, 8> | 21000000 | 0 | 524,288 |  | 40 | 37 | 40,370,176 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, LessThanCoreAir<4, 8> | 21000000 | 1 | 524,288 |  | 40 | 37 | 40,370,176 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, LessThanCoreAir<4, 8> | 21000000 | 10 | 32,768 |  | 40 | 37 | 2,523,136 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, LessThanCoreAir<4, 8> | 21000000 | 2 | 524,288 |  | 40 | 37 | 40,370,176 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, LessThanCoreAir<4, 8> | 21000000 | 3 | 131,072 |  | 40 | 37 | 10,092,544 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, LessThanCoreAir<4, 8> | 21000000 | 4 | 262,144 |  | 40 | 37 | 20,185,088 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, LessThanCoreAir<4, 8> | 21000000 | 5 | 1,048,576 |  | 40 | 37 | 80,740,352 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, LessThanCoreAir<4, 8> | 21000000 | 6 | 524,288 |  | 40 | 37 | 40,370,176 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, LessThanCoreAir<4, 8> | 21000000 | 7 | 524,288 |  | 40 | 37 | 40,370,176 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, LessThanCoreAir<4, 8> | 21000000 | 8 | 524,288 |  | 40 | 37 | 40,370,176 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, LessThanCoreAir<4, 8> | 21000000 | 9 | 524,288 |  | 40 | 37 | 40,370,176 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, ShiftCoreAir<4, 8> | 21000000 | 0 | 1,048,576 |  | 52 | 53 | 110,100,480 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, ShiftCoreAir<4, 8> | 21000000 | 1 | 1,048,576 |  | 52 | 53 | 110,100,480 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, ShiftCoreAir<4, 8> | 21000000 | 10 | 131,072 |  | 52 | 53 | 13,762,560 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, ShiftCoreAir<4, 8> | 21000000 | 2 | 1,048,576 |  | 52 | 53 | 110,100,480 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, ShiftCoreAir<4, 8> | 21000000 | 3 | 262,144 |  | 52 | 53 | 27,525,120 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, ShiftCoreAir<4, 8> | 21000000 | 4 | 2,097,152 |  | 52 | 53 | 220,200,960 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, ShiftCoreAir<4, 8> | 21000000 | 5 | 2,097,152 |  | 52 | 53 | 220,200,960 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, ShiftCoreAir<4, 8> | 21000000 | 6 | 2,097,152 |  | 52 | 53 | 220,200,960 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, ShiftCoreAir<4, 8> | 21000000 | 7 | 2,097,152 |  | 52 | 53 | 220,200,960 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, ShiftCoreAir<4, 8> | 21000000 | 8 | 2,097,152 |  | 52 | 53 | 220,200,960 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BaseAluAdapterAir, ShiftCoreAir<4, 8> | 21000000 | 9 | 524,288 |  | 52 | 53 | 55,050,240 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchEqualCoreAir<4> | 21000000 | 0 | 2,097,152 |  | 28 | 26 | 113,246,208 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchEqualCoreAir<4> | 21000000 | 1 | 2,097,152 |  | 28 | 26 | 113,246,208 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchEqualCoreAir<4> | 21000000 | 10 | 524,288 |  | 28 | 26 | 28,311,552 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchEqualCoreAir<4> | 21000000 | 2 | 2,097,152 |  | 28 | 26 | 113,246,208 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchEqualCoreAir<4> | 21000000 | 3 | 524,288 |  | 28 | 26 | 28,311,552 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchEqualCoreAir<4> | 21000000 | 4 | 2,097,152 |  | 28 | 26 | 113,246,208 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchEqualCoreAir<4> | 21000000 | 5 | 2,097,152 |  | 28 | 26 | 113,246,208 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchEqualCoreAir<4> | 21000000 | 6 | 2,097,152 |  | 28 | 26 | 113,246,208 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchEqualCoreAir<4> | 21000000 | 7 | 2,097,152 |  | 28 | 26 | 113,246,208 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchEqualCoreAir<4> | 21000000 | 8 | 2,097,152 |  | 28 | 26 | 113,246,208 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchEqualCoreAir<4> | 21000000 | 9 | 2,097,152 |  | 28 | 26 | 113,246,208 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchLessThanCoreAir<4, 8> | 21000000 | 0 | 1,048,576 |  | 32 | 32 | 67,108,864 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchLessThanCoreAir<4, 8> | 21000000 | 1 | 1,048,576 |  | 32 | 32 | 67,108,864 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchLessThanCoreAir<4, 8> | 21000000 | 10 | 65,536 |  | 32 | 32 | 4,194,304 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchLessThanCoreAir<4, 8> | 21000000 | 2 | 1,048,576 |  | 32 | 32 | 67,108,864 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchLessThanCoreAir<4, 8> | 21000000 | 3 | 262,144 |  | 32 | 32 | 16,777,216 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchLessThanCoreAir<4, 8> | 21000000 | 4 | 2,097,152 |  | 32 | 32 | 134,217,728 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchLessThanCoreAir<4, 8> | 21000000 | 5 | 2,097,152 |  | 32 | 32 | 134,217,728 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchLessThanCoreAir<4, 8> | 21000000 | 6 | 4,194,304 |  | 32 | 32 | 268,435,456 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchLessThanCoreAir<4, 8> | 21000000 | 7 | 2,097,152 |  | 32 | 32 | 134,217,728 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchLessThanCoreAir<4, 8> | 21000000 | 8 | 2,097,152 |  | 32 | 32 | 134,217,728 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32BranchAdapterAir, BranchLessThanCoreAir<4, 8> | 21000000 | 9 | 262,144 |  | 32 | 32 | 16,777,216 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32CondRdWriteAdapterAir, Rv32JalLuiCoreAir> | 21000000 | 0 | 1,048,576 |  | 28 | 18 | 48,234,496 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32CondRdWriteAdapterAir, Rv32JalLuiCoreAir> | 21000000 | 1 | 1,048,576 |  | 28 | 18 | 48,234,496 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32CondRdWriteAdapterAir, Rv32JalLuiCoreAir> | 21000000 | 10 | 32,768 |  | 28 | 18 | 1,507,328 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32CondRdWriteAdapterAir, Rv32JalLuiCoreAir> | 21000000 | 2 | 1,048,576 |  | 28 | 18 | 48,234,496 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32CondRdWriteAdapterAir, Rv32JalLuiCoreAir> | 21000000 | 3 | 262,144 |  | 28 | 18 | 12,058,624 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32CondRdWriteAdapterAir, Rv32JalLuiCoreAir> | 21000000 | 4 | 524,288 |  | 28 | 18 | 24,117,248 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32CondRdWriteAdapterAir, Rv32JalLuiCoreAir> | 21000000 | 5 | 524,288 |  | 28 | 18 | 24,117,248 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32CondRdWriteAdapterAir, Rv32JalLuiCoreAir> | 21000000 | 6 | 524,288 |  | 28 | 18 | 24,117,248 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32CondRdWriteAdapterAir, Rv32JalLuiCoreAir> | 21000000 | 7 | 524,288 |  | 28 | 18 | 24,117,248 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32CondRdWriteAdapterAir, Rv32JalLuiCoreAir> | 21000000 | 8 | 524,288 |  | 28 | 18 | 24,117,248 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32CondRdWriteAdapterAir, Rv32JalLuiCoreAir> | 21000000 | 9 | 262,144 |  | 28 | 18 | 12,058,624 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, BaseAluCoreAir<32, 8> | 21000000 | 4 | 4,096 |  | 192 | 168 | 1,474,560 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, BaseAluCoreAir<32, 8> | 21000000 | 5 | 16,384 |  | 192 | 168 | 5,898,240 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, BaseAluCoreAir<32, 8> | 21000000 | 6 | 16,384 |  | 192 | 168 | 5,898,240 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, BaseAluCoreAir<32, 8> | 21000000 | 7 | 16,384 |  | 192 | 168 | 5,898,240 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, BaseAluCoreAir<32, 8> | 21000000 | 8 | 16,384 |  | 192 | 168 | 5,898,240 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, BaseAluCoreAir<32, 8> | 21000000 | 9 | 512 |  | 192 | 168 | 184,320 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, LessThanCoreAir<32, 8> | 21000000 | 4 | 2,048 |  | 68 | 169 | 485,376 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, LessThanCoreAir<32, 8> | 21000000 | 5 | 4,096 |  | 68 | 169 | 970,752 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, LessThanCoreAir<32, 8> | 21000000 | 6 | 8,192 |  | 68 | 169 | 1,941,504 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, LessThanCoreAir<32, 8> | 21000000 | 7 | 4,096 |  | 68 | 169 | 970,752 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, LessThanCoreAir<32, 8> | 21000000 | 8 | 4,096 |  | 68 | 169 | 970,752 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, MultiplicationCoreAir<32, 8> | 21000000 | 4 | 512 |  | 192 | 164 | 182,272 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, MultiplicationCoreAir<32, 8> | 21000000 | 5 | 2,048 |  | 192 | 164 | 729,088 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, MultiplicationCoreAir<32, 8> | 21000000 | 6 | 1,024 |  | 192 | 164 | 364,544 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, MultiplicationCoreAir<32, 8> | 21000000 | 7 | 1,024 |  | 192 | 164 | 364,544 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, MultiplicationCoreAir<32, 8> | 21000000 | 8 | 512 |  | 192 | 164 | 182,272 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, ShiftCoreAir<32, 8> | 21000000 | 4 | 1,024 |  | 164 | 241 | 414,720 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, ShiftCoreAir<32, 8> | 21000000 | 5 | 2,048 |  | 164 | 241 | 829,440 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, ShiftCoreAir<32, 8> | 21000000 | 6 | 2,048 |  | 164 | 241 | 829,440 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, ShiftCoreAir<32, 8> | 21000000 | 7 | 2,048 |  | 164 | 241 | 829,440 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapAdapterAir<2, 32, 32>, ShiftCoreAir<32, 8> | 21000000 | 8 | 2,048 |  | 164 | 241 | 829,440 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapBranchAdapterAir<2, 32>, BranchEqualCoreAir<32> | 21000000 | 10 | 2 |  | 48 | 124 | 344 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapBranchAdapterAir<2, 32>, BranchEqualCoreAir<32> | 21000000 | 4 | 8,192 |  | 48 | 124 | 1,409,024 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapBranchAdapterAir<2, 32>, BranchEqualCoreAir<32> | 21000000 | 5 | 32,768 |  | 48 | 124 | 5,636,096 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapBranchAdapterAir<2, 32>, BranchEqualCoreAir<32> | 21000000 | 6 | 16,384 |  | 48 | 124 | 2,818,048 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapBranchAdapterAir<2, 32>, BranchEqualCoreAir<32> | 21000000 | 7 | 16,384 |  | 48 | 124 | 2,818,048 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapBranchAdapterAir<2, 32>, BranchEqualCoreAir<32> | 21000000 | 8 | 16,384 |  | 48 | 124 | 2,818,048 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32HeapBranchAdapterAir<2, 32>, BranchEqualCoreAir<32> | 21000000 | 9 | 512 |  | 48 | 124 | 88,064 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32IsEqualModAdapterAir<2, 1, 32, 32>, ModularIsEqualCoreAir<32, 4, 8> | 21000000 | 0 | 1 |  | 56 | 166 | 222 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32IsEqualModAdapterAir<2, 1, 32, 32>, ModularIsEqualCoreAir<32, 4, 8> | 21000000 | 4 | 131,072 |  | 56 | 166 | 29,097,984 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32IsEqualModAdapterAir<2, 1, 32, 32>, ModularIsEqualCoreAir<32, 4, 8> | 21000000 | 5 | 1,024 |  | 56 | 166 | 227,328 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32IsEqualModAdapterAir<2, 1, 32, 32>, ModularIsEqualCoreAir<32, 4, 8> | 21000000 | 6 | 4,096 |  | 56 | 166 | 909,312 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32IsEqualModAdapterAir<2, 1, 32, 32>, ModularIsEqualCoreAir<32, 4, 8> | 21000000 | 7 | 2,048 |  | 56 | 166 | 454,656 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32IsEqualModAdapterAir<2, 1, 32, 32>, ModularIsEqualCoreAir<32, 4, 8> | 21000000 | 8 | 4,096 |  | 56 | 166 | 909,312 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32JalrAdapterAir, Rv32JalrCoreAir> | 21000000 | 0 | 524,288 |  | 36 | 28 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32JalrAdapterAir, Rv32JalrCoreAir> | 21000000 | 1 | 524,288 |  | 36 | 28 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32JalrAdapterAir, Rv32JalrCoreAir> | 21000000 | 10 | 262,144 |  | 36 | 28 | 16,777,216 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32JalrAdapterAir, Rv32JalrCoreAir> | 21000000 | 2 | 524,288 |  | 36 | 28 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32JalrAdapterAir, Rv32JalrCoreAir> | 21000000 | 3 | 131,072 |  | 36 | 28 | 8,388,608 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32JalrAdapterAir, Rv32JalrCoreAir> | 21000000 | 4 | 524,288 |  | 36 | 28 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32JalrAdapterAir, Rv32JalrCoreAir> | 21000000 | 5 | 524,288 |  | 36 | 28 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32JalrAdapterAir, Rv32JalrCoreAir> | 21000000 | 6 | 524,288 |  | 36 | 28 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32JalrAdapterAir, Rv32JalrCoreAir> | 21000000 | 7 | 524,288 |  | 36 | 28 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32JalrAdapterAir, Rv32JalrCoreAir> | 21000000 | 8 | 524,288 |  | 36 | 28 | 33,554,432 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32JalrAdapterAir, Rv32JalrCoreAir> | 21000000 | 9 | 262,144 |  | 36 | 28 | 16,777,216 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadSignExtendCoreAir<4, 8> | 21000000 | 0 | 1,048,576 |  | 52 | 36 | 92,274,688 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadSignExtendCoreAir<4, 8> | 21000000 | 1 | 1,048,576 |  | 52 | 36 | 92,274,688 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadSignExtendCoreAir<4, 8> | 21000000 | 10 | 32,768 |  | 52 | 36 | 2,883,584 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadSignExtendCoreAir<4, 8> | 21000000 | 2 | 1,048,576 |  | 52 | 36 | 92,274,688 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadSignExtendCoreAir<4, 8> | 21000000 | 3 | 262,144 |  | 52 | 36 | 23,068,672 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadSignExtendCoreAir<4, 8> | 21000000 | 4 | 1,048,576 |  | 52 | 36 | 92,274,688 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadSignExtendCoreAir<4, 8> | 21000000 | 5 | 1,048,576 |  | 52 | 36 | 92,274,688 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadSignExtendCoreAir<4, 8> | 21000000 | 6 | 2,097,152 |  | 52 | 36 | 184,549,376 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadSignExtendCoreAir<4, 8> | 21000000 | 7 | 1,048,576 |  | 52 | 36 | 92,274,688 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadSignExtendCoreAir<4, 8> | 21000000 | 8 | 1,048,576 |  | 52 | 36 | 92,274,688 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadSignExtendCoreAir<4, 8> | 21000000 | 9 | 1,048,576 |  | 52 | 36 | 92,274,688 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadStoreCoreAir<4> | 21000000 | 0 | 8,388,608 |  | 52 | 41 | 780,140,544 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadStoreCoreAir<4> | 21000000 | 1 | 8,388,608 |  | 52 | 41 | 780,140,544 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadStoreCoreAir<4> | 21000000 | 10 | 1,048,576 |  | 52 | 41 | 97,517,568 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadStoreCoreAir<4> | 21000000 | 2 | 8,388,608 |  | 52 | 41 | 780,140,544 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadStoreCoreAir<4> | 21000000 | 3 | 4,194,304 |  | 52 | 41 | 390,070,272 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadStoreCoreAir<4> | 21000000 | 4 | 8,388,608 |  | 52 | 41 | 780,140,544 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadStoreCoreAir<4> | 21000000 | 5 | 8,388,608 |  | 52 | 41 | 780,140,544 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadStoreCoreAir<4> | 21000000 | 6 | 8,388,608 |  | 52 | 41 | 780,140,544 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadStoreCoreAir<4> | 21000000 | 7 | 8,388,608 |  | 52 | 41 | 780,140,544 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadStoreCoreAir<4> | 21000000 | 8 | 8,388,608 |  | 52 | 41 | 780,140,544 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32LoadStoreAdapterAir, LoadStoreCoreAir<4> | 21000000 | 9 | 8,388,608 |  | 52 | 41 | 780,140,544 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, DivRemCoreAir<4, 8> | 21000000 | 4 | 64 |  | 72 | 59 | 8,384 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, DivRemCoreAir<4, 8> | 21000000 | 5 | 256 |  | 72 | 59 | 33,536 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, DivRemCoreAir<4, 8> | 21000000 | 6 | 256 |  | 72 | 59 | 33,536 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, DivRemCoreAir<4, 8> | 21000000 | 7 | 64 |  | 72 | 59 | 8,384 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, DivRemCoreAir<4, 8> | 21000000 | 8 | 128 |  | 72 | 59 | 16,768 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, DivRemCoreAir<4, 8> | 21000000 | 9 | 512 |  | 72 | 59 | 67,072 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MulHCoreAir<4, 8> | 21000000 | 1 | 512 |  | 72 | 39 | 56,832 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MulHCoreAir<4, 8> | 21000000 | 10 | 32 |  | 72 | 39 | 3,552 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MulHCoreAir<4, 8> | 21000000 | 2 | 1,024 |  | 72 | 39 | 113,664 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MulHCoreAir<4, 8> | 21000000 | 3 | 4,096 |  | 72 | 39 | 454,656 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MulHCoreAir<4, 8> | 21000000 | 4 | 65,536 |  | 72 | 39 | 7,274,496 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MulHCoreAir<4, 8> | 21000000 | 5 | 131,072 |  | 72 | 39 | 14,548,992 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MulHCoreAir<4, 8> | 21000000 | 6 | 131,072 |  | 72 | 39 | 14,548,992 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MulHCoreAir<4, 8> | 21000000 | 7 | 131,072 |  | 72 | 39 | 14,548,992 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MulHCoreAir<4, 8> | 21000000 | 8 | 131,072 |  | 72 | 39 | 14,548,992 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MulHCoreAir<4, 8> | 21000000 | 9 | 16,384 |  | 72 | 39 | 1,818,624 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MultiplicationCoreAir<4, 8> | 21000000 | 0 | 256 |  | 52 | 31 | 21,248 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MultiplicationCoreAir<4, 8> | 21000000 | 1 | 1,024 |  | 52 | 31 | 84,992 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MultiplicationCoreAir<4, 8> | 21000000 | 10 | 8,192 |  | 52 | 31 | 679,936 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MultiplicationCoreAir<4, 8> | 21000000 | 2 | 4,096 |  | 52 | 31 | 339,968 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MultiplicationCoreAir<4, 8> | 21000000 | 3 | 16,384 |  | 52 | 31 | 1,359,872 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MultiplicationCoreAir<4, 8> | 21000000 | 4 | 262,144 |  | 52 | 31 | 21,757,952 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MultiplicationCoreAir<4, 8> | 21000000 | 5 | 262,144 |  | 52 | 31 | 21,757,952 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MultiplicationCoreAir<4, 8> | 21000000 | 6 | 262,144 |  | 52 | 31 | 21,757,952 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MultiplicationCoreAir<4, 8> | 21000000 | 7 | 524,288 |  | 52 | 31 | 43,515,904 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MultiplicationCoreAir<4, 8> | 21000000 | 8 | 262,144 |  | 52 | 31 | 21,757,952 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32MultAdapterAir, MultiplicationCoreAir<4, 8> | 21000000 | 9 | 65,536 |  | 52 | 31 | 5,439,488 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32RdWriteAdapterAir, Rv32AuipcCoreAir> | 21000000 | 0 | 262,144 |  | 28 | 20 | 12,582,912 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32RdWriteAdapterAir, Rv32AuipcCoreAir> | 21000000 | 1 | 262,144 |  | 28 | 20 | 12,582,912 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32RdWriteAdapterAir, Rv32AuipcCoreAir> | 21000000 | 10 | 131,072 |  | 28 | 20 | 6,291,456 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32RdWriteAdapterAir, Rv32AuipcCoreAir> | 21000000 | 2 | 262,144 |  | 28 | 20 | 12,582,912 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32RdWriteAdapterAir, Rv32AuipcCoreAir> | 21000000 | 3 | 65,536 |  | 28 | 20 | 3,145,728 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32RdWriteAdapterAir, Rv32AuipcCoreAir> | 21000000 | 4 | 262,144 |  | 28 | 20 | 12,582,912 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32RdWriteAdapterAir, Rv32AuipcCoreAir> | 21000000 | 5 | 65,536 |  | 28 | 20 | 3,145,728 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32RdWriteAdapterAir, Rv32AuipcCoreAir> | 21000000 | 6 | 65,536 |  | 28 | 20 | 3,145,728 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32RdWriteAdapterAir, Rv32AuipcCoreAir> | 21000000 | 7 | 131,072 |  | 28 | 20 | 6,291,456 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32RdWriteAdapterAir, Rv32AuipcCoreAir> | 21000000 | 8 | 131,072 |  | 28 | 20 | 6,291,456 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32RdWriteAdapterAir, Rv32AuipcCoreAir> | 21000000 | 9 | 131,072 |  | 28 | 20 | 6,291,456 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<1, 2, 2, 32, 32>, FieldExpressionCoreAir> | 21000000 | 0 | 1 |  | 836 | 547 | 1,383 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<1, 2, 2, 32, 32>, FieldExpressionCoreAir> | 21000000 | 4 | 65,536 |  | 836 | 547 | 90,636,288 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<1, 2, 2, 32, 32>, FieldExpressionCoreAir> | 21000000 | 5 | 256 |  | 836 | 547 | 354,048 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<1, 2, 2, 32, 32>, FieldExpressionCoreAir> | 21000000 | 6 | 2,048 |  | 836 | 547 | 2,832,384 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<1, 2, 2, 32, 32>, FieldExpressionCoreAir> | 21000000 | 7 | 512 |  | 836 | 547 | 708,096 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<1, 2, 2, 32, 32>, FieldExpressionCoreAir> | 21000000 | 8 | 2,048 |  | 836 | 547 | 2,832,384 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<2, 1, 1, 32, 32>, FieldExpressionCoreAir> | 21000000 | 0 | 1 |  | 320 | 263 | 583 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<2, 1, 1, 32, 32>, FieldExpressionCoreAir> | 21000000 | 4 | 1,024 |  | 320 | 263 | 596,992 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<2, 1, 1, 32, 32>, FieldExpressionCoreAir> | 21000000 | 5 | 4 |  | 320 | 263 | 2,332 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<2, 1, 1, 32, 32>, FieldExpressionCoreAir> | 21000000 | 6 | 32 |  | 320 | 263 | 18,656 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<2, 1, 1, 32, 32>, FieldExpressionCoreAir> | 21000000 | 7 | 8 |  | 320 | 263 | 4,664 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<2, 1, 1, 32, 32>, FieldExpressionCoreAir> | 21000000 | 8 | 32 |  | 320 | 263 | 18,656 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<2, 2, 2, 32, 32>, FieldExpressionCoreAir> | 21000000 | 0 | 1 |  | 860 | 625 | 1,485 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<2, 2, 2, 32, 32>, FieldExpressionCoreAir> | 21000000 | 4 | 32,768 |  | 860 | 625 | 48,660,480 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<2, 2, 2, 32, 32>, FieldExpressionCoreAir> | 21000000 | 5 | 256 |  | 860 | 625 | 380,160 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<2, 2, 2, 32, 32>, FieldExpressionCoreAir> | 21000000 | 6 | 1,024 |  | 860 | 625 | 1,520,640 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<2, 2, 2, 32, 32>, FieldExpressionCoreAir> | 21000000 | 7 | 512 |  | 860 | 625 | 760,320 | 
+| reth.prove_e2e.block_21000000 | VmAirWrapper<Rv32VecHeapAdapterAir<2, 2, 2, 32, 32>, FieldExpressionCoreAir> | 21000000 | 8 | 1,024 |  | 860 | 625 | 1,520,640 | 
+| reth.prove_e2e.block_21000000 | VmConnectorAir | 21000000 | 0 | 2 | 1 | 16 | 5 | 42 | 
+| reth.prove_e2e.block_21000000 | VmConnectorAir | 21000000 | 1 | 2 | 1 | 16 | 5 | 42 | 
+| reth.prove_e2e.block_21000000 | VmConnectorAir | 21000000 | 10 | 2 | 1 | 16 | 5 | 42 | 
+| reth.prove_e2e.block_21000000 | VmConnectorAir | 21000000 | 2 | 2 | 1 | 16 | 5 | 42 | 
+| reth.prove_e2e.block_21000000 | VmConnectorAir | 21000000 | 3 | 2 | 1 | 16 | 5 | 42 | 
+| reth.prove_e2e.block_21000000 | VmConnectorAir | 21000000 | 4 | 2 | 1 | 16 | 5 | 42 | 
+| reth.prove_e2e.block_21000000 | VmConnectorAir | 21000000 | 5 | 2 | 1 | 16 | 5 | 42 | 
+| reth.prove_e2e.block_21000000 | VmConnectorAir | 21000000 | 6 | 2 | 1 | 16 | 5 | 42 | 
+| reth.prove_e2e.block_21000000 | VmConnectorAir | 21000000 | 7 | 2 | 1 | 16 | 5 | 42 | 
+| reth.prove_e2e.block_21000000 | VmConnectorAir | 21000000 | 8 | 2 | 1 | 16 | 5 | 42 | 
+| reth.prove_e2e.block_21000000 | VmConnectorAir | 21000000 | 9 | 2 | 1 | 16 | 5 | 42 | 
+
+| group | block_number | trace_gen_time_ms | total_proof_time_ms | total_cycles | total_cells | stark_prove_excluding_trace_time_ms | quotient_poly_compute_time_ms | quotient_poly_commit_time_ms | perm_trace_commit_time_ms | pcs_opening_time_ms | num_segments | main_trace_commit_time_ms | main_cells_used | halo2_total_cells | halo2_keygen_time_ms | generate_perm_trace_time_ms | execute_time_ms |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| agg_keygen | 21000000 | 319 | 23,011 | 1,636,746 | 270,872,042 | 22,483 | 578 | 8,205 | 4,267 | 2,504 | 1 | 6,872 | 86,881,383 | 8,037,489 | 17,842 | 52 | 209 | 
+| halo2_outer | 21000000 |  | 49,824 |  |  |  |  |  |  |  |  |  | 62,800,919 |  |  |  |  | 
+| halo2_wrapper | 21000000 |  | 35,697 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 
+| reth.prove_e2e.block_21000000 | 21000000 |  |  |  |  |  |  |  |  |  | 11 |  |  |  |  |  |  | 
+
+| group | block_number | cell_tracker_span | simple_advice_cells | lookup_advice_cells | fixed_cells |
+| --- | --- | --- | --- | --- | --- |
+| agg_keygen | 21000000 | VerifierProgram | 482,930 | 155,510 | 158,234 | 
+| agg_keygen | 21000000 | VerifierProgram;CheckTraceHeightConstraints | 4,789 | 972 | 1,738 | 
+| agg_keygen | 21000000 | VerifierProgram;PoseidonCell | 29,400 |  | 8,700 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-c-build-rounds | 19,526 | 2,717 | 6,696 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-c-build-rounds;PoseidonCell | 46,550 |  | 13,775 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-d-verify-pcs | 1,365,246 | 211,617 | 481,258 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-d-verify-pcs;PoseidonCell | 3,839,150 |  | 1,136,075 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-d-verify-pcs;stage-d-verifier-verify | 45,125 | 5,543 | 19,412 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-d-verify-pcs;stage-d-verifier-verify;PoseidonCell | 68,600 |  | 20,300 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-d-verify-pcs;stage-d-verifier-verify;cache-generator-powers | 66,304 | 11,396 | 20,384 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-d-verify-pcs;stage-d-verifier-verify;compute-reduced-opening;single-reduced-opening-eval | 7,994,476 | 335,356 | 1,482,124 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-d-verify-pcs;stage-d-verifier-verify;pre-compute-rounds-context | 76,224 | 11,116 | 22,232 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-d-verify-pcs;stage-d-verifier-verify;verify-batch | 49,728 |  | 6,216 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-d-verify-pcs;stage-d-verifier-verify;verify-batch;PoseidonCell | 9,264,780 |  | 2,744,280 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-d-verify-pcs;stage-d-verifier-verify;verify-batch;verify-batch-reduce-fast;PoseidonCell | 8,263,864 | 237,048 | 2,580,396 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-d-verify-pcs;stage-d-verifier-verify;verify-query | 953,456 | 165,676 | 272,356 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-d-verify-pcs;stage-d-verifier-verify;verify-query;verify-batch-ext | 102,144 |  | 12,768 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-d-verify-pcs;stage-d-verifier-verify;verify-query;verify-batch-ext;PoseidonCell | 15,647,184 |  | 4,634,784 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-d-verify-pcs;stage-d-verifier-verify;verify-query;verify-batch-ext;verify-batch-reduce-fast;PoseidonCell | 1,550,612 | 56,000 | 476,812 | 
+| agg_keygen | 21000000 | VerifierProgram;stage-e-verify-constraints | 9,770,542 | 1,967,337 | 3,013,652 | 
+
+| group | block_number | idx | trace_gen_time_ms | total_proof_time_ms | total_cycles | total_cells | stark_prove_excluding_trace_time_ms | quotient_poly_compute_time_ms | quotient_poly_commit_time_ms | perm_trace_commit_time_ms | pcs_opening_time_ms | main_trace_commit_time_ms | main_cells_used | generate_perm_trace_time_ms | execute_time_ms |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| internal.0 | 21000000 | 0 | 1,054 | 7,339 | 2,381,649 | 347,187,682 | 5,362 | 872 | 1,028 | 885 | 1,433 | 958 | 142,122,045 | 181 | 923 | 
+| internal.0 | 21000000 | 1 | 1,054 | 7,279 | 2,365,436 | 346,728,930 | 5,318 | 884 | 1,011 | 873 | 1,425 | 939 | 140,440,887 | 182 | 907 | 
+| internal.0 | 21000000 | 2 | 1,086 | 7,998 | 2,397,801 | 432,384,482 | 5,971 | 1,004 | 1,101 | 975 | 1,523 | 1,136 | 143,363,681 | 227 | 941 | 
+| internal.0 | 21000000 | 3 | 1,099 | 7,970 | 2,397,962 | 432,384,482 | 5,925 | 1,017 | 1,083 | 992 | 1,494 | 1,130 | 143,365,613 | 203 | 946 | 
+| internal.0 | 21000000 | 4 | 1,080 | 7,376 | 2,381,726 | 347,187,682 | 5,377 | 865 | 1,057 | 896 | 1,438 | 940 | 142,124,425 | 175 | 919 | 
+| internal.0 | 21000000 | 5 | 561 | 4,303 | 1,183,121 | 188,176,866 | 3,288 | 518 | 710 | 502 | 919 | 532 | 70,990,990 | 102 | 454 | 
+| internal.1 | 21000000 | 6 | 612 | 4,317 | 1,531,808 | 183,445,986 | 3,272 | 489 | 721 | 494 | 930 | 537 | 75,082,363 | 95 | 433 | 
+| internal.1 | 21000000 | 7 | 614 | 4,349 | 1,532,215 | 183,445,986 | 3,301 | 489 | 687 | 484 | 1,014 | 523 | 75,027,477 | 101 | 434 | 
+| internal.1 | 21000000 | 8 | 613 | 4,333 | 1,524,186 | 186,591,714 | 3,297 | 503 | 705 | 509 | 940 | 537 | 74,509,536 | 97 | 423 | 
+| internal.2 | 21000000 | 10 | 325 | 2,589 | 758,729 | 95,656,418 | 2,054 | 284 | 486 | 290 | 621 | 317 | 37,500,432 | 52 | 210 | 
+| internal.2 | 21000000 | 9 | 581 | 4,239 | 1,516,742 | 183,445,986 | 3,242 | 491 | 689 | 503 | 918 | 526 | 73,641,339 | 111 | 416 | 
+| internal.3 | 21000000 | 11 | 604 | 4,282 | 1,508,937 | 183,445,986 | 3,269 | 488 | 735 | 482 | 923 | 525 | 73,142,229 | 112 | 409 | 
+| leaf | 21000000 | 0 | 1,900 | 9,517 | 3,028,820 | 1,037,143,530 | 6,619 | 939 | 685 | 1,989 | 1,628 | 982 | 247,923,186 | 391 | 998 | 
+| leaf | 21000000 | 1 | 1,279 | 6,290 | 2,040,144 | 664,751,594 | 4,271 | 622 | 457 | 1,207 | 1,084 | 655 | 156,788,548 | 240 | 740 | 
+| leaf | 21000000 | 10 | 1,287 | 6,326 | 2,101,596 | 639,847,914 | 4,322 | 631 | 485 | 1,207 | 1,114 | 628 | 159,236,782 | 252 | 717 | 
+| leaf | 21000000 | 2 | 1,304 | 6,288 | 2,040,260 | 664,751,594 | 4,250 | 621 | 450 | 1,214 | 1,066 | 656 | 156,790,953 | 238 | 734 | 
+| leaf | 21000000 | 3 | 1,219 | 5,873 | 2,024,319 | 571,690,474 | 3,942 | 570 | 453 | 1,080 | 1,055 | 562 | 155,251,480 | 217 | 712 | 
+| leaf | 21000000 | 4 | 2,136 | 10,226 | 3,459,095 | 1,100,058,090 | 6,987 | 1,019 | 736 | 2,012 | 1,755 | 1,057 | 278,251,252 | 404 | 1,103 | 
+| leaf | 21000000 | 5 | 2,155 | 10,213 | 3,457,898 | 1,100,058,090 | 6,953 | 1,008 | 733 | 2,022 | 1,723 | 1,056 | 278,335,032 | 406 | 1,105 | 
+| leaf | 21000000 | 6 | 2,162 | 10,199 | 3,458,429 | 1,100,058,090 | 6,939 | 1,008 | 733 | 2,013 | 1,724 | 1,049 | 278,430,904 | 409 | 1,098 | 
+| leaf | 21000000 | 7 | 2,094 | 10,149 | 3,378,724 | 1,100,058,090 | 6,965 | 1,012 | 731 | 2,025 | 1,731 | 1,045 | 275,169,718 | 416 | 1,090 | 
+| leaf | 21000000 | 8 | 2,087 | 10,143 | 3,418,770 | 1,100,058,090 | 6,959 | 1,022 | 737 | 2,018 | 1,722 | 1,049 | 276,891,092 | 407 | 1,097 | 
+| leaf | 21000000 | 9 | 1,410 | 6,878 | 2,337,587 | 746,278,378 | 4,680 | 680 | 501 | 1,340 | 1,146 | 739 | 174,794,888 | 269 | 788 | 
+| root | 21000000 | 0 | 304 | 23,387 | 759,148 | 80,435,354 | 22,875 | 578 | 8,401 | 4,394 | 2,572 | 6,866 | 37,486,611 | 47 | 208 | 
+
+| group | block_number | idx | trace_height_constraint | weighted_sum | threshold |
+| --- | --- | --- | --- | --- | --- |
+| internal.0 | 21000000 | 0 | 0 | 9,830,532 | 2,013,265,921 | 
+| internal.0 | 21000000 | 0 | 1 | 50,356,480 | 2,013,265,921 | 
+| internal.0 | 21000000 | 0 | 2 | 4,915,266 | 2,013,265,921 | 
+| internal.0 | 21000000 | 0 | 3 | 50,610,436 | 2,013,265,921 | 
+| internal.0 | 21000000 | 0 | 4 | 262,144 | 2,013,265,921 | 
+| internal.0 | 21000000 | 0 | 5 | 116,368,074 | 2,013,265,921 | 
+| internal.0 | 21000000 | 1 | 0 | 9,764,996 | 2,013,265,921 | 
+| internal.0 | 21000000 | 1 | 1 | 50,356,480 | 2,013,265,921 | 
+| internal.0 | 21000000 | 1 | 2 | 4,882,498 | 2,013,265,921 | 
+| internal.0 | 21000000 | 1 | 3 | 50,610,436 | 2,013,265,921 | 
+| internal.0 | 21000000 | 1 | 4 | 262,144 | 2,013,265,921 | 
+| internal.0 | 21000000 | 1 | 5 | 116,269,770 | 2,013,265,921 | 
+| internal.0 | 21000000 | 2 | 0 | 10,354,820 | 2,013,265,921 | 
+| internal.0 | 21000000 | 2 | 1 | 60,317,952 | 2,013,265,921 | 
+| internal.0 | 21000000 | 2 | 2 | 5,177,410 | 2,013,265,921 | 
+| internal.0 | 21000000 | 2 | 3 | 60,047,620 | 2,013,265,921 | 
+| internal.0 | 21000000 | 2 | 4 | 524,288 | 2,013,265,921 | 
+| internal.0 | 21000000 | 2 | 5 | 136,815,306 | 2,013,265,921 | 
+| internal.0 | 21000000 | 3 | 0 | 10,354,820 | 2,013,265,921 | 
+| internal.0 | 21000000 | 3 | 1 | 60,317,952 | 2,013,265,921 | 
+| internal.0 | 21000000 | 3 | 2 | 5,177,410 | 2,013,265,921 | 
+| internal.0 | 21000000 | 3 | 3 | 60,047,620 | 2,013,265,921 | 
+| internal.0 | 21000000 | 3 | 4 | 524,288 | 2,013,265,921 | 
+| internal.0 | 21000000 | 3 | 5 | 136,815,306 | 2,013,265,921 | 
+| internal.0 | 21000000 | 4 | 0 | 9,830,532 | 2,013,265,921 | 
+| internal.0 | 21000000 | 4 | 1 | 50,356,480 | 2,013,265,921 | 
+| internal.0 | 21000000 | 4 | 2 | 4,915,266 | 2,013,265,921 | 
+| internal.0 | 21000000 | 4 | 3 | 50,610,436 | 2,013,265,921 | 
+| internal.0 | 21000000 | 4 | 4 | 262,144 | 2,013,265,921 | 
+| internal.0 | 21000000 | 4 | 5 | 116,368,074 | 2,013,265,921 | 
+| internal.0 | 21000000 | 5 | 0 | 4,882,564 | 2,013,265,921 | 
+| internal.0 | 21000000 | 5 | 1 | 26,620,160 | 2,013,265,921 | 
+| internal.0 | 21000000 | 5 | 2 | 2,441,282 | 2,013,265,921 | 
+| internal.0 | 21000000 | 5 | 3 | 26,747,140 | 2,013,265,921 | 
+| internal.0 | 21000000 | 5 | 4 | 131,072 | 2,013,265,921 | 
+| internal.0 | 21000000 | 5 | 5 | 61,215,434 | 2,013,265,921 | 
+| internal.1 | 21000000 | 6 | 0 | 5,144,708 | 2,013,265,921 | 
+| internal.1 | 21000000 | 6 | 1 | 23,748,864 | 2,013,265,921 | 
+| internal.1 | 21000000 | 6 | 2 | 2,572,354 | 2,013,265,921 | 
+| internal.1 | 21000000 | 6 | 3 | 23,478,532 | 2,013,265,921 | 
+| internal.1 | 21000000 | 6 | 4 | 131,072 | 2,013,265,921 | 
+| internal.1 | 21000000 | 6 | 5 | 55,468,746 | 2,013,265,921 | 
+| internal.1 | 21000000 | 7 | 0 | 5,144,708 | 2,013,265,921 | 
+| internal.1 | 21000000 | 7 | 1 | 23,748,864 | 2,013,265,921 | 
+| internal.1 | 21000000 | 7 | 2 | 2,572,354 | 2,013,265,921 | 
+| internal.1 | 21000000 | 7 | 3 | 23,478,532 | 2,013,265,921 | 
+| internal.1 | 21000000 | 7 | 4 | 131,072 | 2,013,265,921 | 
+| internal.1 | 21000000 | 7 | 5 | 55,468,746 | 2,013,265,921 | 
+| internal.1 | 21000000 | 8 | 0 | 5,144,708 | 2,013,265,921 | 
+| internal.1 | 21000000 | 8 | 1 | 24,011,008 | 2,013,265,921 | 
+| internal.1 | 21000000 | 8 | 2 | 2,572,354 | 2,013,265,921 | 
+| internal.1 | 21000000 | 8 | 3 | 24,133,892 | 2,013,265,921 | 
+| internal.1 | 21000000 | 8 | 4 | 131,072 | 2,013,265,921 | 
+| internal.1 | 21000000 | 8 | 5 | 56,386,250 | 2,013,265,921 | 
+| internal.2 | 21000000 | 10 | 0 | 2,572,420 | 2,013,265,921 | 
+| internal.2 | 21000000 | 10 | 1 | 12,005,632 | 2,013,265,921 | 
+| internal.2 | 21000000 | 10 | 2 | 1,286,210 | 2,013,265,921 | 
+| internal.2 | 21000000 | 10 | 3 | 12,067,076 | 2,013,265,921 | 
+| internal.2 | 21000000 | 10 | 4 | 65,536 | 2,013,265,921 | 
+| internal.2 | 21000000 | 10 | 5 | 28,390,090 | 2,013,265,921 | 
+| internal.2 | 21000000 | 9 | 0 | 5,144,708 | 2,013,265,921 | 
+| internal.2 | 21000000 | 9 | 1 | 23,748,864 | 2,013,265,921 | 
+| internal.2 | 21000000 | 9 | 2 | 2,572,354 | 2,013,265,921 | 
+| internal.2 | 21000000 | 9 | 3 | 23,478,532 | 2,013,265,921 | 
+| internal.2 | 21000000 | 9 | 4 | 131,072 | 2,013,265,921 | 
+| internal.2 | 21000000 | 9 | 5 | 55,468,746 | 2,013,265,921 | 
+| internal.3 | 21000000 | 11 | 0 | 5,144,708 | 2,013,265,921 | 
+| internal.3 | 21000000 | 11 | 1 | 23,748,864 | 2,013,265,921 | 
+| internal.3 | 21000000 | 11 | 2 | 2,572,354 | 2,013,265,921 | 
+| internal.3 | 21000000 | 11 | 3 | 23,478,532 | 2,013,265,921 | 
+| internal.3 | 21000000 | 11 | 4 | 131,072 | 2,013,265,921 | 
+| internal.3 | 21000000 | 11 | 5 | 55,468,746 | 2,013,265,921 | 
+| leaf | 21000000 | 0 | 0 | 18,022,532 | 2,013,265,921 | 
+| leaf | 21000000 | 0 | 1 | 123,437,312 | 2,013,265,921 | 
+| leaf | 21000000 | 0 | 2 | 9,011,266 | 2,013,265,921 | 
+| leaf | 21000000 | 0 | 3 | 125,108,484 | 2,013,265,921 | 
+| leaf | 21000000 | 0 | 4 | 524,288 | 2,013,265,921 | 
+| leaf | 21000000 | 0 | 5 | 278,463,178 | 2,013,265,921 | 
+| leaf | 21000000 | 1 | 0 | 9,896,068 | 2,013,265,921 | 
+| leaf | 21000000 | 1 | 1 | 73,318,656 | 2,013,265,921 | 
+| leaf | 21000000 | 1 | 2 | 4,948,034 | 2,013,265,921 | 
+| leaf | 21000000 | 1 | 3 | 73,433,348 | 2,013,265,921 | 
+| leaf | 21000000 | 1 | 4 | 524,288 | 2,013,265,921 | 
+| leaf | 21000000 | 1 | 5 | 164,479,690 | 2,013,265,921 | 
+| leaf | 21000000 | 10 | 0 | 11,468,932 | 2,013,265,921 | 
+| leaf | 21000000 | 10 | 1 | 71,221,504 | 2,013,265,921 | 
+| leaf | 21000000 | 10 | 2 | 5,734,466 | 2,013,265,921 | 
+| leaf | 21000000 | 10 | 3 | 71,336,196 | 2,013,265,921 | 
+| leaf | 21000000 | 10 | 4 | 262,144 | 2,013,265,921 | 
+| leaf | 21000000 | 10 | 5 | 162,382,538 | 2,013,265,921 | 
+| leaf | 21000000 | 2 | 0 | 9,896,068 | 2,013,265,921 | 
+| leaf | 21000000 | 2 | 1 | 73,318,656 | 2,013,265,921 | 
+| leaf | 21000000 | 2 | 2 | 4,948,034 | 2,013,265,921 | 
+| leaf | 21000000 | 2 | 3 | 73,433,348 | 2,013,265,921 | 
+| leaf | 21000000 | 2 | 4 | 524,288 | 2,013,265,921 | 
+| leaf | 21000000 | 2 | 5 | 164,479,690 | 2,013,265,921 | 
+| leaf | 21000000 | 3 | 0 | 9,371,780 | 2,013,265,921 | 
+| leaf | 21000000 | 3 | 1 | 64,930,048 | 2,013,265,921 | 
+| leaf | 21000000 | 3 | 2 | 4,685,890 | 2,013,265,921 | 
+| leaf | 21000000 | 3 | 3 | 65,044,740 | 2,013,265,921 | 
+| leaf | 21000000 | 3 | 4 | 262,144 | 2,013,265,921 | 
+| leaf | 21000000 | 3 | 5 | 146,653,898 | 2,013,265,921 | 
+| leaf | 21000000 | 4 | 0 | 18,546,820 | 2,013,265,921 | 
+| leaf | 21000000 | 4 | 1 | 129,728,768 | 2,013,265,921 | 
+| leaf | 21000000 | 4 | 2 | 9,273,410 | 2,013,265,921 | 
+| leaf | 21000000 | 4 | 3 | 129,827,076 | 2,013,265,921 | 
+| leaf | 21000000 | 4 | 4 | 524,288 | 2,013,265,921 | 
+| leaf | 21000000 | 4 | 5 | 290,259,658 | 2,013,265,921 | 
+| leaf | 21000000 | 5 | 0 | 18,546,820 | 2,013,265,921 | 
+| leaf | 21000000 | 5 | 1 | 129,728,768 | 2,013,265,921 | 
+| leaf | 21000000 | 5 | 2 | 9,273,410 | 2,013,265,921 | 
+| leaf | 21000000 | 5 | 3 | 129,827,076 | 2,013,265,921 | 
+| leaf | 21000000 | 5 | 4 | 524,288 | 2,013,265,921 | 
+| leaf | 21000000 | 5 | 5 | 290,259,658 | 2,013,265,921 | 
+| leaf | 21000000 | 6 | 0 | 18,546,820 | 2,013,265,921 | 
+| leaf | 21000000 | 6 | 1 | 129,728,768 | 2,013,265,921 | 
+| leaf | 21000000 | 6 | 2 | 9,273,410 | 2,013,265,921 | 
+| leaf | 21000000 | 6 | 3 | 129,827,076 | 2,013,265,921 | 
+| leaf | 21000000 | 6 | 4 | 524,288 | 2,013,265,921 | 
+| leaf | 21000000 | 6 | 5 | 290,259,658 | 2,013,265,921 | 
+| leaf | 21000000 | 7 | 0 | 18,546,820 | 2,013,265,921 | 
+| leaf | 21000000 | 7 | 1 | 129,728,768 | 2,013,265,921 | 
+| leaf | 21000000 | 7 | 2 | 9,273,410 | 2,013,265,921 | 
+| leaf | 21000000 | 7 | 3 | 129,827,076 | 2,013,265,921 | 
+| leaf | 21000000 | 7 | 4 | 524,288 | 2,013,265,921 | 
+| leaf | 21000000 | 7 | 5 | 290,259,658 | 2,013,265,921 | 
+| leaf | 21000000 | 8 | 0 | 18,546,820 | 2,013,265,921 | 
+| leaf | 21000000 | 8 | 1 | 129,728,768 | 2,013,265,921 | 
+| leaf | 21000000 | 8 | 2 | 9,273,410 | 2,013,265,921 | 
+| leaf | 21000000 | 8 | 3 | 129,827,076 | 2,013,265,921 | 
+| leaf | 21000000 | 8 | 4 | 524,288 | 2,013,265,921 | 
+| leaf | 21000000 | 8 | 5 | 290,259,658 | 2,013,265,921 | 
+| leaf | 21000000 | 9 | 0 | 12,517,508 | 2,013,265,921 | 
+| leaf | 21000000 | 9 | 1 | 80,658,688 | 2,013,265,921 | 
+| leaf | 21000000 | 9 | 2 | 6,258,754 | 2,013,265,921 | 
+| leaf | 21000000 | 9 | 3 | 80,773,380 | 2,013,265,921 | 
+| leaf | 21000000 | 9 | 4 | 524,288 | 2,013,265,921 | 
+| leaf | 21000000 | 9 | 5 | 183,091,914 | 2,013,265,921 | 
+| root | 21000000 | 0 | 0 | 2,252,928 | 2,013,265,921 | 
+| root | 21000000 | 0 | 1 | 14,557,184 | 2,013,265,921 | 
+| root | 21000000 | 0 | 2 | 1,126,464 | 2,013,265,921 | 
+| root | 21000000 | 0 | 3 | 15,540,224 | 2,013,265,921 | 
+| root | 21000000 | 0 | 4 | 262,144 | 2,013,265,921 | 
+| root | 21000000 | 0 | 5 | 34,263,234 | 2,013,265,921 | 
+
+| group | block_number | segment | trace_gen_time_ms | total_proof_time_ms | total_cycles | total_cells | stark_prove_excluding_trace_time_ms | quotient_poly_compute_time_ms | quotient_poly_commit_time_ms | perm_trace_commit_time_ms | pcs_opening_time_ms | main_trace_commit_time_ms | main_cells_used | generate_perm_trace_time_ms | execute_time_ms |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| agg_keygen | 21000000 | 0 | 28 | 447 |  | 7,747,601 | 419 | 29 | 58 | 50 | 216 | 50 | 665,916 | 10 | 0 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 0 | 8,912 | 25,774 | 20,417,756 | 2,548,470,041 | 14,159 | 2,106 | 1,312 | 3,877 | 3,071 | 2,871 | 994,175,183 | 903 | 2,703 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 1 | 8,902 | 25,301 | 20,434,118 | 2,548,578,999 | 13,723 | 2,120 | 1,219 | 3,727 | 3,051 | 2,784 | 990,818,132 | 812 | 2,676 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 10 | 3,225 | 7,395 | 2,108,135 | 596,030,412 | 3,877 | 644 | 419 | 724 | 1,049 | 894 | 310,297,137 | 139 | 293 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 2 | 8,765 | 25,129 | 20,452,601 | 2,548,890,807 | 13,699 | 2,107 | 1,234 | 3,678 | 3,078 | 2,778 | 992,361,924 | 815 | 2,665 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 3 | 4,550 | 22,564 | 5,828,811 | 3,308,761,166 | 17,210 | 4,626 | 766 | 3,349 | 1,935 | 5,904 | 1,451,472,521 | 621 | 804 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 4 | 9,828 | 33,324 | 23,486,136 | 3,343,298,794 | 17,580 | 3,322 | 1,337 | 4,552 | 3,481 | 3,903 | 1,360,419,239 | 971 | 5,916 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 5 | 9,978 | 27,994 | 23,850,342 | 2,704,491,686 | 14,883 | 2,365 | 1,347 | 4,060 | 3,366 | 2,855 | 1,094,520,257 | 875 | 3,133 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 6 | 10,715 | 30,116 | 24,897,308 | 2,892,926,986 | 15,990 | 2,551 | 1,446 | 4,369 | 3,586 | 3,059 | 1,161,702,451 | 965 | 3,411 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 7 | 10,297 | 28,388 | 24,314,235 | 2,686,742,498 | 14,804 | 2,348 | 1,336 | 4,046 | 3,363 | 2,815 | 1,117,709,920 | 880 | 3,287 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 8 | 10,821 | 29,945 | 24,111,730 | 2,875,560,842 | 15,793 | 2,688 | 1,439 | 4,179 | 3,350 | 3,189 | 1,283,734,723 | 931 | 3,331 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 9 | 9,119 | 36,001 | 14,503,095 | 4,948,270,778 | 24,183 | 5,775 | 1,238 | 5,161 | 3,372 | 7,504 | 1,946,260,208 | 1,125 | 2,699 | 
+
+| group | block_number | segment | trace_height_constraint | weighted_sum | threshold |
+| --- | --- | --- | --- | --- | --- |
+| agg_keygen | 21000000 | 0 | 0 | 34 | 2,013,265,921 | 
+| agg_keygen | 21000000 | 0 | 1 | 86 | 2,013,265,921 | 
+| agg_keygen | 21000000 | 0 | 2 | 17 | 2,013,265,921 | 
+| agg_keygen | 21000000 | 0 | 3 | 98 | 2,013,265,921 | 
+| agg_keygen | 21000000 | 0 | 4 | 193 | 2,013,265,921 | 
+| agg_keygen | 21000000 | 0 | 5 | 65 | 2,013,265,921 | 
+| agg_keygen | 21000000 | 0 | 6 | 29 | 2,013,265,921 | 
+| agg_keygen | 21000000 | 0 | 7 | 20 | 2,013,265,921 | 
+| agg_keygen | 21000000 | 0 | 8 | 918,079 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 0 | 0 | 49,807,902 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 0 | 1 | 141,035,676 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 0 | 2 | 24,903,951 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 0 | 3 | 166,202,506 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 0 | 4 | 4,194,304 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 0 | 5 | 2,097,152 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 0 | 6 | 56,361,113 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 0 | 7 |  | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 0 | 8 | 1,024 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 0 | 9 | 448,666,860 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 1 | 0 | 49,810,440 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 1 | 1 | 141,042,778 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 1 | 2 | 24,905,220 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 1 | 3 | 166,208,606 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 1 | 4 | 4,194,304 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 1 | 5 | 2,097,152 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 1 | 6 | 56,361,610 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 1 | 7 |  | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 1 | 8 | 8,192 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 1 | 9 | 448,691,534 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 10 | 0 | 6,668,362 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 10 | 1 | 20,070,680 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 10 | 2 | 3,334,181 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 10 | 3 | 23,445,764 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 10 | 4 | 3,407,872 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 10 | 5 | 1,310,720 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 10 | 6 | 9,273,378 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 10 | 7 |  | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 10 | 8 | 33,024 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 10 | 9 | 71,082,925 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 2 | 0 | 49,817,608 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 2 | 1 | 141,064,282 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 2 | 2 | 24,908,804 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 2 | 3 | 166,230,110 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 2 | 4 | 4,194,304 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 2 | 5 | 2,097,152 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 2 | 6 | 56,362,122 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 2 | 7 |  | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 2 | 8 | 24,576 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 2 | 9 | 448,762,190 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 3 | 0 | 19,570,696 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 3 | 1 | 103,800,832 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 3 | 2 | 9,785,348 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 3 | 3 | 112,713,732 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 3 | 4 | 4,194,304 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 3 | 5 | 2,097,152 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 3 | 6 | 89,198,592 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 3 | 7 |  | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 3 | 8 | 98,304 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 3 | 9 | 344,997,904 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 4 | 0 | 52,798,084 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 4 | 1 | 170,270,592 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 4 | 2 | 26,399,042 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 4 | 3 | 236,365,188 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 4 | 4 | 4,194,304 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 4 | 5 | 2,097,152 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 4 | 6 | 77,454,464 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 4 | 7 |  | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 4 | 8 | 1,589,760 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 4 | 9 | 574,707,530 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 5 | 0 | 53,497,408 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 5 | 1 | 158,818,004 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 5 | 2 | 26,748,704 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 5 | 3 | 188,050,016 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 5 | 4 | 4,194,304 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 5 | 5 | 2,097,152 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 5 | 6 | 63,141,188 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 5 | 7 |  | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 5 | 8 | 2,164,736 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 5 | 9 | 502,250,456 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 6 | 0 | 58,725,220 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 6 | 1 | 170,345,248 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 6 | 2 | 29,362,610 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 6 | 3 | 203,713,380 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 6 | 4 | 4,194,304 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 6 | 5 | 2,097,152 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 6 | 6 | 65,770,336 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 6 | 7 |  | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 6 | 8 | 2,131,968 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 6 | 9 | 539,879,162 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 7 | 0 | 53,072,124 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 7 | 1 | 157,245,224 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 7 | 2 | 26,536,062 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 7 | 3 | 186,677,820 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 7 | 4 | 4,194,304 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 7 | 5 | 2,097,152 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 7 | 6 | 61,880,072 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 7 | 7 |  | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 7 | 8 | 3,179,008 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 7 | 9 | 498,420,710 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 8 | 0 | 52,653,668 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 8 | 1 | 160,140,064 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 8 | 2 | 26,326,834 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 8 | 3 | 190,370,404 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 8 | 4 | 4,194,304 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 8 | 5 | 2,097,152 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 8 | 6 | 68,669,024 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 8 | 7 |  | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 8 | 8 | 2,114,560 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 8 | 9 | 510,104,954 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 9 | 0 | 44,993,556 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 9 | 1 | 177,619,968 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 9 | 2 | 22,496,778 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 9 | 3 | 198,710,276 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 9 | 4 | 7,340,032 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 9 | 5 | 3,145,728 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 9 | 6 | 120,228,352 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 9 | 7 |  | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 9 | 8 | 397,312 | 2,013,265,921 | 
+| reth.prove_e2e.block_21000000 | 21000000 | 9 | 9 | 580,043,810 | 2,013,265,921 | 
+
+| group | block_number | trace_height_constraint | weighted_sum | threshold |
+| --- | --- | --- | --- | --- |
+| agg_keygen | 21000000 | 0 | 5,701,764 | 2,013,265,921 | 
+| agg_keygen | 21000000 | 1 | 28,467,456 | 2,013,265,921 | 
+| agg_keygen | 21000000 | 2 | 2,850,882 | 2,013,265,921 | 
+| agg_keygen | 21000000 | 3 | 28,197,124 | 2,013,265,921 | 
+| agg_keygen | 21000000 | 4 | 262,144 | 2,013,265,921 | 
+| agg_keygen | 21000000 | 5 | 65,741,514 | 2,013,265,921 | 
+
+</details>
+
+
+Commit: https://github.com/axiom-crypto/openvm-reth-benchmark/commit/37a3de4937fd38e296c5d7b4fc2ebcc6aaeeffe5
+
+Max Segment Length: 8388508
+
+Instance Type: m8g.24xlarge
+
+Memory Allocator: jemalloc
+
+[Benchmark Workflow](https://github.com/axiom-crypto/openvm-reth-benchmark/actions/runs/14140028872)
