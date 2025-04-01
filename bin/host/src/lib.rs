@@ -109,9 +109,7 @@ pub fn reth_vm_config(
     let bn_config = PairingCurve::Bn254.curve_config();
     let bls_config = PairingCurve::Bls12_381.curve_config();
     // The builder will do this automatically, but we set it just in case.
-    let rv32m = Rv32M {
-        range_tuple_checker_sizes: int256.range_tuple_checker_sizes,
-    };
+    let rv32m = Rv32M { range_tuple_checker_sizes: int256.range_tuple_checker_sizes };
     let mut supported_moduli = vec![
         bn_config.modulus.clone(),
         bn_config.scalar.clone(),
@@ -147,7 +145,10 @@ pub const RETH_DEFAULT_APP_LOG_BLOWUP: usize = 1;
 pub const RETH_DEFAULT_LEAF_LOG_BLOWUP: usize = 1;
 
 #[tokio::main]
-pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(args: HostArgs, openvm_client_eth_elf: &[u8]) -> eyre::Result<()> {
+pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
+    args: HostArgs,
+    openvm_client_eth_elf: &[u8],
+) -> eyre::Result<()> {
     // Initialize the environment variables.
     dotenv::dotenv().ok();
 
@@ -179,9 +180,8 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(args: HostArgs, openvm_cl
         (None, Some(rpc_url)) => {
             // Cache not found but we have RPC
             // Setup the provider.
-            let client = RpcClient::builder()
-                .layer(RetryBackoffLayer::new(5, 1000, 100))
-                .http(rpc_url);
+            let client =
+                RpcClient::builder().layer(RetryBackoffLayer::new(5, 1000, 100)).http(rpc_url);
             let provider = RootProvider::new(client);
 
             // Setup the host executor.
@@ -224,19 +224,12 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(args: HostArgs, openvm_cl
         return Ok(());
     }
 
-    let app_log_blowup = args
-        .benchmark
-        .app_log_blowup
-        .unwrap_or(RETH_DEFAULT_APP_LOG_BLOWUP);
+    let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(RETH_DEFAULT_APP_LOG_BLOWUP);
     args.benchmark.app_log_blowup = Some(app_log_blowup);
     let max_segment_length = args.benchmark.max_segment_length.unwrap_or((1 << 23) - 100);
-    let max_cells_per_chip_in_segment = args
-        .max_cells_per_chip_in_segment
-        .unwrap_or(((1 << 23) - 100) * 120);
-    let leaf_log_blowup = args
-        .benchmark
-        .leaf_log_blowup
-        .unwrap_or(RETH_DEFAULT_LEAF_LOG_BLOWUP);
+    let max_cells_per_chip_in_segment =
+        args.max_cells_per_chip_in_segment.unwrap_or(((1 << 23) - 100) * 120);
+    let leaf_log_blowup = args.benchmark.leaf_log_blowup.unwrap_or(RETH_DEFAULT_LEAF_LOG_BLOWUP);
     args.benchmark.leaf_log_blowup = Some(leaf_log_blowup);
 
     let vm_config = reth_vm_config(
@@ -281,8 +274,9 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(args: HostArgs, openvm_cl
                     let app_pk = sdk.app_keygen(app_config)?;
                     let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
 
-                    let app_prover = AppProver::new(app_pk.app_vm_pk.clone(), app_committed_exe)
-                        .with_program_name(program_name);
+                    let app_prover =
+                        AppProver::<_, E>::new(app_pk.app_vm_pk.clone(), app_committed_exe)
+                            .with_program_name(program_name);
                     let proof = app_prover.generate_app_proof(stdin);
                     let app_vk = app_pk.get_app_vk();
                     sdk.verify_app_proof(&app_vk, &proof)?;
@@ -300,27 +294,15 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(args: HostArgs, openvm_cl
                     )?;
                     tracing::info!(
                         "halo2_outer_k: {}",
-                        full_agg_pk
-                            .halo2_pk
-                            .verifier
-                            .pinning
-                            .metadata
-                            .config_params
-                            .k
+                        full_agg_pk.halo2_pk.verifier.pinning.metadata.config_params.k
                     );
                     tracing::info!(
                         "halo2_wrapper_k: {}",
-                        full_agg_pk
-                            .halo2_pk
-                            .wrapper
-                            .pinning
-                            .metadata
-                            .config_params
-                            .k
+                        full_agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k
                     );
                     let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
 
-                    let mut prover = ContinuationProver::new(
+                    let mut prover = ContinuationProver::<_, E>::new(
                         &halo2_params_reader,
                         Arc::new(app_pk),
                         app_committed_exe,
