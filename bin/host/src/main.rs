@@ -25,14 +25,14 @@ use openvm_pairing_circuit::{PairingCurve, PairingExtension};
 use openvm_rv32im_circuit::Rv32M;
 use openvm_sdk::{
     config::SdkVmConfig,
-    fs::write_object_to_file,
     prover::{AppProver, ContinuationProver},
     DefaultStaticVerifierPvHandler, Sdk, StdIn,
 };
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 pub use reth_primitives;
 use reth_primitives::hex::ToHexExt;
-use std::{path::PathBuf, sync::Arc};
+use serde_json::json;
+use std::{fs, path::PathBuf, sync::Arc};
 use tracing::info_span;
 
 mod execute;
@@ -216,7 +216,14 @@ async fn main() -> eyre::Result<()> {
     stdin.write(&client_input);
 
     if args.make_input {
-        write_object_to_file(args.input_path.unwrap(), stdin)?;
+        let words: Vec<u32> = openvm::serde::to_vec(&client_input).unwrap();
+        let bytes: Vec<u8> = words.into_iter().flat_map(|w| w.to_le_bytes()).collect();
+        let hex_bytes = String::from("0x01") + &hex::encode(&bytes);
+        let input = json!({
+            "input": [hex_bytes]
+        });
+        let input = serde_json::to_string(&input).unwrap();
+        fs::write(args.input_path.unwrap(), input)?;
         return Ok(());
     }
 
