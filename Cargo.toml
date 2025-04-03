@@ -1,5 +1,5 @@
 [workspace]
-members = ["bin/host", "crates/executor/client", "crates/executor/host", "crates/mpt", "crates/primitives", "crates/storage/rpc-db", "crates/storage/witness-db"]
+members = ["bin/host", "crates/executor/client", "crates/executor/host", "crates/mpt", "crates/primitives", "crates/storage/rpc-db", "crates/storage/witness-db", "crates/host-bench"]
 exclude = []
 resolver = "2"
 
@@ -36,7 +36,7 @@ openvm-client-executor = { path = "./crates/executor/client" }
 openvm-host-executor = { path = "./crates/executor/host" }
 openvm-mpt = { path = "./crates/mpt" }
 openvm-primitives = { path = "./crates/primitives" }
-
+openvm-reth-benchmark = { path = "./crates/host-bench" }
 # reth
 reth-primitives = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false, features = ["alloy-compat", "std", "ecrecover"] }
 reth-codecs = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false }
