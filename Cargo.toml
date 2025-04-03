@@ -53,7 +53,7 @@ openvm-client-executor = { path = "./crates/executor/client" }
 openvm-host-executor = { path = "./crates/executor/host" }
 openvm-mpt = { path = "./crates/mpt" }
 openvm-primitives = { path = "./crates/primitives" }
-openvm-reth-benchmark = { path = "./crates/host-bench" }
+openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
 # reth
 reth-primitives = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/v1.0.6", default-features = false, features = [
     "alloy-compat",
