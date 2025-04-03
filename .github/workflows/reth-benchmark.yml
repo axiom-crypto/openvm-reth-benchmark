@@ -284,7 +284,7 @@ jobs:
         id: cache-host-binary-restore
         uses: runs-on/cache/restore@v4
         with:
-          path: target/${{ steps.set-cache-keys.outputs.host_profile }}/openvm-reth-benchmark
+          path: target/${{ steps.set-cache-keys.outputs.host_profile }}/openvm-reth-benchmark-bin
           key: ${{ steps.set-cache-keys.outputs.host_cache_key }}
 
       - name: Build Host Binary
@@ -309,14 +309,14 @@ jobs:
               RUSTFLAGS="${RUSTFLAGS} -g -C force-frame-pointers=yes"
           fi
           export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
-          RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark --profile=$HOST_PROFILE --no-default-features --features=$FEATURES
+          RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark-bin --profile=$HOST_PROFILE --no-default-features --features=$FEATURES
           echo "JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}" >> $GITHUB_ENV
 
       - name: Save Host Binary to cache
         if: steps.cache-host-binary-restore.outputs.cache-hit != 'true'
         uses: runs-on/cache/save@v4
         with:
-          path: target/${{ steps.set-cache-keys.outputs.host_profile }}/openvm-reth-benchmark
+          path: target/${{ steps.set-cache-keys.outputs.host_profile }}/openvm-reth-benchmark-bin
           key: ${{ steps.cache-host-binary-restore.outputs.cache-primary-key }}
 
       - name: Set up run benchmark script
@@ -328,7 +328,7 @@ jobs:
           BLOCK_NUMBER=${{ inputs.block_number || github.event.inputs.block_number }}
           HOST_PROFILE=${{ steps.set-cache-keys.outputs.host_profile }}
           cat > run_benchmark.sh <<EOF
-          ./target/$HOST_PROFILE/openvm-reth-benchmark \
+          ./target/$HOST_PROFILE/openvm-reth-benchmark-bin \
             --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
             --app-log-blowup ${{ inputs.app_log_blowup || github.event.inputs.app_log_blowup }} \
             --leaf-log-blowup ${{ inputs.leaf_log_blowup || github.event.inputs.leaf_log_blowup }} \
