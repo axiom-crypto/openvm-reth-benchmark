@@ -17,6 +17,9 @@ clap = { version = "4.5.7", features = ["derive", "env"] }
 serde.workspace = true
 bincode = { workspace = true, features = ["std"] }
 metrics = "0.23.0"
+hex = "0.4.3"
+serde_json.workspace = true
+
 # workspace
 openvm-host-executor.workspace = true
 openvm-client-executor.workspace = true
@@ -30,6 +33,7 @@ alloy-transport.workspace = true
 reth-primitives.workspace = true
 
 # openvm
+openvm = { workspace = true }
 openvm-build = { workspace = true }
 openvm-transpiler = { workspace = true }
 openvm-rv32im-circuit = { workspace = true }
