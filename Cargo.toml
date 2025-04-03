@@ -123,7 +123,7 @@ alloy-eips = { version = "0.3", default-features = false }
 alloy-trie = "0.5.0"
 
 # openvm
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "884f8e6aabf72bde00dc51f1f1121277bff73b1e", default-features = false }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", branch = "test/dump-trace-sizes", default-features = false }
 openvm-build = { git = "https://github.com/openvm-org/openvm.git", rev = "f41640c37bc5468a0775a38098053fe37ea3538a", default-features = false }
 openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "f41640c37bc5468a0775a38098053fe37ea3538a", default-features = false }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", rev = "f41640c37bc5468a0775a38098053fe37ea3538a", default-features = false }

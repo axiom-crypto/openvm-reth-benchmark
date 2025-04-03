@@ -3800,7 +3800,7 @@ dependencies = [
  "openvm-pairing-circuit",
  "openvm-rv32im-circuit",
  "openvm-sdk",
- "openvm-stark-sdk 1.0.0 (git+https://github.com/openvm-org/stark-backend.git?rev=884f8e6aabf72bde00dc51f1f1121277bff73b1e)",
+ "openvm-stark-sdk 1.0.0 (git+https://github.com/openvm-org/stark-backend.git?branch=test%2Fdump-trace-sizes)",
  "openvm-transpiler",
  "reth-primitives",
  "serde",
@@ -4036,7 +4036,7 @@ dependencies = [
 [[package]]
 name = "openvm-stark-backend"
 version = "1.0.0"
-source = "git+https://github.com/openvm-org/stark-backend.git?rev=884f8e6aabf72bde00dc51f1f1121277bff73b1e#884f8e6aabf72bde00dc51f1f1121277bff73b1e"
+source = "git+https://github.com/openvm-org/stark-backend.git?branch=test%2Fdump-trace-sizes#884f8e6aabf72bde00dc51f1f1121277bff73b1e"
 dependencies = [
  "bitcode",
  "cfg-if",
@@ -4095,7 +4095,7 @@ dependencies = [
 [[package]]
 name = "openvm-stark-sdk"
 version = "1.0.0"
-source = "git+https://github.com/openvm-org/stark-backend.git?rev=884f8e6aabf72bde00dc51f1f1121277bff73b1e#884f8e6aabf72bde00dc51f1f1121277bff73b1e"
+source = "git+https://github.com/openvm-org/stark-backend.git?branch=test%2Fdump-trace-sizes#884f8e6aabf72bde00dc51f1f1121277bff73b1e"
 dependencies = [
  "derivative",
  "derive_more 0.99.19",
@@ -4104,7 +4104,7 @@ dependencies = [
  "metrics",
  "metrics-tracing-context",
  "metrics-util",
- "openvm-stark-backend 1.0.0 (git+https://github.com/openvm-org/stark-backend.git?rev=884f8e6aabf72bde00dc51f1f1121277bff73b1e)",
+ "openvm-stark-backend 1.0.0 (git+https://github.com/openvm-org/stark-backend.git?branch=test%2Fdump-trace-sizes)",
  "p3-baby-bear",
  "p3-blake3",
  "p3-bn254-fr",
