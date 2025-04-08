@@ -7,7 +7,7 @@ openvm-stark-sdk = { git = "ssh://git@github.com/openvm-org/stark-backend.git", 
 
 [patch."https://github.com/openvm-org/openvm.git"]
 openvm-benchmarks-prove = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
-openvm-sdk = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
+openvm-sdk = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV", features = ["profiling"] }
 cargo-openvm = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
 openvm-mod-circuit-builder = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
 openvm-poseidon2-air = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
