@@ -6,7 +6,7 @@ openvm-stark-backend = { git = "ssh://git@github.com/openvm-org/stark-backend.gi
 openvm-stark-sdk = { git = "ssh://git@github.com/openvm-org/stark-backend.git", rev = "$STARK_BACKEND_REV" }
 
 [patch."https://github.com/openvm-org/openvm.git"]
-openvm-benchmarks = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
+openvm-benchmarks-prove = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
 openvm-sdk = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
 cargo-openvm = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
 openvm-mod-circuit-builder = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
