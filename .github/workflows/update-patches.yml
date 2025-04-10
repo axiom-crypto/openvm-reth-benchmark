@@ -259,7 +259,8 @@ jobs:
     uses: ./.github/workflows/reth-benchmark.yml
     with:
       mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-e2e' }}
-      instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
+      #instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
+      instance_family: m8g.48xlarge
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
       block_number: ${{ fromJSON(inputs.benchmark_block_number || github.event.inputs.benchmark_block_number || '21000000') }}
