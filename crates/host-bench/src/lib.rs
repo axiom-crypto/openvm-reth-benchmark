@@ -33,11 +33,7 @@ use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 pub use reth_primitives;
 use reth_primitives::hex::ToHexExt;
 use serde_json::json;
-use std::{
-    fs,
-    path::PathBuf,
-    sync::{Arc, Mutex},
-};
+use std::{fs, path::PathBuf, sync::Arc};
 use tracing::info_span;
 
 mod execute;
@@ -46,7 +42,7 @@ mod cli;
 use cli::ProviderArgs;
 
 mod profiler;
-use pprof::ProfilerGuardBuilder;
+use pprof::{protos::Message, ProfilerGuardBuilder};
 
 /// The arguments for the host executable.
 #[derive(Debug, Parser)]
@@ -160,7 +156,6 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
         .blocklist(&["libc", "libgcc", "pthread", "vdso"])
         .build()
         .expect("Failed to create profiler guard");
-    profiler::start_profile_server(Arc::new(Mutex::new(guard))).await?;
 
     // Initialize the environment variables.
     dotenv::dotenv().ok();
@@ -338,6 +333,13 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
             },
         )
     })?;
+
+    let report = guard.report().build().expect("Failed to build report");
+    let pprof_data = report.pprof().expect("Failed to create pprof");
+    let filtered_pprof = profiler::filter_profile(pprof_data);
+    let bytes = filtered_pprof.write_to_bytes().expect("Failed to write pprof data");
+    profiler::start_profile_server(bytes).await?;
+
     Ok(())
 }
 

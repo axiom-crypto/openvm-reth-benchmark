@@ -1,13 +1,7 @@
-use std::{
-    collections::HashSet,
-    sync::{Arc, Mutex},
-};
+use std::collections::HashSet;
 
 use axum::{extract::Query, response::IntoResponse};
-use pprof::{
-    protos::{Message, Profile},
-    ProfilerGuard,
-};
+use pprof::protos::Profile;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -15,33 +9,21 @@ struct ProfileParams {
     seconds: Option<u32>,
 }
 
-pub async fn start_profile_server(guard: Arc<Mutex<ProfilerGuard<'static>>>) -> eyre::Result<()> {
+pub async fn start_profile_server(pprof_data: Vec<u8>) -> eyre::Result<()> {
     let app = axum::Router::new().route(
         "/debug/pprof/profile",
         axum::routing::get(|query: Query<ProfileParams>| async move {
             let _ = query.seconds.unwrap_or(10);
-
-            // Lock the mutex to ensure exclusive access to the profiler guard
-            let guard = guard.lock().unwrap();
-
-            let report = guard.report().build().expect("Failed to build report");
-            let pprof_data = report.pprof().expect("Failed to create pprof");
-            let filtered_pprof = filter_profile(pprof_data);
-            let bytes = axum::body::Bytes::from(
-                filtered_pprof.write_to_bytes().expect("Failed to write pprof data"),
-            );
+            let bytes = axum::body::Bytes::from(pprof_data);
             bytes.into_response()
         }),
     );
 
     println!("Starting profile server on port 3000");
 
-    // Spawn a task to run the server in the background
-    tokio::spawn(async move {
-        // run our app with hyper, listening globally on port 3000
-        let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-        axum::serve(listener, app).await.unwrap();
-    });
+    // run our app with hyper, listening globally on port 3000
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 
     Ok(())
 }
@@ -59,7 +41,7 @@ fn get_function_name<'a>(profile: &'a Profile, f: &pprof::protos::Function) -> &
 
 /// Filter the profile so that only functions (and associated locations/samples)
 /// whose names do not contain the unwanted substrings remain.
-fn filter_profile(mut profile: Profile) -> Profile {
+pub fn filter_profile(mut profile: Profile) -> Profile {
     // 1. Build a set of allowed function IDs by looking up the actual function name.
     let allowed_function_ids: HashSet<u64> = profile
         .function
