@@ -41,6 +41,9 @@ mod execute;
 mod cli;
 use cli::ProviderArgs;
 
+mod profiler;
+use pprof::{protos::Message, ProfilerGuardBuilder};
+
 /// The arguments for the host executable.
 #[derive(Debug, Parser)]
 #[clap(group(
@@ -147,6 +150,12 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
     args: HostArgs,
     openvm_client_eth_elf: &[u8],
 ) -> eyre::Result<()> {
+    // Start pprof profiling
+    let guard = ProfilerGuardBuilder::default()
+        .frequency(19)
+        .build()
+        .expect("Failed to create profiler guard");
+
     // Initialize the environment variables.
     dotenv::dotenv().ok();
 
@@ -323,6 +332,14 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
             },
         )
     })?;
+
+    let report = guard.report().build().expect("Failed to build report");
+    let pprof_data = report.pprof().expect("Failed to create pprof");
+    profiler::start_profile_server(
+        pprof_data.write_to_bytes().expect("Failed to write pprof data"),
+    )
+    .await?;
+
     Ok(())
 }
 
