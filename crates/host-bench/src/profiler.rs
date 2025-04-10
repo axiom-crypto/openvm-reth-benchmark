@@ -29,7 +29,7 @@ pub async fn start_profile_server(pprof_data: Vec<u8>) -> eyre::Result<()> {
 }
 
 /// Substrings that should be filtered out from the profile.
-const UNWANTED_SUBSTRINGS: [&str; 3] = ["rayon", "call_once", "tokio"];
+const UNWANTED_SUBSTRINGS: [&str; 6] = ["rayon", "std", "call_once", "tokio", "core::", "alloc::"];
 
 fn is_allowed(function_name: &str) -> bool {
     UNWANTED_SUBSTRINGS.iter().all(|&sub| !function_name.contains(sub))
