@@ -3,7 +3,7 @@ use alloy_rpc_client::RpcClient;
 use alloy_transport::layers::RetryBackoffLayer;
 use clap::{ArgGroup, Parser};
 use openvm_algebra_circuit::{Fp2Extension, ModularExtension};
-use openvm_benchmarks::utils::BenchmarkCli;
+use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_bigint_circuit::Int256;
 use openvm_circuit::{
     arch::{

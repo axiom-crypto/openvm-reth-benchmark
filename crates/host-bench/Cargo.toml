@@ -43,7 +43,7 @@ openvm-ecc-circuit = { workspace = true }
 openvm-pairing-circuit = { workspace = true }
 openvm-circuit = { workspace = true }
 openvm-native-recursion = { workspace = true, features = ["static-verifier"] }
-openvm-benchmarks = { workspace = true, features = ["parallel"] }
+openvm-benchmarks-prove = { workspace = true, features = ["parallel"] }
 openvm-stark-sdk = { workspace = true }
 openvm-sdk = { workspace = true }
 openvm-native-compiler = { workspace = true }
@@ -54,10 +54,10 @@ halo2-axiom = { version = "0.5.0", default-features = false }
 
 [features]
 default = ["mimalloc", "bench-metrics"]
-bench-metrics = ["openvm-benchmarks/bench-metrics"]
-profiling = ["openvm-sdk/profiling", "openvm-benchmarks/profiling"]
-mimalloc = ["openvm-benchmarks/mimalloc"]
-jemalloc = ["openvm-benchmarks/jemalloc"]
-nightly-features = ["openvm-benchmarks/nightly-features"]
+bench-metrics = ["openvm-benchmarks-prove/bench-metrics"]
+profiling = ["openvm-sdk/profiling", "openvm-benchmarks-prove/profiling"]
+mimalloc = ["openvm-benchmarks-prove/mimalloc"]
+jemalloc = ["openvm-benchmarks-prove/jemalloc"]
+nightly-features = ["openvm-benchmarks-prove/nightly-features"]
 # x86 only:
 halo2-asm = ["halo2-axiom/asm"]
