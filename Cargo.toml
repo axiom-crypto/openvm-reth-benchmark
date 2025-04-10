@@ -168,3 +168,8 @@ codegen-units = 1
 
 [profile.dev]
 opt-level = 3
+
+[profile.pprof]
+inherits = "release"
+debug = true
+lto = false

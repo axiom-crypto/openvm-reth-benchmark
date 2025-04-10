@@ -20,7 +20,7 @@ metrics = "0.23.0"
 hex = "0.4.3"
 serde_json.workspace = true
 axum = "0.8.3"
-pprof = { version = "0.14.0", features = ["protobuf-codec"] }
+pprof = { version = "0.14.0", features = ["frame-pointer", "protobuf-codec"] }
 
 # workspace
 openvm-host-executor.workspace = true

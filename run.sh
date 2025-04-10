@@ -13,15 +13,15 @@ cd ../..
 
 mkdir -p rpc-cache
 source .env
-MODE=execute # can be execute, tracegen, prove, or prove-e2e
-PROFILE="release"
+MODE=prove # can be execute, tracegen, prove, or prove-e2e
+PROFILE="pprof"
 FEATURES="bench-metrics,nightly-features,jemalloc"
 BLOCK_NUMBER=21882667
 
 arch=$(uname -m)
 case $arch in
 arm64|aarch64)
-    RUSTFLAGS="-Ctarget-cpu=native"
+    RUSTFLAGS="-Ctarget-cpu=native -C force-frame-pointers=yes"
     ;;
 x86_64|amd64)
     RUSTFLAGS="-Ctarget-cpu=native -C target-feature=+avx512f"

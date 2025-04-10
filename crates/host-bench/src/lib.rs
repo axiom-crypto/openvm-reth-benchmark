@@ -157,7 +157,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
     // Start pprof profiling
     let guard = ProfilerGuardBuilder::default()
         .frequency(19)
-        .blocklist(&["libc", "libgcc", "pthread", "vdso", "rayon", "rayon_core"])
+        .blocklist(&["libc", "libgcc", "pthread", "vdso"])
         .build()
         .expect("Failed to create profiler guard");
     profiler::start_profile_server(Arc::new(Mutex::new(guard))).await?;
