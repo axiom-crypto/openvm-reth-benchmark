@@ -354,7 +354,8 @@ jobs:
             --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
             --app-log-blowup ${{ inputs.app_log_blowup || github.event.inputs.app_log_blowup }} \
             --leaf-log-blowup ${{ inputs.leaf_log_blowup || github.event.inputs.leaf_log_blowup }} \
-            --root-log-blowup ${{ inputs.root_log_blowup || github.event.inputs.root_log_blowup }} \
+            --internal-log-blowup ${{ inputs.internal_log_blowup || github.event.inputs.internal_log_blowup || 2 }} \
+            --root-log-blowup ${{ inputs.root_log_blowup || github.event.inputs.root_log_blowup || 3 }} \
             --max-segment-length ${{ inputs.max_segment_length || github.event.inputs.max_segment_length }} \
             --max-cells-per-chip-in-segment ${{ inputs.max_cells_per_chip_in_segment || github.event.inputs.max_cells_per_chip_in_segment }} \
             --num-children-leaf ${{ inputs.num_children_leaf || github.event.inputs.num_children_leaf }} \
