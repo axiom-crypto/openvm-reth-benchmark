@@ -243,7 +243,8 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
         max_cells_per_chip_in_segment,
         !args.no_kzg_intrinsics,
     );
-    let sdk = GenericSdk::<E>::new();
+    let mut sdk = GenericSdk::<E>::new();
+    sdk.set_agg_tree_config(args.benchmark.agg_tree_config);
     let elf = Elf::decode(openvm_client_eth_elf, MEM_SIZE as u32)?;
     let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
@@ -312,6 +313,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                         Arc::new(app_pk),
                         app_committed_exe,
                         full_agg_pk,
+                        args.benchmark.agg_tree_config,
                     );
                     prover.set_program_name(program_name);
                     let evm_proof = prover.generate_proof_for_evm(stdin);

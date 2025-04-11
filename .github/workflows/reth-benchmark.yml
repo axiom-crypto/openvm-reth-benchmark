@@ -65,6 +65,16 @@ on:
         required: false
         description: Max cells per chip in segment for continuations
         default: 1006620960 # ((2**23 - 100) * 120)
+      num_children_leaf:
+        type: number
+        required: false
+        description: Number of app proofs that leaf verifier aggregates
+        default: 1
+      num_children_internal:
+        type: number
+        required: false
+        description: Number of proofs that internal verifier aggregates
+        default: 4
   workflow_call:
     inputs:
       ref:
@@ -126,6 +136,16 @@ on:
         required: false
         description: Max cells per chip in segment for continuations
         default: 1006620960
+      num_children_leaf:
+        type: number
+        required: false
+        description: Number of app proofs that leaf verifier aggregates
+        default: 1
+      num_children_internal:
+        type: number
+        required: false
+        description: Number of proofs that internal verifier aggregates
+        default: 4
       tag:
         type: string
         required: false
@@ -335,6 +355,8 @@ jobs:
             --root-log-blowup ${{ inputs.root_log_blowup || github.event.inputs.root_log_blowup }} \
             --max-segment-length ${{ inputs.max_segment_length || github.event.inputs.max_segment_length }} \
             --max-cells-per-chip-in-segment ${{ inputs.max_cells_per_chip_in_segment || github.event.inputs.max_cells_per_chip_in_segment }} \
+            --num-children-leaf ${{ inputs.num_children_leaf || github.event.inputs.num_children_leaf }} \
+            --num-children-internal ${{ inputs.num_children_internal || github.event.inputs.num_children_internal }} \
             $OPTIONAL_ARGS
           EOF
           chmod +x run_benchmark.sh
