@@ -3,6 +3,8 @@ run-name: "Reth Benchmark (block ${{ inputs.block_number || github.event.inputs.
 
 on:
   workflow_dispatch:
+    # github workflow dispatch inputs has 10 input limit...
+    # > you may only define up to 10 `inputs` for a `workflow_dispatch` event
     inputs:
       # Default runner is not big enough for this
       # https://aws.amazon.com/ec2/instance-types/
@@ -26,16 +28,16 @@ on:
         required: false
         description: Aggregation (leaf) level log blowup
         default: 1
-      internal_log_blowup:
-        type: number
-        required: false
-        description: Internal level log blowup (only for e2e)
-        default: 2
-      root_log_blowup:
-        type: number
-        required: false
-        description: Root level log blowup (only for e2e)
-        default: 3
+      # internal_log_blowup:
+      #   type: number
+      #   required: false
+      #   description: Internal level log blowup (only for e2e)
+      #   default: 2
+      # root_log_blowup:
+      #   type: number
+      #   required: false
+      #   description: Root level log blowup (only for e2e)
+      #   default: 3
       mode:
         type: choice
         required: false
