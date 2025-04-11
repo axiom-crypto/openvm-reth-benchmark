@@ -3,9 +3,6 @@ name: "Update openvm patches"
 on:
   workflow_dispatch:
     inputs:
-      STARK_BACKEND_REV:
-        description: "Optional ref for openvm-stark-backend (defaults to main head)"
-        required: false
       OPENVM_REV:
         description: "Optional ref for openvm (defaults to main head)"
         required: false
@@ -43,10 +40,6 @@ on:
     - cron: "0 */12 * * *" # Run every 12 hours
   workflow_call:
     inputs:
-      STARK_BACKEND_REV:
-        type: string
-        required: false
-        description: "Optional ref for openvm-stark-backend (defaults to main head)"
       OPENVM_REV:
         type: string
         required: false
@@ -109,49 +102,33 @@ jobs:
   patch:
     name: "Update .cargo/config.toml and open a pull request"
     runs-on:
-      ["runs-on", "runner=2cpu-linux-arm64", "run-id=${{ github.run_id }}"]
+      [ "runs-on", "runner=2cpu-linux-arm64", "run-id=${{ github.run_id }}" ]
     outputs:
       branch_name: ${{ steps.create-branch.outputs.branch_name }}
       pr_number: ${{ steps.create-pr.outputs.pr_number }}
       tag: ${{ steps.set-tag.outputs.tag }}
     steps:
-      - name: Check out the repository
-        uses: actions/checkout@v4
-
-      - name: Get default STARK_BACKEND_REV from main (if none provided)
-        id: get-stark-backend-rev
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const inputRef = "${{ inputs.STARK_BACKEND_REV || github.event.inputs.STARK_BACKEND_REV }}";
-            if (inputRef && inputRef.trim()) {
-              return inputRef;
-            } else {
-              const { data } = await github.rest.repos.getCommit({
-                owner: 'openvm-org',
-                repo: 'stark-backend',
-                ref: 'main'
-              });
-              return data.sha;
-            }
-
       - name: Get default OPENVM_REV from main (if none provided)
         id: get-openvm-rev
-        uses: actions/github-script@v6
+        env:
+          OPENVM_REV: "${{ inputs.OPENVM_REV || github.event.inputs.OPENVM_REV }}"
+        run: |
+          echo "result=${OPENVM_REV:-$(git ls-remote https://github.com/openvm-org/openvm.git refs/heads/main | cut -f1)}" >> "$GITHUB_OUTPUT"
+
+      - name: Check out openvm repository
+        uses: actions/checkout@v4
         with:
-          script: |
-            const inputRef = "${{ inputs.OPENVM_REV || github.event.inputs.OPENVM_REV }}";
-            if (inputRef && inputRef.trim()) {
-              return inputRef;
-            } else {
-              // Otherwise fetch latest commit of main
-              const { data } = await github.rest.repos.getCommit({
-                owner: 'openvm-org',
-                repo: 'openvm',
-                ref: 'main'
-              });
-              return data.sha;
-            }
+          repository: 'openvm-org/openvm'
+          ref: ${{ steps.get-openvm-rev.outputs.result }}
+
+      - name: Get STARK_BACKEND_REV from openvm
+        id: get-stark-backend-rev
+        run: |
+          STARK_BACKEND_REV=$(cargo metadata --format-version=1 | jq -r '.packages[] | select(.name=="openvm-stark-sdk") | .source | split("#") | .[1]')
+          echo "result=${STARK_BACKEND_REV}" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the repository
+        uses: actions/checkout@v4
 
       - name: Replace placeholders in configuration
         run: |
@@ -267,7 +244,7 @@ jobs:
     secrets: inherit
 
   close-pr:
-    needs: [patch, run-benchmark]
+    needs: [ patch, run-benchmark ]
     if: |
       always() &&
       needs.patch.outputs.pr_number != '' &&
