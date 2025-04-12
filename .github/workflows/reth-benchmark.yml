@@ -476,6 +476,7 @@ jobs:
           cargo install --git https://github.com/mstange/samply.git samply --force
 
           mkdir -p samply_profile
+          chmod +w samply_profile
           echo "SAMPLY_PROFILE_PATH=samply_profile" >> $GITHUB_ENV
 
           samply import perf.data --unstable-presymbolicate --save-only --output $SAMPLY_PROFILE_PATH/profile.json
