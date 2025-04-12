@@ -169,6 +169,7 @@ env:
   S3_METRICS_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/metrics
   S3_FLAMEGRAPHS_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/flamegraphs
   S3_FLAMEGRAPHS_URL: https://axiom-public-data-sandbox-us-east-1.s3.us-east-1.amazonaws.com/benchmark/github/flamegraphs
+  S3_SAMPLY_PROFILE_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/samply
   CMD_ARGS: ""
   INPUT_ARGS: ""
   CARGO_NET_GIT_FETCH_WITH_CLI: "true"
@@ -328,7 +329,7 @@ jobs:
           esac
           HOST_PROFILE=${{ steps.set-cache-keys.outputs.host_profile }}
           if [[ "$HOST_PROFILE" == "profiling" ]]; then
-              RUSTFLAGS="${RUSTFLAGS} -g -C force-frame-pointers=yes"
+              RUSTFLAGS="${RUSTFLAGS} -C force-frame-pointers=yes"
           fi
           export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
           RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark-bin --profile=$HOST_PROFILE --no-default-features --features=$FEATURES
@@ -374,17 +375,8 @@ jobs:
             echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
             echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
 
-            # install custom addr2line: https://crates.io/crates/flamegraph
-            rm -rf /tmp/addr2line
-            git clone https://github.com/gimli-rs/addr2line /tmp/addr2line
-            work_dir=$(pwd)
-            cd /tmp/addr2line
-            cargo build --release --bin addr2line --features bin
-            sudo mv target/release/addr2line /usr/local/bin/
-            cd $work_dir
-
             perf --version
-            perf record -F 99 --call-graph dwarf -o perf.data -- ./run_benchmark.sh
+            perf record -F 100 --call-graph=fp -g -o perf.data -- ./run_benchmark.sh
           else
             ./ci/monitor_memory.sh ./run_benchmark.sh
             echo "MEM_USAGE_PATH=memory_usage.png" >> $GITHUB_ENV
@@ -478,23 +470,28 @@ jobs:
           s5cmd cp $MD_PATH $S3_MD_PATH
           echo "S3_MD_PATH=${S3_MD_PATH}" >> $GITHUB_ENV
 
-      - name: Upload host flamegraph
+      - name: Generate samply profile artifacts
         if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
         run: |
-          cargo install inferno
+          cargo install --git https://github.com/mstange/samply.git samply --force
 
-          perf script -i perf.data | inferno-collapse-perf > stacks.folded
-          cat stacks.folded | inferno-flamegraph > flamegraph.svg
-          cat stacks.folded | inferno-flamegraph --reverse --inverted > flamegraph-reverse.svg
+          mkdir -p samply_profile
+          echo "SAMPLY_PROFILE_PATH=samply_profile" >> $GITHUB_ENV
 
-          s5cmd cp flamegraph.svg ${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/host.svg
-          s5cmd cp flamegraph-reverse.svg ${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/host-reverse.svg
-          flamegraph_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/host.svg
-          flamegraph_reverse_url=${{ env.S3_FLAMEGRAPHS_URL }}/${METRIC_NAME}/host-reverse.svg
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Host Perf Flamegraph: $flamegraph_url" >> $GITHUB_STEP_SUMMARY
-          echo "Host Perf Reverse Flamegraph: $flamegraph_reverse_url" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          samply import perf.data --unstable-presymbolicate --save-only --output $SAMPLY_PROFILE_PATH/profile.json
+
+          s5cmd cp $SAMPLY_PROFILE_PATH/profile.json ${{ env.S3_SAMPLY_PROFILE_PATH }}/${METRIC_NAME}/profile.json
+          s5cmd cp $SAMPLY_PROFILE_PATH/profile.syms.json ${{ env.S3_SAMPLY_PROFILE_PATH }}/${METRIC_NAME}/profile.syms.json
+          echo "S3_SAMPLY_PROFILE_PATH=${S3_SAMPLY_PROFILE_PATH}" >> $GITHUB_ENV
+
+      - name: Upload samply profile artifacts
+        if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
+        id: upload-samply-profile-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.set-metric-name.outputs.name }}-samply-profile
+          path: ${{ env.SAMPLY_PROFILE_PATH }}
+          retention-days: 1
 
       ### Update gh-pages
       - uses: actions/checkout@v4
