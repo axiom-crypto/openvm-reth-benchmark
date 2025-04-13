@@ -6,9 +6,7 @@ use openvm_algebra_circuit::{Fp2Extension, ModularExtension};
 use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_bigint_circuit::Int256;
 use openvm_circuit::{
-    arch::{
-        instructions::exe::VmExe, DefaultSegmentationStrategy, SystemConfig, VmConfig, VmExecutor,
-    },
+    arch::{instructions::exe::VmExe, SegmentationStrategy, SystemConfig, VmConfig, VmExecutor},
     openvm_stark_sdk::{
         bench::run_with_metric_collection, config::baby_bear_poseidon2::BabyBearPoseidon2Config,
         openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear,
@@ -78,8 +76,8 @@ pub struct HostArgs {
     benchmark: BenchmarkCli,
 
     /// Max cells per chip in segment for continuations
-    #[arg(long, alias = "max_cells_per_chip_in_segment")]
-    pub max_cells_per_chip_in_segment: Option<usize>,
+    #[arg(long)]
+    pub segment_max_cells: Option<usize>,
 
     #[arg(long)]
     pub no_kzg_intrinsics: bool,
@@ -89,19 +87,62 @@ pub struct HostArgs {
     pub input_path: Option<PathBuf>,
 }
 
+/// Segments based on total trace cells across all chips
+#[derive(Debug, Clone, Copy)]
+pub struct TraceSizeSegmentationStrategy {
+    max_height: usize,
+    max_cells: usize,
+}
+
+impl TraceSizeSegmentationStrategy {
+    pub fn new(max_height: usize, max_cells: usize) -> Self {
+        assert!(max_height < (1 << 27));
+        Self { max_height, max_cells }
+    }
+}
+
+impl SegmentationStrategy for TraceSizeSegmentationStrategy {
+    fn should_segment(
+        &self,
+        air_names: &[String],
+        trace_heights: &[usize],
+        trace_cells: &[usize],
+    ) -> bool {
+        for (i, &height) in trace_heights.iter().enumerate() {
+            if height > self.max_height {
+                tracing::info!(
+                    "Should segment because chip {i} (name: {}) has height {height}",
+                    air_names[i],
+                );
+                return true;
+            }
+        }
+        let total_cells: usize = trace_cells.iter().sum();
+        if total_cells > self.max_cells {
+            tracing::info!("Should segment because total trace cells = {total_cells}",);
+            return true;
+        }
+        false
+    }
+
+    fn stricter_strategy(&self) -> Arc<dyn SegmentationStrategy> {
+        Arc::new(Self { max_height: self.max_height / 2, max_cells: self.max_cells / 2 })
+    }
+}
+
 pub fn reth_vm_config(
     app_log_blowup: usize,
-    max_segment_length: usize,
-    max_cells_per_chip_in_segment: usize,
+    segment_max_height: usize,
+    segment_max_cells: usize,
     use_kzg_intrinsics: bool,
 ) -> SdkVmConfig {
     let mut system_config = SystemConfig::default()
         .with_continuations()
         .with_max_constraint_degree((1 << app_log_blowup) + 1)
         .with_public_values(32);
-    system_config.set_segmentation_strategy(Arc::new(DefaultSegmentationStrategy::new(
-        max_segment_length,
-        max_cells_per_chip_in_segment,
+    system_config.set_segmentation_strategy(Arc::new(TraceSizeSegmentationStrategy::new(
+        segment_max_height,
+        segment_max_cells,
     )));
     let int256 = Int256::default();
     let bn_config = PairingCurve::Bn254.curve_config();
@@ -231,16 +272,15 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
 
     let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(RETH_DEFAULT_APP_LOG_BLOWUP);
     args.benchmark.app_log_blowup = Some(app_log_blowup);
-    let max_segment_length = args.benchmark.max_segment_length.unwrap_or((1 << 23) - 100);
-    let max_cells_per_chip_in_segment =
-        args.max_cells_per_chip_in_segment.unwrap_or(((1 << 23) - 100) * 120);
+    let segment_max_height = args.benchmark.max_segment_length.unwrap_or((1 << 23) - 100);
+    let segment_max_cells = args.segment_max_cells.unwrap_or(u32::MAX as usize); // 2^32 u32's = 16gb
     let leaf_log_blowup = args.benchmark.leaf_log_blowup.unwrap_or(RETH_DEFAULT_LEAF_LOG_BLOWUP);
     args.benchmark.leaf_log_blowup = Some(leaf_log_blowup);
 
     let vm_config = reth_vm_config(
         app_log_blowup,
-        max_segment_length,
-        max_cells_per_chip_in_segment,
+        segment_max_height,
+        segment_max_cells,
         !args.no_kzg_intrinsics,
     );
     let mut sdk = GenericSdk::<E>::new();

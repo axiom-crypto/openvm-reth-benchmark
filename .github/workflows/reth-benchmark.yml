@@ -62,11 +62,11 @@ on:
         required: false
         description: Max segment length for continuations, must be larger than 524288
         default: 8388508 # 2**23 - 100
-      max_cells_per_chip_in_segment:
-        type: number
+      segment_max_cells:
+        type: string # number might have u32 limit
         required: false
         description: Max cells per chip in segment for continuations
-        default: 1006620960 # ((2**23 - 100) * 120)
+        default: "4294967295" # 2**32 - 1
       # num_children_leaf:
       #   type: number
       #   required: false
@@ -133,11 +133,11 @@ on:
         required: false
         description: Max segment length for continuations, must be larger than 524288
         default: 8388508
-      max_cells_per_chip_in_segment:
-        type: number
+      segment_max_cells:
+        type: string
         required: false
         description: Max cells per chip in segment for continuations
-        default: 1006620960
+        default: "4294967295" # 2**32 - 1
       num_children_leaf:
         type: number
         required: false
@@ -357,7 +357,7 @@ jobs:
             --internal-log-blowup ${{ inputs.internal_log_blowup || github.event.inputs.internal_log_blowup || 2 }} \
             --root-log-blowup ${{ inputs.root_log_blowup || github.event.inputs.root_log_blowup || 3 }} \
             --max-segment-length ${{ inputs.max_segment_length || github.event.inputs.max_segment_length }} \
-            --max-cells-per-chip-in-segment ${{ inputs.max_cells_per_chip_in_segment || github.event.inputs.max_cells_per_chip_in_segment }} \
+            --segment-max-cells ${{ inputs.segment_max_cells || github.event.inputs.segment_max_cells }} \
             --num-children-leaf ${{ inputs.num_children_leaf || github.event.inputs.num_children_leaf || 1 }} \
             --num-children-internal ${{ inputs.num_children_internal || github.event.inputs.num_children_internal }} \
             $OPTIONAL_ARGS
