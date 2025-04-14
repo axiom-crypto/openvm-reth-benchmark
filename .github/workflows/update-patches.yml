@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       STARK_BACKEND_REV:
-        description: "Optional ref for openvm-stark-backend (defaults to main head)"
+        description: "Optional ref for openvm-stark-backend (defaults to what openvm uses)"
         required: false
       OPENVM_REV:
         description: "Optional ref for openvm (defaults to main head)"
