@@ -3,6 +3,9 @@ name: "Update openvm patches"
 on:
   workflow_dispatch:
     inputs:
+      STARK_BACKEND_REV:
+        description: "Optional ref for openvm-stark-backend (defaults to main head)"
+        required: false
       OPENVM_REV:
         description: "Optional ref for openvm (defaults to main head)"
         required: false
@@ -40,6 +43,10 @@ on:
     - cron: "0 */12 * * *" # Run every 12 hours
   workflow_call:
     inputs:
+      STARK_BACKEND_REV:
+        type: string
+        required: false
+        description: "Optional ref for openvm-stark-backend (defaults to main head)"
       OPENVM_REV:
         type: string
         required: false
@@ -123,9 +130,11 @@ jobs:
 
       - name: Get STARK_BACKEND_REV from openvm
         id: get-stark-backend-rev
+        env:
+          STARK_BACKEND_REV: "${{ inputs.STARK_BACKEND_REV || github.event.inputs.STARK_BACKEND_REV }}"
         run: |
-          STARK_BACKEND_REV=$(cargo metadata --format-version=1 | jq -r '.packages[] | select(.name=="openvm-stark-sdk") | .source | split("#") | .[1]')
-          echo "result=${STARK_BACKEND_REV}" >> "$GITHUB_OUTPUT"
+          RESULT=${STARK_BACKEND_REV:-$(cargo metadata --format-version=1 | jq -r '.packages[] | select(.name=="openvm-stark-sdk") | .source | split("#") | .[1]')}
+          echo "result=${RESULT}" >> "$GITHUB_OUTPUT"
 
       - name: Check out the repository
         uses: actions/checkout@v4
