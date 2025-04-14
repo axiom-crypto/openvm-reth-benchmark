@@ -25,7 +25,7 @@ use openvm_pairing_circuit::{PairingCurve, PairingExtension};
 use openvm_rv32im_circuit::Rv32M;
 use openvm_sdk::{
     config::SdkVmConfig,
-    prover::{AppProver, ContinuationProver},
+    prover::{AppProver, EvmHalo2Prover},
     DefaultStaticVerifierPvHandler, GenericSdk, StdIn, SC,
 };
 use openvm_stark_sdk::engine::StarkFriEngine;
@@ -308,7 +308,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                     );
                     let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
 
-                    let mut prover = ContinuationProver::<_, E>::new(
+                    let mut prover = EvmHalo2Prover::<_, E>::new(
                         &halo2_params_reader,
                         Arc::new(app_pk),
                         app_committed_exe,
