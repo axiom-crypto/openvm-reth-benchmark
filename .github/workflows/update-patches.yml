@@ -46,7 +46,7 @@ on:
       STARK_BACKEND_REV:
         type: string
         required: false
-        description: "Optional ref for openvm-stark-backend (defaults to main head)"
+        description: "Optional ref for openvm-stark-backend (defaults to what openvm uses)"
       OPENVM_REV:
         type: string
         required: false
