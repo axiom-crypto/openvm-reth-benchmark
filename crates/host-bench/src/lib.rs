@@ -298,6 +298,8 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
         "prove_e2e"
     };
     let program_name = format!("reth.{}.block_{}", mode, args.block_number);
+    // NOTE: args.benchmark.app_config resets SegmentationStrategy if max_segment_length is set
+    args.benchmark.max_segment_length = None;
     let app_config = args.benchmark.app_config(vm_config.clone());
 
     run_with_metric_collection("OUTPUT_PATH", || {
