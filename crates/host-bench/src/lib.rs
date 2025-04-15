@@ -120,7 +120,10 @@ impl SegmentationStrategy for TraceSizeSegmentationStrategy {
         }
         let total_cells: usize = trace_cells.iter().sum();
         if total_cells > self.max_cells {
-            tracing::info!("Should segment because total trace cells = {total_cells} > {}", self.max_cells);
+            tracing::info!(
+                "Should segment because total trace cells = {total_cells} > {}",
+                self.max_cells
+            );
             return true;
         }
         false
