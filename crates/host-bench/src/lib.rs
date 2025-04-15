@@ -111,8 +111,9 @@ impl SegmentationStrategy for TraceSizeSegmentationStrategy {
         for (i, &height) in trace_heights.iter().enumerate() {
             if height > self.max_height {
                 tracing::info!(
-                    "Should segment because chip {i} (name: {}) has height {height}",
+                    "Should segment because chip {i} (name: {}) has height {height} > {}",
                     air_names[i],
+                    self.max_height
                 );
                 return true;
             }
