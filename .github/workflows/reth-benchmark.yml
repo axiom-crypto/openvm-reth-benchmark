@@ -392,26 +392,6 @@ jobs:
           echo "MD_PATH=${MD_PATH}" >> $GITHUB_ENV
           echo "BENCHER_METRIC_PATH=${BENCHER_METRIC_PATH}" >> $GITHUB_ENV
 
-      - uses: bencherdev/bencher@main
-      - name: Upload bencher metrics
-        if: ${{ inputs.profiling == 'none' || github.event.inputs.profiling == 'none' }}
-        run: |
-          current_branch=$(git rev-parse --abbrev-ref HEAD)
-          if [[ "$current_branch" == nightly* ]]; then
-            BRANCH=nightly
-          else
-            BRANCH=dev
-          fi
-          echo "Bencher branch: ${BRANCH}"
-          bencher run \
-            --project ${{ env.BENCHER_PROJECT }} \
-            --token '${{ secrets.BENCHER_API_TOKEN }}' \
-            --start-point nightly \
-            --branch $BRANCH \
-            --testbed ${{ inputs.instance_family || github.event.inputs.instance_family }} \
-            --adapter json \
-            --file $BENCHER_METRIC_PATH
-
       - name: Generate circuit flamegraphs
         if: ${{ inputs.profiling == 'guest' || github.event.inputs.profiling == 'guest' }}
         run: |
