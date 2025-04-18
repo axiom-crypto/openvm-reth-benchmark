@@ -246,7 +246,7 @@ jobs:
 
       - name: Install openvm-prof
         run: |
-          cargo install --git https://github.com/openvm-org/openvm.git --profile=dev --force openvm-prof
+          cargo install --git https://github.com/openvm-org/openvm.git --branch fix/fn_bounds --profile=dev --force openvm-prof
       - name: Checkout openvm (for scripts)
         run: |
           git clone --depth=1 -b fix/fn_bounds https://github.com/openvm-org/openvm.git
