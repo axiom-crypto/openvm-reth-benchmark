@@ -162,7 +162,6 @@ lto = "thin"
 [profile.profiling]
 inherits = "maxperf"
 debug = "full"
-strip = "none"
 
 [profile.maxperf]
 inherits = "release"
