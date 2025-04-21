@@ -400,7 +400,7 @@ jobs:
           retention-days: 1
 
       - name: Upload Benchmark Metrics
-        run: s5cmd cp -r ${METRIC_PATH} ${{ env.S3_METRICS_PATH }}/${METRIC_NAME}
+        run: s5cmd cp ${METRIC_PATH} ${{ env.S3_METRICS_PATH }}/${METRIC_NAME}
 
       - name: Generate markdown
         run: |
