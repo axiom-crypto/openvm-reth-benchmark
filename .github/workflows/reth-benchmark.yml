@@ -401,14 +401,14 @@ jobs:
 
       - name: Upload Benchmark Metrics
         run: |
-          s5cmd cp $METRIC_PATH/metrics.json ${{ env.S3_METRICS_PATH }}/${METRIC_NAME}/metrics.json
-          s5cmd cp $METRIC_PATH/guest.syms ${{ env.S3_METRICS_PATH }}/${METRIC_NAME}/guest.syms
+          s5cmd cp ${METRIC_PATH}/metrics.json ${{ env.S3_METRICS_PATH }}/${METRIC_NAME}/metrics.json
+          s5cmd cp ${METRIC_PATH}/guest.syms ${{ env.S3_METRICS_PATH }}/${METRIC_NAME}/guest.syms
 
       - name: Generate markdown
         run: |
           BENCHER_METRIC_PATH=bencher.json
-          openvm-prof --json-paths $METRIC_PATH/metrics.json --output-json $BENCHER_METRIC_PATH
-          MD_PATH=${METRIC_PATH}.md
+          openvm-prof --json-paths ${METRIC_PATH}/metrics.json --output-json $BENCHER_METRIC_PATH
+          MD_PATH=${METRIC_PATH}/metrics.md
           echo "MD_PATH=${MD_PATH}" >> $GITHUB_ENV
           echo "BENCHER_METRIC_PATH=${BENCHER_METRIC_PATH}" >> $GITHUB_ENV
 
@@ -437,7 +437,7 @@ jobs:
         run: |
           cargo install inferno
 
-          python3 openvm/ci/scripts/metric_unify/flamegraph.py $METRIC_PATH/metrics.json --guest-symbols $METRIC_PATH/guest.syms
+          python3 openvm/ci/scripts/metric_unify/flamegraph.py ${METRIC_PATH}/metrics.json --guest-symbols ${METRIC_PATH}/guest.syms
           s5cmd cp '.bench_metrics/flamegraphs/*.svg' "${{ env.S3_FLAMEGRAPHS_PATH }}/${METRIC_NAME}/"
 
           echo "" >> $MD_PATH
