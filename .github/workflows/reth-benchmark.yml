@@ -371,7 +371,9 @@ jobs:
           export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
           export RUST_LOG="info,p3_=warn"
           export OUTPUT_PATH=${METRIC_PATH}/metrics.json
-          export GUEST_SYMBOLS_PATH=${METRIC_PATH}/guest.syms
+          if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
+            export GUEST_SYMBOLS_PATH=${METRIC_PATH}/guest.syms
+          fi
 
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
             echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
@@ -402,7 +404,9 @@ jobs:
       - name: Upload Benchmark Metrics
         run: |
           s5cmd cp ${METRIC_PATH}/metrics.json ${{ env.S3_METRICS_PATH }}/${METRIC_NAME}/metrics.json
-          s5cmd cp ${METRIC_PATH}/guest.syms ${{ env.S3_METRICS_PATH }}/${METRIC_NAME}/guest.syms
+          if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
+            s5cmd cp ${METRIC_PATH}/guest.syms ${{ env.S3_METRICS_PATH }}/${METRIC_NAME}/guest.syms
+          fi
 
       - name: Generate markdown
         run: |
