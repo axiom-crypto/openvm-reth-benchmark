@@ -331,7 +331,7 @@ jobs:
           if [[ "$HOST_PROFILE" == "profiling" ]]; then
               RUSTFLAGS="${RUSTFLAGS} -C force-frame-pointers=yes"
           fi
-          export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:false,background_thread:false,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
+          export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:600000,muzzy_decay_ms:600000,abort_conf:true"
           RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark-bin --profile=$HOST_PROFILE --no-default-features --features=$FEATURES
           echo "JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}" >> $GITHUB_ENV
 
