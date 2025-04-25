@@ -107,11 +107,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.run-base-benchmark.outputs.metric_name }}
+          path: ${{ needs.run-base-benchmark.outputs.metric_name }}
 
       - name: Download target benchmark results
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.run-target-benchmark.outputs.metric_name }}
+          path: ${{ needs.run-target-benchmark.outputs.metric_name }}
 
       - name: Install openvm-prof
         run: |
