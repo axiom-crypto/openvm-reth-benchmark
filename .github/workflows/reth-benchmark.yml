@@ -268,10 +268,12 @@ jobs:
           arch=$(uname -m)
           # Use inputs.tag if defined, otherwise use current commit SHA
           TAG="${{ inputs.tag || env.current_sha }}"
+          GUEST_PROFILE=${{ steps.set-build-profiles.outputs.guest_profile }}
           echo "elf_cache_key=elf-${TAG}-${arch}-${GUEST_PROFILE}" >> $GITHUB_OUTPUT
           RUSTFLAGS_HASH=$(echo "${RUSTFLAGS}" | sha256sum | cut -d' ' -f1 | head -c8)
           JEMALLOC_CONF_HASH=$(echo "${JEMALLOC_SYS_WITH_MALLOC_CONF}" | sha256sum | cut -d' ' -f1 | head -c8)
           FEATURES_HASH=$(echo "${FEATURES}" | sha256sum | cut -d' ' -f1 | head -c8)
+          HOST_PROFILE=${{ steps.set-build-profiles.outputs.host_profile }}
           echo "host_cache_key=host-${TAG}-${arch}-${HOST_PROFILE}-${RUSTFLAGS_HASH}-${JEMALLOC_CONF_HASH}-${FEATURES_HASH}" >> $GITHUB_OUTPUT
 
       - name: Load SSH key
