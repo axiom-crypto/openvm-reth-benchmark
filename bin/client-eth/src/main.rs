@@ -66,8 +66,7 @@ pub fn main() {
 
     // Execute the block.
     let executor = ClientExecutor;
-    let header = executor.execute::<EthereumVariant>(input).expect("failed to execute client");
-    let block_hash = header.hash_slow();
+    let block_hash = executor.execute::<EthereumVariant>(input).expect("failed to execute client");
 
     // Reveal the block hash.
     reveal_bytes32(*block_hash);
