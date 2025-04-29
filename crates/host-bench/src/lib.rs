@@ -333,7 +333,9 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                     let app_vk = app_pk.get_app_vk();
                     sdk.verify_app_proof(&app_vk, &proof)?;
                 } else {
-                    let halo2_params_reader = CacheHalo2ParamsReader::new_with_default_params_dir();
+                    let halo2_params_reader = CacheHalo2ParamsReader::new(
+                        args.benchmark.kzg_params_dir.as_ref().expect("must set --kzg-params-dir"),
+                    );
                     let mut agg_config = args.benchmark.agg_config();
                     agg_config.agg_stark_config.max_num_user_public_values =
                         VmConfig::<BabyBear>::system(&vm_config).num_public_values;
