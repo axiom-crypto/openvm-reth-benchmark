@@ -322,7 +322,7 @@ jobs:
         working-directory: bin/client-eth
         run: |
           GUEST_PROFILE=${{ steps.set-build-profiles.outputs.guest_profile }}
-          cargo openvm build --no-transpile --profile=$GUEST_PROFILE
+          RUSTFLAGS="" cargo openvm build --no-transpile --profile=$GUEST_PROFILE
           mkdir -p ../host/elf
           cp target/riscv32im-risc0-zkvm-elf/$GUEST_PROFILE/openvm-client-eth ../host/elf/
 
