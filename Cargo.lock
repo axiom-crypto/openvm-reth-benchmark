@@ -782,12 +782,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.98"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
-
-[[package]]
 name = "arbitrary"
 version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2611,8 +2605,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 dependencies = [
  "ahash",
- "allocator-api2",
- "rayon",
 ]
 
 [[package]]
@@ -3887,35 +3879,16 @@ dependencies = [
 name = "openvm-client-executor"
 version = "0.1.0"
 dependencies = [
+ "alloy-consensus",
  "alloy-primitives 1.0.0",
- "alloy-rlp",
- "bincode 2.0.1",
- "bincode_derive",
  "eyre",
- "futures",
- "hashbrown 0.14.5",
- "itertools 0.14.0",
- "openvm-mpt",
- "openvm-primitives",
- "openvm-witness-db",
  "reth-chainspec",
- "reth-errors",
- "reth-ethereum-consensus",
- "reth-evm",
- "reth-evm-ethereum",
- "reth-execution-types",
  "reth-primitives",
- "reth-revm",
+ "reth-primitives-traits",
  "reth-stateless",
- "reth-storage-errors",
- "reth-trie",
  "revm",
  "revm-primitives 18.0.0",
- "rustc-hash 2.1.1",
  "serde",
- "serde_json",
- "tokio",
- "url",
 ]
 
 [[package]]
@@ -4038,7 +4011,6 @@ dependencies = [
  "futures",
  "itertools 0.13.0",
  "openvm-client-executor",
- "openvm-mpt",
  "openvm-primitives",
  "openvm-rpc-db",
  "openvm-witness-db",
@@ -4159,33 +4131,6 @@ dependencies = [
  "serde",
  "serde_with",
  "tracing",
-]
-
-[[package]]
-name = "openvm-mpt"
-version = "0.1.0"
-dependencies = [
- "alloy-primitives 1.0.0",
- "alloy-rlp",
- "alloy-rpc-types",
- "alloy-trie",
- "anyhow",
- "bincode 2.0.1",
- "eyre",
- "hex-literal",
- "itertools 0.13.0",
- "openvm-mpt",
- "openvm-primitives",
- "reth-execution-types",
- "reth-primitives",
- "reth-trie",
- "revm",
- "revm-primitives 18.0.0",
- "rlp",
- "rustc-hash 2.1.1",
- "serde",
- "thiserror 1.0.69",
- "tracing-subscriber 0.3.19",
 ]
 
 [[package]]
@@ -5886,8 +5831,6 @@ dependencies = [
  "auto_impl",
  "derive_more 2.0.1",
  "futures-util",
- "op-revm",
- "reth-ethereum-primitives",
  "reth-execution-errors",
  "reth-execution-types",
  "reth-primitives-traits",

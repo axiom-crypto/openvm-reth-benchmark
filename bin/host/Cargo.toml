@@ -1,8 +1,6 @@
 [package]
 name = "openvm-reth-benchmark-bin"
 edition.workspace = true
-repository.workspace = true
-homepage.workspace = true
 exclude.workspace = true
 version.workspace = true
 

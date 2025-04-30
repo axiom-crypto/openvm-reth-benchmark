@@ -3,8 +3,6 @@ name = "openvm-rpc-db"
 description = ""
 version.workspace = true
 edition.workspace = true
-homepage.workspace = true
-repository.workspace = true
 
 [dependencies]
 tokio.workspace = true

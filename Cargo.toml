@@ -3,7 +3,6 @@ members = [
     "bin/host",
     "crates/executor/client",
     "crates/executor/host",
-    "crates/mpt",
     "crates/primitives",
     "crates/storage/rpc-db",
     "crates/storage/witness-db",
@@ -14,8 +13,6 @@ resolver = "2"
 
 [workspace.package]
 edition = "2021"
-repository = "https://github.com/moongate-forks/minimal-reth"
-homepage = "https://github.com/moongate-forks/minimal-reth"
 exclude = ["**/target"]
 version = "0.1.0"
 
@@ -52,7 +49,6 @@ openvm-rpc-db = { path = "./crates/storage/rpc-db" }
 openvm-witness-db = { path = "./crates/storage/witness-db" }
 openvm-client-executor = { path = "./crates/executor/client" }
 openvm-host-executor = { path = "./crates/executor/host" }
-openvm-mpt = { path = "./crates/mpt" }
 openvm-primitives = { path = "./crates/primitives" }
 openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
 # reth
@@ -83,6 +79,7 @@ reth-db = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/state
 reth-errors = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/stateless-experiment", default-features = false }
 reth-ethereum-consensus = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/stateless-experiment", default-features = false }
 reth-ethereum-primitives = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/stateless-experiment", default-features = false }
+reth-primitives-traits = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/stateless-experiment", default-features = false }
 reth-stateless = { git = "https://github.com/axiom-crypto/reth", branch = "openvm/stateless-experiment", default-features = false }
 
 # revm

@@ -3,8 +3,6 @@ name = "openvm-primitives"
 description = ""
 version.workspace = true
 edition.workspace = true
-homepage.workspace = true
-repository.workspace = true
 
 [dependencies]
 eyre.workspace = true
