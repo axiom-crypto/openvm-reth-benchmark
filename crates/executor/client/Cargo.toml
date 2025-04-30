@@ -1,6 +1,6 @@
 [package]
 name = "openvm-client-executor"
-description = ""
+description = "Guest program to verify block execution"
 version.workspace = true
 edition.workspace = true
 
@@ -17,12 +17,9 @@ reth-primitives.workspace = true
 reth-primitives-traits.workspace = true
 reth-stateless.workspace = true
 
-# revm
-revm.workspace = true
-revm-primitives.workspace = true
-
 # alloy
 alloy-consensus.workspace = true
+alloy-primitives.workspace = true
 
 [target.'cfg(target_os = "zkvm")'.dependencies]
 revm-primitives = { workspace = true, features = ["hashbrown"] }

@@ -1,9 +1,9 @@
 use alloy_consensus::Block;
+use alloy_primitives::B256;
 use reth_chainspec::MAINNET;
 use reth_primitives::TransactionSigned;
 use reth_primitives_traits::RecoveredBlock;
 use reth_stateless::{validation::stateless_validation, ExecutionWitness};
-use revm_primitives::B256;
 use serde::{Deserialize, Serialize};
 
 /// Chain ID for Ethereum Mainnet.

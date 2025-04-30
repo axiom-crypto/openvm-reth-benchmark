@@ -3,17 +3,15 @@ use std::{collections::BTreeSet, marker::PhantomData};
 use alloy_provider::{network::AnyNetwork, Provider};
 use alloy_transport::Transport;
 use eyre::{eyre, Ok};
-use openvm_client_executor::{
-    io::ClientExecutorInput, ChainVariant, EthereumVariant, LineaVariant, OptimismVariant, Variant,
-};
-use openvm_mpt::{state::HashedPostState, EthereumState};
+use openvm_client_executor::ClientExecutorInput;
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
+use reth_evm_ethereum::execute::EthExecutorProvider;
 use reth_execution_types::ExecutionOutcome;
 use reth_primitives::{proofs, Block, Bloom, Receipts, B256};
-use revm::db::CacheDB;
+use revm::{database::CacheDB, db::CacheDB};
 
-/// An executor that fetches data from a [Provider] to execute blocks in the [ClientExecutor].
+/// An executor that fetches data from a [Provider] to generate [ExecutionWitness] for a block.
 #[derive(Debug, Clone)]
 pub struct HostExecutor<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> {
     /// The provider which fetches data.
@@ -29,35 +27,20 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> HostExecutor<T, P
     }
 
     /// Executes the block with the given block number.
-    pub async fn execute(
-        &self,
-        block_number: u64,
-        variant: ChainVariant,
-    ) -> eyre::Result<ClientExecutorInput> {
-        let client_input = match variant {
-            ChainVariant::Ethereum => self.execute_variant::<EthereumVariant>(block_number).await,
-            ChainVariant::Optimism => self.execute_variant::<OptimismVariant>(block_number).await,
-            ChainVariant::Linea => self.execute_variant::<LineaVariant>(block_number).await,
-        }?;
-
-        Ok(client_input)
-    }
-
-    async fn execute_variant<V>(&self, block_number: u64) -> eyre::Result<ClientExecutorInput>
-    where
-        V: Variant,
-    {
+    pub async fn execute(&self, block_number: u64) -> eyre::Result<ClientExecutorInput> {
         // Fetch the current block and the previous block from the provider.
         tracing::info!("fetching the current block and the previous block");
         let current_block = self
             .provider
-            .get_block_by_number(block_number.into(), true)
+            .get_block_by_number(block_number.into())
+            .full()
             .await?
             .map(|block| Block::try_from(block.inner))
             .ok_or(eyre!("couldn't fetch block: {}", block_number))??;
         let previous_block = self
             .provider
-            .get_block_by_number((block_number - 1).into(), true)
+            .get_block_by_number((block_number - 1).into())
+            .full()
             .await?
             .map(|block| Block::try_from(block.inner))
             .ok_or(eyre!("couldn't fetch block: {}", block_number))??;
@@ -78,11 +61,15 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> HostExecutor<T, P
             current_block.body.len()
         );
 
-        let executor_block_input = V::pre_process_block(&current_block)
-            .with_recovered_senders()
-            .ok_or(eyre!("failed to recover senders"))?;
+        let executor_block_input =
+            current_block.with_recovered_senders().ok_or(eyre!("failed to recover senders"))?;
         let executor_difficulty = current_block.header.difficulty;
-        let executor_output = V::execute(&executor_block_input, executor_difficulty, cache_db)?;
+        let executor_output = EthExecutorProvider::new(
+            Self::spec().into(),
+            CustomEvmConfig::from_variant(ChainVariant::Ethereum),
+        )
+        .executor(cache_db)
+        .execute((executor_block_input, executor_difficulty).into())?;
 
         // Validate the block post execution.
         tracing::info!("validating the block post execution");
@@ -219,3 +206,34 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> HostExecutor<T, P
         Ok(client_input)
     }
 }
+
+// impl Variant for EthereumVariant {
+//     fn spec() -> ChainSpec {
+//         openvm_primitives::chain_spec::mainnet()
+//     }
+
+//     fn execute<DB>(
+//         executor_block_input: &BlockWithSenders,
+//         executor_difficulty: U256,
+//         cache_db: DB,
+//     ) -> eyre::Result<BlockExecutionOutput<Receipt>>
+//     where
+//         DB: Database<Error: Into<ProviderError> + Display>,
+//     {
+//         Ok(EthExecutorProvider::new(
+//             Self::spec().into(),
+//             CustomEvmConfig::from_variant(ChainVariant::Ethereum),
+//         )
+//         .executor(cache_db)
+//         .execute((executor_block_input, executor_difficulty).into())?)
+//     }
+
+//     fn validate_block_post_execution(
+//         block: &BlockWithSenders,
+//         chain_spec: &ChainSpec,
+//         receipts: &[Receipt],
+//         requests: &[Request],
+//     ) -> eyre::Result<()> {
+//         Ok(validate_block_post_execution_ethereum(block, chain_spec, receipts, requests)?)
+//     }
+// }
