@@ -1,4 +1,3 @@
-use bincode::serde::Compat;
 use eyre::Result;
 use mpt::{proofs_to_tries, transition_proofs_to_tries, MptNode};
 use reth_trie::{AccountProof, TrieAccount};
@@ -12,7 +11,7 @@ pub mod mpt;
 pub mod state;
 
 /// Ethereum state trie and account storage tries.
-#[derive(Debug, Clone, PartialEq, Eq, bincode::Encode, bincode::Decode, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EthereumState {
     pub state_trie: MptNode,
     pub storage_tries: StorageTries,
@@ -20,70 +19,6 @@ pub struct EthereumState {
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct StorageTries(pub HashMap<B256, MptNode, FxBuildHasher>);
-
-// A custom bincode 2.0.0 Encode / Decode implementation, copied from the standard HashMap
-// derivation, except we use `Compat` to get around the fact that B256 does not implement
-// Encode/Decode but does implement serde
-impl bincode::Encode for StorageTries {
-    fn encode<E: bincode::enc::Encoder>(
-        &self,
-        encoder: &mut E,
-    ) -> core::result::Result<(), bincode::error::EncodeError> {
-        bincode::Encode::encode(&(self.0.len() as u64), encoder)?;
-        for (k, v) in self.0.iter() {
-            bincode::Encode::encode(&Compat(*k), encoder)?;
-            bincode::Encode::encode(v, encoder)?;
-        }
-        Ok(())
-    }
-}
-
-impl bincode::Decode for StorageTries {
-    fn decode<D: bincode::de::Decoder>(
-        decoder: &mut D,
-    ) -> core::result::Result<Self, bincode::error::DecodeError> {
-        let len_u64: u64 = bincode::Decode::decode(decoder)?;
-        let len: usize = len_u64
-            .try_into()
-            .map_err(|_| bincode::error::DecodeError::OutsideUsizeRange(len_u64))?;
-        decoder.claim_container_read::<(Compat<B256>, MptNode)>(len)?;
-
-        let hash_builder = Default::default();
-        let mut map = HashMap::with_capacity_and_hasher(len, hash_builder);
-        for _ in 0..len {
-            // See the documentation on `unclaim_bytes_read` as to why we're doing this here
-            decoder.unclaim_bytes_read(core::mem::size_of::<(Compat<B256>, MptNode)>());
-
-            let k = Compat::<B256>::decode(decoder)?;
-            let v = bincode::Decode::decode(decoder)?;
-            map.insert(k.0, v);
-        }
-        Ok(Self(map))
-    }
-}
-impl<'de> bincode::BorrowDecode<'de> for StorageTries {
-    fn borrow_decode<D: bincode::de::BorrowDecoder<'de>>(
-        decoder: &mut D,
-    ) -> core::result::Result<Self, bincode::error::DecodeError> {
-        let len_u64: u64 = bincode::Decode::decode(decoder)?;
-        let len: usize = len_u64
-            .try_into()
-            .map_err(|_| bincode::error::DecodeError::OutsideUsizeRange(len_u64))?;
-        decoder.claim_container_read::<(Compat<B256>, MptNode)>(len)?;
-
-        let hash_builder = Default::default();
-        let mut map = HashMap::with_capacity_and_hasher(len, hash_builder);
-        for _ in 0..len {
-            // See the documentation on `unclaim_bytes_read` as to why we're doing this here
-            decoder.unclaim_bytes_read(core::mem::size_of::<(Compat<B256>, MptNode)>());
-
-            let k = Compat::<B256>::borrow_decode(decoder)?;
-            let v = bincode::BorrowDecode::borrow_decode(decoder)?;
-            map.insert(k.0, v);
-        }
-        Ok(Self(map))
-    }
-}
 
 impl EthereumState {
     /// Builds Ethereum state tries from relevant proofs before and after a state transition.

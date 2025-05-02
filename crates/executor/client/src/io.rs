@@ -15,22 +15,18 @@ use serde::{Deserialize, Serialize};
 ///
 /// Instead of passing in the entire state, we only pass in the state roots along with merkle proofs
 /// for the storage slots that were modified and accessed.
-#[derive(Debug, Clone, PartialEq, Eq, bincode::Encode, bincode::Decode, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClientExecutorInput {
     /// The current block (which will be executed inside the client).
-    #[bincode(with_serde)]
     pub current_block: Block,
     /// The previous block headers starting from the most recent. There must be at least one header
     /// to provide the parent state root.
-    #[bincode(with_serde)]
     pub ancestor_headers: Vec<Header>,
     /// Network state as of the parent block.
     pub parent_state: EthereumState,
     /// Requests to account state and storage slots.
-    #[bincode(with_serde)]
     pub state_requests: HashMap<Address, Vec<U256>, FxBuildHasher>,
     /// Account bytecodes.
-    #[bincode(with_serde)]
     pub bytecodes: Vec<Bytecode>,
 }
 
