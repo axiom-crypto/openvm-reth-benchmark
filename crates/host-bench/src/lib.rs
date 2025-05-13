@@ -1,7 +1,7 @@
 use alloy_provider::RootProvider;
 use alloy_rpc_client::RpcClient;
 use alloy_transport::layers::RetryBackoffLayer;
-use clap::{ArgGroup, Parser};
+use clap::Parser;
 use openvm_algebra_circuit::{Fp2Extension, ModularExtension};
 use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_bigint_circuit::Int256;
@@ -23,7 +23,8 @@ use openvm_pairing_circuit::{PairingCurve, PairingExtension};
 use openvm_rv32im_circuit::Rv32M;
 use openvm_sdk::{
     config::SdkVmConfig,
-    prover::{AppProver, EvmHalo2Prover},
+    keygen::AggStarkProvingKey,
+    prover::{AppProver, EvmHalo2Prover, StarkProver},
     DefaultStaticVerifierPvHandler, GenericSdk, StdIn, SC,
 };
 use openvm_stark_sdk::engine::StarkFriEngine;
@@ -39,13 +40,38 @@ mod execute;
 mod cli;
 use cli::ProviderArgs;
 
+/// Enum representing the execution mode of the host executable.
+#[derive(Debug, Clone, clap::ValueEnum)]
+pub enum BenchMode {
+    /// Execute the VM without generating a proof.
+    Execute,
+    /// Generate trace data without proving.
+    Tracegen,
+    /// Generate sequence of app proofs for continuation segments.
+    ProveApp,
+    /// Generate a full end-to-end STARK proof with aggregation.
+    ProveStark,
+    /// Generate a full end-to-end halo2 proof for EVM verifier.
+    ProveEvm,
+    /// Generate input file only.
+    MakeInput,
+}
+
+impl std::fmt::Display for BenchMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Execute => write!(f, "execute"),
+            Self::Tracegen => write!(f, "tracegen"),
+            Self::ProveApp => write!(f, "prove_app"),
+            Self::ProveStark => write!(f, "prove_stark"),
+            Self::ProveEvm => write!(f, "prove_evm"),
+            Self::MakeInput => write!(f, "make_input"),
+        }
+    }
+}
+
 /// The arguments for the host executable.
 #[derive(Debug, Parser)]
-#[clap(group(
-    ArgGroup::new("mode")
-        .required(true)
-        .args(&["prove", "execute", "tracegen", "prove_e2e"]),
-))]
 pub struct HostArgs {
     /// The block number of the block to execute.
     #[clap(long)]
@@ -53,16 +79,9 @@ pub struct HostArgs {
     #[clap(flatten)]
     provider: ProviderArgs,
 
-    #[clap(long, group = "mode")]
-    execute: bool,
-    #[clap(long, group = "mode")]
-    tracegen: bool,
-    #[clap(long, group = "mode")]
-    prove: bool,
-    #[clap(long, group = "mode")]
-    prove_e2e: bool,
-    #[clap(long, group = "mode")]
-    make_input: bool,
+    /// The execution mode.
+    #[clap(long, value_enum)]
+    mode: BenchMode,
 
     /// Optional path to the directory containing cached client input. A new cache file will be
     /// created from RPC data if it doesn't already exist.
@@ -262,7 +281,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
     let mut stdin = StdIn::default();
     stdin.write(&client_input);
 
-    if args.make_input {
+    if matches!(args.mode, BenchMode::MakeInput) {
         let words: Vec<u32> = openvm::serde::to_vec(&client_input).unwrap();
         let bytes: Vec<u8> = words.into_iter().flat_map(|w| w.to_le_bytes()).collect();
         let hex_bytes = String::from("0x01") + &hex::encode(&bytes);
@@ -292,16 +311,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
     let elf = Elf::decode(openvm_client_eth_elf, MEM_SIZE as u32)?;
     let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
-    let mode = if args.execute {
-        "execute"
-    } else if args.tracegen {
-        "tracegen"
-    } else if args.prove {
-        "prove"
-    } else {
-        "prove_e2e"
-    };
-    let program_name = format!("reth.{}.block_{}", mode, args.block_number);
+    let program_name = format!("reth.{}.block_{}", args.mode, args.block_number);
     // NOTE: args.benchmark.app_config resets SegmentationStrategy if max_segment_length is set
     args.benchmark.max_segment_length = None;
     let app_config = args.benchmark.app_config(vm_config.clone());
@@ -309,64 +319,98 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
     run_with_metric_collection("OUTPUT_PATH", || {
         info_span!("reth-block", block_number = args.block_number).in_scope(
             || -> eyre::Result<()> {
-                if args.execute {
-                    let pvs = info_span!("execute", group = program_name)
-                        .in_scope(|| sdk.execute(exe, app_config.app_vm_config, stdin))?;
-                    let block_hash: Vec<u8> = pvs
-                        .iter()
-                        .map(|x| x.as_canonical_u32().try_into().unwrap())
-                        .collect::<Vec<_>>();
-                    println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
-                } else if args.tracegen {
-                    let executor = VmExecutor::<_, _>::new(app_config.app_vm_config);
-                    info_span!("tracegen", group = program_name).in_scope(|| {
-                        executor.execute_and_generate::<BabyBearPoseidon2Config>(exe, stdin)
-                    })?;
-                } else if args.prove {
-                    let app_pk = sdk.app_keygen(app_config)?;
-                    let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
+                match args.mode {
+                    BenchMode::Execute => {
+                        let pvs = info_span!("execute", group = program_name)
+                            .in_scope(|| sdk.execute(exe, app_config.app_vm_config, stdin))?;
+                        let block_hash: Vec<u8> = pvs
+                            .iter()
+                            .map(|x| x.as_canonical_u32().try_into().unwrap())
+                            .collect::<Vec<_>>();
+                        println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+                    }
+                    BenchMode::Tracegen => {
+                        let executor = VmExecutor::<_, _>::new(app_config.app_vm_config);
+                        info_span!("tracegen", group = program_name).in_scope(|| {
+                            executor.execute_and_generate::<BabyBearPoseidon2Config>(exe, stdin)
+                        })?;
+                    }
+                    BenchMode::ProveApp => {
+                        let app_pk = sdk.app_keygen(app_config)?;
+                        let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
 
-                    let app_prover =
-                        AppProver::<_, E>::new(app_pk.app_vm_pk.clone(), app_committed_exe)
-                            .with_program_name(program_name);
-                    let proof = app_prover.generate_app_proof(stdin);
-                    let app_vk = app_pk.get_app_vk();
-                    sdk.verify_app_proof(&app_vk, &proof)?;
-                } else {
-                    let halo2_params_reader = CacheHalo2ParamsReader::new(
-                        args.benchmark.kzg_params_dir.as_ref().expect("must set --kzg-params-dir"),
-                    );
-                    let mut agg_config = args.benchmark.agg_config();
-                    agg_config.agg_stark_config.max_num_user_public_values =
-                        VmConfig::<BabyBear>::system(&vm_config).num_public_values;
+                        let app_prover =
+                            AppProver::<_, E>::new(app_pk.app_vm_pk.clone(), app_committed_exe)
+                                .with_program_name(program_name);
+                        let proof = app_prover.generate_app_proof(stdin);
+                        let app_vk = app_pk.get_app_vk();
+                        sdk.verify_app_proof(&app_vk, &proof)?;
+                    }
+                    BenchMode::ProveStark => {
+                        // TODO: update this to use the new generate_stark_proof API once v1.2.1 is
+                        // released
+                        let app_pk = sdk.app_keygen(app_config)?;
+                        let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
+                        let agg_stark_config = args.benchmark.agg_config().agg_stark_config;
+                        let agg_stark_pk = AggStarkProvingKey::keygen(agg_stark_config);
+                        let mut prover = StarkProver::<_, E>::new(
+                            Arc::new(app_pk),
+                            app_committed_exe,
+                            agg_stark_pk,
+                            args.benchmark.agg_tree_config,
+                        );
+                        prover.set_program_name(program_name);
+                        let proof = prover.generate_root_verifier_input(stdin);
+                        let block_hash = proof
+                            .public_values
+                            .iter()
+                            .map(|pv| pv.as_canonical_u32() as u8)
+                            .collect::<Vec<u8>>();
+                        println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+                    }
+                    BenchMode::ProveEvm => {
+                        let halo2_params_reader = CacheHalo2ParamsReader::new(
+                            args.benchmark
+                                .kzg_params_dir
+                                .as_ref()
+                                .expect("must set --kzg-params-dir"),
+                        );
+                        let mut agg_config = args.benchmark.agg_config();
+                        agg_config.agg_stark_config.max_num_user_public_values =
+                            VmConfig::<BabyBear>::system(&vm_config).num_public_values;
 
-                    let app_pk = sdk.app_keygen(app_config)?;
-                    let full_agg_pk = sdk.agg_keygen(
-                        agg_config,
-                        &halo2_params_reader,
-                        &DefaultStaticVerifierPvHandler,
-                    )?;
-                    tracing::info!(
-                        "halo2_outer_k: {}",
-                        full_agg_pk.halo2_pk.verifier.pinning.metadata.config_params.k
-                    );
-                    tracing::info!(
-                        "halo2_wrapper_k: {}",
-                        full_agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k
-                    );
-                    let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
+                        let app_pk = sdk.app_keygen(app_config)?;
+                        let full_agg_pk = sdk.agg_keygen(
+                            agg_config,
+                            &halo2_params_reader,
+                            &DefaultStaticVerifierPvHandler,
+                        )?;
+                        tracing::info!(
+                            "halo2_outer_k: {}",
+                            full_agg_pk.halo2_pk.verifier.pinning.metadata.config_params.k
+                        );
+                        tracing::info!(
+                            "halo2_wrapper_k: {}",
+                            full_agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k
+                        );
+                        let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
 
-                    let mut prover = EvmHalo2Prover::<_, E>::new(
-                        &halo2_params_reader,
-                        Arc::new(app_pk),
-                        app_committed_exe,
-                        full_agg_pk,
-                        args.benchmark.agg_tree_config,
-                    );
-                    prover.set_program_name(program_name);
-                    let evm_proof = prover.generate_proof_for_evm(stdin);
-                    let block_hash = &evm_proof.user_public_values;
-                    println!("block_hash: {}", ToHexExt::encode_hex(block_hash));
+                        let mut prover = EvmHalo2Prover::<_, E>::new(
+                            &halo2_params_reader,
+                            Arc::new(app_pk),
+                            app_committed_exe,
+                            full_agg_pk,
+                            args.benchmark.agg_tree_config,
+                        );
+                        prover.set_program_name(program_name);
+                        let evm_proof = prover.generate_proof_for_evm(stdin);
+                        let block_hash = &evm_proof.user_public_values;
+                        println!("block_hash: {}", ToHexExt::encode_hex(block_hash));
+                    }
+                    BenchMode::MakeInput => {
+                        // This case is handled earlier and should not reach here
+                        unreachable!();
+                    }
                 }
 
                 Ok(())
