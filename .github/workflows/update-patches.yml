@@ -28,7 +28,7 @@ on:
         description: "Benchmark mode (if running benchmark)"
         type: string
         required: false
-        default: prove-e2e
+        default: prove-evm
       instance_family:
         description: "Instance family to use for benchmark"
         type: string
@@ -70,7 +70,7 @@ on:
         type: string
         required: false
         description: "Benchmark mode (if running benchmark)"
-        default: prove-e2e
+        default: prove-evm
       instance_family:
         type: string
         required: false
@@ -109,7 +109,7 @@ jobs:
   patch:
     name: "Update .cargo/config.toml and open a pull request"
     runs-on:
-      [ "runs-on", "runner=2cpu-linux-arm64", "run-id=${{ github.run_id }}" ]
+      ["runs-on", "runner=2cpu-linux-arm64", "run-id=${{ github.run_id }}"]
     outputs:
       branch_name: ${{ steps.create-branch.outputs.branch_name }}
       pr_number: ${{ steps.create-pr.outputs.pr_number }}
@@ -125,7 +125,7 @@ jobs:
       - name: Check out openvm repository
         uses: actions/checkout@v4
         with:
-          repository: 'openvm-org/openvm'
+          repository: "openvm-org/openvm"
           ref: ${{ steps.get-openvm-rev.outputs.result }}
 
       - name: Get STARK_BACKEND_REV from openvm
@@ -218,7 +218,7 @@ jobs:
     if: ${{ github.event.inputs.run_benchmark == 'true' || inputs.run_benchmark || github.event_name == 'schedule' }}
     uses: ./.github/workflows/reth-benchmark.yml
     with:
-      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-e2e' }}
+      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-evm' }}
       instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
@@ -231,7 +231,7 @@ jobs:
     if: ${{ github.event.inputs.host_flamegraph == 'true' || inputs.host_flamegraph || github.event_name == 'schedule' }}
     uses: ./.github/workflows/reth-benchmark.yml
     with:
-      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-e2e' }}
+      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-evm' }}
       instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
@@ -244,7 +244,7 @@ jobs:
     if: ${{ github.event.inputs.guest_flamegraph == 'true' || inputs.guest_flamegraph || github.event_name == 'schedule' }}
     uses: ./.github/workflows/reth-benchmark.yml
     with:
-      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-e2e' }}
+      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-evm' }}
       instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
@@ -253,7 +253,7 @@ jobs:
     secrets: inherit
 
   close-pr:
-    needs: [ patch, run-benchmark ]
+    needs: [patch, run-benchmark]
     if: |
       always() &&
       needs.patch.outputs.pr_number != '' &&

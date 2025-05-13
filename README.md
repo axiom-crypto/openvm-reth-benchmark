@@ -125,7 +125,7 @@ To run the full end-to-end benchmark for EVM verification, run:
 ```bash
 RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info OUTPUT_PATH="metrics.json" \
 cargo run --bin openvm-reth-benchmark --release -- \
---prove-e2e --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
+--mode prove-evm --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
 ```
 
 ### Summarizing Benchmark Results

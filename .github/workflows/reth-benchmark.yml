@@ -45,9 +45,10 @@ on:
         options:
           - execute
           - tracegen
-          - prove
-          - prove-e2e
-        default: prove-e2e
+          - prove-app
+          - prove-stark
+          - prove-evm
+        default: prove-evm
       profiling:
         type: choice
         required: false
@@ -121,8 +122,8 @@ on:
       mode:
         type: string
         required: false
-        description: Running mode, one of execute, tracegen, prove, or prove-e2e
-        default: prove-e2e
+        description: Running mode, one of {execute, tracegen, prove-app, prove-stark, prove-evm}
+        default: prove-evm
       profiling:
         type: string
         required: false
@@ -298,7 +299,7 @@ jobs:
           sudo apt install gnuplot
 
       - name: Setup halo2
-        if: ${{ (github.event.inputs.mode == 'prove-e2e') || (inputs.mode == 'prove-e2e') }}
+        if: ${{ (github.event.inputs.mode == 'prove-evm') || (inputs.mode == 'prove-evm') }}
         run: |
           bash openvm/extensions/native/recursion/trusted_setup_s3.sh
           PARAMS_DIR=$(pwd)/params
@@ -367,7 +368,7 @@ jobs:
           fi
           cat > run_benchmark.sh <<EOF
           ./target/$HOST_PROFILE/openvm-reth-benchmark-bin \
-            --$MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
+            --mode $MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
             --app-log-blowup ${{ inputs.app_log_blowup || github.event.inputs.app_log_blowup }} \
             --leaf-log-blowup ${{ inputs.leaf_log_blowup || github.event.inputs.leaf_log_blowup }} \
             --internal-log-blowup ${{ inputs.internal_log_blowup || github.event.inputs.internal_log_blowup || 2 }} \

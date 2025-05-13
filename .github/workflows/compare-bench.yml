@@ -18,9 +18,10 @@ on:
         options:
           - execute
           - tracegen
-          - prove
-          - prove-e2e
-        default: prove-e2e
+          - prove-app
+          - prove-stark
+          - prove-evm
+        default: prove-evm
       host_flamegraph:
         description: "Run target profiling benchmark for host flamegraph"
         type: boolean
@@ -126,7 +127,7 @@ jobs:
           TARGET_NAME=${{ needs.run-target-benchmark.outputs.metric_name }}
           TARGET_JSON=$TARGET_NAME/metrics.json
 
-          openvm-prof --json-paths $TARGET_JSON --prev-json-paths $BASE_JSON 
+          openvm-prof --json-paths $TARGET_JSON --prev-json-paths $BASE_JSON
           MD_PATH=${TARGET_JSON%.json}.md
           # Inspired by https://github.com/rustls/rustls/blob/7159373401f253cbaacd276634508e0798a8849f/.github/workflows/icount-bench.yml#L37
           cat $MD_PATH >> $GITHUB_STEP_SUMMARY
