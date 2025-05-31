@@ -160,6 +160,8 @@ on:
         required: true
       BENCHER_API_TOKEN:
         required: true
+      CODSPEED_TOKEN:
+        required: true
     outputs:
       metric_name:
         description: "Name of the metric"
@@ -198,6 +200,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
+
       - name: Display workflow inputs
         run: |
           if [[ "${{ inputs.manual_call }}" == "true" ]]; then
@@ -560,3 +563,185 @@ jobs:
       - name: Path to result
         run: |
           echo "https://github.com/axiom-crypto/openvm-reth-benchmark/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_NAME}.md"
+
+  codspeed-execute:
+    name: Run codspeed execute benchmark
+    runs-on:
+      - runs-on
+      - run-id=${{ github.run_id }}
+      - family=${{ inputs.instance_family || github.event.inputs.instance_family }}
+      - disk=large
+      - tag=bench-reth-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
+      - extras=s3-cache
+      - image=${{ contains(inputs.instance_family || github.event.inputs.instance_family, 'g.') && 'ubuntu22-full-arm64' || 'ubuntu22-full-x64' }}
+    
+    strategy:
+      matrix:
+        mode: [instrumentation, walltime]
+    env:
+      CODSPEED_RUNNER_MODE: ${{ matrix.mode }}
+
+    steps:
+      - uses: runs-on/action@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+      - name: Install codspeed
+        run: cargo binstall --no-confirm --force cargo-codspeed
+
+      - name: Display workflow inputs
+        run: |
+          if [[ "${{ inputs.manual_call }}" == "true" ]]; then
+            echo "${{ toJSON(inputs) }}"
+          else
+            echo "${{ toJSON(github.event.inputs) }}"
+          fi
+      - name: Get current commit hash
+        run: echo "current_sha=$(git rev-parse HEAD)" >> $GITHUB_ENV
+      - name: Set metric name
+        id: set-metric-name
+        run: |
+          input_json_str="${{ toJSON(inputs || github.event.inputs) }}"
+          input_hash=$(echo $input_json_str | sha256sum | cut -d' ' -f1)
+          METRIC_NAME=reth-$current_sha-${input_hash}
+          echo "METRIC_NAME=${METRIC_NAME}" >> $GITHUB_ENV
+          mkdir -p .bench_metrics/${METRIC_NAME}
+          METRIC_PATH=".bench_metrics/${METRIC_NAME}"
+          echo "METRIC_PATH=${METRIC_PATH}" >> $GITHUB_ENV
+          echo "name=${METRIC_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Set build profiles
+        id: set-build-profiles
+        run: |
+          GUEST_PROFILE="release"
+          HOST_PROFILE="maxperf"
+          if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
+            GUEST_PROFILE="profiling"
+            HOST_PROFILE="profiling"
+          fi
+          if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
+            HOST_PROFILE="profiling"
+          fi
+          echo "guest_profile=${GUEST_PROFILE}" >> $GITHUB_OUTPUT
+          echo "host_profile=${HOST_PROFILE}" >> $GITHUB_OUTPUT
+
+      - name: Set build args
+        id: set-build-args
+        run: |
+          FEATURES="bench-metrics,nightly-features,${{ inputs.memory_allocator || github.event.inputs.memory_allocator || 'jemalloc' }}"
+          if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
+            FEATURES="${FEATURES},profiling"
+          fi
+          arch=$(uname -m)
+          case $arch in
+            arm64|aarch64)
+              RUSTFLAGS="-Ctarget-cpu=native"
+              ;;
+            x86_64|amd64)
+              RUSTFLAGS="-Ctarget-cpu=native -C target-feature=+avx512f"
+              FEATURES="${FEATURES},halo2-asm"
+              ;;
+            *)
+              echo "Unsupported architecture: $arch"
+              exit 1
+              ;;
+          esac
+          if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
+            RUSTFLAGS="${RUSTFLAGS} -C force-frame-pointers=yes"
+          fi
+          JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
+          echo "RUSTFLAGS=${RUSTFLAGS}" >> $GITHUB_ENV
+          echo "JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}" >> $GITHUB_ENV
+          echo "FEATURES=${FEATURES}" >> $GITHUB_ENV
+
+      - name: Set cache keys
+        id: set-cache-keys
+        run: |
+          arch=$(uname -m)
+          # Use inputs.tag if defined, otherwise use current commit SHA
+          TAG="${{ inputs.tag || env.current_sha }}"
+          GUEST_PROFILE=${{ steps.set-build-profiles.outputs.guest_profile }}
+          echo "elf_cache_key=elf-${TAG}-${arch}-${GUEST_PROFILE}" >> $GITHUB_OUTPUT
+          RUSTFLAGS_HASH=$(echo "${RUSTFLAGS}" | sha256sum | cut -d' ' -f1 | head -c8)
+          JEMALLOC_CONF_HASH=$(echo "${JEMALLOC_SYS_WITH_MALLOC_CONF}" | sha256sum | cut -d' ' -f1 | head -c8)
+          FEATURES_HASH=$(echo "${FEATURES}" | sha256sum | cut -d' ' -f1 | head -c8)
+          HOST_PROFILE=${{ steps.set-build-profiles.outputs.host_profile }}
+          echo "host_cache_key=host-${TAG}-${arch}-${HOST_PROFILE}-${RUSTFLAGS_HASH}-${JEMALLOC_CONF_HASH}-${FEATURES_HASH}" >> $GITHUB_OUTPUT
+
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
+            
+      - name: Restore Guest ELF from cache
+        id: cache-guest-elf-restore
+        uses: runs-on/cache/restore@v4
+        with:
+          path: bin/host/elf/openvm-client-eth
+          key: ${{ steps.set-cache-keys.outputs.elf_cache_key }}
+
+      - name: Install cargo-openvm
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
+        run: |
+          cargo install --git https://github.com/openvm-org/openvm.git --locked --force cargo-openvm
+      - name: Build Guest ELF
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
+        working-directory: bin/client-eth
+        run: |
+          GUEST_PROFILE=${{ steps.set-build-profiles.outputs.guest_profile }}
+          RUSTFLAGS="" cargo openvm build --no-transpile --profile=$GUEST_PROFILE
+          mkdir -p ../host/elf
+          cp target/riscv32im-risc0-zkvm-elf/$GUEST_PROFILE/openvm-client-eth ../host/elf/
+
+      - name: Save Guest ELF to cache
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
+        uses: runs-on/cache/save@v4
+        with:
+          path: bin/host/elf/openvm-client-eth
+          key: ${{ steps.cache-guest-elf-restore.outputs.cache-primary-key }}
+
+      - name: Restore Host Binary from cache
+        id: cache-host-binary-restore
+        uses: runs-on/cache/restore@v4
+        with:
+          path: target/${{ steps.set-build-profiles.outputs.host_profile }}/openvm-reth-benchmark-bin
+          key: ${{ steps.set-cache-keys.outputs.host_cache_key }}
+
+      - name: Build Host Binary
+        if: steps.cache-host-binary-restore.outputs.cache-hit != 'true'
+        run: |
+          export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
+          HOST_PROFILE=${{ steps.set-build-profiles.outputs.host_profile }}
+          RUSTFLAGS=$RUSTFLAGS cargo codspeed build --bin openvm-reth-benchmark-bin --profile=$HOST_PROFILE --no-default-features --features=$FEATURES            
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v3
+        with:
+          run: |
+            mkdir -p rpc-cache
+            mkdir -p .bench_metrics
+            RPC_1=${{ secrets.RPC_URL_1 }}
+            MODE=${{ inputs.mode || github.event.inputs.mode }}
+            BLOCK_NUMBER=${{ inputs.block_number || github.event.inputs.block_number }}
+            HOST_PROFILE=${{ steps.set-build-profiles.outputs.host_profile }}
+            export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
+            export RUST_LOG="info,p3_=warn"
+            export OUTPUT_PATH=${METRIC_PATH}/metrics.json                
+            cargo codspeed run -- --mode $MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
+            --app-log-blowup ${{ inputs.app_log_blowup || github.event.inputs.app_log_blowup }} \
+            --leaf-log-blowup ${{ inputs.leaf_log_blowup || github.event.inputs.leaf_log_blowup }} \
+            --internal-log-blowup ${{ inputs.internal_log_blowup || github.event.inputs.internal_log_blowup || 2 }} \
+            --root-log-blowup ${{ inputs.root_log_blowup || github.event.inputs.root_log_blowup || 3 }} \
+            --max-segment-length ${{ inputs.max_segment_length || github.event.inputs.max_segment_length }} \
+            --segment-max-cells ${{ inputs.segment_max_cells || github.event.inputs.segment_max_cells }} \
+            --num-children-leaf ${{ inputs.num_children_leaf || github.event.inputs.num_children_leaf || 1 }} \
+            --num-children-internal ${{ inputs.num_children_internal || github.event.inputs.num_children_internal }}
+          token: ${{ secrets.CODSPEED_TOKEN }}
+        env:
+          CODSPEED_RUNNER_MODE: ${{ matrix.mode }}
