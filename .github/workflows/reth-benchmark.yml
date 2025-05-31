@@ -718,7 +718,7 @@ jobs:
         run: |
           export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
           HOST_PROFILE=${{ steps.set-build-profiles.outputs.host_profile }}
-          RUSTFLAGS=$RUSTFLAGS cargo codspeed build --bin openvm-reth-benchmark-bin --profile=$HOST_PROFILE --no-default-features --features=$FEATURES            
+          RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark-bin --profile=$HOST_PROFILE --no-default-features --features=$FEATURES            
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v3
