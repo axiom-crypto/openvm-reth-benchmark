@@ -53,6 +53,8 @@ openvm_algebra_complex_macros::complex_init! {
     Bn254Fp2 { mod_idx = 0 },
 }
 
+// TODO: maybe need to be updated like here:
+// https://github.com/axiom-crypto/openvm-reth-benchmark/compare/main...stateless
 pub fn main() {
     println("client-eth starting");
     // Setup secp256k1 because it is always used for recover_signers

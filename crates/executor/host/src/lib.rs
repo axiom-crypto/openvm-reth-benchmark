@@ -51,13 +51,15 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> HostExecutor<T, P
         tracing::info!("fetching the current block and the previous block");
         let current_block = self
             .provider
-            .get_block_by_number(block_number.into(), true)
+            .get_block_by_number(block_number.into())
+            .full()
             .await?
             .map(|block| Block::try_from(block.inner))
             .ok_or(eyre!("couldn't fetch block: {}", block_number))??;
         let previous_block = self
             .provider
-            .get_block_by_number((block_number - 1).into(), true)
+            .get_block_by_number((block_number - 1).into())
+            .full()
             .await?
             .map(|block| Block::try_from(block.inner))
             .ok_or(eyre!("couldn't fetch block: {}", block_number))??;
@@ -202,7 +204,7 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> HostExecutor<T, P
         let mut ancestor_headers = vec![];
         tracing::info!("fetching {} ancestor headers", block_number - oldest_ancestor);
         for height in (oldest_ancestor..=(block_number - 1)).rev() {
-            let block = self.provider.get_block_by_number(height.into(), false).await?.unwrap();
+            let block = self.provider.get_block_by_number(height.into()).await?.unwrap();
             ancestor_headers.push(block.inner.header.try_into()?);
         }
 
