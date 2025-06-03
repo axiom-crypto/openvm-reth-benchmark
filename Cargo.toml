@@ -20,7 +20,7 @@ exclude = ["**/target"]
 version = "0.1.0"
 
 [workspace.dependencies]
-bincode_derive = "2.0.0"
+bincode_derive = "2.0.1"
 eyre = "0.6"
 anyhow = { version = "1.0.86", default-features = false }
 tracing = { version = "0.1.40", default-features = false }
@@ -39,7 +39,7 @@ thiserror = "1.0.61"
 hex-literal = "0.4.1"
 rayon = "1.10.0"
 rlp = "0.5.2"
-bincode = { version = "2.0.0", default-features = false, features = [
+bincode = { version = "2.0.1", default-features = false, features = [
     "derive",
     "alloc",
     "serde",
