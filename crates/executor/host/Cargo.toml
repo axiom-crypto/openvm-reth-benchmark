@@ -21,17 +21,19 @@ tracing.workspace = true
 openvm-rpc-db.workspace = true
 openvm-witness-db.workspace = true
 openvm-client-executor.workspace = true
-openvm-mpt = { workspace = true, features = ["preimage_context"] }
 openvm-primitives.workspace = true
 
 # reth
 reth-codecs.workspace = true
 reth-primitives = { workspace = true, features = ["secp256k1"] }
+reth-primitives-traits.workspace = true
 reth-storage-errors.workspace = true
 reth-trie.workspace = true
+reth-evm.workspace = true
 reth-execution-types.workspace = true
 reth-errors.workspace = true
 reth-chainspec.workspace = true
+reth-evm-ethereum.workspace = true
 
 # revm
 revm.workspace = true
@@ -42,7 +44,8 @@ alloy-primitives.workspace = true
 alloy-rlp.workspace = true
 alloy-provider.workspace = true
 alloy-transport.workspace = true
-itertools = "0.13.0"
+alloy-consensus.workspace = true
+itertools.workspace = true
 futures.workspace = true
 alloy-rpc-types.workspace = true
 

@@ -22,7 +22,6 @@ hashbrown = { version = "0.14", features = ["rayon"] }
 # workspace
 openvm-witness-db.workspace = true
 openvm-primitives.workspace = true
-openvm-mpt.workspace = true
 
 # reth
 reth-ethereum-consensus.workspace = true
@@ -34,17 +33,21 @@ reth-evm.workspace = true
 reth-evm-ethereum.workspace = true
 reth-errors.workspace = true
 reth-chainspec.workspace = true
-reth-optimism-chainspec.workspace = true
 reth-revm.workspace = true
+revm-primitives.workspace = true
+reth-primitives-traits.workspace = true
+reth-stateless.workspace = true
 
 # revm
 revm.workspace = true
-revm-primitives.workspace = true
 
 # alloy
 alloy-primitives.workspace = true
 alloy-rlp.workspace = true
-itertools = "0.13.0"
+alloy-consensus.workspace = true
+
+
+itertools.workspace = true
 url.workspace = true
 futures.workspace = true
 

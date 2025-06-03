@@ -3,7 +3,6 @@ members = [
     "bin/host",
     "crates/executor/client",
     "crates/executor/host",
-    "crates/mpt",
     "crates/primitives",
     "crates/storage/rpc-db",
     "crates/storage/witness-db",
@@ -36,7 +35,7 @@ serde = { version = "1.0", default-features = false, features = ["derive"] }
 futures = "0.3"
 url = "2.3"
 thiserror = "1.0.61"
-hex-literal = "0.4.1"
+hex-literal = "1.0.0"
 rayon = "1.10.0"
 rlp = "0.5.2"
 bincode = { version = "2.0.1", default-features = false, features = [
@@ -44,14 +43,14 @@ bincode = { version = "2.0.1", default-features = false, features = [
     "alloc",
     "serde",
 ] }
-rustc-hash = "2.1.0"
+rustc-hash = "2.1.1"
+itertools = "0.14.0"
 
 # workspace
 openvm-rpc-db = { path = "./crates/storage/rpc-db" }
 openvm-witness-db = { path = "./crates/storage/witness-db" }
 openvm-client-executor = { path = "./crates/executor/client" }
 openvm-host-executor = { path = "./crates/executor/host" }
-openvm-mpt = { path = "./crates/mpt" }
 openvm-primitives = { path = "./crates/primitives" }
 openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
 
@@ -60,6 +59,9 @@ reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7",
     "alloy-compat",
     "std",
     # "ecrecover", -- maybe we need fork to support it, idk
+] }
+reth-primitives-traits = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false, features = [
+    "std",
 ] }
 reth-codecs = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false }
 reth-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false }
@@ -77,14 +79,12 @@ reth-storage-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4
 reth-trie = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false }
 reth-trie-common = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false }
 reth-chainspec = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false }
-reth-optimism-chainspec = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false, features = [
-    "serde",
-] }
 reth-execution-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false }
 reth-execution-types = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false }
 reth-db = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false }
 reth-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false }
 reth-ethereum-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false }
+reth-stateless = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false }
 
 # revm -- shall be the same version as reth usues
 revm = { version = "24.0.1", features = [

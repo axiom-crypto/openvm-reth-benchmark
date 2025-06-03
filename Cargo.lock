@@ -161,6 +161,7 @@ dependencies = [
  "alloy-rlp",
  "k256",
  "serde",
+ "serde_with",
  "thiserror 2.0.12",
 ]
 
@@ -247,7 +248,6 @@ dependencies = [
  "alloy-primitives 1.1.2",
  "auto_impl",
  "dyn-clone",
- "serde",
 ]
 
 [[package]]
@@ -324,17 +324,6 @@ dependencies = [
  "alloy-eips 1.0.9",
  "alloy-primitives 1.1.2",
  "alloy-serde 1.0.9",
- "serde",
-]
-
-[[package]]
-name = "alloy-op-hardforks"
-version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ddfbb5cc9f614efa5d56e0d7226214bb67b29271d44b6ddfcbbe25eb0ff898b"
-dependencies = [
- "alloy-hardforks",
- "auto_impl",
  "serde",
 ]
 
@@ -532,6 +521,16 @@ dependencies = [
  "alloy-consensus-any",
  "alloy-rpc-types-eth",
  "alloy-serde 1.0.9",
+]
+
+[[package]]
+name = "alloy-rpc-types-debug"
+version = "1.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c832f2e851801093928dbb4b7bd83cd22270faf76b2e080646b806a285c8757"
+dependencies = [
+ "alloy-primitives 1.1.2",
+ "serde",
 ]
 
 [[package]]
@@ -878,12 +877,6 @@ dependencies = [
  "once_cell_polyfill",
  "windows-sys 0.59.0",
 ]
-
-[[package]]
-name = "anyhow"
-version = "1.0.98"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 
 [[package]]
 name = "ariadne"
@@ -3965,7 +3958,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3be647b768db090acb35d5ec5db2b0e1f1de11133ca123b9eacf5137868f892a"
 dependencies = [
  "adler2",
- "serde",
 ]
 
 [[package]]
@@ -4218,25 +4210,7 @@ dependencies = [
  "alloy-serde 1.0.9",
  "derive_more 2.0.1",
  "serde",
- "thiserror 2.0.12",
-]
-
-[[package]]
-name = "op-alloy-rpc-types"
-version = "0.17.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f82a315004b6720fbf756afdcfdc97ea7ddbcdccfec86ea7df7562bb0da29a3f"
-dependencies = [
- "alloy-consensus",
- "alloy-eips 1.0.9",
- "alloy-network-primitives",
- "alloy-primitives 1.1.2",
- "alloy-rpc-types-eth",
- "alloy-serde 1.0.9",
- "derive_more 2.0.1",
- "op-alloy-consensus",
- "serde",
- "serde_json",
+ "serde_with",
  "thiserror 2.0.12",
 ]
 
@@ -4557,6 +4531,7 @@ dependencies = [
 name = "openvm-client-executor"
 version = "0.1.0"
 dependencies = [
+ "alloy-consensus",
  "alloy-primitives 1.1.2",
  "alloy-rlp",
  "bincode 2.0.1",
@@ -4564,8 +4539,7 @@ dependencies = [
  "eyre",
  "futures",
  "hashbrown 0.14.5",
- "itertools 0.13.0",
- "openvm-mpt",
+ "itertools 0.14.0",
  "openvm-primitives",
  "openvm-witness-db",
  "reth-chainspec",
@@ -4574,9 +4548,10 @@ dependencies = [
  "reth-evm",
  "reth-evm-ethereum",
  "reth-execution-types",
- "reth-optimism-chainspec",
  "reth-primitives",
+ "reth-primitives-traits",
  "reth-revm",
+ "reth-stateless",
  "reth-storage-errors",
  "reth-trie",
  "revm 24.0.1",
@@ -4697,6 +4672,7 @@ dependencies = [
 name = "openvm-host-executor"
 version = "0.1.0"
 dependencies = [
+ "alloy-consensus",
  "alloy-primitives 1.1.2",
  "alloy-provider",
  "alloy-rlp",
@@ -4706,17 +4682,19 @@ dependencies = [
  "dotenv",
  "eyre",
  "futures",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "openvm-client-executor",
- "openvm-mpt",
  "openvm-primitives",
  "openvm-rpc-db",
  "openvm-witness-db",
  "reth-chainspec",
  "reth-codecs",
  "reth-errors",
+ "reth-evm",
+ "reth-evm-ethereum",
  "reth-execution-types",
  "reth-primitives",
+ "reth-primitives-traits",
  "reth-storage-errors",
  "reth-trie",
  "revm 24.0.1",
@@ -4829,33 +4807,6 @@ dependencies = [
  "serde",
  "serde_with",
  "tracing",
-]
-
-[[package]]
-name = "openvm-mpt"
-version = "0.1.0"
-dependencies = [
- "alloy-primitives 1.1.2",
- "alloy-rlp",
- "alloy-rpc-types",
- "alloy-trie",
- "anyhow",
- "bincode 2.0.1",
- "eyre",
- "hex-literal",
- "itertools 0.13.0",
- "openvm-mpt",
- "openvm-primitives",
- "reth-execution-types",
- "reth-primitives",
- "reth-trie",
- "revm 24.0.1",
- "revm-primitives 19.1.0",
- "rlp",
- "rustc-hash 2.1.1",
- "serde",
- "thiserror 1.0.69",
- "tracing-subscriber 0.3.19",
 ]
 
 [[package]]
@@ -5051,7 +5002,6 @@ dependencies = [
  "alloy-rpc-types",
  "eyre",
  "reth-chainspec",
- "reth-optimism-chainspec",
  "reth-primitives",
  "reth-revm",
  "reth-trie",
@@ -6790,56 +6740,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "reth-optimism-chainspec"
-version = "1.4.7"
-source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.7#dc7cb6e6670b0da294a0e5010e02855f5aaf6b49"
-dependencies = [
- "alloy-chains",
- "alloy-consensus",
- "alloy-eips 1.0.9",
- "alloy-genesis",
- "alloy-hardforks",
- "alloy-primitives 1.1.2",
- "derive_more 2.0.1",
- "miniz_oxide",
- "op-alloy-rpc-types",
- "reth-chainspec",
- "reth-ethereum-forks",
- "reth-network-peers",
- "reth-optimism-forks",
- "reth-optimism-primitives",
- "reth-primitives-traits",
- "serde_json",
-]
-
-[[package]]
-name = "reth-optimism-forks"
-version = "1.4.7"
-source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.7#dc7cb6e6670b0da294a0e5010e02855f5aaf6b49"
-dependencies = [
- "alloy-op-hardforks",
- "alloy-primitives 1.1.2",
- "once_cell",
- "reth-ethereum-forks",
-]
-
-[[package]]
-name = "reth-optimism-primitives"
-version = "1.4.7"
-source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.7#dc7cb6e6670b0da294a0e5010e02855f5aaf6b49"
-dependencies = [
- "alloy-consensus",
- "alloy-eips 1.0.9",
- "alloy-primitives 1.1.2",
- "alloy-rlp",
- "bytes",
- "op-alloy-consensus",
- "reth-codecs",
- "reth-primitives-traits",
- "serde",
-]
-
-[[package]]
 name = "reth-primitives"
 version = "1.4.7"
 source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.7#dc7cb6e6670b0da294a0e5010e02855f5aaf6b49"
@@ -6910,6 +6810,32 @@ dependencies = [
  "bytes",
  "reth-trie-common",
  "serde",
+]
+
+[[package]]
+name = "reth-stateless"
+version = "1.4.7"
+source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.7#dc7cb6e6670b0da294a0e5010e02855f5aaf6b49"
+dependencies = [
+ "alloy-consensus",
+ "alloy-primitives 1.1.2",
+ "alloy-rlp",
+ "alloy-rpc-types-debug",
+ "alloy-trie",
+ "itertools 0.14.0",
+ "reth-chainspec",
+ "reth-consensus",
+ "reth-errors",
+ "reth-ethereum-consensus",
+ "reth-ethereum-primitives",
+ "reth-evm",
+ "reth-primitives-traits",
+ "reth-revm",
+ "reth-trie-common",
+ "reth-trie-sparse",
+ "serde",
+ "serde_with",
+ "thiserror 2.0.12",
 ]
 
 [[package]]

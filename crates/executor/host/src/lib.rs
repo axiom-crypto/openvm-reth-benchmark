@@ -1,52 +1,44 @@
 use std::{collections::BTreeSet, marker::PhantomData};
 
-use alloy_provider::{network::AnyNetwork, Provider};
+use alloy_primitives::Bloom;
+use alloy_provider::{
+    network::{AnyNetwork, BlockResponse},
+    Provider,
+};
 use alloy_transport::Transport;
 use eyre::{eyre, Ok};
-use openvm_client_executor::{
-    io::ClientExecutorInput, ChainVariant, EthereumVariant, LineaVariant, OptimismVariant, Variant,
-};
-use openvm_mpt::{state::HashedPostState, EthereumState};
+use openvm_client_executor::ClientExecutorInput;
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
+use reth_chainspec::MAINNET;
+use reth_evm::ConfigureEvm;
+use reth_evm_ethereum::execute::EthExecutorProvider;
 use reth_execution_types::ExecutionOutcome;
-use reth_primitives::{proofs, Block, Bloom, Receipts, B256};
-use revm::db::CacheDB;
+use reth_primitives::{Block, RecoveredBlock};
+use reth_primitives_traits::proofs;
+use reth_trie::HashedPostState;
+use revm::database::CacheDB;
+use revm_primitives::B256;
 
-/// An executor that fetches data from a [Provider] to execute blocks in the [ClientExecutor].
+/// /// An executor that fetches data from a [Provider] to generate [ExecutionWitness] for a block.
 #[derive(Debug, Clone)]
-pub struct HostExecutor<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> {
+pub struct HostExecutor<T: Transport + Clone, P: Provider<AnyNetwork> + Clone> {
     /// The provider which fetches data.
     pub provider: P,
     /// A phantom type to make the struct generic over the transport.
     pub phantom: PhantomData<T>,
 }
-
-impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> HostExecutor<T, P> {
+impl<T: Transport + Clone, P: Provider<AnyNetwork> + Clone> HostExecutor<T, P> {
     /// Create a new [`HostExecutor`] with a specific [Provider] and [Transport].
     pub fn new(provider: P) -> Self {
         Self { provider, phantom: PhantomData }
     }
 
     /// Executes the block with the given block number.
-    pub async fn execute(
-        &self,
-        block_number: u64,
-        variant: ChainVariant,
-    ) -> eyre::Result<ClientExecutorInput> {
-        let client_input = match variant {
-            ChainVariant::Ethereum => self.execute_variant::<EthereumVariant>(block_number).await,
-            ChainVariant::Optimism => self.execute_variant::<OptimismVariant>(block_number).await,
-            ChainVariant::Linea => self.execute_variant::<LineaVariant>(block_number).await,
-        }?;
+    pub async fn execute(&self, block_number: u64) -> eyre::Result<ClientExecutorInput> {
+        // For now only MAINNET is supported.
+        let spec = MAINNET.clone();
 
-        Ok(client_input)
-    }
-
-    async fn execute_variant<V>(&self, block_number: u64) -> eyre::Result<ClientExecutorInput>
-    where
-        V: Variant,
-    {
         // Fetch the current block and the previous block from the provider.
         tracing::info!("fetching the current block and the previous block");
         let current_block = self
@@ -54,19 +46,13 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> HostExecutor<T, P
             .get_block_by_number(block_number.into())
             .full()
             .await?
-            .map(|block| Block::try_from(block.inner))
-            .ok_or(eyre!("couldn't fetch block: {}", block_number))??;
+            .ok_or(eyre!("couldn't fetch block: {}", block_number))?;
         let previous_block = self
             .provider
             .get_block_by_number((block_number - 1).into())
             .full()
             .await?
-            .map(|block| Block::try_from(block.inner))
-            .ok_or(eyre!("couldn't fetch block: {}", block_number))??;
-
-        // Setup the spec for the block executor.
-        tracing::info!("setting up the spec for the block executor");
-        let spec = V::spec();
+            .ok_or(eyre!("couldn't fetch block: {}", block_number))?;
 
         // Setup the database for the block executor.
         tracing::info!("setting up the database for the block executor");
@@ -75,16 +61,23 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> HostExecutor<T, P
 
         // Execute the block and fetch all the necessary data along the way.
         tracing::info!(
-            "executing the block and with rpc db: block_number={}, transaction_count={}",
-            block_number,
-            current_block.body.len()
+            "executing the block and with rpc db: block_number={block_number}, transaction_count={transaction_count}",
+            transaction_count = current_block.transactions().len()
         );
 
-        let executor_block_input = V::pre_process_block(&current_block)
+        let current_block_body = current_block.into_block_body_unchecked();
+        let current_consensus_block = current_block_body.into_block(current_block.header.clone());
+        let current_sealed_block = current_consensus_block.into_sealed_block();
+
+        let executor_block_input = current_consensus_block.split();
+
+        let executor_block_input = current_consensus_block
             .with_recovered_senders()
             .ok_or(eyre!("failed to recover senders"))?;
         let executor_difficulty = current_block.header.difficulty;
-        let executor_output = V::execute(&executor_block_input, executor_difficulty, cache_db)?;
+        let executor_output = EthExecutorProvider::new(spec.into())
+            .executor(cache_db)
+            .execute((executor_block_input, executor_difficulty).into())?;
 
         // Validate the block post execution.
         tracing::info!("validating the block post execution");
@@ -105,7 +98,7 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> HostExecutor<T, P
         // Convert the output to an execution outcome.
         let executor_outcome = ExecutionOutcome::new(
             executor_output.state,
-            Receipts::from(executor_output.receipts),
+            executor_output.receipts,
             current_block.header.number,
             vec![executor_output.requests.into()],
         );
@@ -211,10 +204,7 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> HostExecutor<T, P
         // Create the client input.
         let client_input = ClientExecutorInput {
             current_block: V::pre_process_block(&current_block),
-            ancestor_headers,
-            parent_state: state,
-            state_requests,
-            bytecodes: rpc_db.get_bytecodes(),
+            witness: todo!(),
         };
         tracing::info!("successfully generated client input");
 
