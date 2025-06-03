@@ -1,7 +1,9 @@
 use std::{collections::BTreeSet, marker::PhantomData};
 
+use alloy_consensus::BlockBody;
 use alloy_primitives::Bloom;
 use alloy_provider::{
+    bindings::IMulticall3::getCurrentBlockGasLimitCall,
     network::{AnyNetwork, BlockResponse},
     Provider,
 };
@@ -14,7 +16,7 @@ use reth_chainspec::MAINNET;
 use reth_evm::ConfigureEvm;
 use reth_evm_ethereum::execute::EthExecutorProvider;
 use reth_execution_types::ExecutionOutcome;
-use reth_primitives::{Block, RecoveredBlock};
+use reth_primitives::{Block, RecoveredBlock, SealedBlock};
 use reth_primitives_traits::proofs;
 use reth_trie::HashedPostState;
 use revm::database::CacheDB;
@@ -65,11 +67,27 @@ impl<T: Transport + Clone, P: Provider<AnyNetwork> + Clone> HostExecutor<T, P> {
             transaction_count = current_block.transactions().len()
         );
 
-        let current_block_body = current_block.into_block_body_unchecked();
-        let current_consensus_block = current_block_body.into_block(current_block.header.clone());
-        let current_sealed_block = current_consensus_block.into_sealed_block();
+        let current_header =
+            current_block.header.clone().try_into_header().expect("failed to convert header");
 
-        let executor_block_input = current_consensus_block.split();
+        let current_transactions = current_block
+            .transactions()
+            .map(|t| {
+                t.as_envelope()
+                    .expect("only Ethereum transactions are supported")
+                    .into_typed_transaction()
+            })
+            .into_transactions_vec();
+
+        let current_body = BlockBody {
+            transactions: current_transactions,
+            // TODO: can be restored from current_block.uncles but it's not needed?
+            ommers: vec![],
+            withdrawals: current_block.withdrawals,
+        };
+
+        let current_sealed_block = Block::new(current_header, current_body);
+        let recovered_block = RecoveredBlock::try_recover(current_sealed_block)?;
 
         let executor_block_input = current_consensus_block
             .with_recovered_senders()
