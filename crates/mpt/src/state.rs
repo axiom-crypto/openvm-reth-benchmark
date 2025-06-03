@@ -3,10 +3,12 @@
 use core::iter::IntoIterator;
 
 use itertools::Itertools;
-use reth_primitives::{Account, Address, B256, U256};
+use reth_primitives::Account;
 use reth_trie::{prefix_set::PrefixSetMut, Nibbles};
-use revm::db::{AccountStatus, BundleAccount};
-use revm_primitives::{hash_map, keccak256, HashMap, HashSet};
+use revm::database::{AccountStatus, BundleAccount};
+// TODO: unclear if it shall be revm_primitives::HashMap or hash_map::HashMap
+use revm_primitives::{hash_map, hash_map::HashMap, hash_set::HashSet, keccak256};
+use revm_primitives::{Address, B256, U256};
 use std::borrow::Cow;
 
 /// Representation of in-memory hashed state.

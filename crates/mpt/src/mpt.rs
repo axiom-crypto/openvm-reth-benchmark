@@ -30,6 +30,7 @@ use core::{
 };
 use reth_trie::AccountProof;
 use revm::primitives::HashMap;
+use revm_primitives::Address;
 use rustc_hash::FxBuildHasher;
 use serde::{Deserialize, Serialize};
 
@@ -37,7 +38,6 @@ use rlp::{Decodable, DecoderError, Prototype, Rlp};
 use thiserror::Error as ThisError;
 
 use anyhow::{Context, Result};
-use reth_primitives::Address;
 
 use crate::StorageTries;
 

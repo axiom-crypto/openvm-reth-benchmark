@@ -7,13 +7,12 @@ use std::{
 use alloy_provider::{network::AnyNetwork, Provider};
 use alloy_rpc_types::BlockId;
 use alloy_transport::Transport;
-use reth_primitives::{
-    revm_primitives::{AccountInfo, Bytecode},
-    Address, B256, U256,
+use reth_revm::{
+    state::{AccountInfo, Bytecode},
+    DatabaseRef,
 };
-use reth_revm::DatabaseRef;
 use reth_storage_errors::{db::DatabaseError, provider::ProviderError};
-use revm_primitives::HashMap;
+use revm_primitives::{hash_map::HashMap, hash_set::HashSet, Address, B256, U256};
 use rustc_hash::FxBuildHasher;
 
 /// A database that fetches data from a [Provider] over a [Transport].
@@ -44,7 +43,7 @@ pub enum RpcDbError {
     PreimageNotFound,
 }
 
-impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> RpcDb<T, P> {
+impl<T: Transport + Clone, P: Provider<AnyNetwork> + Clone> RpcDb<T, P> {
     /// Create a new [`RpcDb`].
     pub fn new(provider: P, block: u64) -> Self {
         RpcDb {
@@ -78,12 +77,12 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> RpcDb<T, P> {
             .map_err(|e| RpcDbError::RpcError(e.to_string()))?;
 
         // Construct the account info & write it to the log.
-        let bytecode = Bytecode::new_raw(code);
+        let code = Bytecode::new_raw(code);
         let account_info = AccountInfo {
             nonce: proof.nonce,
             balance: proof.balance,
             code_hash: proof.code_hash,
-            code: Some(bytecode.clone()),
+            code: Some(code),
         };
 
         // Record the account info to the state.
@@ -123,7 +122,7 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> RpcDb<T, P> {
         // Fetch the block.
         let block = self
             .provider
-            .get_block_by_number(number.into(), false)
+            .get_block_by_number(number.into())
             .await
             .map_err(|e| RpcDbError::RpcError(e.to_string()))?;
 
@@ -156,21 +155,25 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> RpcDb<T, P> {
             .collect()
     }
 
-    /// Gets all account bytecodes.
+    /// Gets all unique account bytecodes.
     pub fn get_bytecodes(&self) -> Vec<Bytecode> {
-        let accounts = self.accounts.borrow();
+        let mut seen_hashes = HashSet::new();
+        let mut unique_codes = Vec::new();
 
-        accounts
-            .values()
-            .flat_map(|account| account.code.clone())
-            .map(|code| (code.hash_slow(), code))
-            .collect::<BTreeMap<_, _>>()
-            .into_values()
-            .collect::<Vec<_>>()
+        for account in self.accounts.borrow().values() {
+            if let Some(code) = &account.code {
+                let hash = code.hash_slow();
+                if seen_hashes.insert(hash) {
+                    unique_codes.push(code.clone());
+                }
+            }
+        }
+
+        unique_codes
     }
 }
 
-impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> DatabaseRef for RpcDb<T, P> {
+impl<T: Transport + Clone, P: Provider<AnyNetwork> + Clone> DatabaseRef for RpcDb<T, P> {
     type Error = ProviderError;
 
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
