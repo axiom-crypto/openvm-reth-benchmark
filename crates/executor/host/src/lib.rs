@@ -21,13 +21,10 @@ use revm_primitives::Address;
 use revm_primitives::B256;
 use revm_primitives::U256;
 use rustc_hash::FxBuildHasher;
-use std::marker::PhantomData;
-
-// Import the lightweight executor module
-mod lightweight;
-pub use lightweight::LightweightHostExecutor;
 use zerocopy::IntoBytes;
 
+mod lightweight;
+pub use lightweight::LightweightHostExecutor;
 /// /// An executor that fetches data from a [Provider] to generate [ExecutionWitness] for a block.
 #[derive(Debug, Clone)]
 pub struct HostExecutor<P: Provider<AnyNetwork> + Clone> {

@@ -4683,6 +4683,7 @@ dependencies = [
  "dotenv",
  "eyre",
  "futures",
+ "hex",
  "itertools 0.14.0",
  "openvm-client-executor",
  "openvm-primitives",
