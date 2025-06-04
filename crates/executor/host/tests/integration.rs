@@ -26,16 +26,16 @@ async fn run_e2e(env_var_key: &str, block_number: u64) {
         Url::parse(std::env::var(env_var_key).unwrap().as_str()).expect("invalid rpc url");
     let provider = RootProvider::new_http(rpc_url);
 
-    // Setup the host executor.
+    tracing::info!("setting up the host executor");
     let host_executor = HostExecutor::new(provider);
 
-    // Execute the host.
+    tracing::info!("executing the host");
     let client_input = host_executor.execute(block_number).await.expect("failed to execute host");
 
-    // Setup the client executor.
+    tracing::info!("setting up the client executor");
     let client_executor = ClientExecutor;
 
-    // Execute the client.
+    tracing::info!("executing the client");
     client_executor.execute(client_input.clone()).expect("failed to execute client");
 
     // // Save the client input to a buffer.
