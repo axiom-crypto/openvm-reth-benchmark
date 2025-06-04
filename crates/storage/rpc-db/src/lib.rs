@@ -1,8 +1,4 @@
-use std::{
-    cell::RefCell,
-    collections::{BTreeMap, BTreeSet},
-    marker::PhantomData,
-};
+use std::{cell::RefCell, collections::BTreeSet};
 
 use alloy_provider::{network::AnyNetwork, Provider};
 use alloy_rpc_types::BlockId;
@@ -17,7 +13,7 @@ use rustc_hash::FxBuildHasher;
 
 /// A database that fetches data from a [Provider] over a [Transport].
 #[derive(Debug, Clone)]
-pub struct RpcDb<T, P> {
+pub struct RpcDb<P> {
     /// The provider which fetches data.
     pub provider: P,
     /// The block to fetch data from.
@@ -28,8 +24,6 @@ pub struct RpcDb<T, P> {
     pub storage: RefCell<HashMap<Address, HashMap<U256, U256>>>,
     /// The oldest block whose header/hash has been requested.
     pub oldest_ancestor: RefCell<u64>,
-    /// A phantom type to make the struct generic over the transport.
-    pub _phantom: PhantomData<T>,
 }
 
 /// Errors that can occur when interacting with the [RpcDb].
@@ -43,7 +37,7 @@ pub enum RpcDbError {
     PreimageNotFound,
 }
 
-impl<T: Transport + Clone, P: Provider<AnyNetwork> + Clone> RpcDb<T, P> {
+impl<P: Provider<AnyNetwork> + Clone> RpcDb<P> {
     /// Create a new [`RpcDb`].
     pub fn new(provider: P, block: u64) -> Self {
         RpcDb {
@@ -52,7 +46,6 @@ impl<T: Transport + Clone, P: Provider<AnyNetwork> + Clone> RpcDb<T, P> {
             accounts: RefCell::new(HashMap::new()),
             storage: RefCell::new(HashMap::new()),
             oldest_ancestor: RefCell::new(block),
-            _phantom: PhantomData,
         }
     }
 
@@ -173,7 +166,7 @@ impl<T: Transport + Clone, P: Provider<AnyNetwork> + Clone> RpcDb<T, P> {
     }
 }
 
-impl<T: Transport + Clone, P: Provider<AnyNetwork> + Clone> DatabaseRef for RpcDb<T, P> {
+impl<P: Provider<AnyNetwork> + Clone> DatabaseRef for RpcDb<P> {
     type Error = ProviderError;
 
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {

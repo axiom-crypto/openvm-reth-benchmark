@@ -44,6 +44,7 @@ bincode = { version = "2.0.1", default-features = false, features = [
 ] }
 rustc-hash = "2.1.1"
 itertools = "0.14.0"
+zerocopy = "0.8.11"
 
 # workspace
 openvm-rpc-db = { path = "./crates/storage/rpc-db" }

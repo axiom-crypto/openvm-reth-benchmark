@@ -12,10 +12,7 @@ use openvm_circuit::{
         openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear,
     },
 };
-use openvm_client_executor::{
-    io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET,
-    CHAIN_ID_OP_MAINNET,
-};
+use openvm_client_executor::io::ClientExecutorInput;
 use openvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
 use openvm_host_executor::HostExecutor;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
@@ -30,7 +27,6 @@ use openvm_sdk::{
 use openvm_stark_sdk::engine::StarkFriEngine;
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 pub use reth_primitives;
-use reth_primitives::hex::ToHexExt;
 use serde_json::json;
 use std::{fs, path::PathBuf, sync::Arc};
 use tracing::info_span;
@@ -222,15 +218,6 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
     let mut args = args;
     let provider_config = args.provider.into_provider().await?;
 
-    let variant = match provider_config.chain_id {
-        CHAIN_ID_ETH_MAINNET => ChainVariant::Ethereum,
-        CHAIN_ID_OP_MAINNET => ChainVariant::Optimism,
-        CHAIN_ID_LINEA_MAINNET => ChainVariant::Linea,
-        _ => {
-            eyre::bail!("unknown chain ID: {}", provider_config.chain_id);
-        }
-    };
-
     let client_input_from_cache = try_load_input_from_cache(
         args.cache_dir.as_ref(),
         provider_config.chain_id,
@@ -250,10 +237,8 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
             let host_executor = HostExecutor::new(provider);
 
             // Execute the host.
-            let client_input = host_executor
-                .execute(args.block_number, variant)
-                .await
-                .expect("failed to execute host");
+            let client_input =
+                host_executor.execute(args.block_number).await.expect("failed to execute host");
 
             if let Some(cache_dir) = args.cache_dir {
                 let input_folder = cache_dir.join(format!("input/{}", provider_config.chain_id));
@@ -327,7 +312,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                             .iter()
                             .map(|x| x.as_canonical_u32().try_into().unwrap())
                             .collect::<Vec<_>>();
-                        println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+                        println!("block_hash: {}", hex::encode(&block_hash));
                     }
                     BenchMode::Tracegen => {
                         let executor = VmExecutor::<_, _>::new(app_config.app_vm_config);
@@ -366,7 +351,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                             .iter()
                             .map(|pv| pv.as_canonical_u32() as u8)
                             .collect::<Vec<u8>>();
-                        println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+                        println!("block_hash: {}", hex::encode(&block_hash));
                     }
                     BenchMode::ProveEvm => {
                         let halo2_params_reader = CacheHalo2ParamsReader::new(
@@ -405,7 +390,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                         prover.set_program_name(program_name);
                         let evm_proof = prover.generate_proof_for_evm(stdin);
                         let block_hash = &evm_proof.user_public_values;
-                        println!("block_hash: {}", ToHexExt::encode_hex(block_hash));
+                        println!("block_hash: {}", hex::encode(block_hash));
                     }
                     BenchMode::MakeInput => {
                         // This case is handled earlier and should not reach here
