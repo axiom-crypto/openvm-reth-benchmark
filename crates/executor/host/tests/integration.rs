@@ -59,7 +59,7 @@ async fn run_e2e(env_var_key: &str, block_number: u64) {
 
     // Log detailed information about the generated ExecutionWitness
     log_execution_witness_details(&client_input.witness, "HostExecutor");
-    log_block_details(&client_input.current_block);
+    log_block_details(&client_input.block);
 
     tracing::info!("🔧 Setting up the client executor");
     let client_executor = ClientExecutor;

@@ -12,7 +12,7 @@ use openvm_circuit::{
         openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear,
     },
 };
-use openvm_client_executor::io::ClientExecutorInput;
+use openvm_client_executor::io::StatelessInput;
 use openvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
 use openvm_host_executor::HostExecutor;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
@@ -409,14 +409,14 @@ fn try_load_input_from_cache(
     cache_dir: Option<&PathBuf>,
     chain_id: u64,
     block_number: u64,
-) -> eyre::Result<Option<ClientExecutorInput>> {
+) -> eyre::Result<Option<StatelessInput>> {
     Ok(if let Some(cache_dir) = cache_dir {
         let cache_path = cache_dir.join(format!("input/{}/{}.bin", chain_id, block_number));
 
         if cache_path.exists() {
             // TODO: prune the cache if invalid instead
             let mut cache_file = std::fs::File::open(cache_path)?;
-            let client_input: ClientExecutorInput =
+            let client_input: StatelessInput =
                 bincode::serde::decode_from_std_read(&mut cache_file, bincode::config::standard())?;
 
             Some(client_input)

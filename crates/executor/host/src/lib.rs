@@ -465,19 +465,43 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
 
 fn recover_rpc_block(
     block: AnyRpcBlock,
-) -> RecoveredBlock<Block<EthereumTxEnvelope<alloy_consensus::TxEip4844>>> {
+) -> RecoveredBlock<Block<EthereumTxEnvelope<alloy_consensus::TxEip4844Variant>>> {
     let block = block.clone();
     let current_header =
         block.inner.header.inner.clone().try_into_header().expect("failed to convert header");
 
-    let current_transactions: Vec<EthereumTxEnvelope<alloy_consensus::TxEip4844>> = block
+    let current_transactions = block
         .inner
         .transactions
         .clone()
         .map(|t| {
             let envelope = t.as_envelope().expect("only Ethereum transactions are supported");
-            let pooled = envelope.clone().try_into_pooled().expect("failed to convert to pooled");
-            pooled.into()
+
+            // Handle different transaction types without converting to pooled
+            // EIP-4844 transactions don't have blob sidecar in RPC responses
+            match envelope {
+                EthereumTxEnvelope::Eip4844(signed_tx) => {
+                    // For EIP-4844 transactions, we need to create a transaction without sidecar
+                    // since RPC responses don't include the blob sidecar data
+                    let tx_4844 = signed_tx.tx().clone();
+                    let signature = signed_tx.signature().clone();
+
+                    // Create the signed transaction
+                    let signed = alloy_consensus::Signed::new_unchecked(
+                        tx_4844,
+                        signature,
+                        *signed_tx.hash(),
+                    );
+                    EthereumTxEnvelope::Eip4844(signed)
+                }
+                _ => {
+                    // For non-EIP-4844 transactions, try converting to pooled first
+                    match envelope.clone().try_into_pooled() {
+                        Ok(pooled) => pooled.into(),
+                        Err(_) => envelope.clone(), // Fallback to original envelope if pooled conversion fails
+                    }
+                }
+            }
         })
         .into_transactions_vec();
 
@@ -488,9 +512,7 @@ fn recover_rpc_block(
         withdrawals: block.withdrawals.clone(),
     };
 
-    let current_sealed_block: alloy_consensus::Block<
-        EthereumTxEnvelope<alloy_consensus::TxEip4844>,
-    > = Block::new(current_header, current_body);
+    let current_sealed_block = Block::new(current_header, current_body);
     let recovered_block =
         RecoveredBlock::try_recover(current_sealed_block).expect("failed to recover block");
 
