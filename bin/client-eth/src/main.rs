@@ -1,11 +1,6 @@
 use openvm::io::{println, read, reveal_bytes32};
 #[allow(unused_imports)]
-use openvm_client_executor::{
-    custom::{USED_BN_ADD, USED_BN_MUL, USED_BN_PAIR, USED_KZG_PROOF},
-    io::ClientExecutorInput,
-    reth_primitives::revm_primitives::FixedBytes,
-    ClientExecutor, EthereumVariant,
-};
+use openvm_client_executor::{io::StatelessInput, ClientExecutor};
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
     openvm_algebra_guest::IntMod,
@@ -53,46 +48,18 @@ openvm_algebra_complex_macros::complex_init! {
     Bn254Fp2 { mod_idx = 0 },
 }
 
-// TODO: maybe need to be updated like here:
-// https://github.com/axiom-crypto/openvm-reth-benchmark/compare/main...stateless
 pub fn main() {
-    println("client-eth starting");
-    // Setup secp256k1 because it is always used for recover_signers
-    setup_2();
-    setup_3();
-    setup_sw_Secp256k1Point();
+    println("[INFO] client-eth starting");
 
     // Read the input.
-    let input: ClientExecutorInput = read();
-    println("finished reading input");
+    // TODO: optimize read since StatelessInput already consists of bytes
+    let input: StatelessInput = read();
+    println("[INFO] finished reading input");
 
     // Execute the block.
     let executor = ClientExecutor;
-    let header = executor.execute::<EthereumVariant>(input).expect("failed to execute client");
-    let block_hash = header.hash_slow();
+    let block_hash = executor.execute(input).expect("failed to execute client");
 
     // Reveal the block hash.
     reveal_bytes32(*block_hash);
-
-    // Setup can be called at any time.
-    if unsafe { USED_BN_ADD || USED_BN_MUL || USED_BN_PAIR } {
-        setup_0(); // Bn254 coordinate field
-    }
-    if unsafe { USED_BN_ADD || USED_BN_MUL } {
-        // pairing does not use ecc extension
-        setup_sw_Bn254G1Affine();
-    }
-    if unsafe { USED_BN_MUL || USED_BN_PAIR } {
-        setup_1(); // Bn254 scalar field
-    }
-    if unsafe { USED_BN_PAIR } {
-        setup_complex_0(); // Bn254 complex extension of coordinate field
-    }
-    #[cfg(feature = "kzg-intrinsics")]
-    if unsafe { USED_KZG_PROOF } {
-        setup_4(); // Bls12-381 coordinate field
-        setup_5(); // Bls12-381 scalar field
-        setup_sw_Bls12_381G1Affine();
-        setup_complex_1(); // Bls12-381 complex extension of coordinate field
-    }
 }

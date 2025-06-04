@@ -11,7 +11,7 @@ use alloy_rpc_types::trace::geth::{
 };
 use alloy_rpc_types_debug::ExecutionWitness;
 use eyre::{eyre, OptionExt};
-use openvm_client_executor::ClientExecutorInput;
+use openvm_client_executor::io::StatelessInput;
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
 use reth_chainspec::MAINNET;
@@ -40,7 +40,7 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
     }
 
     /// Executes the block with the given block number.
-    pub async fn execute(&self, block_number: u64) -> eyre::Result<ClientExecutorInput> {
+    pub async fn execute(&self, block_number: u64) -> eyre::Result<StatelessInput> {
         // For now only MAINNET is supported.
         let spec = MAINNET.clone();
 
@@ -89,7 +89,7 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
         let processed_block = self.process_block_for_client(&current_block)?;
 
         // Create the client input.
-        let client_input = ClientExecutorInput { current_block: processed_block, witness };
+        let client_input = StatelessInput { block: processed_block, witness };
         tracing::info!("successfully generated client input");
 
         Ok(client_input)
