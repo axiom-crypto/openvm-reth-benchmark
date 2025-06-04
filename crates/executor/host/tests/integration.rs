@@ -1,7 +1,7 @@
 use alloy_provider::RootProvider;
 use alloy_rpc_types_debug::ExecutionWitness;
 use openvm_client_executor::ClientExecutor;
-use openvm_host_executor::{HostExecutor, LightweightHostExecutor};
+use openvm_host_executor::HostExecutor;
 use std::time::Instant;
 use tracing_subscriber::{
     fmt, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt, EnvFilter,
@@ -10,12 +10,8 @@ use url::Url;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_e2e_ethereum() {
-    run_e2e("RPC_1", 18884864).await;
-}
-
-#[tokio::test(flavor = "multi_thread")]
-async fn test_lightweight_executor() {
-    run_lightweight_e2e("RPC_1", 18884864).await;
+    run_e2e("RPC_1", 21345144).await;
+    //run_e2e("RPC_1", 18884864).await;
 }
 
 async fn run_e2e(env_var_key: &str, block_number: u64) {
@@ -90,94 +86,6 @@ async fn run_e2e(env_var_key: &str, block_number: u64) {
 
     // // Load the client input from a buffer.
     // let _: ClientExecutorInput = bincode::deserialize(&buffer).unwrap();
-}
-
-async fn run_lightweight_e2e(env_var_key: &str, block_number: u64) {
-    // Initialize the environment variables.
-    dotenv::dotenv().ok();
-
-    // Initialize the logger with detailed output
-    let _ = tracing_subscriber::registry()
-        .with(
-            fmt::layer()
-                .with_target(true)
-                .with_thread_ids(true)
-                .with_file(true)
-                .with_line_number(true),
-        )
-        .with(EnvFilter::from_default_env())
-        .try_init();
-
-    tracing::info!("🚀 Starting E2E test with LightweightHostExecutor");
-    tracing::info!("📊 Test Configuration:");
-    tracing::info!("   - Block Number: {}", block_number);
-    tracing::info!("   - RPC Environment Variable: {}", env_var_key);
-
-    let start_time = Instant::now();
-
-    // Setup the provider.
-    tracing::info!("🔗 Setting up RPC provider...");
-    let rpc_url =
-        Url::parse(std::env::var(env_var_key).unwrap().as_str()).expect("invalid rpc url");
-    tracing::info!("   - RPC URL: {}", rpc_url);
-
-    let provider_setup_time = Instant::now();
-    let provider = RootProvider::new_http(rpc_url);
-    tracing::info!("   ✅ Provider setup completed in {:?}", provider_setup_time.elapsed());
-
-    tracing::info!("🔧 Setting up the lightweight host executor");
-    let lightweight_executor = LightweightHostExecutor::new(provider);
-
-    tracing::info!("⚡ Executing the lightweight host (generating ExecutionWitness via RPC)...");
-    let host_execution_start = Instant::now();
-
-    // This will currently fail due to block conversion, but we'll get detailed logs
-    match lightweight_executor.generate_execution_witness(block_number).await {
-        Ok(client_input) => {
-            let host_execution_time = host_execution_start.elapsed();
-            tracing::info!("✅ Lightweight host execution completed in {:?}", host_execution_time);
-
-            // Log detailed information about the generated ExecutionWitness
-            log_execution_witness_details(&client_input.witness, "LightweightHostExecutor");
-
-            tracing::info!("🔧 Setting up the client executor");
-            let client_executor = ClientExecutor;
-
-            tracing::info!("⚡ Executing the client (validating ExecutionWitness)...");
-            let client_execution_start = Instant::now();
-            client_executor.execute(client_input.clone()).expect("failed to execute client");
-            let client_execution_time = client_execution_start.elapsed();
-
-            tracing::info!("✅ Client execution completed in {:?}", client_execution_time);
-
-            let total_time = start_time.elapsed();
-            tracing::info!("🎯 Lightweight E2E Test Summary:");
-            tracing::info!("   - Total Time: {:?}", total_time);
-            tracing::info!("   - Host Execution: {:?}", host_execution_time);
-            tracing::info!("   - Client Execution: {:?}", client_execution_time);
-            tracing::info!(
-                "   - Setup Overhead: {:?}",
-                total_time - host_execution_time - client_execution_time
-            );
-        }
-        Err(e) => {
-            let host_execution_time = host_execution_start.elapsed();
-            tracing::warn!("⚠️  Lightweight host execution failed after {:?}", host_execution_time);
-            tracing::warn!("   Error: {}", e);
-            tracing::info!("   This is expected due to unimplemented block conversion");
-
-            // Check if the error is specifically about block conversion
-            if e.to_string().contains("Block conversion not fully implemented") {
-                tracing::info!("✅ Test reached expected failure point - block conversion needs implementation");
-                tracing::info!(
-                    "   The ExecutionWitness generation logic was exercised successfully"
-                );
-            } else {
-                tracing::error!("❌ Unexpected error during execution: {}", e);
-                panic!("Unexpected error: {}", e);
-            }
-        }
-    }
 }
 
 fn log_execution_witness_details(witness: &ExecutionWitness, executor_type: &str) {

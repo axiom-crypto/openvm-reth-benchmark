@@ -5,7 +5,7 @@ use alloy_provider::{
     Provider,
 };
 use alloy_rpc_types_debug::ExecutionWitness;
-use eyre::{eyre, Ok};
+use eyre::{eyre, Ok, OptionExt};
 use openvm_client_executor::ClientExecutorInput;
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
@@ -23,8 +23,6 @@ use revm_primitives::U256;
 use rustc_hash::FxBuildHasher;
 use zerocopy::IntoBytes;
 
-mod lightweight;
-pub use lightweight::LightweightHostExecutor;
 /// /// An executor that fetches data from a [Provider] to generate [ExecutionWitness] for a block.
 #[derive(Debug, Clone)]
 pub struct HostExecutor<P: Provider<AnyNetwork> + Clone> {
@@ -118,7 +116,7 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
         let state = self.build_state_witness(&state_requests, block_number).await?;
 
         // 3. Extract contract codes that were accessed
-        let codes = self.extract_accessed_codes(&state_requests).await?;
+        let codes = self.extract_accessed_codes(&rpc_db, executor_output, block_number).await?;
 
         // 4. Build key preimages (unhashed addresses and storage keys)
         let keys = self.build_key_preimages(&state_requests);
@@ -170,13 +168,37 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
     /// Extract contract codes that were accessed during execution
     async fn extract_accessed_codes(
         &self,
-        state_requests: &HashMap<Address, Vec<U256>, FxBuildHasher>,
+        rpc_db: &RpcDb<P>,
+        executor_output: &BlockExecutionResult<reth_primitives::Receipt>,
+        block_number: u64,
     ) -> eyre::Result<Vec<Bytes>> {
-        let mut codes = Vec::new();
+        // Start with bytecodes that were cached during execution
+        let cached_bytecodes = rpc_db.get_bytecodes();
+        let mut codes: Vec<Bytes> =
+            cached_bytecodes.into_iter().map(|bytecode| bytecode.bytecode().clone()).collect();
 
-        for address in state_requests.keys() {
-            // Get the code for this address
-            let code = self.provider.get_code_at(*address).await?;
+        // Collect all unique addresses that appeared in transactions
+        let mut all_addresses = std::collections::HashSet::new();
+
+        // Add addresses from logs (contracts that emitted events)
+        for receipt in &executor_output.receipts {
+            for log in &receipt.logs {
+                all_addresses.insert(log.address);
+            }
+        }
+
+        // For each unique address, fetch its bytecode if it's a contract
+        for address in all_addresses {
+            // Check if we already have this bytecode cached
+            let state_requests = rpc_db.get_state_requests();
+            if state_requests.contains_key(&address) {
+                continue; // Already included in cached bytecodes
+            }
+
+            // Fetch the bytecode for this address
+            let code =
+                self.provider.get_code_at(address).block_id((block_number - 1).into()).await?;
+
             if !code.is_empty() {
                 codes.push(code);
             }
@@ -186,6 +208,7 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
         codes.sort();
         codes.dedup();
 
+        tracing::info!("extracted {} contract codes from execution", codes.len());
         Ok(codes)
     }
 
@@ -213,25 +236,49 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
         keys
     }
 
-    /// Build headers for witness verification
-    /// Simplified approach: just include the parent header for state verification
+    /// Build headers for witness verification with proper RLP encoding
+    /// Since EIP-2935 is implemented, we only need the parent header for state verification
     async fn build_headers_for_witness(&self, block_number: u64) -> eyre::Result<Vec<Bytes>> {
-        let mut headers = Vec::new();
+        use alloy_rlp::Encodable;
 
-        // For now, just include the parent header for state verification
-        // In a full implementation, you'd track BLOCKHASH usage to determine the range
+        // Since EIP-2935 is implemented, we only need the parent header for state verification
         let parent_block = self
             .provider
             .get_block_by_number((block_number - 1).into())
             .await?
-            .ok_or(eyre!("couldn't fetch parent block"))?;
+            .ok_or_eyre("couldn't fetch parent block")?;
 
-        // For now, create a simple placeholder header encoding
-        // In a full implementation, you'd need to properly convert AnyHeader to a serializable format
-        let header_placeholder = format!("header_{}", block_number - 1);
-        headers.push(header_placeholder.into_bytes().into());
+        // Convert to proper header format and RLP encode
+        let header = alloy_consensus::Header {
+            parent_hash: parent_block.header.parent_hash,
+            ommers_hash: parent_block.header.ommers_hash,
+            beneficiary: parent_block.header.beneficiary,
+            state_root: parent_block.header.state_root,
+            transactions_root: parent_block.header.transactions_root,
+            receipts_root: parent_block.header.receipts_root,
+            logs_bloom: parent_block.header.logs_bloom,
+            difficulty: parent_block.header.difficulty,
+            number: parent_block.header.number,
+            gas_limit: parent_block.header.gas_limit,
+            gas_used: parent_block.header.gas_used,
+            timestamp: parent_block.header.timestamp,
+            extra_data: parent_block.header.extra_data.clone(),
+            mix_hash: parent_block.header.mix_hash.unwrap_or_default(),
+            nonce: parent_block.header.nonce.map(|n| n.into()).unwrap_or_default(),
+            base_fee_per_gas: parent_block.header.base_fee_per_gas,
+            withdrawals_root: parent_block.header.withdrawals_root,
+            blob_gas_used: parent_block.header.blob_gas_used,
+            excess_blob_gas: parent_block.header.excess_blob_gas,
+            parent_beacon_block_root: parent_block.header.parent_beacon_block_root,
+            requests_hash: None,
+        };
 
-        Ok(headers)
+        // RLP encode the header (this is what the client expects)
+        let mut header_bytes = Vec::new();
+        header.encode(&mut header_bytes);
+
+        tracing::info!("added RLP-encoded parent header for state verification");
+        Ok(vec![header_bytes.into()])
     }
 
     /// Convert AnyRpcBlock to the Block type expected by ClientExecutorInput

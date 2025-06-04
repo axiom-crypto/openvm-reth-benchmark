@@ -3,7 +3,10 @@ use alloy_primitives::B256;
 use reth_chainspec::MAINNET;
 use reth_evm_ethereum::EthEvmConfig;
 use reth_primitives::Block;
-use reth_stateless::{validation::stateless_validation, ExecutionWitness, StatelessInput};
+use reth_stateless::{
+    validation::{stateless_validation, StatelessValidationError},
+    ExecutionWitness, StatelessInput,
+};
 use serde::{Deserialize, Serialize};
 
 /// Chain ID for Ethereum Mainnet.
@@ -40,7 +43,13 @@ impl ClientExecutor {
             stateless_input.witness,
             chain_spec,
             config,
-        )?;
-        Ok(block_hash)
+        );
+        match block_hash {
+            Ok(block_hash) => Ok(block_hash),
+            Err(StatelessValidationError::StatelessExecutionFailed(inner_msg)) => {
+                Err(eyre::eyre!("Stateless execution failed with details: {}", inner_msg))
+            }
+            Err(e) => Err(eyre::eyre!("Stateless validation error: {:?}", e)),
+        }
     }
 }
