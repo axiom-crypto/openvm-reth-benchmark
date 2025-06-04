@@ -35,9 +35,12 @@ reth-evm.workspace = true
 reth-execution-types.workspace = true
 reth-errors.workspace = true
 reth-chainspec.workspace = true
+reth-revm.workspace = true
 reth-evm-ethereum.workspace = true
 reth-consensus.workspace = true
 reth-ethereum-consensus.workspace = true
+reth-trie-common.workspace = true
+reth-storage-api.workspace = true
 
 # revm
 revm.workspace = true

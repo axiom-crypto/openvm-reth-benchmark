@@ -1,11 +1,11 @@
-use alloy_consensus::{BlockBody, EthereumTxEnvelope};
+use alloy_consensus::{BlockBody, EthereumTxEnvelope, Transaction};
 use alloy_primitives::Bytes;
 use alloy_provider::{
     network::{AnyNetwork, AnyRpcBlock, BlockResponse},
     Provider,
 };
 use alloy_rpc_types_debug::ExecutionWitness;
-use eyre::{eyre, Ok, OptionExt};
+use eyre::{eyre, OptionExt};
 use openvm_client_executor::ClientExecutorInput;
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
@@ -15,6 +15,8 @@ use reth_evm::{execute::Executor, ConfigureEvm};
 use reth_evm_ethereum::execute::EthExecutorProvider;
 use reth_execution_types::BlockExecutionResult;
 use reth_primitives::{Block, RecoveredBlock};
+use reth_revm::witness::ExecutionWitnessRecord;
+
 use revm::database::CacheDB;
 use revm_primitives::hash_map::HashMap;
 use revm_primitives::Address;
@@ -68,9 +70,13 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
 
         let executor_block_input = recover_rpc_block(current_block.clone());
 
+        // Execute with witness recording (like reth's implementation)
+        let mut witness_record = ExecutionWitnessRecord::default();
         let executor_output = EthExecutorProvider::new(spec.clone())
             .executor(cache_db)
-            .execute(&executor_block_input)?;
+            .execute_with_state_closure(&executor_block_input, |statedb| {
+                witness_record.record_executed_state(statedb);
+            })?;
 
         // Validate the block post execution.
         tracing::info!("validating the block post execution");
@@ -85,10 +91,11 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
         // TODO: skip for now -- some type issues
         // consensus.validate_block_post_execution(&executor_block_input, &block_execution_result)?;
 
-        // Generate ExecutionWitness
-        tracing::info!("generating execution witness");
-        let witness =
-            self.generate_execution_witness(&rpc_db, &executor_output, block_number).await?;
+        // Generate ExecutionWitness using reth's approach
+        tracing::info!("generating execution witness using reth's approach");
+        let witness = self
+            .generate_execution_witness(&rpc_db, &executor_output, block_number, witness_record)
+            .await?;
 
         // Convert current_block to the correct type for ClientExecutorInput
         let processed_block = self.process_block_for_client(&current_block)?;
@@ -100,50 +107,117 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
         Ok(client_input)
     }
 
-    /// Generate ExecutionWitness based on the reference implementation approach
+    /// Generate ExecutionWitness using reth's ExecutionWitnessRecord approach
     async fn generate_execution_witness(
         &self,
         rpc_db: &RpcDb<P>,
         executor_output: &BlockExecutionResult<reth_primitives::Receipt>,
         block_number: u64,
+        witness_record: ExecutionWitnessRecord,
     ) -> eyre::Result<ExecutionWitness> {
-        tracing::info!("building execution witness components");
+        tracing::info!("building execution witness using reth's ExecutionWitnessRecord");
 
-        // 1. Get state requests (what was accessed during execution)
-        let state_requests = rpc_db.get_state_requests();
+        // Extract recorded data from ExecutionWitnessRecord (exactly like reth does)
+        let ExecutionWitnessRecord { hashed_state, codes, keys, lowest_block_number } =
+            witness_record;
 
-        // 2. Build state trie nodes from storage proofs
-        let state = self.build_state_witness(&state_requests, block_number).await?;
+        tracing::info!(
+            "extracted from witness record: {} codes, {} keys, lowest_block: {:?}",
+            codes.len(),
+            keys.len(),
+            lowest_block_number
+        );
 
-        // 3. Extract contract codes that were accessed
-        let codes = self.extract_accessed_codes(&rpc_db, executor_output, block_number).await?;
+        // Convert reth's witness data to the format expected by ExecutionWitness
+        let keys_bytes: Vec<Bytes> = keys.into_iter().map(|key| key.to_vec().into()).collect();
 
-        // 4. Build key preimages (unhashed addresses and storage keys)
-        let keys = self.build_key_preimages(&state_requests);
+        let codes_bytes: Vec<Bytes> = if codes.is_empty() {
+            // Fallback: ExecutionWitnessRecord didn't capture codes, use our proven approach
+            tracing::warn!(
+                "ExecutionWitnessRecord returned 0 codes, falling back to RPC collection"
+            );
+            self.extract_accessed_codes(&rpc_db, executor_output, block_number, &keys_bytes).await?
+        } else {
+            codes
+        };
 
-        // 5. Build headers based on BLOCKHASH usage (simplified approach)
-        let headers = self.build_headers_for_witness(block_number).await?;
+        // Build state trie nodes using RPC fallback (since no database transaction available)
+        let state =
+            self.build_state_witness_from_hashed_state(&hashed_state, block_number, rpc_db).await?;
 
-        Ok(ExecutionWitness { state, codes, keys, headers })
+        // Build headers based on lowest_block_number (exactly like reth does)
+        let headers =
+            self.build_headers_for_witness_range(block_number, lowest_block_number).await?;
+
+        tracing::info!(
+            "built witness: {} state nodes, {} codes, {} keys, {} headers",
+            state.len(),
+            codes_bytes.len(),
+            keys_bytes.len(),
+            headers.len()
+        );
+
+        Ok(ExecutionWitness { state, codes: codes_bytes, keys: keys_bytes, headers })
     }
 
-    /// Build state witness from storage proofs
+    /// Build state witness from hashed state (RPC fallback approach)
+    async fn build_state_witness_from_hashed_state(
+        &self,
+        hashed_state: &reth_trie_common::HashedPostState,
+        block_number: u64,
+        rpc_db: &RpcDb<P>,
+    ) -> eyre::Result<Vec<Bytes>> {
+        // Since we don't have database access for DatabaseTrieWitness::overlay_witness,
+        // fall back to RPC-based state witness generation using the state that was tracked
+        tracing::info!(
+            "using RPC-based state witness generation (no database transaction available)"
+        );
+
+        // Use the RPC db's tracked state requests for witness generation
+        // This ensures we get the same state that was actually accessed during execution
+        let state_requests = rpc_db.get_state_requests();
+
+        if state_requests.is_empty() {
+            tracing::warn!("no RPC state requests found - using empty state witness");
+            return Ok(Vec::new());
+        }
+
+        // Generate witness using our proven RPC approach
+        self.build_state_witness(&state_requests, block_number).await
+    }
+
+    /// Build state witness from storage proofs (parallelized for speed) - RPC fallback
     async fn build_state_witness(
         &self,
         state_requests: &HashMap<Address, Vec<U256>, FxBuildHasher>,
         block_number: u64,
     ) -> eyre::Result<Vec<Bytes>> {
+        use futures::future::join_all;
+
         let mut state_nodes = Vec::new();
 
-        for (address, storage_keys) in state_requests.iter() {
-            // Convert storage keys to B256
-            let keys: Vec<B256> = storage_keys.iter().map(|k| B256::from(*k)).collect();
+        // Parallelize proof requests for better performance
+        let proof_futures: Vec<_> = state_requests
+            .iter()
+            .map(|(address, storage_keys)| {
+                let provider = self.provider.clone();
+                let address = *address;
+                let keys: Vec<B256> = storage_keys.iter().map(|k| B256::from(*k)).collect();
 
-            // Get storage proof for the previous block (pre-state)
-            let proof =
-                self.provider.get_proof(*address, keys).block_id((block_number - 1).into()).await?;
+                async move {
+                    let proof = provider
+                        .get_proof(address, keys)
+                        .block_id((block_number - 1).into())
+                        .await?;
+                    Ok::<_, eyre::Error>(eip1186_proof_to_account_proof(proof))
+                }
+            })
+            .collect();
 
-            let account_proof = eip1186_proof_to_account_proof(proof);
+        let account_proofs = join_all(proof_futures).await;
+
+        for proof_result in account_proofs {
+            let account_proof = proof_result?;
 
             // Extract trie nodes from account proof
             for node in &account_proof.proof {
@@ -162,6 +236,7 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
         state_nodes.sort();
         state_nodes.dedup();
 
+        tracing::info!("built state witness with {} trie nodes (parallelized)", state_nodes.len());
         Ok(state_nodes)
     }
 
@@ -171,14 +246,31 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
         rpc_db: &RpcDb<P>,
         executor_output: &BlockExecutionResult<reth_primitives::Receipt>,
         block_number: u64,
+        keys_bytes: &[Bytes],
     ) -> eyre::Result<Vec<Bytes>> {
         // Start with bytecodes that were cached during execution
         let cached_bytecodes = rpc_db.get_bytecodes();
         let mut codes: Vec<Bytes> =
             cached_bytecodes.into_iter().map(|bytecode| bytecode.bytecode().clone()).collect();
 
-        // Collect all unique addresses that appeared in transactions
+        // Collect ALL unique addresses that appear anywhere in the block execution
         let mut all_addresses = std::collections::HashSet::new();
+
+        // Get the current block to extract transaction addresses
+        let current_block = self
+            .provider
+            .get_block_by_number(block_number.into())
+            .full()
+            .await?
+            .ok_or_eyre("couldn't fetch current block")?;
+
+        // Add transaction recipients ("to" addresses)
+        let txs = current_block.transactions().clone().into_transactions();
+        for tx in txs {
+            if let Some(to_address) = tx.to() {
+                all_addresses.insert(to_address);
+            }
+        }
 
         // Add addresses from logs (contracts that emitted events)
         for receipt in &executor_output.receipts {
@@ -187,10 +279,24 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
             }
         }
 
+        // Add any addresses that had state access
+        let state_requests = rpc_db.get_state_requests();
+        for address in state_requests.keys() {
+            all_addresses.insert(*address);
+        }
+
+        // Add addresses from ExecutionWitnessRecord keys (these are comprehensive!)
+        // The first 20 bytes of each key might be an address
+        for key_bytes in keys_bytes {
+            if key_bytes.len() >= 20 {
+                let potential_addr: [u8; 20] = key_bytes[..20].try_into().unwrap_or_default();
+                all_addresses.insert(Address::from(potential_addr));
+            }
+        }
+
         // For each unique address, fetch its bytecode if it's a contract
         for address in all_addresses {
-            // Check if we already have this bytecode cached
-            let state_requests = rpc_db.get_state_requests();
+            // Skip if we already have this in cached bytecodes (avoid double-fetching)
             if state_requests.contains_key(&address) {
                 continue; // Already included in cached bytecodes
             }
@@ -200,7 +306,11 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
                 self.provider.get_code_at(address).block_id((block_number - 1).into()).await?;
 
             if !code.is_empty() {
+                let code_len = code.len();
                 codes.push(code);
+                tracing::debug!(
+                    "added additional bytecode for address {address}: {code_len} bytes"
+                );
             }
         }
 
@@ -234,6 +344,69 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
         keys.dedup();
 
         keys
+    }
+
+    /// Build headers for witness verification based on lowest_block_number (like reth)
+    async fn build_headers_for_witness_range(
+        &self,
+        block_number: u64,
+        lowest_block_number: Option<u64>,
+    ) -> eyre::Result<Vec<Bytes>> {
+        use alloy_rlp::Encodable;
+
+        let smallest = match lowest_block_number {
+            Some(smallest) => smallest,
+            None => {
+                // Return only the parent header, if there were no calls to the
+                // BLOCKHASH opcode.
+                block_number.saturating_sub(1)
+            }
+        };
+
+        let range = smallest..block_number;
+        tracing::info!("building headers for range: {}..{}", smallest, block_number);
+
+        let mut headers = Vec::new();
+        for block_num in range {
+            let block = self
+                .provider
+                .get_block_by_number(block_num.into())
+                .await?
+                .ok_or_eyre("couldn't fetch block in header range")?;
+
+            // Convert to proper header format and RLP encode (like reth does)
+            let header = alloy_consensus::Header {
+                parent_hash: block.header.parent_hash,
+                ommers_hash: block.header.ommers_hash,
+                beneficiary: block.header.beneficiary,
+                state_root: block.header.state_root,
+                transactions_root: block.header.transactions_root,
+                receipts_root: block.header.receipts_root,
+                logs_bloom: block.header.logs_bloom,
+                difficulty: block.header.difficulty,
+                number: block.header.number,
+                gas_limit: block.header.gas_limit,
+                gas_used: block.header.gas_used,
+                timestamp: block.header.timestamp,
+                extra_data: block.header.extra_data.clone(),
+                mix_hash: block.header.mix_hash.unwrap_or_default(),
+                nonce: block.header.nonce.map(|n| n.into()).unwrap_or_default(),
+                base_fee_per_gas: block.header.base_fee_per_gas,
+                withdrawals_root: block.header.withdrawals_root,
+                blob_gas_used: block.header.blob_gas_used,
+                excess_blob_gas: block.header.excess_blob_gas,
+                parent_beacon_block_root: block.header.parent_beacon_block_root,
+                requests_hash: None,
+            };
+
+            // RLP encode the header (like reth does)
+            let mut header_bytes = Vec::new();
+            header.encode(&mut header_bytes);
+            headers.push(header_bytes.into());
+        }
+
+        tracing::info!("added {} RLP-encoded headers for witness verification", headers.len());
+        Ok(headers)
     }
 
     /// Build headers for witness verification with proper RLP encoding

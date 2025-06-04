@@ -68,11 +68,13 @@ reth-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", 
 reth-evm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false }
 reth-revm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false, features = [
     "std",
+    "witness",
 ] }
 reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false }
 reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false, features = [
     "std",
 ] }
+reth-storage-api = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false }
 reth-storage-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.7", default-features = false, features = [
     "std",
 ] }

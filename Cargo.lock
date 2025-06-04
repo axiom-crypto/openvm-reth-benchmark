@@ -4727,8 +4727,11 @@ dependencies = [
  "reth-execution-types",
  "reth-primitives",
  "reth-primitives-traits",
+ "reth-revm",
+ "reth-storage-api",
  "reth-storage-errors",
  "reth-trie",
+ "reth-trie-common",
  "revm 24.0.1",
  "revm-primitives 19.1.0",
  "rustc-hash 2.1.1",
@@ -6838,6 +6841,7 @@ dependencies = [
  "reth-primitives-traits",
  "reth-storage-api",
  "reth-storage-errors",
+ "reth-trie",
  "revm 24.0.1",
 ]
 
