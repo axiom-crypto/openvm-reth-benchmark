@@ -2,7 +2,6 @@ use std::{cell::RefCell, collections::BTreeSet};
 
 use alloy_provider::{network::AnyNetwork, Provider};
 use alloy_rpc_types::BlockId;
-use alloy_transport::Transport;
 use reth_revm::{
     state::{AccountInfo, Bytecode},
     DatabaseRef,

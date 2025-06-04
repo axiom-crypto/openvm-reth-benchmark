@@ -465,7 +465,7 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
 
 fn recover_rpc_block(
     block: AnyRpcBlock,
-) -> RecoveredBlock<Block<EthereumTxEnvelope<alloy_consensus::TxEip4844Variant>>> {
+) -> RecoveredBlock<Block<EthereumTxEnvelope<alloy_consensus::TxEip4844>>> {
     let block = block.clone();
     let current_header =
         block.inner.header.inner.clone().try_into_header().expect("failed to convert header");
@@ -475,33 +475,15 @@ fn recover_rpc_block(
         .transactions
         .clone()
         .map(|t| {
-            let envelope = t.as_envelope().expect("only Ethereum transactions are supported");
+            let envelope =
+                t.as_envelope().expect("only Ethereum transactions are supported").clone();
 
-            // Handle different transaction types without converting to pooled
-            // EIP-4844 transactions don't have blob sidecar in RPC responses
-            match envelope {
-                EthereumTxEnvelope::Eip4844(signed_tx) => {
-                    // For EIP-4844 transactions, we need to create a transaction without sidecar
-                    // since RPC responses don't include the blob sidecar data
-                    let tx_4844 = signed_tx.tx().clone();
-                    let signature = signed_tx.signature().clone();
+            // Direct conversion from TxEip4844Variant to TxEip4844
+            // This preserves EIP-4844 transactions without requiring blob sidecars
+            let converted_envelope: EthereumTxEnvelope<alloy_consensus::TxEip4844> =
+                envelope.into();
 
-                    // Create the signed transaction
-                    let signed = alloy_consensus::Signed::new_unchecked(
-                        tx_4844,
-                        signature,
-                        *signed_tx.hash(),
-                    );
-                    EthereumTxEnvelope::Eip4844(signed)
-                }
-                _ => {
-                    // For non-EIP-4844 transactions, try converting to pooled first
-                    match envelope.clone().try_into_pooled() {
-                        Ok(pooled) => pooled.into(),
-                        Err(_) => envelope.clone(), // Fallback to original envelope if pooled conversion fails
-                    }
-                }
-            }
+            converted_envelope
         })
         .into_transactions_vec();
 

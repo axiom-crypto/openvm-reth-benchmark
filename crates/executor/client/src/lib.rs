@@ -1,13 +1,10 @@
-use alloy_consensus::{EthereumTxEnvelope, TxEip4844};
 use alloy_primitives::B256;
 use reth_chainspec::MAINNET;
 use reth_evm_ethereum::EthEvmConfig;
-use reth_primitives::Block;
 use reth_stateless::{
     validation::{stateless_validation, StatelessValidationError},
-    ExecutionWitness, StatelessInput,
+    StatelessInput,
 };
-use serde::{Deserialize, Serialize};
 
 /// Chain ID for Ethereum Mainnet.
 pub const CHAIN_ID_ETH_MAINNET: u64 = 0x1;
