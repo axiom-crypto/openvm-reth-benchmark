@@ -10,8 +10,8 @@ use url::Url;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_e2e_ethereum() {
-    run_e2e("RPC_1", 21345144).await;
-    //run_e2e("RPC_1", 18884864).await;
+    // run_e2e("RPC_1", 21345144).await; -- this is just 1M gas block
+    run_e2e("RPC_1", 18884864).await;
 }
 
 async fn run_e2e(env_var_key: &str, block_number: u64) {
