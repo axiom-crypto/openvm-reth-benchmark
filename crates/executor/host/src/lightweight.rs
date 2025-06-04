@@ -1,4 +1,4 @@
-use alloy_consensus::{BlockBody, EthereumTxEnvelope, Transaction};
+use alloy_consensus::{Block, BlockBody, EthereumTxEnvelope, Transaction};
 use alloy_primitives::Bytes;
 use alloy_provider::{
     network::{AnyNetwork, AnyRpcBlock, BlockResponse, TransactionResponse},
@@ -218,21 +218,36 @@ impl<P: Provider<AnyNetwork> + Clone> LightweightHostExecutor<P> {
     /// Convert AnyRpcBlock to the required block format
     fn convert_block_format(
         &self,
-        _block: &AnyRpcBlock,
-    ) -> eyre::Result<reth_primitives::Block<EthereumTxEnvelope<alloy_consensus::TxEip4844>>> {
-        // Simplified conversion - in a full implementation you'd need proper type conversion
-        // For now, create a minimal block structure
-        use alloy_consensus::TxEip4844;
-        use reth_primitives::{Block, Header};
+        block: &AnyRpcBlock,
+    ) -> eyre::Result<
+        reth_primitives::Block<alloy_consensus::EthereumTxEnvelope<alloy_consensus::TxEip4844>>,
+    > {
+        let block = block.clone();
+        let current_header =
+            block.inner.header.inner.clone().try_into_header().expect("failed to convert header");
 
-        // This is a placeholder - you'd need to implement proper block conversion
-        // based on your specific requirements
+        let current_transactions: Vec<EthereumTxEnvelope<alloy_consensus::TxEip4844>> = block
+            .inner
+            .transactions
+            .clone()
+            .map(|t| {
+                let envelope = t.as_envelope().expect("only Ethereum transactions are supported");
+                let pooled =
+                    envelope.clone().try_into_pooled().expect("failed to convert to pooled");
+                pooled.into()
+            })
+            .into_transactions_vec();
 
-        tracing::warn!("using simplified block conversion - may need enhancement for production");
+        let current_body = BlockBody {
+            transactions: current_transactions,
+            // TODO: can be restored from current_block.uncles but it's not needed?
+            ommers: vec![],
+            withdrawals: block.withdrawals.clone(),
+        };
 
-        // For now, return an error to indicate this needs proper implementation
-        Err(eyre!(
-            "Block conversion not fully implemented - needs proper AnyRpcBlock to Block conversion"
-        ))
+        let block: alloy_consensus::Block<EthereumTxEnvelope<alloy_consensus::TxEip4844>> =
+            Block::new(current_header, current_body);
+
+        Ok(block)
     }
 }
