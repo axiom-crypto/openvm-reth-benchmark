@@ -1,8 +1,13 @@
 use alloy_consensus::{BlockBody, EthereumTxEnvelope, Transaction};
 use alloy_primitives::Bytes;
 use alloy_provider::{
-    network::{AnyNetwork, AnyRpcBlock, BlockResponse},
+    ext::DebugApi,
+    network::{AnyNetwork, AnyRpcBlock, BlockResponse, TransactionResponse},
     Provider,
+};
+use alloy_rpc_types::trace::geth::{
+    CallFrame, GethDebugBuiltInTracerType, GethDebugTracerType, GethDebugTracingOptions,
+    GethDefaultTracingOptions,
 };
 use alloy_rpc_types_debug::ExecutionWitness;
 use eyre::{eyre, OptionExt};
@@ -253,64 +258,24 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
         let mut codes: Vec<Bytes> =
             cached_bytecodes.into_iter().map(|bytecode| bytecode.bytecode().clone()).collect();
 
-        // Collect ALL unique addresses that appear anywhere in the block execution
-        let mut all_addresses = std::collections::HashSet::new();
+        // Get ALL addresses that were accessed during block execution using debug_traceTransaction
+        let all_addresses = self.get_all_accessed_addresses(block_number).await?;
 
-        // Get the current block to extract transaction addresses
-        let current_block = self
-            .provider
-            .get_block_by_number(block_number.into())
-            .full()
-            .await?
-            .ok_or_eyre("couldn't fetch current block")?;
+        tracing::info!(
+            "found {} unique addresses accessed during block execution",
+            all_addresses.len()
+        );
 
-        // Add transaction recipients ("to" addresses)
-        let txs = current_block.transactions().clone().into_transactions();
-        for tx in txs {
-            if let Some(to_address) = tx.to() {
-                all_addresses.insert(to_address);
-            }
-        }
-
-        // Add addresses from logs (contracts that emitted events)
-        for receipt in &executor_output.receipts {
-            for log in &receipt.logs {
-                all_addresses.insert(log.address);
-            }
-        }
-
-        // Add any addresses that had state access
-        let state_requests = rpc_db.get_state_requests();
-        for address in state_requests.keys() {
-            all_addresses.insert(*address);
-        }
-
-        // Add addresses from ExecutionWitnessRecord keys (these are comprehensive!)
-        // The first 20 bytes of each key might be an address
-        for key_bytes in keys_bytes {
-            if key_bytes.len() >= 20 {
-                let potential_addr: [u8; 20] = key_bytes[..20].try_into().unwrap_or_default();
-                all_addresses.insert(Address::from(potential_addr));
-            }
-        }
-
-        // For each unique address, fetch its bytecode if it's a contract
+        // For each unique address, fetch its bytecode
         for address in all_addresses {
-            // Skip if we already have this in cached bytecodes (avoid double-fetching)
-            if state_requests.contains_key(&address) {
-                continue; // Already included in cached bytecodes
-            }
-
             // Fetch the bytecode for this address
             let code =
                 self.provider.get_code_at(address).block_id((block_number - 1).into()).await?;
 
             if !code.is_empty() {
                 let code_len = code.len();
-                codes.push(code);
-                tracing::debug!(
-                    "added additional bytecode for address {address}: {code_len} bytes"
-                );
+                codes.push(code.clone());
+                tracing::debug!("added bytecode for address {address}: {} bytes", code_len);
             }
         }
 
@@ -320,6 +285,114 @@ impl<P: Provider<AnyNetwork> + Clone> HostExecutor<P> {
 
         tracing::info!("extracted {} contract codes from execution", codes.len());
         Ok(codes)
+    }
+
+    /// Get ALL addresses that were accessed during block execution using comprehensive collection
+    async fn get_all_accessed_addresses(
+        &self,
+        block_number: u64,
+    ) -> eyre::Result<std::collections::HashSet<Address>> {
+        use std::collections::HashSet;
+
+        let mut all_addresses = HashSet::new();
+
+        // Get the current block to extract all transactions
+        let current_block = self
+            .provider
+            .get_block_by_number(block_number.into())
+            .full()
+            .await?
+            .ok_or_eyre("couldn't fetch current block")?;
+
+        let txs = current_block.transactions().clone().into_transactions();
+
+        for tx in txs {
+            let tx_hash = tx.tx_hash();
+
+            // Trace with built-in call tracer.
+            let call_options = GethDebugTracingOptions {
+                config: GethDefaultTracingOptions {
+                    disable_storage: Some(true),
+                    enable_memory: Some(false),
+                    ..Default::default()
+                },
+                tracer: Some(GethDebugTracerType::BuiltInTracer(
+                    GethDebugBuiltInTracerType::CallTracer,
+                )),
+                ..Default::default()
+            };
+            let result = self.provider.debug_trace_transaction(tx_hash, call_options).await?;
+
+            // Extract the CallFrame from the GethTrace
+            if let Ok(call_frame) = result.try_into_call_frame() {
+                self.extract_addresses_from_call_frame(&call_frame, &mut all_addresses);
+            } else {
+                tracing::warn!("unexpected trace result for transaction {}", tx_hash);
+            }
+        }
+
+        tracing::info!(
+            "collected {} unique addresses from comprehensive collection",
+            all_addresses.len()
+        );
+        Ok(all_addresses)
+    }
+
+    /// Extract all addresses from a call frame recursively
+    fn extract_addresses_from_call_frame(
+        &self,
+        call_frame: &CallFrame,
+        addresses: &mut std::collections::HashSet<Address>,
+    ) {
+        // Extract 'to' and 'from' addresses
+        if let Some(to_addr) = call_frame.to {
+            addresses.insert(to_addr);
+        }
+
+        addresses.insert(call_frame.from);
+
+        // Extract addresses from nested calls (recursive)
+        for call in &call_frame.calls {
+            self.extract_addresses_from_call_frame(call, addresses);
+        }
+
+        // Extract addresses from input data (look for 20-byte sequences that might be addresses)
+        if !call_frame.input.is_empty() {
+            let input_bytes = call_frame.input.as_ref();
+            // Look for potential addresses in the input data (20-byte aligned sequences)
+            for i in (0..input_bytes.len().saturating_sub(19)).step_by(1) {
+                if i + 20 <= input_bytes.len() {
+                    let potential_addr_bytes: [u8; 20] = input_bytes[i..i + 20].try_into().unwrap();
+                    let potential_addr = Address::from(potential_addr_bytes);
+
+                    // Only add if it looks like a real address (not all zeros, not all 0xff)
+                    if !potential_addr.is_zero() && potential_addr != Address::from([0xff; 20]) {
+                        addresses.insert(potential_addr);
+                    }
+                }
+            }
+        }
+
+        // Extract addresses from log data
+        for log in &call_frame.logs {
+            if let Some(log_address) = log.address {
+                addresses.insert(log_address);
+            }
+
+            // Extract addresses from log topics
+            if let Some(topics) = &log.topics {
+                for topic in topics {
+                    // The last 20 bytes of a topic might be an address
+                    if topic.len() >= 20 {
+                        let addr_bytes: [u8; 20] = topic[12..32].try_into().unwrap_or_default();
+                        let potential_addr = Address::from(addr_bytes);
+                        if !potential_addr.is_zero() {
+                            addresses.insert(potential_addr);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /// Build key preimages (unhashed addresses and storage keys)
