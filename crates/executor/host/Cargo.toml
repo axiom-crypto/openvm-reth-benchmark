@@ -16,6 +16,8 @@ url.workspace = true
 serde.workspace = true
 tokio.workspace = true
 tracing.workspace = true
+rustc-hash.workspace = true
+zerocopy.workspace = true
 
 # workspace
 openvm-rpc-db.workspace = true
@@ -50,6 +52,7 @@ alloy-consensus.workspace = true
 itertools.workspace = true
 futures.workspace = true
 alloy-rpc-types.workspace = true
+alloy-rpc-types-debug.workspace = true
 
 [dev-dependencies]
 alloy-primitives.workspace = true

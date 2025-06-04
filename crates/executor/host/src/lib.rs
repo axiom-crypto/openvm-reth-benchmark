@@ -8,6 +8,8 @@ use alloy_provider::{
     network::{eip2718::Encodable2718, AnyNetwork, AnyRpcBlock, BlockResponse},
     Provider,
 };
+use alloy_rlp::Encodable;
+use alloy_rpc_types_debug::ExecutionWitness;
 use alloy_transport::Transport;
 use eyre::{eyre, Ok};
 use openvm_client_executor::ClientExecutorInput;
@@ -23,7 +25,12 @@ use reth_primitives::{Block, RecoveredBlock};
 use reth_primitives_traits::proofs;
 use reth_trie::HashedPostState;
 use revm::database::CacheDB;
+use revm_primitives::hash_map::HashMap;
+use revm_primitives::Address;
 use revm_primitives::B256;
+use revm_primitives::U256;
+use rustc_hash::FxBuildHasher;
+use zerocopy::IntoBytes;
 
 /// /// An executor that fetches data from a [Provider] to generate [ExecutionWitness] for a block.
 #[derive(Debug, Clone)]
@@ -70,7 +77,7 @@ impl<T: Transport + Clone, P: Provider<AnyNetwork> + Clone> HostExecutor<T, P> {
             transaction_count = current_block.transactions().len()
         );
 
-        let executor_block_input = recover_rpc_block(current_block);
+        let executor_block_input = recover_rpc_block(current_block.clone());
 
         let executor_output = EthExecutorProvider::new(spec.into())
             .executor(cache_db)
@@ -81,141 +88,168 @@ impl<T: Transport + Clone, P: Provider<AnyNetwork> + Clone> HostExecutor<T, P> {
         let consensus = EthBeaconConsensus::new(spec.into());
 
         let block_execution_result = BlockExecutionResult {
-            receipts: executor_output.receipts,
-            requests: executor_output.requests,
+            receipts: executor_output.receipts.clone(),
+            requests: executor_output.requests.clone(),
             gas_used: executor_output.gas_used,
         };
 
         consensus.validate_block_post_execution(&executor_block_input, &block_execution_result)?;
 
-        // === Old code === Prob not needed anymore
-        // Accumulate the logs bloom.
-        // tracing::info!("accumulating the logs bloom");
-        // let mut logs_bloom = Bloom::default();
-        // executor_output.receipts.iter().for_each(|r| {
-        //     logs_bloom.accrue_bloom(&r.bloom());
-        // });
+        // Generate ExecutionWitness
+        tracing::info!("generating execution witness");
+        let witness =
+            self.generate_execution_witness(&rpc_db, &executor_output, block_number).await?;
 
-        // // Convert the output to an execution outcome.
-        // let executor_outcome = ExecutionOutcome::new(
-        //     executor_output.state,
-        //     vec![executor_output.receipts],
-        //     current_block.header.number,
-        //     vec![executor_output.requests.into()],
-        // );
-
-        // let state_requests = rpc_db.get_state_requests();
-
-        // For every account we touched, fetch the storage proofs for all the slots we touched.
-        // tracing::info!("fetching storage proofs");
-        // let mut before_storage_proofs = Vec::new();
-        // let mut after_storage_proofs = Vec::new();
-
-        // for (address, used_keys) in state_requests.iter() {
-        //     // Get modified storage keys from the executor outcome
-        //     let modified_keys: Vec<B256> = executor_outcome
-        //         .state()
-        //         .state
-        //         .get(address)
-        //         .map(|account| {
-        //             account.storage.keys().map(|key| B256::from(*key)).collect::<BTreeSet<_>>()
-        //         })
-        //         .unwrap_or_default()
-        //         .into_iter()
-        //         .collect();
-
-        //     // Combine used and modified keys, removing duplicates
-        //     let keys: Vec<B256> = used_keys
-        //         .iter()
-        //         .map(|key| B256::from(*key))
-        //         .chain(modified_keys.iter().cloned())
-        //         .collect::<BTreeSet<_>>()
-        //         .into_iter()
-        //         .collect();
-
-        //     // Get storage proofs for previous block
-        //     let before_proof = self
-        //         .provider
-        //         .get_proof(*address, keys.clone())
-        //         .block_id((block_number - 1).into())
-        //         .await?;
-        //     before_storage_proofs.push(eip1186_proof_to_account_proof(before_proof));
-
-        //     // Get storage proofs for current block
-        //     let after_proof = self
-        //         .provider
-        //         .get_proof(*address, modified_keys)
-        //         .block_id(block_number.into())
-        //         .await?;
-        //     after_storage_proofs.push(eip1186_proof_to_account_proof(after_proof));
-        // }
-
-        // let state = EthereumState::from_transition_proofs(
-        //     previous_block.state_root,
-        //     &before_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
-        //     &after_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
-        // )?;
-
-        // // Verify the state root.
-        // tracing::info!("verifying the state root");
-        // let state_root = {
-        //     let mut mutated_state = state.clone();
-        //     let post_state = HashedPostState::from_bundle_state(&executor_outcome.bundle.state);
-        //     // executor_outcome.hash_state_slow());
-        //     mutated_state.update(&post_state);
-        //     mutated_state.state_root()
-        // };
-        // if state_root != current_block.state_root {
-        //     eyre::bail!("mismatched state root");
-        // }
-
-        // // Derive the block header.
-        // //
-        // // Note: the receipts root and gas used are verified by `validate_block_post_execution`.
-        // let mut header = current_block.header.clone();
-        // header.parent_hash = previous_block.hash_slow();
-        // header.ommers_hash = proofs::calculate_ommers_root(&current_block.ommers);
-        // header.state_root = current_block.state_root;
-        // header.transactions_root = proofs::calculate_transaction_root(&current_block.body);
-        // header.receipts_root = current_block.header.receipts_root;
-        // header.withdrawals_root = current_block
-        //     .withdrawals
-        //     .clone()
-        //     .map(|w| proofs::calculate_withdrawals_root(w.into_inner().as_slice()));
-        // header.logs_bloom = logs_bloom;
-        // header.requests_root =
-        //     current_block.requests.as_ref().map(|r| proofs::calculate_requests_root(&r.0));
-
-        // // Assert the derived header is correct.
-        // assert_eq!(header.hash_slow(), current_block.header.hash_slow(), "header mismatch");
-
-        // // Log the result.
-        // tracing::info!(
-        //     "successfully executed block: block_number={}, block_hash={}, state_root={}",
-        //     current_block.header.number,
-        //     header.hash_slow(),
-        //     state_root
-        // );
-
-        // // Fetch the parent headers needed to constrain the BLOCKHASH opcode.
-        // let oldest_ancestor = *rpc_db.oldest_ancestor.borrow();
-        // let mut ancestor_headers = vec![];
-        // tracing::info!("fetching {} ancestor headers", block_number - oldest_ancestor);
-        // for height in (oldest_ancestor..=(block_number - 1)).rev() {
-        //     let block = self.provider.get_block_by_number(height.into()).await?.unwrap();
-        //     ancestor_headers.push(block.inner.header.try_into()?);
-        // }
-
-        let mut witness
+        // Convert current_block to the correct type for ClientExecutorInput
+        let processed_block = self.process_block_for_client(&current_block)?;
 
         // Create the client input.
-        let client_input = ClientExecutorInput {
-            current_block: V::pre_process_block(&current_block),
-            witness: todo!(),
-        };
+        let client_input = ClientExecutorInput { current_block: processed_block, witness };
         tracing::info!("successfully generated client input");
 
         Ok(client_input)
+    }
+
+    /// Generate ExecutionWitness based on the reference implementation approach
+    async fn generate_execution_witness(
+        &self,
+        rpc_db: &RpcDb<T, P>,
+        executor_output: &BlockExecutionResult<reth_primitives::Receipt>,
+        block_number: u64,
+    ) -> eyre::Result<ExecutionWitness> {
+        tracing::info!("building execution witness components");
+
+        // 1. Get state requests (what was accessed during execution)
+        let state_requests = rpc_db.get_state_requests();
+
+        // 2. Build state trie nodes from storage proofs
+        let state = self.build_state_witness(&state_requests, block_number).await?;
+
+        // 3. Extract contract codes that were accessed
+        let codes = self.extract_accessed_codes(&state_requests).await?;
+
+        // 4. Build key preimages (unhashed addresses and storage keys)
+        let keys = self.build_key_preimages(&state_requests);
+
+        // 5. Build headers based on BLOCKHASH usage (simplified approach)
+        let headers = self.build_headers_for_witness(block_number).await?;
+
+        Ok(ExecutionWitness { state, codes, keys, headers })
+    }
+
+    /// Build state witness from storage proofs
+    async fn build_state_witness(
+        &self,
+        state_requests: &HashMap<Address, Vec<U256>, FxBuildHasher>,
+        block_number: u64,
+    ) -> eyre::Result<Vec<Bytes>> {
+        let mut state_nodes = Vec::new();
+
+        for (address, storage_keys) in state_requests.iter() {
+            // Convert storage keys to B256
+            let keys: Vec<B256> = storage_keys.iter().map(|k| B256::from(*k)).collect();
+
+            // Get storage proof for the previous block (pre-state)
+            let proof =
+                self.provider.get_proof(*address, keys).block_id((block_number - 1).into()).await?;
+
+            let account_proof = eip1186_proof_to_account_proof(proof);
+
+            // Extract trie nodes from account proof
+            for node in &account_proof.proof {
+                state_nodes.push(node.clone().into());
+            }
+
+            // Extract trie nodes from storage proofs
+            for storage_proof in &account_proof.storage_proofs {
+                for node in &storage_proof.proof {
+                    state_nodes.push(node.clone().into());
+                }
+            }
+        }
+
+        // Remove duplicates
+        state_nodes.sort();
+        state_nodes.dedup();
+
+        Ok(state_nodes)
+    }
+
+    /// Extract contract codes that were accessed during execution
+    async fn extract_accessed_codes(
+        &self,
+        state_requests: &HashMap<Address, Vec<U256>, FxBuildHasher>,
+    ) -> eyre::Result<Vec<Bytes>> {
+        let mut codes = Vec::new();
+
+        for address in state_requests.keys() {
+            // Get the code for this address
+            let code = self.provider.get_code_at(*address).await?;
+            if !code.is_empty() {
+                codes.push(code);
+            }
+        }
+
+        // Remove duplicates
+        codes.sort();
+        codes.dedup();
+
+        Ok(codes)
+    }
+
+    /// Build key preimages (unhashed addresses and storage keys)
+    fn build_key_preimages(
+        &self,
+        state_requests: &HashMap<Address, Vec<U256>, FxBuildHasher>,
+    ) -> Vec<Bytes> {
+        let mut keys = Vec::new();
+
+        for (address, storage_keys) in state_requests.iter() {
+            // Add the address itself (unhashed)
+            keys.push(address.as_bytes().to_vec().into());
+
+            // Add storage keys (unhashed)
+            for storage_key in storage_keys {
+                keys.push(storage_key.to_be_bytes_vec().into());
+            }
+        }
+
+        // Remove duplicates
+        keys.sort();
+        keys.dedup();
+
+        keys
+    }
+
+    /// Build headers for witness verification
+    /// Simplified approach: just include the parent header for state verification
+    async fn build_headers_for_witness(&self, block_number: u64) -> eyre::Result<Vec<Bytes>> {
+        let mut headers = Vec::new();
+
+        // For now, just include the parent header for state verification
+        // In a full implementation, you'd track BLOCKHASH usage to determine the range
+        let parent_block = self
+            .provider
+            .get_block_by_number((block_number - 1).into())
+            .await?
+            .ok_or(eyre!("couldn't fetch parent block"))?;
+
+        // Encode the header
+        let mut encoded_header = Vec::new();
+        parent_block.header.inner.encode(&mut encoded_header);
+        headers.push(encoded_header.into());
+
+        Ok(headers)
+    }
+
+    /// Convert AnyRpcBlock to the Block type expected by ClientExecutorInput
+    fn process_block_for_client(
+        &self,
+        block: &AnyRpcBlock,
+    ) -> eyre::Result<Block<EthereumTxEnvelope<alloy_consensus::TxEip4844>>> {
+        // Convert using the existing recover_rpc_block function
+        let recovered_block = recover_rpc_block(block.clone());
+        Ok(recovered_block.into_block())
     }
 }
 

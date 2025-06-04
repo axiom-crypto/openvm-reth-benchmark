@@ -21,10 +21,9 @@ version = "0.1.0"
 [workspace.dependencies]
 bincode_derive = "2.0.1"
 eyre = "0.6"
-anyhow = { version = "1.0.86", default-features = false }
 tracing = { version = "0.1.40", default-features = false }
 cfg-if = "1.0.0"
-spin = { version = "0.9.8", features = ["mutex"] }
+spin = { version = "0.10.0", features = ["mutex"] }
 async-trait = "0.1.80"
 tokio = { version = "1.21", default-features = false, features = [
     "rt",
@@ -34,7 +33,7 @@ serde_json = "1.0.94"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 futures = "0.3"
 url = "2.3"
-thiserror = "1.0.61"
+thiserror = "2.0.12"
 hex-literal = "1.0.0"
 rayon = "1.10.0"
 rlp = "0.5.2"
@@ -116,6 +115,7 @@ alloy-rpc-client = { version = "1.0.9", default-features = false, features = [
 alloy-rpc-types = { version = "1.0.9", default-features = false, features = [
     "eth",
 ] }
+alloy-rpc-types-debug = { version = "1.0.9", default-features = false }
 alloy-transport = { version = "1.0.9", default-features = false }
 alloy-transport-http = { version = "1.0.9", features = [
     "reqwest-rustls-tls",
