@@ -1,4 +1,5 @@
 use openvm::io::{println, read, reveal_bytes32};
+#[allow(unused_imports)]
 use openvm_client_executor::{io::ClientExecutorInput, ClientExecutor};
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {

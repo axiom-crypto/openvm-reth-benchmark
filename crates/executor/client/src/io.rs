@@ -5,7 +5,6 @@ use itertools::Itertools;
 use openvm_mpt::EthereumState;
 use openvm_witness_db::WitnessDb;
 use reth_primitives::{Block, Header};
-use reth_trie::TrieAccount;
 use revm::state::{AccountInfo, Bytecode};
 use revm_primitives::{keccak256, Address, HashMap, B256, U256};
 use serde::{Deserialize, Serialize};
@@ -115,7 +114,7 @@ pub trait WitnessInput {
             let hashed_address = keccak256(address);
             let hashed_address = hashed_address.as_slice();
 
-            let account_in_trie = state.state_trie.get_rlp::<TrieAccount>(hashed_address)?;
+            let account_in_trie = state.state_trie.get_rlp(hashed_address)?;
 
             accounts.insert(
                 address,
@@ -147,7 +146,7 @@ pub trait WitnessInput {
 
                 for &slot in slots {
                     let slot_value = storage_trie
-                        .get_rlp::<U256>(keccak256(slot.to_be_bytes::<32>()).as_slice())?
+                        .get_rlp(keccak256(slot.to_be_bytes::<32>()).as_slice())?
                         .unwrap_or_default();
                     address_storage.insert(slot, slot_value);
                 }
