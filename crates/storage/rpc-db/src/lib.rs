@@ -3,7 +3,7 @@ use std::{
     collections::{BTreeMap, BTreeSet},
 };
 
-use alloy_provider::{network::AnyNetwork, Provider};
+use alloy_provider::{network::Ethereum, Provider};
 use alloy_rpc_types::BlockId;
 use reth_revm::{
     primitives::{Address, HashMap, B256, U256},
@@ -11,7 +11,6 @@ use reth_revm::{
     DatabaseRef,
 };
 use reth_storage_errors::{db::DatabaseError, provider::ProviderError};
-use rustc_hash::FxBuildHasher;
 
 /// A database that fetches data from a [Provider].
 #[derive(Debug, Clone)]
@@ -39,7 +38,7 @@ pub enum RpcDbError {
     PreimageNotFound,
 }
 
-impl<P: Provider<AnyNetwork> + Clone> RpcDb<P> {
+impl<P: Provider<Ethereum> + Clone> RpcDb<P> {
     /// Create a new [`RpcDb`].
     pub fn new(provider: P, block: u64) -> Self {
         RpcDb {
@@ -132,7 +131,7 @@ impl<P: Provider<AnyNetwork> + Clone> RpcDb<P> {
     }
 
     /// Gets all the state keys used. The client uses this to read the actual state data from tries.
-    pub fn get_state_requests(&self) -> HashMap<Address, Vec<U256>, FxBuildHasher> {
+    pub fn get_state_requests(&self) -> HashMap<Address, Vec<U256>> {
         let accounts = self.accounts.borrow();
         let storage = self.storage.borrow();
 
@@ -164,7 +163,7 @@ impl<P: Provider<AnyNetwork> + Clone> RpcDb<P> {
     }
 }
 
-impl<P: Provider<AnyNetwork> + Clone> DatabaseRef for RpcDb<P> {
+impl<P: Provider<Ethereum> + Clone> DatabaseRef for RpcDb<P> {
     type Error = ProviderError;
 
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {

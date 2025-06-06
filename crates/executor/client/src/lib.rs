@@ -3,30 +3,25 @@ pub mod io;
 #[macro_use]
 mod utils;
 
-pub mod custom;
+use std::{fmt::Debug, sync::Arc};
 
-use std::{borrow::BorrowMut, fmt::Display};
-
-use custom::CustomEvmConfig;
-use eyre::eyre;
+use alloy_consensus::TxReceipt;
+use alloy_primitives::Bloom;
 use io::ClientExecutorInput;
 #[allow(unused_imports)]
 pub use openvm_mpt;
 use openvm_mpt::state::HashedPostState;
-use openvm_primitives::chain_spec;
-use reth_chainspec::ChainSpec;
-use reth_errors::ProviderError;
-use reth_ethereum_consensus::validate_block_post_execution as validate_block_post_execution_ethereum;
-use reth_evm::execute::{BlockExecutionOutput, BlockExecutorProvider, Executor};
-use reth_evm_ethereum::execute::EthExecutorProvider;
-use reth_evm_optimism::OpExecutorProvider;
+use reth_chainspec::{ChainSpec, EthChainSpec, EthereumHardforks, MAINNET};
+use reth_consensus::{Consensus, HeaderValidator};
+use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus};
+use reth_evm::execute::{BasicBlockExecutor, Executor};
+use reth_evm_ethereum::EthEvmConfig;
 use reth_execution_types::ExecutionOutcome;
-use reth_optimism_consensus::validate_block_post_execution as validate_block_post_execution_optimism;
 #[allow(unused_imports)]
 pub use reth_primitives;
-use reth_primitives::{proofs, Block, BlockWithSenders, Bloom, Header, Receipt, Receipts, Request};
-use revm::{db::CacheDB, Database};
-use revm_primitives::{address, U256};
+use reth_primitives::{Block, Header, RecoveredBlock};
+use reth_primitives_traits::block::Block as _;
+use reth_revm::db::CacheDB;
 
 /// Chain ID for Ethereum Mainnet.
 pub const CHAIN_ID_ETH_MAINNET: u64 = 0x1;
@@ -41,52 +36,15 @@ pub const CHAIN_ID_LINEA_MAINNET: u64 = 0xe708;
 #[derive(Debug, Clone, Default)]
 pub struct ClientExecutor;
 
-/// Trait for representing different execution/validation rules of different chain variants. This
-/// allows for dead code elimination to minimize the ELF size for each variant.
-pub trait Variant {
-    fn spec() -> ChainSpec;
-
-    fn execute<DB>(
-        executor_block_input: &BlockWithSenders,
-        executor_difficulty: U256,
-        cache_db: DB,
-    ) -> eyre::Result<BlockExecutionOutput<Receipt>>
-    where
-        DB: Database<Error: Into<ProviderError> + Display>;
-
-    fn validate_block_post_execution(
-        block: &BlockWithSenders,
-        chain_spec: &ChainSpec,
-        receipts: &[Receipt],
-        requests: &[Request],
-    ) -> eyre::Result<()>;
-
-    fn pre_process_block(block: &Block) -> Block {
-        block.clone()
-    }
-}
-
 /// Implementation for Ethereum-specific execution/validation logic.
 #[derive(Debug)]
 pub struct EthereumVariant;
-
-/// Implementation for Optimism-specific execution/validation logic.
-#[derive(Debug)]
-pub struct OptimismVariant;
-
-/// Implementation for Linea-specific execution/validation logic.
-#[derive(Debug)]
-pub struct LineaVariant;
 
 /// EVM chain variants that implement different execution/validation rules.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ChainVariant {
     /// Ethereum networks.
     Ethereum,
-    /// OP stack networks.
-    Optimism,
-    /// Linea networks.
-    Linea,
 }
 
 impl ChainVariant {
@@ -94,47 +52,36 @@ impl ChainVariant {
     pub fn chain_id(&self) -> u64 {
         match self {
             ChainVariant::Ethereum => CHAIN_ID_ETH_MAINNET,
-            ChainVariant::Optimism => CHAIN_ID_OP_MAINNET,
-            ChainVariant::Linea => CHAIN_ID_LINEA_MAINNET,
         }
     }
 
-    pub fn chain_spec(&self) -> ChainSpec {
+    pub fn chain_spec(&self) -> Arc<ChainSpec> {
         match self {
-            ChainVariant::Ethereum => chain_spec::mainnet(),
-            ChainVariant::Optimism => chain_spec::op_mainnet(),
-            ChainVariant::Linea => chain_spec::linea_mainnet(),
+            ChainVariant::Ethereum => MAINNET.clone(),
         }
     }
 }
 
 impl ClientExecutor {
-    pub fn execute<V>(&self, mut input: ClientExecutorInput) -> eyre::Result<Header>
-    where
-        V: Variant,
-    {
+    pub fn execute(&self, mut input: ClientExecutorInput) -> eyre::Result<Header> {
         // Initialize the witnessed database with verified storage proofs.
         let witness_db = input.witness_db()?;
         let cache_db = CacheDB::new(&witness_db);
 
         // Execute the block.
-        let spec = V::spec();
-        let executor_block_input = profile!("recover senders", {
-            input
-                .current_block
-                .clone()
-                .with_recovered_senders()
-                .ok_or(eyre!("failed to recover senders"))
-        })?;
-        let executor_difficulty = input.current_block.header.difficulty;
-        let executor_output = profile!("execute", {
-            V::execute(&executor_block_input, executor_difficulty, cache_db)
-        })?;
+        let spec = MAINNET.clone();
+        let current_block =
+            profile!("recover senders", { input.current_block.clone().try_into_recovered() })?;
+
+        validate_block_consensus(spec.clone(), &current_block)?;
+
+        let block_executor = BasicBlockExecutor::new(EthEvmConfig::new(spec.clone()), cache_db);
+        let executor_output = profile!("execute", { block_executor.execute(&current_block) })?;
 
         // Validate the block post execution.
         profile!("validate block post-execution", {
-            V::validate_block_post_execution(
-                &executor_block_input,
+            validate_block_post_execution(
+                &current_block,
                 &spec,
                 &executor_output.receipts,
                 &executor_output.requests,
@@ -145,16 +92,16 @@ impl ClientExecutor {
         let mut logs_bloom = Bloom::default();
         profile!("accrue logs bloom", {
             executor_output.receipts.iter().for_each(|r| {
-                logs_bloom.accrue_bloom(&r.bloom_slow());
+                logs_bloom.accrue_bloom(&r.bloom());
             })
         });
 
         // Convert the output to an execution outcome.
         let executor_outcome = ExecutionOutcome::new(
             executor_output.state,
-            Receipts::from(executor_output.receipts),
+            vec![executor_output.result.receipts],
             input.current_block.header.number,
-            vec![executor_output.requests.into()],
+            vec![executor_output.result.requests],
         );
 
         // Verify the state root.
@@ -175,131 +122,30 @@ impl ClientExecutor {
         // Note: the receipts root and gas used are verified by `validate_block_post_execution`.
         let mut header = input.current_block.header.clone();
         header.parent_hash = input.parent_header().hash_slow();
-        header.ommers_hash = proofs::calculate_ommers_root(&input.current_block.ommers);
+        header.ommers_hash = input.current_block.body.calculate_ommers_root();
         header.state_root = input.current_block.state_root;
-        header.transactions_root = proofs::calculate_transaction_root(&input.current_block.body);
+        header.transactions_root = input.current_block.transactions_root;
         header.receipts_root = input.current_block.header.receipts_root;
-        header.withdrawals_root = input
-            .current_block
-            .withdrawals
-            .clone()
-            .map(|w| proofs::calculate_withdrawals_root(w.into_inner().as_slice()));
+        header.withdrawals_root = input.current_block.body.calculate_withdrawals_root();
         header.logs_bloom = logs_bloom;
-        header.requests_root =
-            input.current_block.requests.as_ref().map(|r| proofs::calculate_requests_root(&r.0));
+        header.requests_hash = input.current_block.requests_hash;
 
         Ok(header)
     }
 }
 
-impl Variant for EthereumVariant {
-    fn spec() -> ChainSpec {
-        openvm_primitives::chain_spec::mainnet()
-    }
+pub fn validate_block_consensus<ChainSpec>(
+    chain_spec: Arc<ChainSpec>,
+    block: &RecoveredBlock<Block>,
+) -> eyre::Result<()>
+where
+    ChainSpec: Send + Sync + EthChainSpec + EthereumHardforks + Debug,
+{
+    let consensus = EthBeaconConsensus::new(chain_spec);
 
-    fn execute<DB>(
-        executor_block_input: &BlockWithSenders,
-        executor_difficulty: U256,
-        cache_db: DB,
-    ) -> eyre::Result<BlockExecutionOutput<Receipt>>
-    where
-        DB: Database<Error: Into<ProviderError> + Display>,
-    {
-        Ok(EthExecutorProvider::new(
-            Self::spec().into(),
-            CustomEvmConfig::from_variant(ChainVariant::Ethereum),
-        )
-        .executor(cache_db)
-        .execute((executor_block_input, executor_difficulty).into())?)
-    }
+    consensus.validate_header(block.sealed_header())?;
 
-    fn validate_block_post_execution(
-        block: &BlockWithSenders,
-        chain_spec: &ChainSpec,
-        receipts: &[Receipt],
-        requests: &[Request],
-    ) -> eyre::Result<()> {
-        Ok(validate_block_post_execution_ethereum(block, chain_spec, receipts, requests)?)
-    }
-}
+    consensus.validate_block_pre_execution(block)?;
 
-impl Variant for OptimismVariant {
-    fn spec() -> ChainSpec {
-        openvm_primitives::chain_spec::op_mainnet()
-    }
-
-    fn execute<DB>(
-        executor_block_input: &BlockWithSenders,
-        executor_difficulty: U256,
-        cache_db: DB,
-    ) -> eyre::Result<BlockExecutionOutput<Receipt>>
-    where
-        DB: Database<Error: Into<ProviderError> + Display>,
-    {
-        Ok(OpExecutorProvider::new(
-            Self::spec().into(),
-            CustomEvmConfig::from_variant(ChainVariant::Optimism),
-        )
-        .executor(cache_db)
-        .execute((executor_block_input, executor_difficulty).into())?)
-    }
-
-    fn validate_block_post_execution(
-        block: &BlockWithSenders,
-        chain_spec: &ChainSpec,
-        receipts: &[Receipt],
-        _requests: &[Request],
-    ) -> eyre::Result<()> {
-        Ok(validate_block_post_execution_optimism(block, chain_spec, receipts)?)
-    }
-}
-
-impl Variant for LineaVariant {
-    fn spec() -> ChainSpec {
-        openvm_primitives::chain_spec::linea_mainnet()
-    }
-
-    fn execute<DB>(
-        executor_block_input: &BlockWithSenders,
-        executor_difficulty: U256,
-        cache_db: DB,
-    ) -> eyre::Result<BlockExecutionOutput<Receipt>>
-    where
-        DB: Database<Error: Into<ProviderError> + Display>,
-    {
-        Ok(EthExecutorProvider::new(
-            Self::spec().into(),
-            CustomEvmConfig::from_variant(ChainVariant::Linea),
-        )
-        .executor(cache_db)
-        .execute((executor_block_input, executor_difficulty).into())?)
-    }
-
-    fn validate_block_post_execution(
-        block: &BlockWithSenders,
-        chain_spec: &ChainSpec,
-        receipts: &[Receipt],
-        requests: &[Request],
-    ) -> eyre::Result<()> {
-        Ok(validate_block_post_execution_ethereum(block, chain_spec, receipts, requests)?)
-    }
-
-    fn pre_process_block(block: &Block) -> Block {
-        // Linea network uses clique consensus, which is not implemented in reth.
-        // The main difference for the execution part is the block beneficiary:
-        // reth will credit the block reward to the beneficiary address (coinbase)
-        // whereas in clique, the block reward is credited to the signer.
-
-        // We extract the clique beneficiary address from the genesis extra data.
-        // - vanity: 32 bytes
-        // - address: 20 bytes
-        // - seal: 65 bytes
-        // we extract the address from the 32nd to 52nd byte.
-        let addr = address!("8f81e2e3f8b46467523463835f965ffe476e1c9e");
-
-        // We hijack the beneficiary address here to match the clique consensus.
-        let mut block = block.clone();
-        block.header.borrow_mut().beneficiary = addr;
-        block
-    }
+    Ok(())
 }

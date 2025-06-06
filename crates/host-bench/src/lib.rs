@@ -12,10 +12,7 @@ use openvm_circuit::{
         openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear,
     },
 };
-use openvm_client_executor::{
-    io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET,
-    CHAIN_ID_OP_MAINNET,
-};
+use openvm_client_executor::{io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET};
 use openvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
 use openvm_host_executor::HostExecutor;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
@@ -224,8 +221,6 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
 
     let variant = match provider_config.chain_id {
         CHAIN_ID_ETH_MAINNET => ChainVariant::Ethereum,
-        CHAIN_ID_OP_MAINNET => ChainVariant::Optimism,
-        CHAIN_ID_LINEA_MAINNET => ChainVariant::Linea,
         _ => {
             eyre::bail!("unknown chain ID: {}", provider_config.chain_id);
         }
@@ -250,10 +245,8 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
             let host_executor = HostExecutor::new(provider);
 
             // Execute the host.
-            let client_input = host_executor
-                .execute(args.block_number, variant)
-                .await
-                .expect("failed to execute host");
+            let client_input =
+                host_executor.execute(args.block_number).await.expect("failed to execute host");
 
             if let Some(cache_dir) = args.cache_dir {
                 let input_folder = cache_dir.join(format!("input/{}", provider_config.chain_id));

@@ -4,10 +4,10 @@ use eyre::Result;
 use itertools::Itertools;
 use openvm_mpt::EthereumState;
 use openvm_witness_db::WitnessDb;
-use reth_primitives::{Block, Header, B256, U256};
+use reth_primitives::{Block, Header};
 use reth_trie::TrieAccount;
-use revm_primitives::{keccak256, AccountInfo, Address, Bytecode, HashMap};
-use rustc_hash::FxBuildHasher;
+use revm::state::{AccountInfo, Bytecode};
+use revm_primitives::{keccak256, Address, HashMap, B256, U256};
 use serde::{Deserialize, Serialize};
 
 /// The input for the client to execute a block and fully verify the STF (state transition
@@ -25,7 +25,7 @@ pub struct ClientExecutorInput {
     /// Network state as of the parent block.
     pub parent_state: EthereumState,
     /// Requests to account state and storage slots.
-    pub state_requests: HashMap<Address, Vec<U256>, FxBuildHasher>,
+    pub state_requests: HashMap<Address, Vec<U256>>, // FxBuildHasher>,
     /// Account bytecodes.
     pub bytecodes: Vec<Bytecode>,
 }
@@ -109,8 +109,8 @@ pub trait WitnessInput {
         let bytecodes_by_hash =
             self.bytecodes().map(|code| (code.hash_slow(), code)).collect::<HashMap<_, _>>();
 
-        let mut accounts = HashMap::new();
-        let mut storage = HashMap::new();
+        let mut accounts = HashMap::default();
+        let mut storage = HashMap::default();
         for (&address, slots) in self.state_requests() {
             let hashed_address = keccak256(address);
             let hashed_address = hashed_address.as_slice();
@@ -137,7 +137,7 @@ pub trait WitnessInput {
             );
 
             if !slots.is_empty() {
-                let mut address_storage = HashMap::new();
+                let mut address_storage = HashMap::default();
 
                 let storage_trie = state
                     .storage_tries
@@ -157,7 +157,7 @@ pub trait WitnessInput {
         }
 
         // Verify and build block hashes
-        let mut block_hashes: HashMap<u64, B256, _> = HashMap::new();
+        let mut block_hashes: HashMap<u64, B256, _> = HashMap::default();
         for (child_header, parent_header) in self.headers().tuple_windows() {
             if parent_header.number != child_header.number - 1 {
                 eyre::bail!("non-consecutive blocks");

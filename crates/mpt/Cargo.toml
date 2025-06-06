@@ -19,13 +19,11 @@ itertools = "0.13.0"
 bincode.workspace = true
 rustc-hash.workspace = true
 
-# workspace
-openvm-primitives.workspace = true
-
 # reth
 reth-primitives.workspace = true
 reth-trie.workspace = true
 reth-execution-types.workspace = true
+reth-revm.workspace = true
 
 # revm
 revm.workspace = true

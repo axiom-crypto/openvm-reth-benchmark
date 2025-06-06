@@ -3,10 +3,12 @@
 use core::iter::IntoIterator;
 
 use itertools::Itertools;
-use reth_primitives::{Account, Address, B256, U256};
+use reth_primitives::Account;
+use reth_revm::db::{AccountStatus, BundleAccount};
 use reth_trie::{prefix_set::PrefixSetMut, Nibbles};
-use revm::db::{AccountStatus, BundleAccount};
-use revm_primitives::{hash_map, keccak256, HashMap, HashSet};
+use revm_primitives::{
+    hash_map, keccak256, map::DefaultHashBuilder, Address, HashMap, HashSet, B256, U256,
+};
 use std::borrow::Cow;
 
 /// Representation of in-memory hashed state.
@@ -38,8 +40,10 @@ impl HashedPostState {
             })
             .collect::<Vec<(B256, (Option<Account>, HashedStorage))>>();
 
-        let mut accounts = HashMap::with_capacity(hashed.len());
-        let mut storages = HashMap::with_capacity(hashed.len());
+        let mut accounts =
+            HashMap::with_capacity_and_hasher(hashed.len(), DefaultHashBuilder::default());
+        let mut storages =
+            HashMap::with_capacity_and_hasher(hashed.len(), DefaultHashBuilder::default());
         for (address, (account, storage)) in hashed {
             accounts.insert(address, account);
             storages.insert(address, storage);
@@ -49,7 +53,10 @@ impl HashedPostState {
 
     /// Construct [`HashedPostState`] from a single [`HashedStorage`].
     pub fn from_hashed_storage(hashed_address: B256, storage: HashedStorage) -> Self {
-        Self { accounts: HashMap::default(), storages: HashMap::from([(hashed_address, storage)]) }
+        Self {
+            accounts: HashMap::default(),
+            storages: [(hashed_address, storage)].into_iter().collect(),
+        }
     }
 
     /// Set account entries on hashed state.
