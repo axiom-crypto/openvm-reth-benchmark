@@ -2,7 +2,6 @@ use eyre::Result;
 use mpt::{proofs_to_tries, transition_proofs_to_tries, MptNode};
 use reth_trie::{AccountProof, TrieAccount};
 use revm::primitives::{Address, HashMap, B256};
-use rustc_hash::FxBuildHasher;
 use serde::{Deserialize, Serialize};
 use state::HashedPostState;
 
@@ -18,24 +17,21 @@ pub struct EthereumState {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
-pub struct StorageTries(pub HashMap<B256, MptNode, FxBuildHasher>);
+pub struct StorageTries(pub HashMap<B256, MptNode>);
 
 impl EthereumState {
     /// Builds Ethereum state tries from relevant proofs before and after a state transition.
     pub fn from_transition_proofs(
         state_root: B256,
-        parent_proofs: &HashMap<Address, AccountProof, FxBuildHasher>,
-        proofs: &HashMap<Address, AccountProof, FxBuildHasher>,
+        parent_proofs: &HashMap<Address, AccountProof>,
+        proofs: &HashMap<Address, AccountProof>,
     ) -> Result<Self> {
         transition_proofs_to_tries(state_root, parent_proofs, proofs)
             .map_err(|err| eyre::eyre!("{}", err))
     }
 
     /// Builds Ethereum state tries from relevant proofs from a given state.
-    pub fn from_proofs(
-        state_root: B256,
-        proofs: &HashMap<Address, AccountProof, FxBuildHasher>,
-    ) -> Result<Self> {
+    pub fn from_proofs(state_root: B256, proofs: &HashMap<Address, AccountProof>) -> Result<Self> {
         proofs_to_tries(state_root, proofs).map_err(|err| eyre::eyre!("{}", err))
     }
 

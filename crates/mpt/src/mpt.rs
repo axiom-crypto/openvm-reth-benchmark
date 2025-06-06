@@ -30,8 +30,7 @@ use core::{
 };
 use reth_trie::AccountProof;
 use revm::primitives::HashMap;
-use revm_primitives::Address;
-use rustc_hash::FxBuildHasher;
+use revm_primitives::{map::DefaultHashBuilder, Address};
 use serde::{Deserialize, Serialize};
 
 use rlp::{Decodable, DecoderError, Prototype, Rlp};
@@ -945,10 +944,7 @@ pub fn is_not_included(key: &[u8], proof_nodes: &[MptNode]) -> Result<bool> {
 }
 
 /// Creates a new MPT trie where all the digests contained in `node_store` are resolved.
-pub fn resolve_nodes(
-    root: &MptNode,
-    node_store: &HashMap<MptNodeReference, MptNode, FxBuildHasher>,
-) -> MptNode {
+pub fn resolve_nodes(root: &MptNode, node_store: &HashMap<MptNodeReference, MptNode>) -> MptNode {
     let trie = match root.as_data() {
         MptNodeData::Null | MptNodeData::Leaf(_, _) => root.clone(),
         MptNodeData::Branch(children) => {
@@ -1004,7 +1000,7 @@ pub fn shorten_node_path(node: &MptNode) -> Vec<MptNode> {
 
 pub fn proofs_to_tries(
     state_root: B256,
-    proofs: &HashMap<Address, AccountProof, FxBuildHasher>,
+    proofs: &HashMap<Address, AccountProof>,
 ) -> Result<EthereumState> {
     // if no addresses are provided, return the trie only consisting of the state root
     if proofs.is_empty() {
@@ -1014,10 +1010,10 @@ pub fn proofs_to_tries(
         });
     }
 
-    let mut storage: HashMap<B256, MptNode, FxBuildHasher> =
-        HashMap::with_capacity_and_hasher(proofs.len(), FxBuildHasher);
+    let mut storage: HashMap<B256, MptNode> =
+        HashMap::with_capacity_and_hasher(proofs.len(), DefaultHashBuilder::default());
 
-    let mut state_nodes = HashMap::<_, _, FxBuildHasher>::default();
+    let mut state_nodes = HashMap::<_, _>::default();
     let mut state_root_node = MptNode::default();
     for (address, proof) in proofs {
         let proof_nodes = parse_proof(&proof.proof).unwrap();
@@ -1040,7 +1036,7 @@ pub fn proofs_to_tries(
             continue;
         }
 
-        let mut storage_nodes = HashMap::<_, _, FxBuildHasher>::default();
+        let mut storage_nodes = HashMap::<_, _>::default();
         let mut storage_root_node = MptNode::default();
         for storage_proof in &proof.storage_proofs {
             let proof_nodes = parse_proof(&storage_proof.proof).unwrap();
@@ -1070,8 +1066,8 @@ pub fn proofs_to_tries(
 
 pub fn transition_proofs_to_tries(
     state_root: B256,
-    parent_proofs: &HashMap<Address, AccountProof, FxBuildHasher>,
-    proofs: &HashMap<Address, AccountProof, FxBuildHasher>,
+    parent_proofs: &HashMap<Address, AccountProof>,
+    proofs: &HashMap<Address, AccountProof>,
 ) -> Result<EthereumState> {
     // if no addresses are provided, return the trie only consisting of the state root
     if parent_proofs.is_empty() {
@@ -1082,9 +1078,9 @@ pub fn transition_proofs_to_tries(
     }
 
     let mut storage: HashMap<B256, MptNode, _> =
-        HashMap::with_capacity_and_hasher(parent_proofs.len(), FxBuildHasher);
+        HashMap::with_capacity_and_hasher(parent_proofs.len(), DefaultHashBuilder::default());
 
-    let mut state_nodes = HashMap::<_, _, FxBuildHasher>::default();
+    let mut state_nodes = HashMap::<_, _, DefaultHashBuilder>::default();
     let mut state_root_node = MptNode::default();
     for (address, proof) in parent_proofs {
         let proof_nodes = parse_proof(&proof.proof).unwrap();
@@ -1112,7 +1108,7 @@ pub fn transition_proofs_to_tries(
             continue;
         }
 
-        let mut storage_nodes = HashMap::<_, _, FxBuildHasher>::default();
+        let mut storage_nodes = HashMap::<_, _>::default();
         let mut storage_root_node = MptNode::default();
         for storage_proof in &proof.storage_proofs {
             let proof_nodes = parse_proof(&storage_proof.proof).unwrap();
@@ -1148,7 +1144,7 @@ pub fn transition_proofs_to_tries(
 fn add_orphaned_leafs(
     key: impl AsRef<[u8]>,
     proof: &[impl AsRef<[u8]>],
-    nodes_by_reference: &mut HashMap<MptNodeReference, MptNode, FxBuildHasher>,
+    nodes_by_reference: &mut HashMap<MptNodeReference, MptNode>,
 ) -> Result<()> {
     if !proof.is_empty() {
         let proof_nodes = parse_proof(proof).context("invalid proof encoding")?;

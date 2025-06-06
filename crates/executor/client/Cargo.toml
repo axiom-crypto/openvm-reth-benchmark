@@ -34,7 +34,7 @@ revm.workspace = true
 revm-primitives.workspace = true
 
 # alloy
-alloy-primitives = { workspace = true, features = ["rayon"] }
+alloy-primitives = { workspace = true, features = ["rayon", "map-fxhash"] }
 alloy-consensus.workspace = true
 itertools = "0.13.0"
 
