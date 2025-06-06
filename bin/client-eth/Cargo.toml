@@ -15,22 +15,22 @@ revm-precompile = { version = "11.0.1", default-features = false, features = [
 ] }
 
 # openvm
-openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "51f07d50d20174b23091f48e25d9ea421b4e2787", features = [
+openvm = { git = "https://github.com/openvm-org/openvm.git", features = [
     "std",
 ] }
-openvm-platform = { git = "https://github.com/openvm-org/openvm.git", rev = "51f07d50d20174b23091f48e25d9ea421b4e2787" }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "51f07d50d20174b23091f48e25d9ea421b4e2787" }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "51f07d50d20174b23091f48e25d9ea421b4e2787" }
-openvm-algebra-moduli-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "51f07d50d20174b23091f48e25d9ea421b4e2787" }
-openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "51f07d50d20174b23091f48e25d9ea421b4e2787" }
-openvm-ecc-sw-macros = { git = "https://github.com/openvm-org/openvm.git", rev = "51f07d50d20174b23091f48e25d9ea421b4e2787" }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "51f07d50d20174b23091f48e25d9ea421b4e2787", features = [
+openvm-platform = { git = "https://github.com/openvm-org/openvm.git" }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git" }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git" }
+openvm-algebra-moduli-macros = { git = "https://github.com/openvm-org/openvm.git" }
+openvm-algebra-complex-macros = { git = "https://github.com/openvm-org/openvm.git" }
+openvm-ecc-sw-macros = { git = "https://github.com/openvm-org/openvm.git" }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", features = [
     "k256",
 ] }
-openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "51f07d50d20174b23091f48e25d9ea421b4e2787", features = [
+openvm-bigint-guest = { git = "https://github.com/openvm-org/openvm.git", features = [
     "export-intrinsics",
 ] }
-openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "51f07d50d20174b23091f48e25d9ea421b4e2787", features = [
+openvm-pairing-guest = { git = "https://github.com/openvm-org/openvm.git", features = [
     "bn254",
     "bls12_381",
 ] }
