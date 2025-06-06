@@ -12,7 +12,7 @@ use openvm_circuit::{
         openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear,
     },
 };
-use openvm_client_executor::{io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET};
+use openvm_client_executor::io::ClientExecutorInput;
 use openvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
 use openvm_host_executor::HostExecutor;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
@@ -27,7 +27,6 @@ use openvm_sdk::{
 use openvm_stark_sdk::engine::StarkFriEngine;
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 pub use reth_primitives;
-use reth_primitives::hex::ToHexExt;
 use serde_json::json;
 use std::{fs, path::PathBuf, sync::Arc};
 use tracing::info_span;
@@ -175,13 +174,14 @@ pub fn reth_vm_config(
         SECP256K1_CONFIG.modulus.clone(),
         SECP256K1_CONFIG.scalar.clone(),
     ];
-    let mut supported_complex_moduli = vec![bn_config.modulus.clone()];
+    let mut supported_complex_moduli =
+        vec![(bn_config.struct_name.clone(), bn_config.modulus.clone())];
     let mut supported_curves = vec![bn_config.clone(), SECP256K1_CONFIG.clone()];
     let mut supported_pairing_curves = vec![PairingCurve::Bn254];
     if use_kzg_intrinsics {
         supported_moduli.push(bls_config.modulus.clone());
         supported_moduli.push(bls_config.scalar.clone());
-        supported_complex_moduli.push(bls_config.modulus.clone());
+        supported_complex_moduli.push((bls_config.struct_name.clone(), bls_config.modulus.clone()));
         supported_curves.push(bls_config.clone());
         supported_pairing_curves.push(PairingCurve::Bls12_381);
     }
@@ -218,13 +218,6 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
     // Parse the command line arguments.
     let mut args = args;
     let provider_config = args.provider.into_provider().await?;
-
-    let variant = match provider_config.chain_id {
-        CHAIN_ID_ETH_MAINNET => ChainVariant::Ethereum,
-        _ => {
-            eyre::bail!("unknown chain ID: {}", provider_config.chain_id);
-        }
-    };
 
     let client_input_from_cache = try_load_input_from_cache(
         args.cache_dir.as_ref(),
@@ -299,8 +292,8 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
         segment_max_cells,
         !args.no_kzg_intrinsics,
     );
-    let mut sdk = GenericSdk::<E>::new();
-    sdk.set_agg_tree_config(args.benchmark.agg_tree_config);
+    let sdk = GenericSdk::<E>::new();
+    let sdk = sdk.with_agg_tree_config(args.benchmark.agg_tree_config);
     let elf = Elf::decode(openvm_client_eth_elf, MEM_SIZE as u32)?;
     let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
@@ -320,7 +313,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                             .iter()
                             .map(|x| x.as_canonical_u32().try_into().unwrap())
                             .collect::<Vec<_>>();
-                        println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+                        println!("block_hash: {}", hex::encode(&block_hash));
                     }
                     BenchMode::Tracegen => {
                         let executor = VmExecutor::<_, _>::new(app_config.app_vm_config);
@@ -359,7 +352,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                             .iter()
                             .map(|pv| pv.as_canonical_u32() as u8)
                             .collect::<Vec<u8>>();
-                        println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+                        println!("block_hash: {}", hex::encode(&block_hash));
                     }
                     BenchMode::ProveEvm => {
                         let halo2_params_reader = CacheHalo2ParamsReader::new(
@@ -398,7 +391,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                         prover.set_program_name(program_name);
                         let evm_proof = prover.generate_proof_for_evm(stdin);
                         let block_hash = &evm_proof.user_public_values;
-                        println!("block_hash: {}", ToHexExt::encode_hex(block_hash));
+                        println!("block_hash: {}", hex::encode(block_hash));
                     }
                     BenchMode::MakeInput => {
                         // This case is handled earlier and should not reach here
