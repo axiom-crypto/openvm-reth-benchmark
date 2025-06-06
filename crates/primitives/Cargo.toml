@@ -17,7 +17,6 @@ reth-primitives.workspace = true
 reth-revm.workspace = true
 reth-trie.workspace = true
 reth-chainspec.workspace = true
-reth-optimism-chainspec.workspace = true
 
 # revm
 revm-interpreter.workspace = true

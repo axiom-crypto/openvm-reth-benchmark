@@ -1,24 +1,21 @@
 use std::{
     cell::RefCell,
     collections::{BTreeMap, BTreeSet},
-    marker::PhantomData,
 };
 
 use alloy_provider::{network::AnyNetwork, Provider};
 use alloy_rpc_types::BlockId;
-use alloy_transport::Transport;
-use reth_primitives::{
-    revm_primitives::{AccountInfo, Bytecode},
-    Address, B256, U256,
+use reth_revm::{
+    primitives::{Address, HashMap, B256, U256},
+    state::{AccountInfo, Bytecode},
+    DatabaseRef,
 };
-use reth_revm::DatabaseRef;
 use reth_storage_errors::{db::DatabaseError, provider::ProviderError};
-use revm_primitives::HashMap;
 use rustc_hash::FxBuildHasher;
 
-/// A database that fetches data from a [Provider] over a [Transport].
+/// A database that fetches data from a [Provider].
 #[derive(Debug, Clone)]
-pub struct RpcDb<T, P> {
+pub struct RpcDb<P> {
     /// The provider which fetches data.
     pub provider: P,
     /// The block to fetch data from.
@@ -29,8 +26,6 @@ pub struct RpcDb<T, P> {
     pub storage: RefCell<HashMap<Address, HashMap<U256, U256>>>,
     /// The oldest block whose header/hash has been requested.
     pub oldest_ancestor: RefCell<u64>,
-    /// A phantom type to make the struct generic over the transport.
-    pub _phantom: PhantomData<T>,
 }
 
 /// Errors that can occur when interacting with the [RpcDb].
@@ -44,16 +39,15 @@ pub enum RpcDbError {
     PreimageNotFound,
 }
 
-impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> RpcDb<T, P> {
+impl<P: Provider<AnyNetwork> + Clone> RpcDb<P> {
     /// Create a new [`RpcDb`].
     pub fn new(provider: P, block: u64) -> Self {
         RpcDb {
             provider,
             block: block.into(),
-            accounts: RefCell::new(HashMap::new()),
-            storage: RefCell::new(HashMap::new()),
+            accounts: RefCell::new(HashMap::default()),
+            storage: RefCell::new(HashMap::default()),
             oldest_ancestor: RefCell::new(block),
-            _phantom: PhantomData,
         }
     }
 
@@ -123,7 +117,7 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> RpcDb<T, P> {
         // Fetch the block.
         let block = self
             .provider
-            .get_block_by_number(number.into(), false)
+            .get_block_by_number(number.into())
             .await
             .map_err(|e| RpcDbError::RpcError(e.to_string()))?;
 
@@ -170,7 +164,7 @@ impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> RpcDb<T, P> {
     }
 }
 
-impl<T: Transport + Clone, P: Provider<T, AnyNetwork> + Clone> DatabaseRef for RpcDb<T, P> {
+impl<P: Provider<AnyNetwork> + Clone> DatabaseRef for RpcDb<P> {
     type Error = ProviderError;
 
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {

@@ -26,17 +26,14 @@ openvm-mpt.workspace = true
 
 # reth
 reth-ethereum-consensus.workspace = true
-reth-optimism-consensus.workspace = true
 reth-execution-types.workspace = true
 reth-primitives.workspace = true
 reth-storage-errors.workspace = true
 reth-trie.workspace = true
 reth-evm.workspace = true
 reth-evm-ethereum.workspace = true
-reth-evm-optimism.workspace = true
 reth-errors.workspace = true
 reth-chainspec.workspace = true
-reth-optimism-chainspec.workspace = true
 reth-revm.workspace = true
 
 # revm

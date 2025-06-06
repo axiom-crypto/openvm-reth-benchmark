@@ -14,20 +14,13 @@ tracing.workspace = true
 rayon.workspace = true
 rustc-hash.workspace = true
 
-# workspace
-openvm-primitives.workspace = true
-
 # reth
 reth-primitives.workspace = true
 reth-storage-errors.workspace = true
 reth-revm.workspace = true
 reth-trie.workspace = true
 
-# revm
-revm-primitives.workspace = true
-
 # alloy
 alloy-provider.workspace = true
 alloy-rlp.workspace = true
 alloy-rpc-types.workspace = true
-alloy-transport.workspace = true
