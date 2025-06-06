@@ -56,8 +56,18 @@ openvm-rv32im-circuit = { path = "../openvm-org/openvm/extensions/rv32im/circuit
 openvm-rv32im-transpiler = { path = "../openvm-org/openvm/extensions/rv32im/transpiler" }
 openvm-rv32im-guest = { path = "../openvm-org/openvm/extensions/rv32im/guest" }
 
+# Guest Libs
+k256 = { path = "../openvm-org/openvm/guest-libs/k256" }
+p256 = { path = "../openvm-org/openvm/guest-libs/p256" }
+ruint = { path = "../openvm-org/openvm/guest-libs/ruint" }
+openvm-keccak256 = { path = "../openvm-org/openvm/guest-libs/keccak256" }
+openvm-sha2 = { path = "../openvm-org/openvm/guest-libs/sha2" }
+openvm-pairing = { path = "../openvm-org/openvm/guest-libs/pairing" }
 
-# [patch.crates-io]
+[patch.crates-io]
+k256 = { path = "../openvm-org/openvm/guest-libs/k256" }
+p256 = { path = "../openvm-org/openvm/guest-libs/p256" }
+ruint = { path = "../openvm-org/openvm/guest-libs/ruint" }
 # revm = { path = "../revm/crates/revm" }
 # revm-primitives = { path = "../revm/crates/primitives" }
 # revm-interpreter = { path = "../revm/crates/interpreter" }
