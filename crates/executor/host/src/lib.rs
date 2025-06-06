@@ -4,8 +4,9 @@ use alloy_consensus::{TxEnvelope, TxReceipt};
 use alloy_primitives::Bloom;
 use alloy_provider::{network::Ethereum, Provider};
 use eyre::{eyre, Ok};
-use openvm_client_executor::{io::ClientExecutorInput, validate_block_consensus};
-use openvm_mpt::{state::HashedPostState, EthereumState};
+use openvm_client_executor::{
+    io::ClientExecutorInput, openvm_mpt::EthereumState, validate_block_consensus,
+};
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
 use reth_chainspec::MAINNET;
@@ -15,6 +16,7 @@ use reth_evm_ethereum::EthEvmConfig;
 use reth_execution_types::ExecutionOutcome;
 use reth_primitives::Block;
 use reth_primitives_traits::block::Block as _;
+use reth_trie::{HashedPostState, KeccakKeyHasher};
 use revm::database::CacheDB;
 use revm_primitives::B256;
 
@@ -151,7 +153,9 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
         tracing::info!("verifying the state root");
         let state_root = {
             let mut mutated_state = state.clone();
-            let post_state = HashedPostState::from_bundle_state(&executor_outcome.bundle.state);
+            let post_state = HashedPostState::from_bundle_state::<KeccakKeyHasher>(
+                &executor_outcome.bundle.state,
+            );
             // executor_outcome.hash_state_slow());
             mutated_state.update(&post_state);
             mutated_state.state_root()

@@ -15,7 +15,6 @@ eyre.workspace = true
 rlp.workspace = true
 serde.workspace = true
 thiserror.workspace = true
-itertools = "0.13.0"
 bincode.workspace = true
 rustc-hash.workspace = true
 
@@ -33,6 +32,8 @@ revm-primitives.workspace = true
 alloy-primitives.workspace = true
 alloy-rlp.workspace = true
 alloy-rpc-types.workspace = true
+alloy-consensus.workspace = true
+risc0-ethereum-trie.workspace = true
 
 [dev-dependencies]
 alloy-trie.workspace = true
