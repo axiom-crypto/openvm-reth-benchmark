@@ -648,6 +648,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "arrayref"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "76a2e8124351fda1ef8aaaa3bbd7ebbcb486bbcd4225aca0aa0d84bb2db8fecb"
+
+[[package]]
 name = "arrayvec"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -778,6 +784,17 @@ dependencies = [
  "serde",
  "tap",
  "wyz",
+]
+
+[[package]]
+name = "blake2b_simd"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06e903a20b159e944f91ec8499fe1e55651480c541ea0a584f5d967c49ad9d99"
+dependencies = [
+ "arrayref",
+ "arrayvec",
+ "constant_time_eq",
 ]
 
 [[package]]
@@ -923,6 +940,12 @@ dependencies = [
  "quote",
  "unicode-xid",
 ]
+
+[[package]]
+name = "constant_time_eq"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c74b8349d32d297c9134b8c88677813a227df8f779daa29bfc29c183fe3dca6"
 
 [[package]]
 name = "convert_case"
@@ -1171,6 +1194,7 @@ version = "0.16.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee27f32b5c5292967d2d4a9d7f1e0b0aed2c15daded5a60300e4abb9d8020bca"
 dependencies = [
+ "der",
  "digest 0.10.7",
  "elliptic-curve",
  "rfc6979",
@@ -1312,6 +1336,7 @@ version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c0b50bfb653653f9ca9095b427bed08ab8d75a137839d9ad64eb11810d5b6393"
 dependencies = [
+ "bitvec",
  "rand_core 0.6.4",
  "subtle",
 ]
@@ -1428,6 +1453,34 @@ dependencies = [
  "ff",
  "rand_core 0.6.4",
  "subtle",
+]
+
+[[package]]
+name = "halo2curves-axiom"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd8309e4638b4f1bcf6613d72265a84074d26034c35edc5d605b5688e580b8b8"
+dependencies = [
+ "blake2b_simd",
+ "digest 0.10.7",
+ "ff",
+ "group",
+ "hex",
+ "lazy_static",
+ "num-bigint",
+ "num-traits",
+ "pairing",
+ "pasta_curves",
+ "paste",
+ "rand 0.8.5",
+ "rand_core 0.6.4",
+ "rayon",
+ "serde",
+ "serde_arrays",
+ "sha2",
+ "static_assertions",
+ "subtle",
+ "unroll",
 ]
 
 [[package]]
@@ -1736,20 +1789,15 @@ dependencies = [
 [[package]]
 name = "k256"
 version = "0.13.4"
-source = "git+https://github.com/openvm-org/openvm.git?rev=c25b262dd75694e798ab090c22f42ffc2e1002a0#c25b262dd75694e798ab090c22f42ffc2e1002a0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6e3919bbaa2945715f0bb6d3934a173d1e9a59ac23767fbaaef277265a7411b"
 dependencies = [
+ "cfg-if",
  "ecdsa",
  "elliptic-curve",
- "ff",
- "hex-literal",
- "num-bigint",
  "once_cell",
- "openvm",
- "openvm-algebra-guest",
- "openvm-algebra-moduli-macros",
- "openvm-ecc-guest",
- "openvm-ecc-sw-macros",
- "serde",
+ "serdect",
+ "sha2",
 ]
 
 [[package]]
@@ -1776,6 +1824,9 @@ name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
+dependencies = [
+ "spin",
+]
 
 [[package]]
 name = "libc"
@@ -2078,6 +2129,7 @@ name = "openvm-algebra-guest"
 version = "1.2.1-rc.0"
 source = "git+https://github.com/openvm-org/openvm.git?rev=c25b262dd75694e798ab090c22f42ffc2e1002a0#c25b262dd75694e798ab090c22f42ffc2e1002a0"
 dependencies = [
+ "halo2curves-axiom",
  "num-bigint",
  "once_cell",
  "openvm-algebra-complex-macros",
@@ -2116,10 +2168,14 @@ dependencies = [
  "getrandom 0.2.16",
  "log",
  "openvm",
+ "openvm-algebra-complex-macros",
  "openvm-algebra-guest",
+ "openvm-algebra-moduli-macros",
  "openvm-client-executor",
  "openvm-ecc-guest",
+ "openvm-ecc-sw-macros",
  "openvm-keccak256-guest",
+ "openvm-pairing-guest",
  "openvm-platform",
  "tracing",
 ]
@@ -2167,6 +2223,7 @@ dependencies = [
  "ecdsa",
  "elliptic-curve",
  "group",
+ "halo2curves-axiom",
  "once_cell",
  "openvm",
  "openvm-algebra-guest",
@@ -2224,6 +2281,26 @@ dependencies = [
  "rustc-hash",
  "serde",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "openvm-pairing-guest"
+version = "1.2.1-rc.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=c25b262dd75694e798ab090c22f42ffc2e1002a0#c25b262dd75694e798ab090c22f42ffc2e1002a0"
+dependencies = [
+ "hex-literal",
+ "itertools 0.14.0",
+ "lazy_static",
+ "num-bigint",
+ "num-traits",
+ "openvm",
+ "openvm-algebra-guest",
+ "openvm-algebra-moduli-macros",
+ "openvm-custom-insn",
+ "openvm-ecc-guest",
+ "rand 0.8.5",
+ "serde",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -2307,6 +2384,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "pairing"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81fec4625e73cf41ef4bb6846cafa6d44736525f442ba45e407c4a000a13996f"
+dependencies = [
+ "group",
+]
+
+[[package]]
 name = "parity-scale-codec"
 version = "3.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2332,6 +2418,21 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.101",
+]
+
+[[package]]
+name = "pasta_curves"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3e57598f73cc7e1b2ac63c79c517b31a0877cd7c402cdcaa311b5208de7a095"
+dependencies = [
+ "blake2b_simd",
+ "ff",
+ "group",
+ "lazy_static",
+ "rand 0.8.5",
+ "static_assertions",
+ "subtle",
 ]
 
 [[package]]
@@ -3438,6 +3539,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_arrays"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38636132857f68ec3d5f3eb121166d2af33cb55174c4d5ff645db6165cbef0fd"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "serde_derive"
 version = "1.0.219"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3561,6 +3671,12 @@ checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
 dependencies = [
  "serde",
 ]
+
+[[package]]
+name = "spin"
+version = "0.9.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
 
 [[package]]
 name = "spki"
@@ -3908,6 +4024,16 @@ name = "unicode-xid"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
+
+[[package]]
+name = "unroll"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ad948c1cb799b1a70f836077721a92a35ac177d4daddf4c20a633786d4cf618"
+dependencies = [
+ "quote",
+ "syn 1.0.109",
+]
 
 [[package]]
 name = "unty"

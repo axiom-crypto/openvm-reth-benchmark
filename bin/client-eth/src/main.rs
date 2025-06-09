@@ -1,10 +1,6 @@
 use openvm::io::{println, read, reveal_bytes32};
+#[allow(unused_imports)]
 use openvm_client_executor::{io::ClientExecutorInput, ClientExecutor};
-#[allow(unused_imports, clippy::single_component_path_imports)]
-use {
-    openvm_algebra_guest::IntMod,
-    openvm_keccak256_guest, // trigger extern native-keccak256
-};
 
 // Custom getrandom implementation for getrandom 0.2 dependencies
 use core::num::NonZeroU32;
@@ -20,6 +16,12 @@ fn custom_getrandom(_buf: &mut [u8]) -> Result<(), Error> {
 
 // Register the custom getrandom function for v0.2
 register_custom_getrandom!(custom_getrandom);
+
+// #[allow(unused_imports, clippy::single_component_path_imports)]
+// use {
+//     openvm_algebra_guest::IntMod,
+//     openvm_keccak256_guest, // trigger extern native-keccak256
+// };
 
 // #[cfg(feature = "kzg-intrinsics")]
 // openvm_algebra_moduli_macros::moduli_init! {
