@@ -12,6 +12,7 @@ workspace = true
 [dependencies]
 eyre.workspace = true
 serde.workspace = true
+serde_with.workspace = true
 
 # workspace
 openvm-witness-db.workspace = true
@@ -19,9 +20,12 @@ openvm-mpt.workspace = true
 
 # reth
 reth-consensus.workspace = true
+reth-ethereum-primitives = { workspace = true, features = [
+    "serde-bincode-compat",
+] }
 reth-ethereum-consensus.workspace = true
 reth-execution-types.workspace = true
-reth-primitives.workspace = true
+reth-primitives = { workspace = true }
 reth-primitives-traits.workspace = true
 reth-trie.workspace = true
 reth-evm.workspace = true

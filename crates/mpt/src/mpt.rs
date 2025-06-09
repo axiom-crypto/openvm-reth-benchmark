@@ -95,24 +95,13 @@ pub fn keccak(data: impl AsRef<[u8]>) -> [u8; 32] {
 /// optimizing storage. However, operations targeting a truncated part will fail and
 /// return an error. Another distinction of this implementation is that branches cannot
 /// store values, aligning with the construction of MPTs in Ethereum.
-#[derive(
-    Clone,
-    Debug,
-    Default,
-    PartialEq,
-    Eq,
-    Ord,
-    PartialOrd,
-    bincode::Encode,
-    bincode::Decode,
-    Serialize,
-    Deserialize,
-)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct MptNode {
     /// The type and data of the node.
     pub data: MptNodeData,
     /// Cache for a previously computed reference of this node. This is skipped during
     /// serialization.
+    #[serde(skip)]
     pub cached_reference: RefCell<Option<MptNodeReference>>,
 }
 
@@ -146,19 +135,7 @@ pub enum Error {
 /// Each node in the trie can be of one of several types, each with its own specific data
 /// structure. This enum provides a clear and type-safe way to represent the data
 /// associated with each node type.
-#[derive(
-    Clone,
-    Debug,
-    Default,
-    PartialEq,
-    Eq,
-    Ord,
-    PartialOrd,
-    bincode::Encode,
-    bincode::Decode,
-    Serialize,
-    Deserialize,
-)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum MptNodeData {
     /// Represents an empty trie node.
     #[default]
@@ -172,7 +149,7 @@ pub enum MptNodeData {
     Extension(Vec<u8>, Box<MptNode>),
     /// Represents a sub-trie by its hash, allowing for efficient storage of large
     /// sub-tries without storing their entire content.
-    Digest(#[bincode(with_serde)] B256),
+    Digest(B256),
 }
 
 /// Represents the ways in which one node can reference another node inside the sparse
@@ -181,26 +158,14 @@ pub enum MptNodeData {
 /// Nodes in the MPT can reference other nodes either directly through their byte
 /// representation or indirectly through a hash of their encoding. This enum provides a
 /// clear and type-safe way to represent these references.
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-    Eq,
-    Hash,
-    Ord,
-    PartialOrd,
-    bincode::Encode,
-    bincode::Decode,
-    Serialize,
-    Deserialize,
-)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum MptNodeReference {
     /// Represents a direct reference to another node using its byte encoding. Typically
     /// used for short encodings that are less than 32 bytes in length.
     Bytes(Vec<u8>),
     /// Represents an indirect reference to another node using the Keccak hash of its long
     /// encoding. Used for encodings that are not less than 32 bytes in length.
-    Digest(#[bincode(with_serde)] B256),
+    Digest(B256),
 }
 
 /// Provides a conversion from [MptNodeData] to [MptNode].

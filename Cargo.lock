@@ -4209,6 +4209,7 @@ dependencies = [
  "alloy-serde",
  "derive_more 2.0.1",
  "serde",
+ "serde_with",
  "thiserror 2.0.12",
 ]
 
@@ -4527,6 +4528,7 @@ dependencies = [
  "reth-chainspec",
  "reth-consensus",
  "reth-ethereum-consensus",
+ "reth-ethereum-primitives",
  "reth-evm",
  "reth-evm-ethereum",
  "reth-execution-types",
@@ -4537,6 +4539,7 @@ dependencies = [
  "revm",
  "revm-primitives 19.1.0",
  "serde",
+ "serde_with",
 ]
 
 [[package]]
@@ -6649,6 +6652,7 @@ dependencies = [
  "reth-codecs",
  "reth-primitives-traits",
  "serde",
+ "serde_with",
 ]
 
 [[package]]
@@ -6766,6 +6770,7 @@ dependencies = [
  "revm-state",
  "secp256k1",
  "serde",
+ "serde_with",
  "thiserror 2.0.12",
 ]
 

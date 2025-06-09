@@ -4,28 +4,34 @@ use eyre::Result;
 use itertools::Itertools;
 use openvm_mpt::EthereumState;
 use openvm_witness_db::WitnessDb;
-use reth_primitives::{Block, Header};
+use reth_primitives::{Block, Header, TransactionSigned};
 use reth_trie::TrieAccount;
 use revm::state::{AccountInfo, Bytecode};
 use revm_primitives::{keccak256, Address, HashMap, B256, U256};
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 
 /// The input for the client to execute a block and fully verify the STF (state transition
 /// function).
 ///
 /// Instead of passing in the entire state, we only pass in the state roots along with merkle proofs
 /// for the storage slots that were modified and accessed.
+#[serde_as]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClientExecutorInput {
     /// The current block (which will be executed inside the client).
-    pub current_block: Block,
+    #[serde_as(
+        as = "reth_primitives_traits::serde_bincode_compat::Block<'_, TransactionSigned, Header>"
+    )]
+    pub current_block: Block<TransactionSigned, Header>,
     /// The previous block headers starting from the most recent. There must be at least one header
     /// to provide the parent state root.
+    #[serde_as(as = "Vec<alloy_consensus::serde_bincode_compat::Header>")]
     pub ancestor_headers: Vec<Header>,
     /// Network state as of the parent block.
     pub parent_state: EthereumState,
     /// Requests to account state and storage slots.
-    pub state_requests: HashMap<Address, Vec<U256>>, // FxBuildHasher>,
+    pub state_requests: HashMap<Address, Vec<U256>>,
     /// Account bytecodes.
     pub bytecodes: Vec<Bytecode>,
 }
