@@ -8,9 +8,8 @@ edition = "2021"
 # workspace
 openvm-client-executor = { path = "../../crates/executor/client" }
 
-# revm-precompile = { version = "11.0.1", default-features = false, features = [
-#     "openvm",
-# ] }
+# Custom getrandom handler for getrandom 0.2 dependencies
+getrandom = { version = "0.2", features = ["custom"] }
 
 # openvm
 openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "c25b262dd75694e798ab090c22f42ffc2e1002a0", features = [

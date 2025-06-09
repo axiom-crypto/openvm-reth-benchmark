@@ -2113,6 +2113,7 @@ dependencies = [
 name = "openvm-client-eth"
 version = "0.0.0"
 dependencies = [
+ "getrandom 0.2.16",
  "log",
  "openvm",
  "openvm-algebra-guest",
