@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 # workspace
 openvm-client-executor = { path = "../../crates/executor/client" }
-
+k256 = { version = "0.13.4", default-features = false }            # patched below
 # revm-precompile = { version = "11.0.1", default-features = false, features = [
 #     "openvm",
 # ] }
@@ -16,10 +16,13 @@ openvm-client-executor = { path = "../../crates/executor/client" }
 openvm = { git = "https://github.com/openvm-org/openvm.git", rev = "c25b262dd75694e798ab090c22f42ffc2e1002a0", features = [
     "std",
 ] }
-openvm-platform = { git = "https://github.com/openvm-org/openvm.git", rev = "c25b262dd75694e798ab090c22f42ffc2e1002a0" }
 openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "c25b262dd75694e798ab090c22f42ffc2e1002a0" }
 openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "c25b262dd75694e798ab090c22f42ffc2e1002a0" }
 openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "c25b262dd75694e798ab090c22f42ffc2e1002a0" }
+openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", rev = "c25b262dd75694e798ab090c22f42ffc2e1002a0", features = [
+    "bn254",
+    "bls12_381",
+] }
 
 # Statically turns off logging
 log = { version = "0.4", features = ["max_level_off", "release_max_level_off"] }
