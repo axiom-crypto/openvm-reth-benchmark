@@ -118,6 +118,14 @@ impl TraceSizeSegmentationStrategy {
 }
 
 impl SegmentationStrategy for TraceSizeSegmentationStrategy {
+    fn max_cells(&self) -> usize {
+        self.max_cells
+    }
+
+    fn max_trace_height(&self) -> usize {
+        self.max_height
+    }
+
     fn should_segment(
         &self,
         air_names: &[String],
