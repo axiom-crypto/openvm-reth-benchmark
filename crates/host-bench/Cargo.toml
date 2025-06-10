@@ -32,6 +32,7 @@ alloy-transport.workspace = true
 
 # reth
 reth-primitives.workspace = true
+reth-stateless.workspace = true
 
 # openvm
 openvm = { workspace = true }

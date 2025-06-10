@@ -248,6 +248,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "alloy-rpc-types-debug"
+version = "1.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c832f2e851801093928dbb4b7bd83cd22270faf76b2e080646b806a285c8757"
+dependencies = [
+ "alloy-primitives",
+ "serde",
+]
+
+[[package]]
 name = "alloy-rpc-types-engine"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2197,6 +2207,7 @@ dependencies = [
  "openvm-ecc-guest",
  "openvm-keccak256-guest",
  "openvm-pairing",
+ "reth-stateless",
  "revm-precompile",
  "tracing",
 ]
@@ -2207,6 +2218,8 @@ version = "0.1.0"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
+ "alloy-rlp",
+ "alloy-rpc-types-debug",
  "eyre",
  "itertools 0.13.0",
  "openvm-mpt",
@@ -2221,6 +2234,7 @@ dependencies = [
  "reth-primitives",
  "reth-primitives-traits",
  "reth-revm",
+ "reth-stateless",
  "reth-trie",
  "revm",
  "revm-primitives",
@@ -2920,6 +2934,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "reth-errors"
+version = "1.4.8"
+source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.8#127595e23079de2c494048d0821ea1f1107eb624"
+dependencies = [
+ "reth-consensus",
+ "reth-execution-errors",
+ "reth-storage-errors",
+ "thiserror 2.0.12",
+]
+
+[[package]]
 name = "reth-ethereum-consensus"
 version = "1.4.8"
 source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.8#127595e23079de2c494048d0821ea1f1107eb624"
@@ -3100,6 +3125,7 @@ dependencies = [
  "reth-primitives-traits",
  "reth-storage-api",
  "reth-storage-errors",
+ "reth-trie",
  "revm",
 ]
 
@@ -3110,6 +3136,32 @@ source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.8#127595e23079de2c494
 dependencies = [
  "alloy-primitives",
  "reth-trie-common",
+]
+
+[[package]]
+name = "reth-stateless"
+version = "1.4.8"
+source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.8#127595e23079de2c494048d0821ea1f1107eb624"
+dependencies = [
+ "alloy-consensus",
+ "alloy-primitives",
+ "alloy-rlp",
+ "alloy-rpc-types-debug",
+ "alloy-trie",
+ "itertools 0.14.0",
+ "reth-chainspec",
+ "reth-consensus",
+ "reth-errors",
+ "reth-ethereum-consensus",
+ "reth-ethereum-primitives",
+ "reth-evm",
+ "reth-primitives-traits",
+ "reth-revm",
+ "reth-trie-common",
+ "reth-trie-sparse",
+ "serde",
+ "serde_with",
+ "thiserror 2.0.12",
 ]
 
 [[package]]

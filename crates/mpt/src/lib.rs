@@ -1,7 +1,7 @@
 use eyre::Result;
 use mpt::{proofs_to_tries, transition_proofs_to_tries, MptNode};
 use reth_trie::{AccountProof, TrieAccount};
-use revm::primitives::{Address, HashMap, B256};
+use revm::primitives::{Address, Bytes, HashMap, B256};
 use serde::{Deserialize, Serialize};
 use state::HashedPostState;
 
@@ -33,6 +33,25 @@ impl EthereumState {
     /// Builds Ethereum state tries from relevant proofs from a given state.
     pub fn from_proofs(state_root: B256, proofs: &HashMap<Address, AccountProof>) -> Result<Self> {
         proofs_to_tries(state_root, proofs).map_err(|err| eyre::eyre!("{}", err))
+    }
+
+    /// Extracts all RLP-encoded trie nodes from the state and storage tries.
+    ///
+    /// This collects all nodes from both the state trie and all storage tries,
+    /// avoiding duplicates by using a HashMap keyed by node hash.
+    pub fn all_rlp_nodes(&self) -> Vec<Bytes> {
+        let mut nodes = HashMap::default();
+
+        // Collect nodes from the state trie
+        self.state_trie.rlp_nodes(&mut nodes);
+
+        // Collect nodes from all storage tries
+        for storage_trie in self.storage_tries.0.values() {
+            storage_trie.rlp_nodes(&mut nodes);
+        }
+
+        // Convert to Vec<Bytes>
+        nodes.into_values().map(Bytes::from).collect()
     }
 
     /// Mutates state based on diffs provided in [`HashedPostState`].
