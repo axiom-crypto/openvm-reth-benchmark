@@ -385,7 +385,6 @@ dependencies = [
  "paste",
  "proptest",
  "rand 0.9.1",
- "rayon",
  "ruint",
  "rustc-hash 2.1.1",
  "serde",
@@ -3065,7 +3064,6 @@ dependencies = [
  "allocator-api2",
  "equivalent",
  "foldhash",
- "rayon",
  "serde",
 ]
 
@@ -3495,7 +3493,6 @@ checksum = "cea70ddb795996207ad57735b50c5982d8844f38ba9ee5f1aedcfb708a2aa11e"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.3",
- "rayon",
  "serde",
 ]
 
@@ -4529,29 +4526,14 @@ dependencies = [
 name = "openvm-client-executor"
 version = "0.1.0"
 dependencies = [
- "alloy-consensus",
  "alloy-primitives 1.2.0",
- "alloy-rlp",
- "alloy-rpc-types-debug",
  "eyre",
- "itertools 0.13.0",
- "openvm-mpt",
  "reth-chainspec",
- "reth-consensus",
- "reth-ethereum-consensus",
- "reth-ethereum-primitives",
- "reth-evm",
  "reth-evm-ethereum",
- "reth-execution-types",
  "reth-primitives",
- "reth-primitives-traits",
- "reth-revm",
  "reth-stateless",
- "reth-trie",
  "revm",
  "revm-primitives 19.1.0",
- "serde",
- "serde_with",
 ]
 
 [[package]]

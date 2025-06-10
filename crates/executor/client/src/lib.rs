@@ -3,12 +3,8 @@ mod utils;
 
 use std::fmt::Debug;
 
-#[allow(unused_imports)]
-pub use openvm_mpt;
 use reth_chainspec::MAINNET;
 use reth_evm_ethereum::EthEvmConfig;
-#[allow(unused_imports)]
-pub use reth_primitives;
 use reth_stateless::{validation::stateless_validation, StatelessInput};
 use revm_primitives::B256;
 

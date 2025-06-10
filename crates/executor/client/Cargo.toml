@@ -1,6 +1,6 @@
 [package]
 name = "openvm-client-executor"
-description = ""
+description = "OpenVM client executor"
 version.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -11,38 +11,16 @@ workspace = true
 
 [dependencies]
 eyre.workspace = true
-serde.workspace = true
-serde_with.workspace = true
 
-# workspace
-openvm-mpt.workspace = true
 
 # reth
-reth-consensus.workspace = true
-reth-ethereum-primitives = { workspace = true, features = [
-    "serde-bincode-compat",
-] }
-reth-ethereum-consensus.workspace = true
-reth-execution-types.workspace = true
 reth-primitives = { workspace = true }
-reth-primitives-traits.workspace = true
-reth-trie.workspace = true
-reth-evm.workspace = true
 reth-evm-ethereum.workspace = true
 reth-chainspec.workspace = true
-reth-revm.workspace = true
 reth-stateless.workspace = true
 
 # revm
-revm.workspace = true
 revm-primitives.workspace = true
-
-# alloy
-alloy-primitives = { workspace = true, features = ["rayon", "map-hashbrown"] }
-alloy-consensus.workspace = true
-alloy-rpc-types-debug.workspace = true
-alloy-rlp.workspace = true
-itertools = "0.13.0"
 
 [target.'cfg(target_os = "zkvm")'.dependencies]
 # revm-primitives = { workspace = true, features = ["hashbrown"] }
