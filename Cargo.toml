@@ -58,9 +58,7 @@ reth-primitives-traits = { git = "https://github.com/paradigmxyz/reth", tag = "v
 reth-codecs = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-evm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-revm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false, features = [
-    "witness",
-] }
+reth-revm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-storage-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
