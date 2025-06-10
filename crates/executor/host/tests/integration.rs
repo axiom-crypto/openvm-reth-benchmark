@@ -11,6 +11,8 @@ use url::Url;
 async fn test_e2e_ethereum() {
     let env_var_key = "RPC_1";
     let block_number = 18884864;
+    // Recommended for more complete testing but is 3x slower.
+    // let block_number = 21000000;
 
     // Initialize the environment variables.
     dotenv::dotenv().ok();
