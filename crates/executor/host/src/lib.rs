@@ -5,7 +5,7 @@ use alloy_primitives::Bloom;
 use alloy_provider::{network::Ethereum, Provider};
 use eyre::{eyre, Ok};
 use openvm_client_executor::io::ClientExecutorInput;
-use openvm_mpt::{state::HashedPostState, EthereumState};
+use openvm_mpt::{state::HashedPostState, EthereumState2};
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
 use reth_chainspec::MAINNET;
@@ -144,7 +144,7 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
             after_storage_proofs.push(eip1186_proof_to_account_proof(storage_proof));
         }
 
-        let state = EthereumState::from_transition_proofs(
+        let state = EthereumState2::from_transition_proofs(
             previous_block.state_root,
             &before_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
             &after_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
@@ -180,12 +180,12 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
         assert_eq!(header.hash_slow(), current_block.header.hash_slow(), "header mismatch");
 
         // Log the result.
-        tracing::info!(
-            "successfully executed block: block_number={}, block_hash={}, state_root={}",
-            current_block.header.number,
-            header.hash_slow(),
-            state_root
-        );
+        // tracing::info!(
+        //     "successfully executed block: block_number={}, block_hash={}, state_root={}",
+        //     current_block.header.number,
+        //     header.hash_slow(),
+        //     state_root
+        // );
 
         // Fetch the parent headers needed to constrain the BLOCKHASH opcode.
         let oldest_ancestor = *rpc_db.oldest_ancestor.borrow();
