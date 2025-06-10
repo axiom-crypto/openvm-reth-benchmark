@@ -1,11 +1,13 @@
 use eyre::Result;
-use mpt::{transition_proofs_to_tries, MptNode};
+use mpt::MptNode;
 use reth_trie::AccountProof;
 use revm::primitives::{Address, Bytes, HashMap, B256};
 use serde::{Deserialize, Serialize};
 
 /// Module containing MPT code adapted from `zeth`.
 pub mod mpt;
+pub mod mpt2;
+pub mod utils;
 
 /// Ethereum state trie and account storage tries.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -24,7 +26,17 @@ impl EthereumState {
         parent_proofs: &HashMap<Address, AccountProof>,
         proofs: &HashMap<Address, AccountProof>,
     ) -> Result<Self> {
-        transition_proofs_to_tries(state_root, parent_proofs, proofs)
+        mpt::transition_proofs_to_tries(state_root, parent_proofs, proofs)
+            .map_err(|err| eyre::eyre!("{}", err))
+    }
+
+    /// Builds Ethereum state tries from relevant proofs before and after a state transition.
+    pub fn from_transition_proofs_2(
+        state_root: B256,
+        parent_proofs: &HashMap<Address, AccountProof>,
+        proofs: &HashMap<Address, AccountProof>,
+    ) -> Result<Self> {
+        mpt2::transition_proofs_to_tries(state_root, parent_proofs, proofs)
             .map_err(|err| eyre::eyre!("{}", err))
     }
 
