@@ -29,7 +29,7 @@ pub struct ClientExecutorInput {
     #[serde_as(as = "Vec<alloy_consensus::serde_bincode_compat::Header>")]
     pub ancestor_headers: Vec<Header>,
     /// Network state as of the parent block.
-    pub parent_state: EthereumState,
+    pub parent_state: EthereumState2,
     /// Requests to account state and storage slots.
     pub state_requests: HashMap<Address, Vec<U256>>,
     /// Account bytecodes.
@@ -51,7 +51,7 @@ impl ClientExecutorInput {
 
 impl WitnessInput for ClientExecutorInput {
     #[inline(always)]
-    fn state(&self) -> &EthereumState {
+    fn state(&self) -> &EthereumState2 {
         &self.parent_state
     }
 
@@ -79,7 +79,7 @@ impl WitnessInput for ClientExecutorInput {
 /// A trait for constructing [`WitnessDb`].
 pub trait WitnessInput {
     /// Gets a reference to the state from which account info and storage slots are loaded.
-    fn state(&self) -> &EthereumState;
+    fn state(&self) -> &EthereumState2;
 
     /// Gets the state trie root hash that the state referenced by
     /// [state()](trait.WitnessInput#tymethod.state) must conform to.
