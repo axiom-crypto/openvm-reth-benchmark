@@ -315,7 +315,7 @@ dependencies = [
  "cfg-if",
  "const-hex",
  "derive_more 0.99.20",
- "hex-literal",
+ "hex-literal 0.4.1",
  "itoa",
  "ruint",
  "tiny-keccak",
@@ -332,7 +332,7 @@ dependencies = [
  "cfg-if",
  "const-hex",
  "derive_more 0.99.20",
- "hex-literal",
+ "hex-literal 0.4.1",
  "itoa",
  "ruint",
  "tiny-keccak",
@@ -843,12 +843,6 @@ dependencies = [
  "once_cell_polyfill",
  "windows-sys 0.59.0",
 ]
-
-[[package]]
-name = "anyhow"
-version = "1.0.98"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 
 [[package]]
 name = "ariadne"
@@ -2333,7 +2327,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cea14ef9355e3beab063703aa9dab15afd25f0667c341310c1e5274bb1d0da18"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3110,6 +3104,12 @@ name = "hex-literal"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
+
+[[package]]
+name = "hex-literal"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bcaaec4551594c969335c98c903c1397853d4198408ea609190f420500f6be71"
 
 [[package]]
 name = "hmac"
@@ -4587,7 +4587,7 @@ dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
  "eyre",
- "hex-literal",
+ "hex-literal 0.4.1",
  "lazy_static",
  "num-bigint 0.4.6",
  "num-integer",
@@ -4805,10 +4805,9 @@ dependencies = [
  "alloy-rlp",
  "alloy-rpc-types",
  "alloy-trie",
- "anyhow",
  "bincode 2.0.1",
  "eyre",
- "hex-literal",
+ "hex-literal 1.0.0",
  "itertools 0.13.0",
  "openvm-mpt",
  "reth-execution-types",
@@ -4820,7 +4819,7 @@ dependencies = [
  "rlp",
  "rustc-hash 2.1.1",
  "serde",
- "thiserror 1.0.69",
+ "thiserror 2.0.12",
  "tracing-subscriber 0.3.19",
 ]
 
@@ -4959,7 +4958,7 @@ version = "1.2.1-rc.0"
 source = "git+https://github.com/openvm-org/openvm.git?rev=c25b262dd75694e798ab090c22f42ffc2e1002a0#c25b262dd75694e798ab090c22f42ffc2e1002a0"
 dependencies = [
  "halo2curves-axiom",
- "hex-literal",
+ "hex-literal 0.4.1",
  "itertools 0.14.0",
  "lazy_static",
  "num-bigint 0.4.6",
@@ -5099,7 +5098,7 @@ dependencies = [
  "reth-storage-errors",
  "reth-trie",
  "rustc-hash 2.1.1",
- "thiserror 1.0.69",
+ "thiserror 2.0.12",
  "tokio",
  "tracing",
 ]
@@ -6243,7 +6242,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -7301,7 +7300,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -8060,7 +8059,7 @@ dependencies = [
  "getrandom 0.3.3",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -8858,7 +8857,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

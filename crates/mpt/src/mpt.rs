@@ -36,7 +36,7 @@ use serde::{Deserialize, Serialize};
 use rlp::{Decodable, DecoderError, Prototype, Rlp};
 use thiserror::Error as ThisError;
 
-use anyhow::{Context, Result};
+use eyre::{Context, Result};
 
 use crate::StorageTries;
 
