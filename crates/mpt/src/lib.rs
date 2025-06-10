@@ -59,3 +59,22 @@ impl EthereumState {
         nodes.into_values().map(Bytes::from).collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_from_transition_proofs_2_empty() {
+        // Test that from_transition_proofs_2 works with empty proofs
+        let state_root = B256::ZERO;
+        let parent_proofs = HashMap::default();
+        let proofs = HashMap::default();
+
+        let result = EthereumState::from_transition_proofs_2(state_root, &parent_proofs, &proofs);
+        assert!(result.is_ok());
+
+        let ethereum_state = result.unwrap();
+        assert!(ethereum_state.storage_tries.0.is_empty());
+    }
+}

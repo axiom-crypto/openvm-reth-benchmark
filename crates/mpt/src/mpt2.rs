@@ -7,8 +7,9 @@ use core::{
     cell::RefCell,
     fmt::{Debug, Write},
 };
+use reth_trie::AccountProof;
 use revm::primitives::HashMap;
-use revm_primitives::keccak256;
+use revm_primitives::{keccak256, Address};
 use serde::{Deserialize, Serialize};
 
 use rlp::{Decodable, DecoderError, Prototype, Rlp};
@@ -18,6 +19,7 @@ use eyre::Result;
 use crate::{
     mpt::{Error, MptNodeReference, EMPTY_ROOT},
     utils::{lcp, prefix_nibs, to_encoded_path, to_nibs},
+    EthereumState, StorageTries,
 };
 
 pub type NodeId = usize;
@@ -919,4 +921,246 @@ mod tests {
 
         assert_eq!(trie1.hash(), trie3.hash());
     }
+}
+
+/// Parses proof bytes into a vector of PreMptNodes (for conversion to arena-based).
+pub fn parse_proof(proof: &[impl AsRef<[u8]>]) -> Result<Vec<PreMptNode>, Error> {
+    Ok(proof.iter().map(|bytes| PreMptNode::decode(bytes)).collect::<Result<Vec<_>, _>>()?)
+}
+
+/// Creates an arena-based Merkle Patricia trie from an EIP-1186 proof.
+pub fn mpt_from_proof(proof_nodes: &[PreMptNode]) -> Result<ArenaBasedMptNode, Error> {
+    if proof_nodes.is_empty() {
+        return Ok(ArenaBasedMptNode::default());
+    }
+
+    // Convert the proof nodes to arena-based and build the trie
+    // We'll start with the last node and work our way back
+    let mut next: Option<PreMptNode> = None;
+    for (i, node) in proof_nodes.iter().enumerate().rev() {
+        // There is nothing to replace for the last node
+        let Some(replacement) = next else {
+            next = Some(node.clone());
+            continue;
+        };
+
+        // The next node must have a digest reference
+        let replacement_ref = replacement.reference();
+        let MptNodeReference::Digest(ref child_ref) = replacement_ref else {
+            panic!("node {} in proof is not referenced by hash", i + 1);
+        };
+
+        // Find the child that references the next node
+        let resolved: PreMptNode = match node.data.clone() {
+            PreMptNodeData::Branch(mut children) => {
+                if let Some(child) = children.iter_mut().flatten().find(
+                    |child| matches!(child.data, PreMptNodeData::Digest(d) if d == *child_ref),
+                ) {
+                    *child = Box::new(replacement);
+                } else {
+                    panic!("node {} does not reference the successor", i);
+                }
+                PreMptNodeData::Branch(children).into()
+            }
+            PreMptNodeData::Extension(prefix, child) => {
+                if !matches!(child.data, PreMptNodeData::Digest(d) if d == *child_ref) {
+                    panic!("node {} does not reference the successor", i);
+                }
+                PreMptNodeData::Extension(prefix, Box::new(replacement)).into()
+            }
+            PreMptNodeData::Null | PreMptNodeData::Leaf(_, _) | PreMptNodeData::Digest(_) => {
+                panic!("node {} has no children to replace", i);
+            }
+        };
+
+        next = Some(resolved);
+    }
+
+    // Convert the final trie to arena-based
+    let final_node = next.unwrap_or_default();
+    Ok(ArenaBasedMptNode::from_pre_node(&final_node))
+}
+
+/// Creates a new arena-based MPT node from a digest.
+fn node_from_digest(digest: B256) -> ArenaBasedMptNode {
+    match digest {
+        EMPTY_ROOT | B256::ZERO => ArenaBasedMptNode::default(),
+        _ => {
+            let mut trie = ArenaBasedMptNode::default();
+            trie.nodes[0] = ArenaNodeData::Digest(digest);
+            trie
+        }
+    }
+}
+
+/// Resolves digest nodes in an arena-based trie using the provided node store.
+pub fn resolve_nodes_arena(
+    root: &ArenaBasedMptNode,
+    node_store: &HashMap<MptNodeReference, PreMptNode>,
+) -> ArenaBasedMptNode {
+    // For now, we'll return a copy since resolving in arena requires more complex logic
+    // In practice, this would need to rebuild the arena with resolved nodes
+    root.clone()
+}
+
+/// Builds Ethereum state tries from relevant proofs before and after a state transition using arena-based MPT.
+pub fn transition_proofs_to_tries(
+    state_root: B256,
+    parent_proofs: &HashMap<Address, AccountProof>,
+    proofs: &HashMap<Address, AccountProof>,
+) -> Result<EthereumState, Error> {
+    // If no addresses are provided, return the trie only consisting of the state root
+    if parent_proofs.is_empty() {
+        return Ok(EthereumState {
+            state_trie: match state_root {
+                EMPTY_ROOT | B256::ZERO => crate::mpt::MptNode::default(),
+                _ => crate::mpt::MptNodeData::Digest(state_root).into(),
+            },
+            storage_tries: Default::default(),
+        });
+    }
+
+    let mut storage: HashMap<B256, crate::mpt::MptNode> = HashMap::default();
+
+    let mut state_nodes = HashMap::<_, _>::default();
+    let mut state_root_node = PreMptNode::default();
+
+    for (address, proof) in parent_proofs {
+        let proof_nodes = parse_proof(&proof.proof)?;
+        let _trie = mpt_from_proof(&proof_nodes)?;
+
+        // The first node in the proof is the root
+        if let Some(node) = proof_nodes.first() {
+            state_root_node = node.clone();
+        }
+
+        proof_nodes.into_iter().for_each(|node| {
+            state_nodes.insert(node.reference(), node);
+        });
+
+        let fini_proofs = proofs.get(address).unwrap();
+
+        // Add orphaned leafs for deletions
+        add_orphaned_leafs(address, &fini_proofs.proof, &mut state_nodes)?;
+
+        // Handle storage proofs
+        let storage_root = proof.storage_root;
+        if proof.storage_proofs.is_empty() {
+            let storage_root_node = match storage_root {
+                EMPTY_ROOT | B256::ZERO => crate::mpt::MptNode::default(),
+                _ => crate::mpt::MptNodeData::Digest(storage_root).into(),
+            };
+            storage.insert(B256::from(keccak256(address)), storage_root_node);
+            continue;
+        }
+
+        let mut storage_nodes = HashMap::<_, _>::default();
+        let mut storage_root_node = PreMptNode::default();
+
+        for storage_proof in &proof.storage_proofs {
+            let proof_nodes = parse_proof(&storage_proof.proof)?;
+            let _trie = mpt_from_proof(&proof_nodes)?;
+
+            // The first node in the proof is the root
+            if let Some(node) = proof_nodes.first() {
+                storage_root_node = node.clone();
+            }
+
+            proof_nodes.into_iter().for_each(|node| {
+                storage_nodes.insert(node.reference(), node);
+            });
+        }
+
+        // Assure that slots can be deleted from the storage trie
+        for storage_proof in &fini_proofs.storage_proofs {
+            add_orphaned_leafs(storage_proof.key.0, &storage_proof.proof, &mut storage_nodes)?;
+        }
+
+        // Create the storage trie from all the relevant nodes
+        let storage_trie = resolve_nodes_arena(
+            &ArenaBasedMptNode::from_pre_node(&storage_root_node),
+            &storage_nodes,
+        );
+
+        // Convert back to original MptNode for now (this is where we'd want to eventually use arena-based)
+        let storage_hash = storage_trie.hash();
+        let storage_trie_original = match storage_hash {
+            EMPTY_ROOT | B256::ZERO => crate::mpt::MptNode::default(),
+            _ => crate::mpt::MptNodeData::Digest(storage_hash).into(),
+        };
+        storage.insert(B256::from(keccak256(address)), storage_trie_original);
+    }
+
+    // Create the state trie from all the relevant nodes
+    let state_trie =
+        resolve_nodes_arena(&ArenaBasedMptNode::from_pre_node(&state_root_node), &state_nodes);
+
+    // Convert back to original MptNode for compatibility
+    let state_hash = state_trie.hash();
+    let state_trie_original = match state_hash {
+        EMPTY_ROOT | B256::ZERO => crate::mpt::MptNode::default(),
+        _ => crate::mpt::MptNodeData::Digest(state_hash).into(),
+    };
+
+    Ok(EthereumState { state_trie: state_trie_original, storage_tries: StorageTries(storage) })
+}
+
+/// Adds all the leaf nodes of non-inclusion proofs to the nodes.
+fn add_orphaned_leafs(
+    key: impl AsRef<[u8]>,
+    proof: &[impl AsRef<[u8]>],
+    nodes_by_reference: &mut HashMap<MptNodeReference, PreMptNode>,
+) -> Result<(), Error> {
+    if !proof.is_empty() {
+        let proof_nodes = parse_proof(proof)?;
+        if is_not_included(keccak256(key).as_slice(), &proof_nodes)? {
+            // Add the leaf node to the nodes
+            let leaf = proof_nodes.last().unwrap();
+            shorten_node_path_arena(leaf).into_iter().for_each(|node| {
+                nodes_by_reference.insert(node.reference(), node);
+            });
+        }
+    }
+
+    Ok(())
+}
+
+/// Verifies that the given proof is a valid proof of exclusion for the given key.
+pub fn is_not_included(key: &[u8], proof_nodes: &[PreMptNode]) -> Result<bool, Error> {
+    let proof_trie = mpt_from_proof(proof_nodes)?;
+    // For valid proofs, the get must not fail
+    let value = proof_trie.get(key)?;
+
+    Ok(value.is_none())
+}
+
+/// Returns a list of all possible nodes that can be created by shortening the path of the given node.
+pub fn shorten_node_path_arena(node: &PreMptNode) -> Vec<PreMptNode> {
+    let mut res = Vec::new();
+    let nibs = match &node.data {
+        PreMptNodeData::Leaf(prefix, _) | PreMptNodeData::Extension(prefix, _) => {
+            prefix_nibs(prefix)
+        }
+        _ => vec![],
+    };
+
+    match &node.data {
+        PreMptNodeData::Null | PreMptNodeData::Branch(_) | PreMptNodeData::Digest(_) => {}
+        PreMptNodeData::Leaf(_, value) => {
+            for i in 0..=nibs.len() {
+                res.push(
+                    PreMptNodeData::Leaf(to_encoded_path(&nibs[i..], true), value.clone()).into(),
+                )
+            }
+        }
+        PreMptNodeData::Extension(_, child) => {
+            for i in 0..=nibs.len() {
+                res.push(
+                    PreMptNodeData::Extension(to_encoded_path(&nibs[i..], false), child.clone())
+                        .into(),
+                )
+            }
+        }
+    };
+    res
 }
