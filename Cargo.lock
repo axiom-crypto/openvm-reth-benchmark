@@ -503,6 +503,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "alloy-rpc-types-debug"
+version = "1.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c832f2e851801093928dbb4b7bd83cd22270faf76b2e080646b806a285c8757"
+dependencies = [
+ "alloy-primitives 1.2.0",
+ "serde",
+]
+
+[[package]]
 name = "alloy-rpc-types-engine"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2323,7 +2333,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cea14ef9355e3beab063703aa9dab15afd25f0667c341310c1e5274bb1d0da18"
 dependencies = [
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4521,6 +4531,8 @@ version = "0.1.0"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives 1.2.0",
+ "alloy-rlp",
+ "alloy-rpc-types-debug",
  "eyre",
  "itertools 0.13.0",
  "openvm-mpt",
@@ -4535,6 +4547,7 @@ dependencies = [
  "reth-primitives",
  "reth-primitives-traits",
  "reth-revm",
+ "reth-stateless",
  "reth-trie",
  "revm",
  "revm-primitives 19.1.0",
@@ -4649,6 +4662,7 @@ dependencies = [
  "alloy-provider",
  "alloy-rlp",
  "alloy-rpc-types",
+ "alloy-rpc-types-debug",
  "alloy-transport",
  "bincode 2.0.1",
  "dotenv",
@@ -4662,6 +4676,7 @@ dependencies = [
  "openvm-witness-db",
  "reth-chainspec",
  "reth-codecs",
+ "reth-consensus",
  "reth-errors",
  "reth-ethereum-consensus",
  "reth-evm",
@@ -4669,6 +4684,8 @@ dependencies = [
  "reth-execution-types",
  "reth-primitives",
  "reth-primitives-traits",
+ "reth-revm",
+ "reth-stateless",
  "reth-storage-errors",
  "reth-trie",
  "revm",
@@ -5051,6 +5068,7 @@ dependencies = [
  "openvm-stark-sdk",
  "openvm-transpiler",
  "reth-primitives",
+ "reth-stateless",
  "serde",
  "serde_json",
  "tokio",
@@ -6237,7 +6255,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -6793,6 +6811,7 @@ dependencies = [
  "reth-primitives-traits",
  "reth-storage-api",
  "reth-storage-errors",
+ "reth-trie",
  "revm",
 ]
 
@@ -6803,6 +6822,32 @@ source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.8#127595e23079de2c494
 dependencies = [
  "alloy-primitives 1.2.0",
  "reth-trie-common",
+]
+
+[[package]]
+name = "reth-stateless"
+version = "1.4.8"
+source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.8#127595e23079de2c494048d0821ea1f1107eb624"
+dependencies = [
+ "alloy-consensus",
+ "alloy-primitives 1.2.0",
+ "alloy-rlp",
+ "alloy-rpc-types-debug",
+ "alloy-trie",
+ "itertools 0.14.0",
+ "reth-chainspec",
+ "reth-consensus",
+ "reth-errors",
+ "reth-ethereum-consensus",
+ "reth-ethereum-primitives",
+ "reth-evm",
+ "reth-primitives-traits",
+ "reth-revm",
+ "reth-trie-common",
+ "reth-trie-sparse",
+ "serde",
+ "serde_with",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -7268,7 +7313,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -8027,7 +8072,7 @@ dependencies = [
  "getrandom 0.3.3",
  "once_cell",
  "rustix",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -8825,7 +8870,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]

@@ -788,6 +788,32 @@ impl MptNode {
             MptNodeData::Digest(_) => 32,
         }
     }
+
+    /// Recursively collects all RLP-encoded trie nodes into the provided HashMap.
+    /// Each node is keyed by its Keccak-256 hash to avoid duplicates.
+    pub fn rlp_nodes(&self, nodes: &mut HashMap<B256, Vec<u8>>) {
+        // Get the RLP encoding of this node
+        let rlp_bytes = self.to_rlp();
+        let hash = B256::from(keccak(rlp_bytes.as_slice()));
+
+        // Insert this node into the map (avoiding duplicates)
+        nodes.entry(hash).or_insert(rlp_bytes);
+
+        // Recursively process child nodes
+        match &self.data {
+            MptNodeData::Branch(children) => {
+                for child in children.iter().flatten() {
+                    child.rlp_nodes(nodes);
+                }
+            }
+            MptNodeData::Extension(_, child) => {
+                child.rlp_nodes(nodes);
+            }
+            MptNodeData::Leaf(_, _) | MptNodeData::Null | MptNodeData::Digest(_) => {
+                // No child nodes to process
+            }
+        }
+    }
 }
 
 /// Converts a byte slice into a vector of nibbles.

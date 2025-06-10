@@ -1,6 +1,7 @@
 use openvm::io::{println, read, reveal_bytes32};
-use openvm_client_executor::{io::ClientExecutorInput, ClientExecutor};
+use openvm_client_executor::ClientExecutor;
 // Imports needed by the linker, but clippy can't tell:
+use reth_stateless::StatelessInput;
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
     k256::Secp256k1Point,
@@ -14,13 +15,12 @@ openvm::init!();
 pub fn main() {
     println("client-eth starting");
     // Read the input.
-    let input: ClientExecutorInput = read();
+    let input: StatelessInput = read();
     println("finished reading input");
 
     // Execute the block.
     let executor = ClientExecutor;
-    let header = executor.execute(input).expect("failed to execute client");
-    let block_hash = header.hash_slow();
+    let block_hash = executor.execute(input).expect("failed to execute client");
 
     // Reveal the block hash.
     reveal_bytes32(*block_hash);

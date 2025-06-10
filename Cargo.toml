@@ -55,13 +55,16 @@ openvm-host-executor = { path = "./crates/executor/host" }
 openvm-mpt = { path = "./crates/mpt" }
 openvm-primitives = { path = "./crates/primitives" }
 openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
+
 # reth
 reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-primitives-traits = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-codecs = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-evm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-revm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
+reth-revm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false, features = [
+    "witness",
+] }
 reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-storage-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
@@ -77,8 +80,7 @@ reth-ethereum-primitives = { git = "https://github.com/paradigmxyz/reth", tag = 
     "serde",
     "serde-bincode-compat",
 ] }
-
-# revm
+reth-stateless = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 revm = { version = "24.0.1", features = ["serde"], default-features = false }
 revm-primitives = { version = "19.0.0", features = [
     "serde",
@@ -103,6 +105,7 @@ alloy-rpc-client = { version = "1.0.9", default-features = false, features = [
 alloy-rpc-types = { version = "1.0.9", default-features = false, features = [
     "eth",
 ] }
+alloy-rpc-types-debug = { version = "1.0.9", default-features = false }
 alloy-rlp = "0.3.10"
 alloy-transport = { version = "1.0.9" }
 alloy-transport-http = { version = "1.0.9", features = [
