@@ -1,5 +1,6 @@
 use eyre::Result;
 use mpt::MptNode;
+use mpt2::ArenaBasedMptNode;
 use reth_trie::AccountProof;
 use revm::primitives::{Address, Bytes, HashMap, B256};
 use serde::{Deserialize, Serialize};
@@ -16,8 +17,18 @@ pub struct EthereumState {
     pub storage_tries: StorageTries,
 }
 
+/// Ethereum state trie and account storage tries using arena-based MPT nodes for better performance.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EthereumState2 {
+    pub state_trie: ArenaBasedMptNode,
+    pub storage_tries: StorageTries2,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct StorageTries(pub HashMap<B256, MptNode>);
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct StorageTries2(pub HashMap<B256, ArenaBasedMptNode>);
 
 impl EthereumState {
     /// Builds Ethereum state tries from relevant proofs before and after a state transition.
@@ -30,13 +41,35 @@ impl EthereumState {
             .map_err(|err| eyre::eyre!("{}", err))
     }
 
-    /// Builds Ethereum state tries from relevant proofs before and after a state transition.
-    pub fn from_transition_proofs_2(
+    /// Extracts all RLP-encoded trie nodes from the state and storage tries.
+    ///
+    /// This collects all nodes from both the state trie and all storage tries,
+    /// avoiding duplicates by using a HashMap keyed by node hash.
+    pub fn all_rlp_nodes(&self) -> Vec<Bytes> {
+        let mut nodes = HashMap::default();
+
+        // Collect nodes from the state trie
+        self.state_trie.rlp_nodes(&mut nodes);
+
+        // Collect nodes from all storage tries
+        for storage_trie in self.storage_tries.0.values() {
+            storage_trie.rlp_nodes(&mut nodes);
+        }
+
+        // Convert to Vec<Bytes>
+        nodes.into_values().map(Bytes::from).collect()
+    }
+}
+
+impl EthereumState2 {
+    /// Builds Ethereum state tries from relevant proofs before and after a state transition
+    /// using the arena-based MPT implementation for better performance.
+    pub fn from_transition_proofs(
         state_root: B256,
         parent_proofs: &HashMap<Address, AccountProof>,
         proofs: &HashMap<Address, AccountProof>,
     ) -> Result<Self> {
-        mpt2::transition_proofs_to_tries(state_root, parent_proofs, proofs)
+        mpt2::transition_proofs_to_tries_arena(state_root, parent_proofs, proofs)
             .map_err(|err| eyre::eyre!("{}", err))
     }
 
@@ -66,12 +99,12 @@ mod tests {
 
     #[test]
     fn test_from_transition_proofs_2_empty() {
-        // Test that from_transition_proofs_2 works with empty proofs
+        // Test that from_transition_proofs works with empty proofs for EthereumState2
         let state_root = B256::ZERO;
         let parent_proofs = HashMap::default();
         let proofs = HashMap::default();
 
-        let result = EthereumState::from_transition_proofs_2(state_root, &parent_proofs, &proofs);
+        let result = EthereumState2::from_transition_proofs(state_root, &parent_proofs, &proofs);
         assert!(result.is_ok());
 
         let ethereum_state = result.unwrap();

@@ -7,6 +7,7 @@ use alloy_rlp::Encodable;
 use alloy_rpc_types_debug::ExecutionWitness;
 use eyre::{eyre, Ok, OptionExt};
 use openvm_mpt::EthereumState;
+use openvm_mpt::EthereumState2;
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
 use reth_chainspec::MAINNET;
@@ -151,7 +152,7 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
         state: BundleState,
         previous_block_state_root: B256,
         block_number: u64,
-    ) -> eyre::Result<(EthereumState, Vec<Bytes>)> {
+    ) -> eyre::Result<(EthereumState2, Vec<Bytes>)> {
         // For every account we touched, fetch the storage proofs for all the slots we touched.
         tracing::info!("fetching storage proofs");
         let mut before_storage_proofs = Vec::new();
@@ -195,7 +196,7 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
             keys_bytes.extend(keys.into_iter().map(|key| key.into()));
         }
 
-        let state = EthereumState::from_transition_proofs(
+        let state = EthereumState2::from_transition_proofs(
             previous_block_state_root,
             &before_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
             &after_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),

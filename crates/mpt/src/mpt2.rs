@@ -3,10 +3,7 @@
 
 use alloy_primitives::B256;
 use alloy_rlp::Encodable;
-use core::{
-    cell::RefCell,
-    fmt::{Debug, Write},
-};
+use core::{cell::RefCell, fmt::Debug};
 use reth_trie::AccountProof;
 use revm::primitives::HashMap;
 use revm_primitives::{keccak256, Address};
@@ -19,7 +16,7 @@ use eyre::Result;
 use crate::{
     mpt::{Error, MptNodeReference, EMPTY_ROOT},
     utils::{lcp, prefix_nibs, to_encoded_path, to_nibs},
-    EthereumState, StorageTries,
+    EthereumState, EthereumState2, StorageTries, StorageTries2,
 };
 
 pub type NodeId = usize;
@@ -648,7 +645,7 @@ impl ArenaBasedMptNode {
 
 /// A temporary structure to decode nodes from RLP before adding them to the arena.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
-struct PreMptNode {
+pub struct PreMptNode {
     /// The type and data of the node.
     pub data: PreMptNodeData,
     /// Cache for a previously computed reference of this node. This is skipped during
@@ -658,7 +655,7 @@ struct PreMptNode {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
-enum PreMptNodeData {
+pub enum PreMptNodeData {
     /// Represents an empty trie node.
     #[default]
     Null,
@@ -921,6 +918,39 @@ mod tests {
 
         assert_eq!(trie1.hash(), trie3.hash());
     }
+
+    #[test]
+    pub fn test_resolve_nodes_arena() {
+        // Create a trie with some data
+        let mut original_trie = ArenaBasedMptNode::default();
+        original_trie.insert(b"test_key", b"test_value".to_vec()).unwrap();
+
+        // Create a trie with a digest node
+        let mut partial_trie = ArenaBasedMptNode::default();
+        let digest = original_trie.hash();
+        partial_trie.nodes[0] = ArenaNodeData::Digest(digest);
+
+        // Create a node store with the resolved content
+        let mut node_store = HashMap::default();
+        let pre_node = PreMptNode {
+            data: PreMptNodeData::Leaf(
+                to_encoded_path(&to_nibs(b"test_key"), true),
+                b"test_value".to_vec(),
+            ),
+            cached_reference: RefCell::new(None),
+        };
+        node_store.insert(MptNodeReference::Digest(digest), pre_node);
+
+        // Resolve the partial trie
+        let resolved_trie = resolve_nodes_arena(&partial_trie, &node_store);
+
+        // The resolved trie should have the same hash as the original
+        assert_eq!(original_trie.hash(), resolved_trie.hash());
+
+        // Should be able to retrieve the value
+        let retrieved = resolved_trie.get(b"test_key").unwrap();
+        assert_eq!(retrieved, Some(b"test_value".to_vec()));
+    }
 }
 
 /// Parses proof bytes into a vector of PreMptNodes (for conversion to arena-based).
@@ -994,33 +1024,91 @@ fn node_from_digest(digest: B256) -> ArenaBasedMptNode {
 }
 
 /// Resolves digest nodes in an arena-based trie using the provided node store.
+/// This rebuilds the arena, replacing any digest nodes with their resolved content.
 pub fn resolve_nodes_arena(
     root: &ArenaBasedMptNode,
     node_store: &HashMap<MptNodeReference, PreMptNode>,
 ) -> ArenaBasedMptNode {
-    // For now, we'll return a copy since resolving in arena requires more complex logic
-    // In practice, this would need to rebuild the arena with resolved nodes
-    root.clone()
+    let mut new_arena =
+        ArenaBasedMptNode { nodes: Vec::new(), cached_references: Vec::new(), root_id: 0 };
+
+    let root_id = resolve_node_recursive(root, root.root_id, node_store, &mut new_arena);
+    new_arena.root_id = root_id;
+
+    // The root hash must not change after resolution
+    debug_assert_eq!(root.hash(), new_arena.hash());
+
+    new_arena
+}
+
+/// Recursively resolves a single node and its children, adding them to the new arena.
+fn resolve_node_recursive(
+    original_arena: &ArenaBasedMptNode,
+    node_id: NodeId,
+    node_store: &HashMap<MptNodeReference, PreMptNode>,
+    new_arena: &mut ArenaBasedMptNode,
+) -> NodeId {
+    let node_data = &original_arena.nodes[node_id];
+
+    let resolved_data = match node_data {
+        ArenaNodeData::Null => ArenaNodeData::Null,
+        ArenaNodeData::Leaf(prefix, value) => ArenaNodeData::Leaf(prefix.clone(), value.clone()),
+        ArenaNodeData::Branch(children) => {
+            let mut resolved_children: [Option<NodeId>; 16] = Default::default();
+            for (i, child_id) in children.iter().enumerate() {
+                if let Some(child_id) = child_id {
+                    let resolved_child_id =
+                        resolve_node_recursive(original_arena, *child_id, node_store, new_arena);
+                    resolved_children[i] = Some(resolved_child_id);
+                }
+            }
+            ArenaNodeData::Branch(resolved_children)
+        }
+        ArenaNodeData::Extension(prefix, child_id) => {
+            let resolved_child_id =
+                resolve_node_recursive(original_arena, *child_id, node_store, new_arena);
+            ArenaNodeData::Extension(prefix.clone(), resolved_child_id)
+        }
+        ArenaNodeData::Digest(digest) => {
+            // Try to resolve the digest from the node store
+            if let Some(resolved_node) = node_store.get(&MptNodeReference::Digest(*digest)) {
+                // Convert the resolved PreMptNode to arena format and add it
+                let resolved_arena = ArenaBasedMptNode::from_pre_node(resolved_node);
+                return resolve_node_recursive(
+                    &resolved_arena,
+                    resolved_arena.root_id,
+                    node_store,
+                    new_arena,
+                );
+            } else {
+                // If not found in store, keep it as a digest
+                ArenaNodeData::Digest(*digest)
+            }
+        }
+    };
+
+    new_arena.add_node(resolved_data)
 }
 
 /// Builds Ethereum state tries from relevant proofs before and after a state transition using arena-based MPT.
-pub fn transition_proofs_to_tries(
+/// This version returns EthereumState2 with arena-based nodes directly for better performance.
+pub fn transition_proofs_to_tries_arena(
     state_root: B256,
     parent_proofs: &HashMap<Address, AccountProof>,
     proofs: &HashMap<Address, AccountProof>,
-) -> Result<EthereumState, Error> {
+) -> Result<EthereumState2, Error> {
     // If no addresses are provided, return the trie only consisting of the state root
     if parent_proofs.is_empty() {
-        return Ok(EthereumState {
+        return Ok(EthereumState2 {
             state_trie: match state_root {
-                EMPTY_ROOT | B256::ZERO => crate::mpt::MptNode::default(),
-                _ => crate::mpt::MptNodeData::Digest(state_root).into(),
+                EMPTY_ROOT | B256::ZERO => ArenaBasedMptNode::default(),
+                _ => node_from_digest(state_root),
             },
             storage_tries: Default::default(),
         });
     }
 
-    let mut storage: HashMap<B256, crate::mpt::MptNode> = HashMap::default();
+    let mut storage: HashMap<B256, ArenaBasedMptNode> = HashMap::default();
 
     let mut state_nodes = HashMap::<_, _>::default();
     let mut state_root_node = PreMptNode::default();
@@ -1047,8 +1135,8 @@ pub fn transition_proofs_to_tries(
         let storage_root = proof.storage_root;
         if proof.storage_proofs.is_empty() {
             let storage_root_node = match storage_root {
-                EMPTY_ROOT | B256::ZERO => crate::mpt::MptNode::default(),
-                _ => crate::mpt::MptNodeData::Digest(storage_root).into(),
+                EMPTY_ROOT | B256::ZERO => ArenaBasedMptNode::default(),
+                _ => node_from_digest(storage_root),
             };
             storage.insert(B256::from(keccak256(address)), storage_root_node);
             continue;
@@ -1076,33 +1164,20 @@ pub fn transition_proofs_to_tries(
             add_orphaned_leafs(storage_proof.key.0, &storage_proof.proof, &mut storage_nodes)?;
         }
 
-        // Create the storage trie from all the relevant nodes
+        // Create the storage trie from all the relevant nodes - keep as arena-based
         let storage_trie = resolve_nodes_arena(
             &ArenaBasedMptNode::from_pre_node(&storage_root_node),
             &storage_nodes,
         );
 
-        // Convert back to original MptNode for now (this is where we'd want to eventually use arena-based)
-        let storage_hash = storage_trie.hash();
-        let storage_trie_original = match storage_hash {
-            EMPTY_ROOT | B256::ZERO => crate::mpt::MptNode::default(),
-            _ => crate::mpt::MptNodeData::Digest(storage_hash).into(),
-        };
-        storage.insert(B256::from(keccak256(address)), storage_trie_original);
+        storage.insert(B256::from(keccak256(address)), storage_trie);
     }
 
-    // Create the state trie from all the relevant nodes
+    // Create the state trie from all the relevant nodes - keep as arena-based
     let state_trie =
         resolve_nodes_arena(&ArenaBasedMptNode::from_pre_node(&state_root_node), &state_nodes);
 
-    // Convert back to original MptNode for compatibility
-    let state_hash = state_trie.hash();
-    let state_trie_original = match state_hash {
-        EMPTY_ROOT | B256::ZERO => crate::mpt::MptNode::default(),
-        _ => crate::mpt::MptNodeData::Digest(state_hash).into(),
-    };
-
-    Ok(EthereumState { state_trie: state_trie_original, storage_tries: StorageTries(storage) })
+    Ok(EthereumState2 { state_trie, storage_tries: StorageTries2(storage) })
 }
 
 /// Adds all the leaf nodes of non-inclusion proofs to the nodes.
