@@ -6,7 +6,6 @@ use alloy_provider::{network::Ethereum, Provider};
 use alloy_rlp::Encodable;
 use alloy_rpc_types_debug::ExecutionWitness;
 use eyre::{eyre, Ok, OptionExt};
-use openvm_mpt::EthereumState;
 use openvm_mpt::EthereumState2;
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;

@@ -2,14 +2,12 @@
 #![allow(dead_code)]
 
 use alloy_primitives::B256;
-use alloy_rlp::Encodable;
+use alloy_rlp::{Buf, Encodable};
 use core::{cell::RefCell, fmt::Debug};
 use reth_trie::AccountProof;
 use revm::primitives::HashMap;
 use revm_primitives::{keccak256, Address};
 use serde::{Deserialize, Serialize};
-
-use rlp::{DecoderError, Prototype, Rlp};
 
 use eyre::Result;
 
@@ -60,57 +58,127 @@ pub enum ArenaNodeData {
 impl ArenaBasedMptNode {
     /// Decodes an RLP-encoded node directly into an ArenaBasedMptNode
     pub fn decode_from_rlp(bytes: impl AsRef<[u8]>) -> Result<Self, Error> {
-        let rlp = Rlp::new(bytes.as_ref());
         let mut arena = ArenaBasedMptNode::default();
-        let root_id = arena.decode_node_recursive(&rlp)?;
+        let mut buf = bytes.as_ref();
+        let root_id = arena.decode_node_recursive(&mut buf)?;
+        if !buf.is_empty() {
+            return Err(Error::Rlp(alloy_rlp::Error::Custom("trailing data")));
+        }
         arena.root_id = root_id;
         Ok(arena)
     }
 
-    fn decode_node_recursive(&mut self, rlp: &Rlp<'_>) -> Result<NodeId, Error> {
-        match rlp.prototype().map_err(Error::LegacyRlp)? {
-            Prototype::Null | Prototype::Data(0) => Ok(self.add_node(ArenaNodeData::Null)),
-            Prototype::List(2) => {
-                let path: Vec<u8> = rlp.val_at(0).map_err(Error::LegacyRlp)?;
+    fn decode_node_recursive(&mut self, buf: &mut &[u8]) -> Result<NodeId, Error> {
+        if buf.is_empty() {
+            return Ok(0); // Return the null node index
+        }
+
+        let header = alloy_rlp::Header::decode(buf).map_err(Error::Rlp)?;
+
+        if !header.list {
+            // Single data item
+            if header.payload_length == 0 {
+                return Ok(0); // Null node
+            }
+            if header.payload_length == 32 {
+                if buf.len() < 32 {
+                    return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
+                }
+                let digest = B256::from_slice(&buf[..32]);
+                buf.advance(32);
+                return Ok(self.add_node(ArenaNodeData::Digest(digest)));
+            }
+            return Err(Error::Rlp(alloy_rlp::Error::Custom("invalid string node")));
+        }
+
+        // Extract the list payload
+        let mut payload_buf = &buf[..header.payload_length];
+        buf.advance(header.payload_length);
+
+        // Count items in the list
+        let mut item_count = 0;
+        {
+            let mut counter_buf = payload_buf;
+            while !counter_buf.is_empty() {
+                let item_header =
+                    alloy_rlp::Header::decode(&mut counter_buf).map_err(Error::Rlp)?;
+                counter_buf.advance(item_header.payload_length);
+                item_count += 1;
+            }
+        }
+
+        match item_count {
+            2 => {
+                // Either extension or leaf node
+                // Manually decode the first item (path)
+                let path_header =
+                    alloy_rlp::Header::decode(&mut payload_buf).map_err(Error::Rlp)?;
+                if path_header.list {
+                    return Err(Error::Rlp(alloy_rlp::Error::Custom("expected string for path")));
+                }
+                if payload_buf.len() < path_header.payload_length {
+                    return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
+                }
+                let path = payload_buf[..path_header.payload_length].to_vec();
+                payload_buf.advance(path_header.payload_length);
+
+                if path.is_empty() {
+                    return Err(Error::Rlp(alloy_rlp::Error::Custom("empty path")));
+                }
+
                 let prefix = path[0];
-                if (prefix & (2 << 4)) == 0 {
-                    // Extension node
-                    let child_rlp = rlp.at(1).map_err(Error::LegacyRlp)?;
-                    let child_id = self.decode_node_recursive(&child_rlp)?;
-                    Ok(self.add_node(ArenaNodeData::Extension(path, child_id)))
-                } else {
-                    // Leaf node
-                    let value: Vec<u8> = rlp.val_at(1).map_err(Error::LegacyRlp)?;
+                if (prefix & 0x20) != 0 {
+                    // Leaf node (prefix 0x20 or 0x21)
+                    // Manually decode the second item (value)
+                    let value_header =
+                        alloy_rlp::Header::decode(&mut payload_buf).map_err(Error::Rlp)?;
+                    if value_header.list {
+                        return Err(Error::Rlp(alloy_rlp::Error::Custom(
+                            "expected string for value",
+                        )));
+                    }
+                    if payload_buf.len() < value_header.payload_length {
+                        return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
+                    }
+                    let value = payload_buf[..value_header.payload_length].to_vec();
+                    payload_buf.advance(value_header.payload_length);
+
                     Ok(self.add_node(ArenaNodeData::Leaf(path, value)))
+                } else {
+                    // Extension node (prefix 0x00 or 0x01)
+                    let child_id = self.decode_node_recursive(&mut payload_buf)?;
+                    Ok(self.add_node(ArenaNodeData::Extension(path, child_id)))
                 }
             }
-            Prototype::List(17) => {
+            17 => {
                 // Branch node
-                let mut children: [Option<NodeId>; 16] = Default::default();
-                for i in 0..16 {
-                    let child_rlp = rlp.at(i).map_err(Error::LegacyRlp)?;
-                    match child_rlp.prototype().map_err(Error::LegacyRlp)? {
-                        Prototype::Null | Prototype::Data(0) => {
-                            children[i] = None;
-                        }
-                        _ => {
-                            let child_id = self.decode_node_recursive(&child_rlp)?;
-                            children[i] = Some(child_id);
-                        }
+                let mut children = [None; 16];
+                for child_opt in children.iter_mut() {
+                    let child_id = self.decode_node_recursive(&mut payload_buf)?;
+                    if child_id != 0 {
+                        *child_opt = Some(child_id);
                     }
                 }
-                let value: Vec<u8> = rlp.val_at(16).map_err(Error::LegacyRlp)?;
-                if value.is_empty() {
-                    Ok(self.add_node(ArenaNodeData::Branch(children)))
-                } else {
-                    Err(Error::ValueInBranch)
+
+                // Manually decode the final value (should be empty for MPT)
+                let value_header =
+                    alloy_rlp::Header::decode(&mut payload_buf).map_err(Error::Rlp)?;
+                if value_header.list {
+                    return Err(Error::Rlp(alloy_rlp::Error::Custom("expected string for value")));
                 }
+                if payload_buf.len() < value_header.payload_length {
+                    return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
+                }
+                let value = payload_buf[..value_header.payload_length].to_vec();
+                payload_buf.advance(value_header.payload_length);
+
+                if !value.is_empty() {
+                    return Err(Error::ValueInBranch);
+                }
+
+                Ok(self.add_node(ArenaNodeData::Branch(children)))
             }
-            Prototype::Data(32) => {
-                let bytes: Vec<u8> = rlp.as_val().map_err(Error::LegacyRlp)?;
-                Ok(self.add_node(ArenaNodeData::Digest(B256::from_slice(&bytes))))
-            }
-            _ => Err(Error::LegacyRlp(DecoderError::RlpIncorrectListLen)),
+            _ => Err(Error::Rlp(alloy_rlp::Error::Custom("invalid list length for mpt node"))),
         }
     }
 }
