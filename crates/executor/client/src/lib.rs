@@ -1,21 +1,12 @@
 #[macro_use]
 mod utils;
 
-use std::fmt::Debug;
+use std::{fmt::Debug, sync::Arc};
 
-#[allow(unused_imports)]
-pub use openvm_mpt;
-use openvm_mpt::state::HashedPostState;
 use openvm_primitives::chain_spec::mainnet;
-use reth_consensus::{Consensus, HeaderValidator};
-use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus};
-use reth_evm::execute::{BasicBlockExecutor, Executor};
 use reth_evm_ethereum::EthEvmConfig;
-#[allow(unused_imports)]
-pub use reth_primitives;
-use reth_primitives::Header;
-use reth_primitives_traits::block::Block as _;
-use reth_revm::db::CacheDB;
+use reth_stateless::{validation::stateless_validation, StatelessInput};
+use revm_primitives::B256;
 
 /// Chain ID for Ethereum Mainnet.
 pub const CHAIN_ID_ETH_MAINNET: u64 = 0x1;

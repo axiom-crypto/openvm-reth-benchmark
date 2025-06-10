@@ -6,7 +6,6 @@ members = [
     "crates/mpt",
     "crates/primitives",
     "crates/storage/rpc-db",
-    "crates/storage/witness-db",
     "crates/host-bench",
 ]
 exclude = []
@@ -22,10 +21,8 @@ version = "0.1.0"
 [workspace.dependencies]
 bincode_derive = "2.0.0"
 eyre = "0.6"
-anyhow = { version = "1.0.86", default-features = false }
 tracing = { version = "0.1.40", default-features = false }
-cfg-if = "1.0.0"
-spin = { version = "0.9.8", features = ["mutex"] }
+cfg-if = "1.0.1"
 async-trait = "0.1.80"
 tokio = { version = "1.44.1", default-features = false, features = [
     "rt",
@@ -36,8 +33,8 @@ serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde_with = "3.12.0"
 futures = "0.3"
 url = "2.3"
-thiserror = "1.0.61"
-hex-literal = "0.4.1"
+thiserror = "2.0.12"
+hex-literal = "1.0.0"
 rayon = "1.10.0"
 rlp = "0.5.2"
 bincode = { version = "2.0.0", default-features = false, features = [
@@ -45,11 +42,10 @@ bincode = { version = "2.0.0", default-features = false, features = [
     "alloc",
     "serde",
 ] }
-rustc-hash = "2.1.0"
+rustc-hash = "2.1.1"
 
 # workspace
 openvm-rpc-db = { path = "./crates/storage/rpc-db" }
-openvm-witness-db = { path = "./crates/storage/witness-db" }
 openvm-client-executor = { path = "./crates/executor/client" }
 openvm-host-executor = { path = "./crates/executor/host" }
 openvm-mpt = { path = "./crates/mpt" }
@@ -62,9 +58,7 @@ reth-primitives-traits = { git = "https://github.com/paradigmxyz/reth", tag = "v
 reth-codecs = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-evm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-revm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false, features = [
-    "witness",
-] }
+reth-revm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-storage-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }

@@ -1,6 +1,6 @@
 [package]
 name = "openvm-host-executor"
-description = ""
+description = "OpenVM host executor"
 version.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -11,27 +11,19 @@ workspace = true
 
 [dependencies]
 eyre.workspace = true
-serde_json.workspace = true
 url.workspace = true
-serde.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 
 # workspace
 openvm-rpc-db.workspace = true
-openvm-witness-db.workspace = true
 openvm-client-executor.workspace = true
 openvm-mpt = { workspace = true, features = ["preimage_context"] }
 openvm-primitives.workspace = true
 
 # reth
-reth-codecs.workspace = true
 reth-primitives = { workspace = true, features = ["secp256k1"] }
 reth-primitives-traits.workspace = true
-reth-storage-errors.workspace = true
-reth-trie.workspace = true
-reth-execution-types.workspace = true
-reth-errors.workspace = true
 reth-chainspec.workspace = true
 reth-evm.workspace = true
 reth-evm-ethereum.workspace = true
@@ -49,11 +41,8 @@ alloy-consensus.workspace = true
 alloy-primitives.workspace = true
 alloy-rlp.workspace = true
 alloy-provider.workspace = true
-alloy-transport.workspace = true
 alloy-rpc-types.workspace = true
 alloy-rpc-types-debug.workspace = true
-itertools = "0.13.0"
-futures.workspace = true
 
 [dev-dependencies]
 bincode = { workspace = true, features = ["serde", "std"] }
