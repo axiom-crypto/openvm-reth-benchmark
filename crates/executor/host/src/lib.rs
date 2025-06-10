@@ -254,7 +254,6 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
 
             let header = block.header;
 
-            // RLP encode the header (like reth does)
             let mut header_bytes = Vec::new();
             header.encode(&mut header_bytes);
             headers.push(header_bytes.into());

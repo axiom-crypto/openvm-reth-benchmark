@@ -4536,7 +4536,6 @@ dependencies = [
  "eyre",
  "itertools 0.13.0",
  "openvm-mpt",
- "openvm-witness-db",
  "reth-chainspec",
  "reth-consensus",
  "reth-ethereum-consensus",
@@ -4673,7 +4672,6 @@ dependencies = [
  "openvm-mpt",
  "openvm-primitives",
  "openvm-rpc-db",
- "openvm-witness-db",
  "reth-chainspec",
  "reth-codecs",
  "reth-consensus",
@@ -5364,16 +5362,6 @@ dependencies = [
  "rrs-lib",
  "rustc-demangle",
  "thiserror 1.0.69",
-]
-
-[[package]]
-name = "openvm-witness-db"
-version = "0.1.0"
-dependencies = [
- "openvm-primitives",
- "reth-revm",
- "reth-storage-errors",
- "serde",
 ]
 
 [[package]]

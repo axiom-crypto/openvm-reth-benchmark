@@ -15,7 +15,6 @@ serde.workspace = true
 serde_with.workspace = true
 
 # workspace
-openvm-witness-db.workspace = true
 openvm-mpt.workspace = true
 
 # reth

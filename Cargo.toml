@@ -6,7 +6,6 @@ members = [
     "crates/mpt",
     "crates/primitives",
     "crates/storage/rpc-db",
-    "crates/storage/witness-db",
     "crates/host-bench",
 ]
 exclude = []
@@ -45,11 +44,10 @@ bincode = { version = "2.0.0", default-features = false, features = [
     "alloc",
     "serde",
 ] }
-rustc-hash = "2.1.0"
+rustc-hash = "2.1.1"
 
 # workspace
 openvm-rpc-db = { path = "./crates/storage/rpc-db" }
-openvm-witness-db = { path = "./crates/storage/witness-db" }
 openvm-client-executor = { path = "./crates/executor/client" }
 openvm-host-executor = { path = "./crates/executor/host" }
 openvm-mpt = { path = "./crates/mpt" }
