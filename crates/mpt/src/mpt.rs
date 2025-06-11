@@ -849,9 +849,39 @@ fn prefix_nibs(prefix: &[u8]) -> Vec<u8> {
     result
 }
 
+/// Decodes an RLP-encoded node **and** pre-computes its reference from the original bytes.
+///
+/// This avoids a second serialization pass in [`calc_reference`], which otherwise has to
+/// re-encode the node to obtain its RLP when the reference is requested for the first time.
+/// Leveraging the fact that we already have the encoded bytes available here saves both
+/// allocation and encoding work during proof processing.
+pub fn decode_with_reference(bytes: &[u8]) -> Result<MptNode, Error> {
+    let node = MptNode::decode(bytes)?;
+
+    // Pre-compute the reference directly from the original encoding instead of letting
+    // `calc_reference` re-encode the node, which would duplicate the work we already paid
+    // for during decoding.
+    let reference = match &node.data {
+        // Empty node – the reference is the canonical empty string code.
+        MptNodeData::Null => MptNodeReference::Bytes(vec![alloy_rlp::EMPTY_STRING_CODE]),
+        // Digest nodes carry their reference explicitly.
+        MptNodeData::Digest(d) => MptNodeReference::Digest(*d),
+        // Anything whose full RLP fits into a single word (< 32 bytes) is inlined.
+        _ if bytes.len() < 32 => MptNodeReference::Bytes(bytes.to_vec()),
+        // For longer encodings we need the Keccak of the RLP.
+        _ => MptNodeReference::Digest(keccak(bytes).into()),
+    };
+
+    *node.cached_reference.borrow_mut() = Some(reference);
+    Ok(node)
+}
+
 /// Parses proof bytes into a vector of MPT nodes.
 pub fn parse_proof(proof: &[impl AsRef<[u8]>]) -> Result<Vec<MptNode>> {
-    Ok(proof.iter().map(MptNode::decode).collect::<Result<Vec<_>, _>>()?)
+    Ok(proof
+        .iter()
+        .map(|bytes| decode_with_reference(bytes.as_ref()))
+        .collect::<std::result::Result<Vec<_>, _>>()?)
 }
 
 /// Creates a Merkle Patricia trie from an EIP-1186 proof.
