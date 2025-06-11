@@ -42,6 +42,8 @@ use crate::StorageTries;
 
 use super::EthereumState;
 
+use smallvec::SmallVec;
+
 pub trait RlpBytes {
     /// Returns the RLP-encoding.
     fn to_rlp(&self) -> Vec<u8>;
@@ -403,9 +405,9 @@ impl MptNode {
     /// Nibbles are half-bytes, and in the context of the MPT, they represent parts of
     /// keys.
     #[inline]
-    pub fn nibs(&self) -> Vec<u8> {
+    pub fn nibs(&self) -> Nibbles {
         match &self.data {
-            MptNodeData::Null | MptNodeData::Branch(_) | MptNodeData::Digest(_) => vec![],
+            MptNodeData::Null | MptNodeData::Branch(_) | MptNodeData::Digest(_) => SmallVec::new(),
             MptNodeData::Leaf(prefix, _) | MptNodeData::Extension(prefix, _) => prefix_nibs(prefix),
         }
     }
@@ -446,7 +448,7 @@ impl MptNode {
                 }
             }
             MptNodeData::Leaf(prefix, value) => {
-                if prefix_nibs(prefix) == key_nibs {
+                if prefix_nibs(prefix).as_slice() == key_nibs {
                     Ok(Some(value))
                 } else {
                     Ok(None)
@@ -531,7 +533,7 @@ impl MptNode {
                 }
             }
             MptNodeData::Leaf(prefix, _) => {
-                if prefix_nibs(prefix) != key_nibs {
+                if prefix_nibs(prefix).as_slice() != key_nibs {
                     return Ok(false);
                 }
                 self.data = MptNodeData::Null;
@@ -790,12 +792,14 @@ impl MptNode {
     }
 }
 
-/// Converts a byte slice into a vector of nibbles.
-///
-/// A nibble is 4 bits or half of an 8-bit byte. This function takes each byte from the
-/// input slice, splits it into two nibbles, and appends them to the resulting vector.
-pub fn to_nibs(slice: &[u8]) -> Vec<u8> {
-    let mut result = Vec::with_capacity(2 * slice.len());
+/// Fixed-capacity stack vector that holds up to 64 nibbles (32-byte key) without
+/// touching the heap. If a longer key is encountered, the `SmallVec` will
+/// transparently spill over into a heap allocation, so the behaviour is still
+/// correct – it is just optimised for the common case.
+pub type Nibbles = SmallVec<[u8; 64]>;
+
+pub fn to_nibs(slice: &[u8]) -> Nibbles {
+    let mut result: Nibbles = SmallVec::with_capacity(2 * slice.len());
     for byte in slice {
         result.push(byte >> 4);
         result.push(byte & 0xf);
@@ -832,12 +836,12 @@ fn lcp(a: &[u8], b: &[u8]) -> usize {
     cmp::min(a.len(), b.len())
 }
 
-fn prefix_nibs(prefix: &[u8]) -> Vec<u8> {
+fn prefix_nibs(prefix: &[u8]) -> Nibbles {
     let (extension, tail) = prefix.split_first().unwrap();
     // the first bit of the first nibble denotes the parity
     let is_odd = extension & (1 << 4) != 0;
 
-    let mut result = Vec::with_capacity(2 * tail.len() + is_odd as usize);
+    let mut result: Nibbles = SmallVec::with_capacity(2 * tail.len() + is_odd as usize);
     // for odd lengths, the second nibble contains the first element
     if is_odd {
         result.push(extension & 0xf);

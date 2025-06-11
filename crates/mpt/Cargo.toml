@@ -34,6 +34,9 @@ alloy-primitives.workspace = true
 alloy-rlp.workspace = true
 alloy-rpc-types.workspace = true
 
+# small, stack-backed vector used to avoid heap allocations for short keys
+smallvec = { version = "1.13", default-features = false }
+
 [dev-dependencies]
 alloy-trie.workspace = true
 hex-literal.workspace = true
