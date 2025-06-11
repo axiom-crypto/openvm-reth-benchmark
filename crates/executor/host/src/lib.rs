@@ -204,7 +204,7 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
         let client_input = ClientExecutorInput {
             current_block,
             ancestor_headers,
-            parent_state: state,
+            parent_state: state.to_flat(),
             state_requests,
             bytecodes: rpc_db.get_bytecodes(),
         };

@@ -8,6 +8,11 @@ use serde::{Deserialize, Serialize};
 /// Module containing MPT code adapted from `zeth`.
 pub mod mpt;
 
+/// Module for a zero-copy, flat MPT representation.
+pub mod flat;
+
+use flat::FlatTrieOwned;
+
 /// Ethereum state trie and account storage tries.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EthereumState {
@@ -15,8 +20,19 @@ pub struct EthereumState {
     pub storage_tries: StorageTries,
 }
 
+/// Flat, zero-copy version of EthereumState for fast deserialization.
+/// This is what gets sent to the guest to avoid the expensive pointer-heavy deserialization.
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+pub struct FlatEthereumState {
+    pub state_trie: FlatTrieOwned,
+    pub storage_tries: FlatStorageTries,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct StorageTries(pub HashMap<B256, MptNode>);
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FlatStorageTries(pub HashMap<B256, FlatTrieOwned>);
 
 impl EthereumState {
     /// Builds Ethereum state tries from relevant proofs before and after a state transition.
@@ -32,6 +48,18 @@ impl EthereumState {
     /// Builds Ethereum state tries from relevant proofs from a given state.
     pub fn from_proofs(state_root: B256, proofs: &HashMap<Address, AccountProof>) -> Result<Self> {
         proofs_to_tries(state_root, proofs).map_err(|err| eyre::eyre!("{}", err))
+    }
+
+    /// Converts this EthereumState into a flat representation for fast serialization.
+    /// This is intended to be run on the host.
+    pub fn to_flat(&self) -> FlatEthereumState {
+        let state_trie = self.state_trie.to_flat_owned();
+
+        let storage_tries = FlatStorageTries(
+            self.storage_tries.0.iter().map(|(k, v)| (*k, v.to_flat_owned())).collect(),
+        );
+
+        FlatEthereumState { state_trie, storage_tries }
     }
 
     /// Mutates state based on diffs provided in [`HashedPostState`].
@@ -86,5 +114,88 @@ impl EthereumState {
     /// Computes the state root.
     pub fn state_root(&self) -> B256 {
         self.state_trie.hash()
+    }
+}
+
+impl FlatEthereumState {
+    /// Converts this flat state back into the mutable EthereumState.
+    /// This is the "inflation" step that we delay until mutation is needed.
+    pub fn to_mpt_state(&self) -> EthereumState {
+        // Rebuild the state trie from the flat representation
+        let state_trie = self.rebuild_mpt_from_flat(&self.state_trie);
+
+        // Rebuild all storage tries
+        let storage_tries = StorageTries(
+            self.storage_tries
+                .0
+                .iter()
+                .map(|(k, flat_trie)| (*k, self.rebuild_mpt_from_flat(flat_trie)))
+                .collect(),
+        );
+
+        EthereumState { state_trie, storage_tries }
+    }
+
+    /// Rebuilds an MptNode tree from a flat representation.
+    /// This is the expensive operation we delay until mutation is actually needed.
+    fn rebuild_mpt_from_flat(&self, flat_trie: &FlatTrieOwned) -> MptNode {
+        if flat_trie.index.is_empty() {
+            return MptNode::default();
+        }
+
+        // The root is the last node in our post-order traversal
+        let root_idx = flat_trie.index.len() - 1;
+        self.rebuild_node_from_flat(flat_trie, root_idx)
+    }
+
+    /// Recursively rebuilds a single node from the flat representation.
+    fn rebuild_node_from_flat(&self, flat_trie: &FlatTrieOwned, node_idx: usize) -> MptNode {
+        let node = &flat_trie.index[node_idx];
+        let rlp_slice = &flat_trie.blob
+            [node.rlp_offset as usize..(node.rlp_offset + node.rlp_len as u32) as usize];
+
+        match node.kind {
+            0 => MptNode::default(), // Null
+            1 => {
+                // Branch
+                let mut children: [Option<Box<MptNode>>; 16] = Default::default();
+                let mask = node.data;
+                let mut child_list_idx = 0;
+
+                for i in 0..16 {
+                    if (mask & (1u16 << i)) != 0 {
+                        let child_flat_idx =
+                            flat_trie.branch_children[node.child_idx as usize + child_list_idx];
+                        children[i] = Some(Box::new(
+                            self.rebuild_node_from_flat(flat_trie, child_flat_idx as usize),
+                        ));
+                        child_list_idx += 1;
+                    }
+                }
+
+                mpt::MptNodeData::Branch(children).into()
+            }
+            2 => {
+                // Leaf - decode from RLP
+                mpt::MptNode::decode(rlp_slice).unwrap()
+            }
+            3 => {
+                // Extension
+                let rlp = rlp::Rlp::new(rlp_slice);
+                let prefix: Vec<u8> = rlp.val_at(0).unwrap();
+                let child_node = self.rebuild_node_from_flat(flat_trie, node.child_idx as usize);
+                mpt::MptNodeData::Extension(prefix, Box::new(child_node)).into()
+            }
+            4 => {
+                // Digest - decode from RLP
+                mpt::MptNode::decode(rlp_slice).unwrap()
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    /// Computes the state root using the flat representation.
+    pub fn state_root(&self) -> B256 {
+        self.state_trie.view().hash()
     }
 }

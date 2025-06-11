@@ -1,8 +1,9 @@
 use std::iter::once;
 
+use alloy_rlp::Decodable as AlloyDecodable;
 use eyre::Result;
 use itertools::Itertools;
-use openvm_mpt::EthereumState;
+use openvm_mpt::FlatEthereumState;
 use openvm_witness_db::WitnessDb;
 use reth_primitives::{Block, Header, TransactionSigned};
 use reth_trie::TrieAccount;
@@ -28,8 +29,8 @@ pub struct ClientExecutorInput {
     /// to provide the parent state root.
     #[serde_as(as = "Vec<alloy_consensus::serde_bincode_compat::Header>")]
     pub ancestor_headers: Vec<Header>,
-    /// Network state as of the parent block.
-    pub parent_state: EthereumState,
+    /// Network state as of the parent block, in flat zero-copy format.
+    pub parent_state: FlatEthereumState,
     /// Requests to account state and storage slots.
     pub state_requests: HashMap<Address, Vec<U256>>,
     /// Account bytecodes.
@@ -43,92 +44,29 @@ impl ClientExecutorInput {
         &self.ancestor_headers[0]
     }
 
-    /// Creates a [`WitnessDb`].
+    /// Creates a [`WitnessDb`] from the flat state representation.
     pub fn witness_db(&self) -> Result<WitnessDb> {
-        <Self as WitnessInput>::witness_db(self)
-    }
-}
+        let flat_state = &self.parent_state;
+        let flat_state_trie = flat_state.state_trie.view();
 
-impl WitnessInput for ClientExecutorInput {
-    #[inline(always)]
-    fn state(&self) -> &EthereumState {
-        &self.parent_state
-    }
-
-    #[inline(always)]
-    fn state_anchor(&self) -> B256 {
-        self.parent_header().state_root
-    }
-
-    #[inline(always)]
-    fn state_requests(&self) -> impl Iterator<Item = (&Address, &Vec<U256>)> {
-        self.state_requests.iter()
-    }
-
-    #[inline(always)]
-    fn bytecodes(&self) -> impl Iterator<Item = &Bytecode> {
-        self.bytecodes.iter()
-    }
-
-    #[inline(always)]
-    fn headers(&self) -> impl Iterator<Item = &Header> {
-        once(&self.current_block.header).chain(self.ancestor_headers.iter())
-    }
-}
-
-/// A trait for constructing [`WitnessDb`].
-pub trait WitnessInput {
-    /// Gets a reference to the state from which account info and storage slots are loaded.
-    fn state(&self) -> &EthereumState;
-
-    /// Gets the state trie root hash that the state referenced by
-    /// [state()](trait.WitnessInput#tymethod.state) must conform to.
-    fn state_anchor(&self) -> B256;
-
-    /// Gets an iterator over address state requests. For each request, the account info and storage
-    /// slots are loaded from the relevant tries in the state returned by
-    /// [state()](trait.WitnessInput#tymethod.state).
-    fn state_requests(&self) -> impl Iterator<Item = (&Address, &Vec<U256>)>;
-
-    /// Gets an iterator over account bytecodes.
-    fn bytecodes(&self) -> impl Iterator<Item = &Bytecode>;
-
-    /// Gets an iterator over references to a consecutive, reverse-chronological block headers
-    /// starting from the current block header.
-    fn headers(&self) -> impl Iterator<Item = &Header>;
-
-    /// Creates a [`WitnessDb`] from a [`WitnessInput`] implementation. To do so, it verifies the
-    /// state root, ancestor headers and account bytecodes, and constructs the account and
-    /// storage values by reading against state tries.
-    ///
-    /// NOTE: For some unknown reasons, calling this trait method directly from outside of the type
-    /// implementing this trait causes a zkVM run to cost over 5M cycles more. To avoid this, define
-    /// a method inside the type that calls this trait method instead.
-    #[inline(always)]
-    fn witness_db(&self) -> Result<WitnessDb> {
-        let state = self.state();
-
-        if self.state_anchor() != state.state_root() {
+        if self.parent_header().state_root != flat_state_trie.hash() {
             eyre::bail!("parent state root mismatch");
         }
 
-        // Pre-allocate the map to roughly the number of bytecodes to avoid costly rehashing.
-        let mut bytecodes_by_hash = HashMap::with_capacity(self.bytecodes().size_hint().0);
+        let bytecodes_by_hash =
+            self.bytecodes.iter().map(|code| (code.hash_slow(), code)).collect::<HashMap<_, _>>();
 
-        for code in self.bytecodes() {
-            bytecodes_by_hash.insert(code.hash_slow(), code);
-        }
-
-        // Reserve space for account & storage responses based on the address requests.
-        let address_requests = self.state_requests().size_hint().0;
-        let mut accounts = HashMap::with_capacity(address_requests);
-        let mut storage = HashMap::with_capacity(address_requests);
-
-        for (&address, slots) in self.state_requests() {
+        let mut accounts = HashMap::default();
+        let mut storage = HashMap::default();
+        for (&address, slots) in self.state_requests.iter() {
             let hashed_address = keccak256(address);
             let hashed_address = hashed_address.as_slice();
 
-            let account_in_trie = state.state_trie.get_rlp::<TrieAccount>(hashed_address)?;
+            let account_in_trie: Option<TrieAccount> = flat_state_trie
+                .get(hashed_address)
+                .map_err(|e| eyre::eyre!("failed to get account from flat trie: {}", e))?
+                .map(|val| AlloyDecodable::decode(&mut val.as_slice()))
+                .transpose()?;
 
             accounts.insert(
                 address,
@@ -141,7 +79,6 @@ pub trait WitnessInput {
                             (*bytecodes_by_hash
                                 .get(&account_in_trie.code_hash)
                                 .ok_or_else(|| eyre::eyre!("missing bytecode"))?)
-                            // Cloning here is fine as `Bytes` is cheap to clone.
                             .to_owned(),
                         ),
                     },
@@ -152,17 +89,21 @@ pub trait WitnessInput {
             if !slots.is_empty() {
                 let mut address_storage = HashMap::default();
 
-                let storage_trie = state
-                    .storage_tries
-                    .0
-                    .get(hashed_address)
-                    .ok_or_else(|| eyre::eyre!("parent state does not contain storage trie"))?;
-
-                for &slot in slots {
-                    let slot_value = storage_trie
-                        .get_rlp::<U256>(keccak256(slot.to_be_bytes::<32>()).as_slice())?
-                        .unwrap_or_default();
-                    address_storage.insert(slot, slot_value);
+                if let Some(storage_trie_view) =
+                    flat_state.storage_tries.0.get(hashed_address).map(|t| t.view())
+                {
+                    for &slot in slots {
+                        let slot_bytes = keccak256(slot.to_be_bytes::<32>());
+                        let slot_value: U256 = storage_trie_view
+                            .get(slot_bytes.as_slice())
+                            .map_err(|e| {
+                                eyre::eyre!("failed to get storage from flat trie: {}", e)
+                            })?
+                            .map(|val| AlloyDecodable::decode(&mut val.as_slice()))
+                            .transpose()?
+                            .unwrap_or_default();
+                        address_storage.insert(slot, slot_value);
+                    }
                 }
 
                 storage.insert(address, address_storage);
@@ -171,7 +112,9 @@ pub trait WitnessInput {
 
         // Verify and build block hashes
         let mut block_hashes: HashMap<u64, B256, _> = HashMap::default();
-        for (child_header, parent_header) in self.headers().tuple_windows() {
+        for (child_header, parent_header) in
+            once(&self.current_block.header).chain(self.ancestor_headers.iter()).tuple_windows()
+        {
             if parent_header.number != child_header.number - 1 {
                 eyre::bail!("non-consecutive blocks");
             }

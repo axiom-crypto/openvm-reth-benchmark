@@ -105,10 +105,11 @@ impl ClientExecutor {
             let post_state = HashedPostState::from_bundle_state::<KeccakKeyHasher>(
                 &executor_outcome.bundle.state,
             );
-            // executor_outcome.hash_state_slow());
+            // Inflate the flat state to a mutable MptNode tree just before mutation.
+            let mut parent_state = input.parent_state.to_mpt_state();
             println!("post state from bundle state: done");
-            input.parent_state.update(&post_state);
-            input.parent_state.state_root()
+            parent_state.update(&post_state);
+            parent_state.state_root()
         });
 
         if state_root != input.current_block.state_root {

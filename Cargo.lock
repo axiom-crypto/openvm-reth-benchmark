@@ -4521,6 +4521,7 @@ version = "0.1.0"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives 1.2.0",
+ "alloy-rlp",
  "eyre",
  "itertools 0.13.0",
  "openvm-mpt",
@@ -4538,6 +4539,7 @@ dependencies = [
  "reth-trie",
  "revm",
  "revm-primitives 19.1.0",
+ "rlp 0.6.1",
  "serde",
  "serde_with",
 ]

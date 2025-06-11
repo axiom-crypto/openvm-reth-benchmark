@@ -42,6 +42,7 @@ use crate::StorageTries;
 
 use super::EthereumState;
 
+use crate::flat::{FlatNode, FlatTrieOwned};
 use smallvec::SmallVec;
 
 pub trait RlpBytes {
@@ -823,6 +824,73 @@ impl MptNode {
         *self.cached_payload_len.borrow_mut() = Some(len);
         len
     }
+
+    /// Converts this MptNode tree into a flat, zero-copy representation.
+    /// This is intended to be run on the host.
+    pub fn to_flat_owned(&self) -> FlatTrieOwned {
+        let mut flat_trie = FlatTrieOwned::default();
+        // Using a map from the node's hash to its future index in the flat array
+        // to handle the DAG structure of the trie and avoid duplicating work.
+        let mut cache = HashMap::with_hasher(DefaultHashBuilder::default());
+        self.add_to_flat(&mut flat_trie, &mut cache);
+        flat_trie
+    }
+
+    /// A recursive helper to perform a post-order traversal of the MPT and build
+    /// the flat representation.
+    fn add_to_flat(
+        &self,
+        flat: &mut FlatTrieOwned,
+        cache: &mut HashMap<B256, u32, DefaultHashBuilder>,
+    ) -> u32 {
+        let hash = self.hash();
+        if let Some(&idx) = cache.get(&hash) {
+            return idx;
+        }
+
+        // Process children first to get their indices in the flat array.
+        let (kind, data, child_idx) = match &self.data {
+            MptNodeData::Null => (0, 0, u32::MAX),
+            MptNodeData::Leaf(prefix, _) => (2, prefix_nibs(prefix).len() as u16, u32::MAX),
+            MptNodeData::Extension(prefix, child) => {
+                let flat_child_idx = child.add_to_flat(flat, cache);
+                (3, prefix_nibs(prefix).len() as u16, flat_child_idx)
+            }
+            MptNodeData::Digest(_) => (4, 0, u32::MAX),
+            MptNodeData::Branch(children) => {
+                let mut mask = 0u16;
+                let mut child_indices = Vec::with_capacity(16);
+                for (i, child_opt) in children.iter().enumerate() {
+                    if let Some(child) = child_opt {
+                        mask |= 1 << i;
+                        child_indices.push(child.add_to_flat(flat, cache));
+                    }
+                }
+
+                let children_storage_offset = if !child_indices.is_empty() {
+                    let offset = flat.branch_children.len() as u32;
+                    flat.branch_children.extend(child_indices);
+                    offset
+                } else {
+                    u32::MAX
+                };
+
+                (1, mask, children_storage_offset)
+            }
+        };
+
+        // Now that children are processed, add the current node.
+        let node_idx = flat.index.len() as u32;
+        cache.insert(hash, node_idx);
+
+        let rlp_offset = flat.blob.len() as u32;
+        self.encode(&mut flat.blob);
+        let rlp_len = (flat.blob.len() as u32 - rlp_offset) as u16;
+
+        flat.index.push(FlatNode { kind, data, rlp_offset, rlp_len, child_idx });
+
+        node_idx
+    }
 }
 
 /// Fixed-capacity stack vector that holds up to 64 nibbles (32-byte key) without
@@ -869,7 +937,7 @@ fn lcp(a: &[u8], b: &[u8]) -> usize {
     cmp::min(a.len(), b.len())
 }
 
-fn prefix_nibs(prefix: &[u8]) -> Nibbles {
+pub fn prefix_nibs(prefix: &[u8]) -> Nibbles {
     let (extension, tail) = prefix.split_first().unwrap();
     // the first bit of the first nibble denotes the parity
     let is_odd = extension & (1 << 4) != 0;
@@ -1047,7 +1115,8 @@ pub fn proofs_to_tries(
 
     // Pre-allocate state_nodes based on expected proof node count across all addresses
     let estimated_state_nodes = proofs.values().map(|p| p.proof.len()).sum::<usize>();
-    let mut state_nodes = HashMap::with_capacity(estimated_state_nodes);
+    let mut state_nodes =
+        HashMap::with_capacity_and_hasher(estimated_state_nodes, DefaultHashBuilder::default());
     let mut state_root_node = MptNode::default();
     for (address, proof) in proofs {
         let proof_nodes = parse_proof(&proof.proof).unwrap();
@@ -1073,7 +1142,10 @@ pub fn proofs_to_tries(
         // Pre-allocate storage_nodes based on all storage proof nodes for this address
         let estimated_storage_nodes =
             proof.storage_proofs.iter().map(|sp| sp.proof.len()).sum::<usize>();
-        let mut storage_nodes = HashMap::with_capacity(estimated_storage_nodes);
+        let mut storage_nodes = HashMap::with_capacity_and_hasher(
+            estimated_storage_nodes,
+            DefaultHashBuilder::default(),
+        );
         let mut storage_root_node = MptNode::default();
         for storage_proof in &proof.storage_proofs {
             let proof_nodes = parse_proof(&storage_proof.proof).unwrap();
@@ -1114,11 +1186,13 @@ pub fn transition_proofs_to_tries(
         });
     }
 
-    let mut storage: HashMap<B256, MptNode, _> = HashMap::with_capacity(parent_proofs.len());
+    let mut storage =
+        HashMap::with_capacity_and_hasher(parent_proofs.len(), DefaultHashBuilder::default());
 
     // Pre-allocate state_nodes based on expected proof node count across all addresses
     let estimated_state_nodes = parent_proofs.values().map(|p| p.proof.len()).sum::<usize>();
-    let mut state_nodes = HashMap::with_capacity(estimated_state_nodes);
+    let mut state_nodes =
+        HashMap::with_capacity_and_hasher(estimated_state_nodes, DefaultHashBuilder::default());
     let mut state_root_node = MptNode::default();
     for (address, proof) in parent_proofs {
         let proof_nodes = parse_proof(&proof.proof).unwrap();
@@ -1149,7 +1223,10 @@ pub fn transition_proofs_to_tries(
         // Pre-allocate storage_nodes based on all storage proof nodes for this address
         let estimated_storage_nodes =
             proof.storage_proofs.iter().map(|sp| sp.proof.len()).sum::<usize>();
-        let mut storage_nodes = HashMap::with_capacity(estimated_storage_nodes);
+        let mut storage_nodes = HashMap::with_capacity_and_hasher(
+            estimated_storage_nodes,
+            DefaultHashBuilder::default(),
+        );
         let mut storage_root_node = MptNode::default();
         for storage_proof in &proof.storage_proofs {
             let proof_nodes = parse_proof(&storage_proof.proof).unwrap();
@@ -1185,7 +1262,7 @@ pub fn transition_proofs_to_tries(
 fn add_orphaned_leafs(
     key: impl AsRef<[u8]>,
     proof: &[impl AsRef<[u8]>],
-    nodes_by_reference: &mut HashMap<MptNodeReference, MptNode>,
+    nodes_by_reference: &mut HashMap<MptNodeReference, MptNode, DefaultHashBuilder>,
 ) -> Result<()> {
     if !proof.is_empty() {
         let proof_nodes = parse_proof(proof).context("invalid proof encoding")?;
@@ -1464,4 +1541,99 @@ mod tests {
         }
         assert!(trie.is_empty());
     }
+
+    #[test]
+    fn test_flat_trie_conversion_and_get() {
+        let mut trie = MptNode::default();
+        let vals = vec![
+            ("painting", "place"),
+            ("guest", "ship"),
+            ("mud", "leave"),
+            ("paper", "call"),
+            ("gate", "boast"),
+            ("tongue", "gain"),
+            ("baseball", "wait"),
+            ("tale", "lie"),
+            ("mood", "cope"),
+            ("menu", "fear"),
+        ];
+        for (key, val) in &vals {
+            trie.insert(key.as_bytes(), val.as_bytes().to_vec()).unwrap();
+        }
+
+        // Convert to flat trie
+        let flat_owned = trie.to_flat_owned();
+        let flat_view = flat_owned.view();
+
+        // 1. Verify root hash
+        assert_eq!(trie.hash(), flat_view.hash());
+
+        // 2. Verify all inserted keys
+        for (key, val) in &vals {
+            let mpt_val = trie.get(key.as_bytes()).unwrap().unwrap();
+            let flat_val = flat_view.get(key.as_bytes()).unwrap().unwrap();
+            assert_eq!(mpt_val, val.as_bytes());
+            assert_eq!(flat_val, val.as_bytes().to_vec());
+        }
+
+        // 3. Verify some non-existent keys
+        assert!(trie.get(b"nonexistent").unwrap().is_none());
+        assert!(flat_view.get(b"nonexistent").unwrap().is_none());
+        assert!(trie.get(b"paint").unwrap().is_none());
+        assert!(flat_view.get(b"paint").unwrap().is_none());
+
+        // Test with an empty trie
+        let empty_trie = MptNode::default();
+        let empty_flat_owned = empty_trie.to_flat_owned();
+        let empty_flat_view = empty_flat_owned.view();
+        assert_eq!(empty_trie.hash(), EMPTY_ROOT);
+        assert_eq!(empty_flat_view.hash(), EMPTY_ROOT);
+        assert!(empty_trie.get(b"any").unwrap().is_none());
+        assert!(empty_flat_view.get(b"any").unwrap().is_none());
+    }
+}
+
+#[test]
+fn test_flat_to_mpt_round_trip() {
+    use crate::{EthereumState, StorageTries};
+
+    // Create an original EthereumState with some data
+    let mut state_trie = MptNode::default();
+    state_trie.insert(b"account1", b"data1".to_vec()).unwrap();
+    state_trie.insert(b"account2", b"data2".to_vec()).unwrap();
+
+    let mut storage_trie = MptNode::default();
+    storage_trie.insert(b"slot1", b"value1".to_vec()).unwrap();
+    storage_trie.insert(b"slot2", b"value2".to_vec()).unwrap();
+
+    let original_state = EthereumState {
+        state_trie,
+        storage_tries: {
+            let mut map = HashMap::with_hasher(DefaultHashBuilder::default());
+            map.insert(B256::from([1u8; 32]), storage_trie);
+            StorageTries(map)
+        },
+    };
+
+    let original_state_root = original_state.state_root();
+
+    // Convert to flat and back
+    let flat_state = original_state.to_flat();
+    let reconstructed_state = flat_state.to_mpt_state();
+
+    // Verify the round-trip preserves the state root
+    assert_eq!(original_state_root, reconstructed_state.state_root());
+
+    // Verify we can read the same data
+    assert_eq!(
+        original_state.state_trie.get(b"account1").unwrap(),
+        reconstructed_state.state_trie.get(b"account1").unwrap()
+    );
+    assert_eq!(
+        original_state.state_trie.get(b"account2").unwrap(),
+        reconstructed_state.state_trie.get(b"account2").unwrap()
+    );
+
+    // Verify flat state can compute the same root without inflation
+    assert_eq!(original_state_root, flat_state.state_root());
 }
