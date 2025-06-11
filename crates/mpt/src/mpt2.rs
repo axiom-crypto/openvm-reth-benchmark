@@ -323,12 +323,12 @@ impl ArenaBasedMptNode {
     }
 
     fn get_internal(&self, node_id: NodeId, key_nibs: &[u8]) -> Result<Option<Vec<u8>>, Error> {
-        match self.nodes[node_id].clone() {
+        match &self.nodes[node_id] {
             ArenaNodeData::Null => Ok(None),
             ArenaNodeData::Branch(nodes) => {
                 if let Some((i, tail)) = key_nibs.split_first() {
                     match nodes[*i as usize] {
-                        Some(ref id) => self.get_internal(*id, tail),
+                        Some(id) => self.get_internal(id, tail),
                         None => Ok(None),
                     }
                 } else {
@@ -336,20 +336,20 @@ impl ArenaBasedMptNode {
                 }
             }
             ArenaNodeData::Leaf(prefix, value) => {
-                if prefix_nibs(&prefix) == key_nibs {
-                    Ok(Some(value))
+                if prefix_nibs(prefix) == key_nibs {
+                    Ok(Some(value.clone()))
                 } else {
                     Ok(None)
                 }
             }
             ArenaNodeData::Extension(prefix, child_id) => {
-                if let Some(tail) = key_nibs.strip_prefix(prefix_nibs(&prefix).as_slice()) {
-                    self.get_internal(child_id, tail)
+                if let Some(tail) = key_nibs.strip_prefix(prefix_nibs(prefix).as_slice()) {
+                    self.get_internal(*child_id, tail)
                 } else {
                     Ok(None)
                 }
             }
-            ArenaNodeData::Digest(digest) => Err(Error::NodeNotResolved(digest)),
+            ArenaNodeData::Digest(digest) => Err(Error::NodeNotResolved(*digest)),
         }
     }
 
@@ -380,32 +380,38 @@ impl ArenaBasedMptNode {
     }
 
     fn delete_internal(&mut self, key_nibs: &[u8]) -> Result<bool, Error> {
-        let updated = self.delete_recursive(self.root_id, key_nibs)?;
+        let (updated, new_root_id) = self.delete_recursive(self.root_id, key_nibs)?;
+        self.root_id = new_root_id;
         if updated {
             self.cached_references[self.root_id].borrow_mut().take();
         }
         Ok(updated)
     }
 
-    fn delete_recursive(&mut self, node_id: NodeId, key_nibs: &[u8]) -> Result<bool, Error> {
+    fn delete_recursive(
+        &mut self,
+        node_id: NodeId,
+        key_nibs: &[u8],
+    ) -> Result<(bool, NodeId), Error> {
         let node_data = self.nodes[node_id].clone();
         match node_data {
-            ArenaNodeData::Null => Ok(false),
+            ArenaNodeData::Null => Ok((false, node_id)),
             ArenaNodeData::Branch(mut children) => {
                 if let Some((i, tail)) = key_nibs.split_first() {
                     let child_id = children[*i as usize];
                     match child_id {
                         Some(id) => {
-                            if !self.delete_recursive(id, tail)? {
-                                return Ok(false);
+                            let (updated, new_child_id) = self.delete_recursive(id, tail)?;
+                            if !updated {
+                                return Ok((false, node_id));
                             }
-                            // if the node is now empty, remove it
-                            if matches!(self.nodes[id], ArenaNodeData::Null) {
+                            children[*i as usize] = Some(new_child_id);
+
+                            if matches!(self.nodes[new_child_id], ArenaNodeData::Null) {
                                 children[*i as usize] = None;
-                                self.nodes[node_id] = ArenaNodeData::Branch(children);
                             }
                         }
-                        None => return Ok(false),
+                        None => return Ok((false, node_id)),
                     }
                 } else {
                     return Err(Error::ValueInBranch);
@@ -415,7 +421,7 @@ impl ArenaBasedMptNode {
                     children.iter().enumerate().filter(|(_, n)| n.is_some()).collect();
 
                 // if there is only exactly one node left, we need to convert the branch
-                if remaining.len() == 1 {
+                let new_node_data = if remaining.len() == 1 {
                     let (index, &child_id) = remaining[0];
                     let child_id = child_id.unwrap();
                     let child_data = self.nodes[child_id].clone();
@@ -425,88 +431,89 @@ impl ArenaBasedMptNode {
                         ArenaNodeData::Leaf(prefix, value) => {
                             let new_nibs: Vec<_> =
                                 std::iter::once(index as u8).chain(prefix_nibs(&prefix)).collect();
-                            self.nodes[node_id] =
-                                ArenaNodeData::Leaf(to_encoded_path(&new_nibs, true), value);
+                            ArenaNodeData::Leaf(to_encoded_path(&new_nibs, true), value)
                         }
                         // if the orphan is an extension, prepend the corresponding nib to it
                         ArenaNodeData::Extension(prefix, child_child_id) => {
                             let new_nibs: Vec<_> =
                                 std::iter::once(index as u8).chain(prefix_nibs(&prefix)).collect();
-                            self.nodes[node_id] = ArenaNodeData::Extension(
+                            ArenaNodeData::Extension(
                                 to_encoded_path(&new_nibs, false),
                                 child_child_id,
-                            );
+                            )
                         }
                         // if the orphan is a branch or digest, convert to an extension
                         ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
-                            self.nodes[node_id] = ArenaNodeData::Extension(
+                            ArenaNodeData::Extension(
                                 to_encoded_path(&[index as u8], false),
                                 child_id,
-                            );
+                            )
                         }
                         ArenaNodeData::Null => unreachable!(),
                     }
                 } else {
                     // Update the branch with the modified children
-                    self.nodes[node_id] = ArenaNodeData::Branch(children);
-                }
+                    ArenaNodeData::Branch(children)
+                };
 
-                self.cached_references[node_id].borrow_mut().take();
-                Ok(true)
+                let new_node_id = self.add_node(new_node_data);
+                self.cached_references[new_node_id].borrow_mut().take();
+                Ok((true, new_node_id))
             }
             ArenaNodeData::Leaf(prefix, _) => {
                 if prefix_nibs(&prefix) != key_nibs {
-                    return Ok(false);
+                    return Ok((false, node_id));
                 }
-                self.nodes[node_id] = ArenaNodeData::Null;
-                self.cached_references[node_id].borrow_mut().take();
-                Ok(true)
+                let new_node_id = self.add_node(ArenaNodeData::Null);
+                self.cached_references[new_node_id].borrow_mut().take();
+                Ok((true, new_node_id))
             }
             ArenaNodeData::Extension(prefix, child_id) => {
                 let mut self_nibs = prefix_nibs(&prefix);
-                if let Some(tail) = key_nibs.strip_prefix(self_nibs.as_slice()) {
-                    if !self.delete_recursive(child_id, tail)? {
-                        return Ok(false);
-                    }
-                } else {
-                    return Ok(false);
-                }
+                let (updated, new_child_id) =
+                    if let Some(tail) = key_nibs.strip_prefix(self_nibs.as_slice()) {
+                        let (updated, new_child_id) = self.delete_recursive(child_id, tail)?;
+                        if !updated {
+                            return Ok((false, node_id));
+                        }
+                        (true, new_child_id)
+                    } else {
+                        return Ok((false, node_id));
+                    };
 
                 // an extension can only point to a branch or a digest; since its sub trie was
                 // modified, we need to make sure that this property still holds
-                let child_data = self.nodes[child_id].clone();
-                match child_data {
+                let child_data = self.nodes[new_child_id].clone();
+                let new_node_data = match child_data {
                     // if the child is empty, remove the extension
-                    ArenaNodeData::Null => {
-                        self.nodes[node_id] = ArenaNodeData::Null;
-                    }
+                    ArenaNodeData::Null => ArenaNodeData::Null,
                     // for a leaf, replace the extension with the extended leaf
                     ArenaNodeData::Leaf(child_prefix, value) => {
                         self_nibs.extend(prefix_nibs(&child_prefix));
-                        self.nodes[node_id] =
-                            ArenaNodeData::Leaf(to_encoded_path(&self_nibs, true), value);
+                        ArenaNodeData::Leaf(to_encoded_path(&self_nibs, true), value)
                     }
                     // for an extension, replace the extension with the extended extension
                     ArenaNodeData::Extension(child_prefix, grandchild_id) => {
                         self_nibs.extend(prefix_nibs(&child_prefix));
-                        self.nodes[node_id] = ArenaNodeData::Extension(
-                            to_encoded_path(&self_nibs, false),
-                            grandchild_id,
-                        );
+                        ArenaNodeData::Extension(to_encoded_path(&self_nibs, false), grandchild_id)
                     }
                     // for a branch or digest, the extension is still correct
-                    ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {}
-                }
+                    ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
+                        ArenaNodeData::Extension(prefix, new_child_id)
+                    }
+                };
 
-                self.cached_references[node_id].borrow_mut().take();
-                Ok(true)
+                let new_node_id = self.add_node(new_node_data);
+                self.cached_references[new_node_id].borrow_mut().take();
+                Ok((updated, new_node_id))
             }
             ArenaNodeData::Digest(digest) => Err(Error::NodeNotResolved(digest)),
         }
     }
 
     fn insert_internal(&mut self, key_nibs: &[u8], value: Vec<u8>) -> Result<bool, Error> {
-        let updated = self.insert_recursive(self.root_id, key_nibs, value)?;
+        let (updated, new_root_id) = self.insert_recursive(self.root_id, key_nibs, value)?;
+        self.root_id = new_root_id;
         if updated {
             self.cached_references[self.root_id].borrow_mut().take();
         }
@@ -518,49 +525,53 @@ impl ArenaBasedMptNode {
         node_id: NodeId,
         key_nibs: &[u8],
         value: Vec<u8>,
-    ) -> Result<bool, Error> {
+    ) -> Result<(bool, NodeId), Error> {
         let node_data = self.nodes[node_id].clone();
         match node_data {
             ArenaNodeData::Null => {
-                self.nodes[node_id] = ArenaNodeData::Leaf(to_encoded_path(key_nibs, true), value);
-                Ok(true)
+                let new_node_id =
+                    self.add_node(ArenaNodeData::Leaf(to_encoded_path(key_nibs, true), value));
+                Ok((true, new_node_id))
             }
             ArenaNodeData::Branch(mut children) => {
                 if let Some((i, tail)) = key_nibs.split_first() {
                     let child_id = children[*i as usize];
                     match child_id {
                         Some(id) => {
-                            let updated = self.insert_recursive(id, tail, value)?;
+                            let (updated, new_child_id) = self.insert_recursive(id, tail, value)?;
                             if updated {
-                                self.cached_references[node_id].borrow_mut().take();
+                                children[*i as usize] = Some(new_child_id);
+                                let new_node_id = self.add_node(ArenaNodeData::Branch(children));
+                                self.cached_references[new_node_id].borrow_mut().take();
+                                Ok((true, new_node_id))
+                            } else {
+                                Ok((false, node_id))
                             }
-                            Ok(updated)
                         }
                         None => {
                             let new_leaf_id = self
                                 .add_node(ArenaNodeData::Leaf(to_encoded_path(tail, true), value));
                             children[*i as usize] = Some(new_leaf_id);
-                            self.nodes[node_id] = ArenaNodeData::Branch(children);
-                            self.cached_references[node_id].borrow_mut().take();
-                            Ok(true)
+                            let new_node_id = self.add_node(ArenaNodeData::Branch(children));
+                            self.cached_references[new_node_id].borrow_mut().take();
+                            Ok((true, new_node_id))
                         }
                     }
                 } else {
                     Err(Error::ValueInBranch)
                 }
             }
-            ArenaNodeData::Leaf(prefix, mut old_value) => {
+            ArenaNodeData::Leaf(prefix, old_value) => {
                 let self_nibs = prefix_nibs(&prefix);
                 let common_len = lcp(&self_nibs, key_nibs);
                 if common_len == self_nibs.len() && common_len == key_nibs.len() {
                     // if self_nibs == key_nibs, update the value if it is different
                     if old_value == value {
-                        return Ok(false);
+                        return Ok((false, node_id));
                     }
-                    old_value = value;
-                    self.nodes[node_id] = ArenaNodeData::Leaf(prefix, old_value);
-                    self.cached_references[node_id].borrow_mut().take();
-                    Ok(true)
+                    let new_node_id = self.add_node(ArenaNodeData::Leaf(prefix, value));
+                    self.cached_references[new_node_id].borrow_mut().take();
+                    Ok((true, new_node_id))
                 } else if common_len == self_nibs.len() || common_len == key_nibs.len() {
                     Err(Error::ValueInBranch)
                 } else {
@@ -580,18 +591,19 @@ impl ArenaBasedMptNode {
                     children[self_nibs[common_len] as usize] = Some(leaf1_id);
                     children[key_nibs[common_len] as usize] = Some(leaf2_id);
 
-                    if common_len > 0 {
+                    let new_node_data = if common_len > 0 {
                         // create parent extension for new branch
                         let branch_id = self.add_node(ArenaNodeData::Branch(children));
-                        self.nodes[node_id] = ArenaNodeData::Extension(
+                        ArenaNodeData::Extension(
                             to_encoded_path(&self_nibs[..common_len], false),
                             branch_id,
-                        );
+                        )
                     } else {
-                        self.nodes[node_id] = ArenaNodeData::Branch(children);
-                    }
-                    self.cached_references[node_id].borrow_mut().take();
-                    Ok(true)
+                        ArenaNodeData::Branch(children)
+                    };
+                    let new_node_id = self.add_node(new_node_data);
+                    self.cached_references[new_node_id].borrow_mut().take();
+                    Ok((true, new_node_id))
                 }
             }
             ArenaNodeData::Extension(prefix, child_id) => {
@@ -599,12 +611,16 @@ impl ArenaBasedMptNode {
                 let common_len = lcp(&self_nibs, key_nibs);
                 if common_len == self_nibs.len() {
                     // traverse down for update
-                    let updated =
+                    let (updated, new_child_id) =
                         self.insert_recursive(child_id, &key_nibs[common_len..], value)?;
                     if updated {
-                        self.cached_references[node_id].borrow_mut().take();
+                        let new_node_id =
+                            self.add_node(ArenaNodeData::Extension(prefix, new_child_id));
+                        self.cached_references[new_node_id].borrow_mut().take();
+                        Ok((true, new_node_id))
+                    } else {
+                        Ok((false, node_id))
                     }
-                    Ok(updated)
                 } else if common_len == key_nibs.len() {
                     Err(Error::ValueInBranch)
                 } else {
@@ -628,18 +644,19 @@ impl ArenaBasedMptNode {
                     ));
                     children[key_nibs[common_len] as usize] = Some(leaf_id);
 
-                    if common_len > 0 {
+                    let new_node_data = if common_len > 0 {
                         // Create parent extension for new branch
                         let branch_id = self.add_node(ArenaNodeData::Branch(children));
-                        self.nodes[node_id] = ArenaNodeData::Extension(
+                        ArenaNodeData::Extension(
                             to_encoded_path(&self_nibs[..common_len], false),
                             branch_id,
-                        );
+                        )
                     } else {
-                        self.nodes[node_id] = ArenaNodeData::Branch(children);
-                    }
-                    self.cached_references[node_id].borrow_mut().take();
-                    Ok(true)
+                        ArenaNodeData::Branch(children)
+                    };
+                    let new_node_id = self.add_node(new_node_data);
+                    self.cached_references[new_node_id].borrow_mut().take();
+                    Ok((true, new_node_id))
                 }
             }
             ArenaNodeData::Digest(digest) => Err(Error::NodeNotResolved(digest)),
