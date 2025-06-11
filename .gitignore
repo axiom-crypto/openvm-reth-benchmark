@@ -27,3 +27,6 @@ elf
 
 # Metrics
 metrics.json
+
+# Local mpt benchmark data
+client_input_benchmark.bin

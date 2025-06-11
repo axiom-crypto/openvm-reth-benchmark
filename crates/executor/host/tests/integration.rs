@@ -42,6 +42,10 @@ async fn test_e2e_ethereum() {
     let bincode_config = standard();
     let buffer = bincode::serde::encode_to_vec(&client_input, bincode_config).unwrap();
 
+    // Save the buffer to a file for benchmarking
+    std::fs::write("client_input_benchmark.bin", &buffer).expect("failed to write benchmark data");
+    println!("Saved benchmark data to client_input_benchmark.bin ({} bytes)", buffer.len());
+
     // Load the client input from a buffer.
     let _: (ClientExecutorInput, _) =
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
