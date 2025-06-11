@@ -217,9 +217,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-hardforks"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbff8445282ec080c2673692062bd4930d7a0d6bda257caf138cfc650c503000"
+checksum = "977d2492ce210e34baf7b36afaacea272c96fbe6774c47e23f97d14033c0e94f"
 dependencies = [
  "alloy-chains",
  "alloy-eip2124",
@@ -5005,6 +5005,7 @@ dependencies = [
 name = "openvm-primitives"
 version = "0.1.0"
 dependencies = [
+ "alloy-hardforks",
  "alloy-rpc-types",
  "eyre",
  "reth-chainspec",
