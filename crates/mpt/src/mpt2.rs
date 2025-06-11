@@ -16,6 +16,7 @@ use crate::{
     utils::{lcp, prefix_nibs, to_encoded_path, to_nibs},
     EthereumState2, StorageTries2,
 };
+use smallvec::SmallVec;
 
 pub type NodeId = usize;
 
@@ -348,7 +349,7 @@ impl ArenaBasedMptNode {
                 }
             }
             ArenaNodeData::Leaf(prefix, value) => {
-                if prefix_nibs(prefix) == key_nibs {
+                if prefix_nibs(prefix).as_slice() == key_nibs {
                     Ok(Some(value.clone()))
                 } else {
                     Ok(None)
@@ -473,7 +474,7 @@ impl ArenaBasedMptNode {
                 Ok((true, new_node_id))
             }
             ArenaNodeData::Leaf(prefix, _) => {
-                if prefix_nibs(&prefix) != key_nibs {
+                if prefix_nibs(&prefix).as_slice() != key_nibs {
                     return Ok((false, node_id));
                 }
                 let new_node_id = self.add_node(ArenaNodeData::Null);
@@ -1050,7 +1051,7 @@ pub fn shorten_node_path_arena(node: &ArenaBasedMptNode) -> Vec<ArenaBasedMptNod
     let mut res = Vec::new();
     let nibs = match &node.nodes[node.root_id] {
         ArenaNodeData::Leaf(prefix, _) | ArenaNodeData::Extension(prefix, _) => prefix_nibs(prefix),
-        _ => vec![],
+        _ => SmallVec::new(),
     };
 
     match &node.nodes[node.root_id] {
