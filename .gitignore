@@ -27,3 +27,7 @@ elf
 
 # Metrics
 metrics.json
+
+# Temp
+old.txt
+new.txt
