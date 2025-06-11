@@ -4908,6 +4908,7 @@ dependencies = [
  "rlp 0.6.1",
  "rustc-hash 2.1.1",
  "serde",
+ "smallvec",
  "thiserror 1.0.69",
  "tracing-subscriber 0.3.19",
 ]
