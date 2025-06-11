@@ -2320,6 +2320,7 @@ dependencies = [
  "rlp 0.6.1",
  "rustc-hash",
  "serde",
+ "smallvec",
  "thiserror 1.0.69",
 ]
 
