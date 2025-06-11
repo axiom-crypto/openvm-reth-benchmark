@@ -111,6 +111,11 @@ pub struct MptNode {
     /// invalidated together with the reference cache whenever the node is mutated.
     #[serde(skip)]
     pub cached_payload_len: RefCell<Option<usize>>,
+    /// Cache for the node hash. For large nodes whose reference is already a digest this
+    /// saves nothing, but for the very common < 32-byte encodings we avoid an extra
+    /// Keccak round every time `hash()` is called.
+    #[serde(skip)]
+    pub cached_hash: RefCell<Option<B256>>,
 }
 
 /// Represents custom error types for the sparse Merkle Patricia Trie (MPT).
@@ -187,6 +192,7 @@ impl From<MptNodeData> for MptNode {
             data: value,
             cached_reference: RefCell::new(None),
             cached_payload_len: RefCell::new(None),
+            cached_hash: RefCell::new(None),
         }
     }
 }
@@ -344,7 +350,11 @@ impl MptNode {
     /// This method provides a unique identifier for the node based on its content.
     #[inline]
     pub fn hash(&self) -> B256 {
-        match self.data {
+        if let Some(h) = *self.cached_hash.borrow() {
+            return h;
+        }
+
+        let h = match self.data {
             MptNodeData::Null => EMPTY_ROOT,
             _ => match self
                 .cached_reference
@@ -352,9 +362,12 @@ impl MptNode {
                 .get_or_insert_with(|| self.calc_reference())
             {
                 MptNodeReference::Digest(digest) => *digest,
-                MptNodeReference::Bytes(bytes) => keccak(bytes).into(),
+                MptNodeReference::Bytes(bytes) => B256::from(keccak(bytes)),
             },
-        }
+        };
+
+        *self.cached_hash.borrow_mut() = Some(h);
+        h
     }
 
     /// bincode::Encodes the [MptNodeReference] of this node into the `out` buffer.
@@ -729,6 +742,7 @@ impl MptNode {
     fn invalidate_ref_cache(&mut self) {
         self.cached_reference.borrow_mut().take();
         self.cached_payload_len.borrow_mut().take();
+        self.cached_hash.borrow_mut().take();
     }
 
     /// Returns the number of traversable nodes in the trie.
