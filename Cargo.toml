@@ -110,6 +110,7 @@ alloy-transport-http = { version = "1.0.9", features = [
 ], default-features = false }
 alloy-eips = { version = "1.0.9", default-features = false }
 alloy-trie = "0.8.1"
+alloy-hardforks = "0.2.7"
 
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", rev = "f48090c9febd021f8ee0349bc929a775fb1fa3ad", default-features = false }
 
