@@ -105,6 +105,12 @@ pub struct MptNode {
     /// serialization.
     #[serde(skip)]
     pub cached_reference: RefCell<Option<MptNodeReference>>,
+    /// Cache for the payload length of this node. Computing it recursively is
+    /// non-trivial (especially for branch nodes) and shows up in the flamegraph.
+    /// We therefore memoise the result the first time it is requested. The cache is
+    /// invalidated together with the reference cache whenever the node is mutated.
+    #[serde(skip)]
+    pub cached_payload_len: RefCell<Option<usize>>,
 }
 
 /// Represents custom error types for the sparse Merkle Patricia Trie (MPT).
@@ -177,7 +183,11 @@ pub enum MptNodeReference {
 /// `cached_reference` field to `None`.
 impl From<MptNodeData> for MptNode {
     fn from(value: MptNodeData) -> Self {
-        Self { data: value, cached_reference: RefCell::new(None) }
+        Self {
+            data: value,
+            cached_reference: RefCell::new(None),
+            cached_payload_len: RefCell::new(None),
+        }
     }
 }
 
@@ -718,6 +728,7 @@ impl MptNode {
 
     fn invalidate_ref_cache(&mut self) {
         self.cached_reference.borrow_mut().take();
+        self.cached_payload_len.borrow_mut().take();
     }
 
     /// Returns the number of traversable nodes in the trie.
@@ -773,7 +784,12 @@ impl MptNode {
 
     /// Returns the length of the RLP payload of the node.
     fn payload_length(&self) -> usize {
-        match &self.data {
+        // Fast path: cached value present.
+        if let Some(len) = *self.cached_payload_len.borrow() {
+            return len;
+        }
+
+        let len = match &self.data {
             MptNodeData::Null => 0,
             MptNodeData::Branch(nodes) => {
                 1 + nodes
@@ -788,7 +804,10 @@ impl MptNode {
                 prefix.as_slice().length() + node.reference_length()
             }
             MptNodeData::Digest(_) => 32,
-        }
+        };
+
+        *self.cached_payload_len.borrow_mut() = Some(len);
+        len
     }
 }
 
