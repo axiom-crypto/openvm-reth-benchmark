@@ -1,11 +1,13 @@
+use smallvec::SmallVec;
 use std::{cmp, iter};
 
 /// Converts a byte slice into a vector of nibbles.
 ///
 /// A nibble is 4 bits or half of an 8-bit byte. This function takes each byte from the
 /// input slice, splits it into two nibbles, and appends them to the resulting vector.
-pub fn to_nibs(slice: &[u8]) -> Vec<u8> {
-    let mut result = Vec::with_capacity(2 * slice.len());
+/// Uses SmallVec to avoid heap allocation for typical key sizes (≤32 bytes = 64 nibbles).
+pub fn to_nibs(slice: &[u8]) -> SmallVec<[u8; 64]> {
+    let mut result = SmallVec::with_capacity(2 * slice.len());
     for byte in slice {
         result.push(byte >> 4);
         result.push(byte & 0xf);
@@ -42,12 +44,12 @@ pub fn lcp(a: &[u8], b: &[u8]) -> usize {
     cmp::min(a.len(), b.len())
 }
 
-pub fn prefix_nibs(prefix: &[u8]) -> Vec<u8> {
+pub fn prefix_nibs(prefix: &[u8]) -> SmallVec<[u8; 64]> {
     let (extension, tail) = prefix.split_first().unwrap();
     // the first bit of the first nibble denotes the parity
     let is_odd = extension & (1 << 4) != 0;
 
-    let mut result = Vec::with_capacity(2 * tail.len() + is_odd as usize);
+    let mut result = SmallVec::with_capacity(2 * tail.len() + is_odd as usize);
     // for odd lengths, the second nibble contains the first element
     if is_odd {
         result.push(extension & 0xf);
