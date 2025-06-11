@@ -1,9 +1,9 @@
 use eyre::Result;
 use mpt::{proofs_to_tries, transition_proofs_to_tries, MptNode};
+use reth_trie::HashedPostState;
 use reth_trie::{AccountProof, TrieAccount};
 use revm::primitives::{Address, HashMap, B256};
 use serde::{Deserialize, Serialize};
-use state::HashedPostState;
 
 /// Module containing MPT code adapted from `zeth`.
 pub mod mpt;
@@ -38,12 +38,12 @@ impl EthereumState {
     /// Mutates state based on diffs provided in [`HashedPostState`].
     pub fn update(&mut self, post_state: &HashedPostState) {
         for (hashed_address, account) in post_state.accounts.iter() {
-            let hashed_address = hashed_address.as_slice();
-
             match account {
                 Some(account) => {
-                    let state_storage = &post_state.storages.get(hashed_address).unwrap();
-                    let storage_root = {
+                    let storage_root = if let Some(state_storage) =
+                        post_state.storages.get(hashed_address)
+                    {
+                        // Account has storage updates
                         let storage_trie = self.storage_tries.0.get_mut(hashed_address).unwrap();
 
                         if state_storage.wiped {
@@ -60,6 +60,13 @@ impl EthereumState {
                         }
 
                         storage_trie.hash()
+                    } else {
+                        // Account has no storage updates, use existing storage root
+                        self.storage_tries
+                            .0
+                            .get(hashed_address)
+                            .map(|trie| trie.hash())
+                            .unwrap_or(reth_trie::EMPTY_ROOT_HASH)
                     };
 
                     let state_account = TrieAccount {
@@ -68,10 +75,10 @@ impl EthereumState {
                         storage_root,
                         code_hash: account.get_bytecode_hash(),
                     };
-                    self.state_trie.insert_rlp(hashed_address, state_account).unwrap();
+                    self.state_trie.insert_rlp(hashed_address.as_slice(), state_account).unwrap();
                 }
                 _ => {
-                    self.state_trie.delete(hashed_address).unwrap();
+                    self.state_trie.delete(hashed_address.as_slice()).unwrap();
                 }
             }
         }

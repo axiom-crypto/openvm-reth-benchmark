@@ -10,7 +10,6 @@ use alloy_primitives::Bloom;
 use io::ClientExecutorInput;
 #[allow(unused_imports)]
 pub use openvm_mpt;
-use openvm_mpt::state::HashedPostState;
 use openvm_primitives::chain_spec::mainnet;
 use reth_consensus::{Consensus, HeaderValidator};
 use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus};
@@ -22,6 +21,7 @@ pub use reth_primitives;
 use reth_primitives::Header;
 use reth_primitives_traits::block::Block as _;
 use reth_revm::db::CacheDB;
+use reth_trie::{HashedPostState, KeccakKeyHasher};
 
 /// Chain ID for Ethereum Mainnet.
 pub const CHAIN_ID_ETH_MAINNET: u64 = 0x1;
@@ -102,7 +102,9 @@ impl ClientExecutor {
 
         // Verify the state root.
         let state_root = profile!("compute state root", {
-            let post_state = HashedPostState::from_bundle_state(&executor_outcome.bundle.state);
+            let post_state = HashedPostState::from_bundle_state::<KeccakKeyHasher>(
+                &executor_outcome.bundle.state,
+            );
             // executor_outcome.hash_state_slow());
             println!("post state from bundle state: done");
             input.parent_state.update(&post_state);
