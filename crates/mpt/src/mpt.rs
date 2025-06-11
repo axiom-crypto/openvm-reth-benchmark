@@ -1008,7 +1008,9 @@ pub fn proofs_to_tries(
     let mut storage: HashMap<B256, MptNode> =
         HashMap::with_capacity_and_hasher(proofs.len(), DefaultHashBuilder::default());
 
-    let mut state_nodes = HashMap::<_, _>::default();
+    // Pre-allocate state_nodes based on expected proof node count across all addresses
+    let estimated_state_nodes = proofs.values().map(|p| p.proof.len()).sum::<usize>();
+    let mut state_nodes = HashMap::with_capacity(estimated_state_nodes);
     let mut state_root_node = MptNode::default();
     for (address, proof) in proofs {
         let proof_nodes = parse_proof(&proof.proof).unwrap();
@@ -1031,7 +1033,10 @@ pub fn proofs_to_tries(
             continue;
         }
 
-        let mut storage_nodes = HashMap::<_, _>::default();
+        // Pre-allocate storage_nodes based on all storage proof nodes for this address
+        let estimated_storage_nodes =
+            proof.storage_proofs.iter().map(|sp| sp.proof.len()).sum::<usize>();
+        let mut storage_nodes = HashMap::with_capacity(estimated_storage_nodes);
         let mut storage_root_node = MptNode::default();
         for storage_proof in &proof.storage_proofs {
             let proof_nodes = parse_proof(&storage_proof.proof).unwrap();
@@ -1072,10 +1077,11 @@ pub fn transition_proofs_to_tries(
         });
     }
 
-    let mut storage: HashMap<B256, MptNode, _> =
-        HashMap::with_capacity_and_hasher(parent_proofs.len(), DefaultHashBuilder::default());
+    let mut storage: HashMap<B256, MptNode, _> = HashMap::with_capacity(parent_proofs.len());
 
-    let mut state_nodes = HashMap::<_, _, DefaultHashBuilder>::default();
+    // Pre-allocate state_nodes based on expected proof node count across all addresses
+    let estimated_state_nodes = parent_proofs.values().map(|p| p.proof.len()).sum::<usize>();
+    let mut state_nodes = HashMap::with_capacity(estimated_state_nodes);
     let mut state_root_node = MptNode::default();
     for (address, proof) in parent_proofs {
         let proof_nodes = parse_proof(&proof.proof).unwrap();
@@ -1103,7 +1109,10 @@ pub fn transition_proofs_to_tries(
             continue;
         }
 
-        let mut storage_nodes = HashMap::<_, _>::default();
+        // Pre-allocate storage_nodes based on all storage proof nodes for this address
+        let estimated_storage_nodes =
+            proof.storage_proofs.iter().map(|sp| sp.proof.len()).sum::<usize>();
+        let mut storage_nodes = HashMap::with_capacity(estimated_storage_nodes);
         let mut storage_root_node = MptNode::default();
         for storage_proof in &proof.storage_proofs {
             let proof_nodes = parse_proof(&storage_proof.proof).unwrap();

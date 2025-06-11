@@ -112,11 +112,18 @@ pub trait WitnessInput {
             eyre::bail!("parent state root mismatch");
         }
 
-        let bytecodes_by_hash =
-            self.bytecodes().map(|code| (code.hash_slow(), code)).collect::<HashMap<_, _>>();
+        // Pre-allocate the map to roughly the number of bytecodes to avoid costly rehashing.
+        let mut bytecodes_by_hash = HashMap::with_capacity(self.bytecodes().size_hint().0);
 
-        let mut accounts = HashMap::default();
-        let mut storage = HashMap::default();
+        for code in self.bytecodes() {
+            bytecodes_by_hash.insert(code.hash_slow(), code);
+        }
+
+        // Reserve space for account & storage responses based on the address requests.
+        let address_requests = self.state_requests().size_hint().0;
+        let mut accounts = HashMap::with_capacity(address_requests);
+        let mut storage = HashMap::with_capacity(address_requests);
+
         for (&address, slots) in self.state_requests() {
             let hashed_address = keccak256(address);
             let hashed_address = hashed_address.as_slice();
