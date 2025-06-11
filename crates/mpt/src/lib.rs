@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 
 /// Module containing MPT code adapted from `zeth`.
 pub mod mpt;
-pub mod state;
 
 /// Ethereum state trie and account storage tries.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
