@@ -222,9 +222,14 @@ impl ArenaBasedMptNode {
             ArenaNodeData::Null => MptNodeReference::Bytes(vec![alloy_rlp::EMPTY_STRING_CODE]),
             ArenaNodeData::Digest(digest) => MptNodeReference::Digest(*digest),
             _ => {
-                let mut encoded = Vec::new();
-                self.encode_id(node_id, &mut encoded);
-                if encoded.len() < 32 {
+                let payload_length = self.payload_length_id(node_id);
+                let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
+
+                let mut encoded = Vec::with_capacity(rlp_length);
+                self.encode_id_with_payload_len(node_id, payload_length, &mut encoded);
+                debug_assert_eq!(encoded.len(), rlp_length);
+
+                if rlp_length < 32 {
                     MptNodeReference::Bytes(encoded)
                 } else {
                     MptNodeReference::Digest(keccak256(encoded))
@@ -234,13 +239,22 @@ impl ArenaBasedMptNode {
     }
 
     fn encode_id(&self, node_id: NodeId, out: &mut dyn alloy_rlp::BufMut) {
+        let payload_length = self.payload_length_id(node_id);
+        self.encode_id_with_payload_len(node_id, payload_length, out);
+    }
+
+    fn encode_id_with_payload_len(
+        &self,
+        node_id: NodeId,
+        payload_length: usize,
+        out: &mut dyn alloy_rlp::BufMut,
+    ) {
         match &self.nodes[node_id] {
             ArenaNodeData::Null => {
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
             ArenaNodeData::Branch(nodes) => {
-                alloy_rlp::Header { list: true, payload_length: self.payload_length_id(node_id) }
-                    .encode(out);
+                alloy_rlp::Header { list: true, payload_length }.encode(out);
                 nodes.iter().for_each(|child_id| match child_id {
                     Some(id) => self.reference_encode_id(*id, out),
                     None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
@@ -249,14 +263,12 @@ impl ArenaBasedMptNode {
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
             ArenaNodeData::Leaf(prefix, value) => {
-                alloy_rlp::Header { list: true, payload_length: self.payload_length_id(node_id) }
-                    .encode(out);
+                alloy_rlp::Header { list: true, payload_length }.encode(out);
                 prefix.as_slice().encode(out);
                 value.as_slice().encode(out);
             }
             ArenaNodeData::Extension(prefix, child_id) => {
-                alloy_rlp::Header { list: true, payload_length: self.payload_length_id(node_id) }
-                    .encode(out);
+                alloy_rlp::Header { list: true, payload_length }.encode(out);
                 prefix.as_slice().encode(out);
                 self.reference_encode_id(*child_id, out);
             }
