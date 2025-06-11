@@ -1,5 +1,5 @@
 use eyre::Result;
-use mpt::{proofs_to_tries, transition_proofs_to_tries, MptNode};
+use mpt::{proofs_to_tries, MptNode};
 use mpt2::ArenaBasedMptNode;
 use reth_trie::{AccountProof, TrieAccount};
 use revm::primitives::{Address, Bytes, HashMap, B256};

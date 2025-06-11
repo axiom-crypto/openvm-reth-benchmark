@@ -58,6 +58,7 @@ dotenv = "0.15.0"
 alloy-primitives.workspace = true
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 criterion = { version = "0.5", features = ["html_reports"] }
+reth-revm.workspace = true
 
 [[bench]]
 name = "mpt_performance"

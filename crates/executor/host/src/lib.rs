@@ -152,7 +152,7 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
 
         // Verify the state root.
         tracing::info!("verifying the state root");
-        let state_root = {
+        let _state_root = {
             let mut mutated_state = state.clone();
             let post_state = HashedPostState::from_bundle_state(&executor_outcome.bundle.state);
             // executor_outcome.hash_state_slow());
