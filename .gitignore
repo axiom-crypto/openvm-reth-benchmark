@@ -28,6 +28,5 @@ elf
 # Metrics
 metrics.json
 
-# Temp
-old.txt
-new.txt
+# Local mpt benchmark data
+client_input_benchmark.bin
