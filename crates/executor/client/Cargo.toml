@@ -17,6 +17,7 @@ serde_with.workspace = true
 # workspace
 openvm-witness-db.workspace = true
 openvm-mpt.workspace = true
+openvm-primitives.workspace = true
 
 # reth
 reth-consensus.workspace = true
@@ -30,7 +31,6 @@ reth-primitives-traits.workspace = true
 reth-trie.workspace = true
 reth-evm.workspace = true
 reth-evm-ethereum.workspace = true
-reth-chainspec.workspace = true
 reth-revm.workspace = true
 
 # revm

@@ -11,7 +11,7 @@ use io::ClientExecutorInput;
 #[allow(unused_imports)]
 pub use openvm_mpt;
 use openvm_mpt::state::HashedPostState;
-use reth_chainspec::{ChainSpec, EthChainSpec, EthereumHardforks, MAINNET};
+use openvm_primitives::chain_spec::mainnet;
 use reth_consensus::{Consensus, HeaderValidator};
 use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus};
 use reth_evm::execute::{BasicBlockExecutor, Executor};
@@ -19,7 +19,7 @@ use reth_evm_ethereum::EthEvmConfig;
 use reth_execution_types::ExecutionOutcome;
 #[allow(unused_imports)]
 pub use reth_primitives;
-use reth_primitives::{Block, Header, RecoveredBlock};
+use reth_primitives::Header;
 use reth_primitives_traits::block::Block as _;
 use reth_revm::db::CacheDB;
 
@@ -47,21 +47,6 @@ pub enum ChainVariant {
     Ethereum,
 }
 
-impl ChainVariant {
-    /// Returns the chain ID for the given variant.
-    pub fn chain_id(&self) -> u64 {
-        match self {
-            ChainVariant::Ethereum => CHAIN_ID_ETH_MAINNET,
-        }
-    }
-
-    pub fn chain_spec(&self) -> Arc<ChainSpec> {
-        match self {
-            ChainVariant::Ethereum => MAINNET.clone(),
-        }
-    }
-}
-
 impl ClientExecutor {
     pub fn execute(&self, mut input: ClientExecutorInput) -> eyre::Result<Header> {
         // Initialize the witnessed database with verified storage proofs.
@@ -69,11 +54,22 @@ impl ClientExecutor {
         let cache_db = CacheDB::new(&witness_db);
 
         // Execute the block.
-        let spec = MAINNET.clone();
+        let spec = Arc::new(mainnet());
         let current_block =
             profile!("recover senders", { input.current_block.clone().try_into_recovered() })?;
 
-        validate_block_consensus(spec.clone(), &current_block)?;
+        // validate the block pre-execution
+        profile!("validate block pre-execution", {
+            let consensus = EthBeaconConsensus::new(spec.clone());
+
+            consensus
+                .validate_header(current_block.sealed_header())
+                .expect("failed to validate header");
+
+            consensus
+                .validate_block_pre_execution(&current_block)
+                .expect("failed to validate block pre-execution");
+        });
 
         let block_executor = BasicBlockExecutor::new(EthEvmConfig::new(spec.clone()), cache_db);
         let executor_output = profile!("execute", { block_executor.execute(&current_block) })?;
@@ -132,20 +128,4 @@ impl ClientExecutor {
 
         Ok(header)
     }
-}
-
-pub fn validate_block_consensus<ChainSpec>(
-    chain_spec: Arc<ChainSpec>,
-    block: &RecoveredBlock<Block>,
-) -> eyre::Result<()>
-where
-    ChainSpec: Send + Sync + EthChainSpec + EthereumHardforks + Debug,
-{
-    let consensus = EthBeaconConsensus::new(chain_spec);
-
-    consensus.validate_header(block.sealed_header())?;
-
-    consensus.validate_block_pre_execution(block)?;
-
-    Ok(())
 }
