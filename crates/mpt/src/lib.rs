@@ -151,13 +151,13 @@ impl FlatEthereumState {
     /// Recursively rebuilds a single node from the flat representation.
     fn rebuild_node_from_flat(&self, flat_trie: &FlatTrieOwned, node_idx: usize) -> MptNode {
         let node = &flat_trie.index[node_idx];
-        let rlp_slice = &flat_trie.blob
-            [node.rlp_offset as usize..(node.rlp_offset + node.rlp_len as u32) as usize];
+        let ref_slice = &flat_trie.blob
+            [node.ref_offset as usize..(node.ref_offset + node.ref_len as u32) as usize];
 
         match node.kind {
             0 => MptNode::default(), // Null
             1 => {
-                // Branch
+                // Branch - reconstruct from reference
                 let mut children: [Option<Box<MptNode>>; 16] = Default::default();
                 let mask = node.data;
                 let mut child_list_idx = 0;
@@ -176,19 +176,27 @@ impl FlatEthereumState {
                 mpt::MptNodeData::Branch(children).into()
             }
             2 => {
-                // Leaf - decode from RLP
-                mpt::MptNode::decode(rlp_slice).unwrap()
+                // Leaf - reconstruct from separate prefix and value storage
+                let prefix_idx = node.data as usize;
+                let prefix = flat_trie.prefixes[prefix_idx].clone();
+                let value = flat_trie.leaf_values[node.child_idx as usize].clone();
+                mpt::MptNodeData::Leaf(prefix, value).into()
             }
             3 => {
-                // Extension
-                let rlp = rlp::Rlp::new(rlp_slice);
-                let prefix: Vec<u8> = rlp.val_at(0).unwrap();
+                // Extension - reconstruct from separate prefix storage
+                let prefix_idx = node.data as usize;
+                let prefix = flat_trie.prefixes[prefix_idx].clone();
                 let child_node = self.rebuild_node_from_flat(flat_trie, node.child_idx as usize);
                 mpt::MptNodeData::Extension(prefix, Box::new(child_node)).into()
             }
             4 => {
-                // Digest - decode from RLP
-                mpt::MptNode::decode(rlp_slice).unwrap()
+                // Digest - the reference contains the digest directly
+                if ref_slice.len() == 32 {
+                    mpt::MptNodeData::Digest(B256::from_slice(ref_slice)).into()
+                } else {
+                    // This shouldn't happen for digest nodes
+                    mpt::MptNode::decode(ref_slice).unwrap()
+                }
             }
             _ => unreachable!(),
         }

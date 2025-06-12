@@ -837,7 +837,7 @@ impl MptNode {
     }
 
     /// A recursive helper to perform a post-order traversal of the MPT and build
-    /// the flat representation.
+    /// the flat representation using node references instead of full RLPs.
     fn add_to_flat(
         &self,
         flat: &mut FlatTrieOwned,
@@ -851,10 +851,23 @@ impl MptNode {
         // Process children first to get their indices in the flat array.
         let (kind, data, child_idx) = match &self.data {
             MptNodeData::Null => (0, 0, u32::MAX),
-            MptNodeData::Leaf(prefix, _) => (2, prefix_nibs(prefix).len() as u16, u32::MAX),
+            MptNodeData::Leaf(prefix, value) => {
+                // Store the value in leaf_values and prefix in prefixes
+                let value_idx = flat.leaf_values.len() as u32;
+                flat.leaf_values.push(value.clone());
+
+                let prefix_idx = flat.prefixes.len() as u16;
+                flat.prefixes.push(prefix.clone());
+
+                (2, prefix_idx, value_idx)
+            }
             MptNodeData::Extension(prefix, child) => {
                 let flat_child_idx = child.add_to_flat(flat, cache);
-                (3, prefix_nibs(prefix).len() as u16, flat_child_idx)
+
+                let prefix_idx = flat.prefixes.len() as u16;
+                flat.prefixes.push(prefix.clone());
+
+                (3, prefix_idx, flat_child_idx)
             }
             MptNodeData::Digest(_) => (4, 0, u32::MAX),
             MptNodeData::Branch(children) => {
@@ -883,11 +896,20 @@ impl MptNode {
         let node_idx = flat.index.len() as u32;
         cache.insert(hash, node_idx);
 
-        let rlp_offset = flat.blob.len() as u32;
-        self.encode(&mut flat.blob);
-        let rlp_len = (flat.blob.len() as u32 - rlp_offset) as u16;
+        // Store the node reference instead of full RLP
+        let ref_offset = flat.blob.len() as u32;
+        let reference = self.reference();
+        match reference {
+            MptNodeReference::Bytes(bytes) => {
+                flat.blob.extend_from_slice(&bytes);
+            }
+            MptNodeReference::Digest(digest) => {
+                flat.blob.extend_from_slice(digest.as_slice());
+            }
+        }
+        let ref_len = (flat.blob.len() as u32 - ref_offset) as u16;
 
-        flat.index.push(FlatNode { kind, data, rlp_offset, rlp_len, child_idx });
+        flat.index.push(FlatNode { kind, data, ref_offset, ref_len, child_idx });
 
         node_idx
     }

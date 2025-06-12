@@ -44,8 +44,8 @@ fn create_synthetic_flat_trie(num_nodes: usize) -> FlatTrieOwned {
         let node = FlatNode {
             kind: (i % 4 + 1) as u8, // Cycle through Branch, Leaf, Extension, Digest
             data: (i % 65536) as u16,
-            rlp_offset: (i * 50) as u32, // Synthetic RLP offset
-            rlp_len: 50,
+            ref_offset: (i * 50) as u32, // Synthetic reference offset
+            ref_len: 50,
             child_idx: if i > 0 { (i - 1) as u32 } else { u32::MAX },
         };
         flat_trie.index.push(node);
@@ -57,17 +57,43 @@ fn create_synthetic_flat_trie(num_nodes: usize) -> FlatTrieOwned {
     // Create synthetic branch children
     flat_trie.branch_children = (0..num_nodes as u32).collect();
 
+    // Create synthetic leaf values
+    flat_trie.leaf_values = (0..num_nodes).map(|i| vec![i as u8; 10]).collect();
+
+    // Create synthetic prefixes
+    flat_trie.prefixes = (0..num_nodes).map(|i| vec![(i % 256) as u8; 5]).collect();
+
     flat_trie
 }
 
-fn bench_mpt_node_serde(c: &mut Criterion) {
-    let ethereum_state = create_synthetic_ethereum_state(10);
+fn bench_ethereum_state_comparison(c: &mut Criterion) {
+    // Create a realistic-sized Ethereum state
+    let ethereum_state = create_synthetic_ethereum_state(20);
+    let flat_state = ethereum_state.to_flat();
 
-    // Serialize once
-    let serialized =
+    // Serialize both formats
+    let mpt_serialized =
         bincode::serde::encode_to_vec(&ethereum_state, bincode::config::standard()).unwrap();
+    let flat_serialized =
+        bincode::serde::encode_to_vec(&flat_state, bincode::config::standard()).unwrap();
 
-    c.bench_function("mpt_node_serialize", |b| {
+    // Print size comparison
+    println!("\n=== Size Comparison ===");
+    println!("Original MPT serialized size: {} bytes", mpt_serialized.len());
+    println!("Flat MPT serialized size: {} bytes", flat_serialized.len());
+    println!(
+        "Size ratio (flat/original): {:.2}x",
+        flat_serialized.len() as f64 / mpt_serialized.len() as f64
+    );
+    println!(
+        "Size difference: {} bytes",
+        flat_serialized.len() as i64 - mpt_serialized.len() as i64
+    );
+
+    // Benchmark serialization
+    let mut group = c.benchmark_group("ethereum_state_serialize");
+
+    group.bench_function("original_mpt", |b| {
         b.iter(|| {
             black_box(
                 bincode::serde::encode_to_vec(&ethereum_state, bincode::config::standard())
@@ -76,59 +102,7 @@ fn bench_mpt_node_serde(c: &mut Criterion) {
         })
     });
 
-    c.bench_function("mpt_node_deserialize", |b| {
-        b.iter(|| {
-            black_box(
-                bincode::serde::decode_from_slice::<EthereumState, _>(
-                    &serialized,
-                    bincode::config::standard(),
-                )
-                .unwrap()
-                .0,
-            )
-        })
-    });
-}
-
-fn bench_flat_trie_serde_current(c: &mut Criterion) {
-    let flat_trie = create_synthetic_flat_trie(10000); // 10k nodes
-
-    // Serialize once
-    let serialized =
-        bincode::serde::encode_to_vec(&flat_trie, bincode::config::standard()).unwrap();
-
-    c.bench_function("flat_trie_current_serialize", |b| {
-        b.iter(|| {
-            black_box(
-                bincode::serde::encode_to_vec(&flat_trie, bincode::config::standard()).unwrap(),
-            )
-        })
-    });
-
-    c.bench_function("flat_trie_current_deserialize", |b| {
-        b.iter(|| {
-            black_box(
-                bincode::serde::decode_from_slice::<FlatTrieOwned, _>(
-                    &serialized,
-                    bincode::config::standard(),
-                )
-                .unwrap()
-                .0,
-            )
-        })
-    });
-}
-
-fn bench_flat_ethereum_state_serde(c: &mut Criterion) {
-    // Create a realistic-sized flat state
-    let ethereum_state = create_synthetic_ethereum_state(50);
-    let flat_state = ethereum_state.to_flat();
-
-    // Serialize once
-    let serialized =
-        bincode::serde::encode_to_vec(&flat_state, bincode::config::standard()).unwrap();
-
-    c.bench_function("flat_ethereum_state_serialize", |b| {
+    group.bench_function("flat_mpt", |b| {
         b.iter(|| {
             black_box(
                 bincode::serde::encode_to_vec(&flat_state, bincode::config::standard()).unwrap(),
@@ -136,11 +110,16 @@ fn bench_flat_ethereum_state_serde(c: &mut Criterion) {
         })
     });
 
-    c.bench_function("flat_ethereum_state_deserialize", |b| {
+    group.finish();
+
+    // Benchmark deserialization
+    let mut group = c.benchmark_group("ethereum_state_deserialize");
+
+    group.bench_function("original_mpt", |b| {
         b.iter(|| {
             black_box(
-                bincode::serde::decode_from_slice::<FlatEthereumState, _>(
-                    &serialized,
+                bincode::serde::decode_from_slice::<EthereumState, _>(
+                    &mpt_serialized,
                     bincode::config::standard(),
                 )
                 .unwrap()
@@ -148,30 +127,22 @@ fn bench_flat_ethereum_state_serde(c: &mut Criterion) {
             )
         })
     });
+
+    group.bench_function("flat_mpt", |b| {
+        b.iter(|| {
+            black_box(
+                bincode::serde::decode_from_slice::<FlatEthereumState, _>(
+                    &flat_serialized,
+                    bincode::config::standard(),
+                )
+                .unwrap()
+                .0,
+            )
+        })
+    });
+
+    group.finish();
 }
 
-fn bench_size_comparison(c: &mut Criterion) {
-    let ethereum_state = create_synthetic_ethereum_state(20);
-    let flat_state = ethereum_state.to_flat();
-
-    let mpt_serialized =
-        bincode::serde::encode_to_vec(&ethereum_state, bincode::config::standard()).unwrap();
-    let flat_serialized =
-        bincode::serde::encode_to_vec(&flat_state, bincode::config::standard()).unwrap();
-
-    println!("MPT serialized size: {} bytes", mpt_serialized.len());
-    println!("Flat serialized size: {} bytes", flat_serialized.len());
-    println!(
-        "Size ratio (flat/mpt): {:.2}",
-        flat_serialized.len() as f64 / mpt_serialized.len() as f64
-    );
-}
-
-criterion_group!(
-    benches,
-    bench_mpt_node_serde,
-    bench_flat_trie_serde_current,
-    bench_flat_ethereum_state_serde,
-    bench_size_comparison
-);
+criterion_group!(benches, bench_ethereum_state_comparison);
 criterion_main!(benches);
