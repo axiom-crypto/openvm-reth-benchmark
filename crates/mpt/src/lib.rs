@@ -25,7 +25,7 @@ pub struct EthereumState {
 /// performance.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EthereumState2 {
-    pub state_trie: ArenaBasedMptNode,
+    pub state_trie: ArenaBasedMptNode<'static>,
     pub storage_tries: StorageTries2,
 }
 
@@ -33,7 +33,7 @@ pub struct EthereumState2 {
 pub struct StorageTries(pub HashMap<B256, MptNode>);
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct StorageTries2(pub HashMap<B256, ArenaBasedMptNode>);
+pub struct StorageTries2(pub HashMap<B256, ArenaBasedMptNode<'static>>);
 
 impl EthereumState {
     /// Builds Ethereum state tries from relevant proofs before and after a state transition.
@@ -200,8 +200,10 @@ impl<'de> Deserialize<'de> for StorageTries2 {
         let mut storage_tries = HashMap::default();
 
         for (addr, rlp_blob) in storage_blobs {
-            let trie =
-                ArenaBasedMptNode::decode_from_rlp(&rlp_blob).map_err(serde::de::Error::custom)?;
+            // We need to leak the memory to get a 'static lifetime for serde compatibility
+            let leaked_bytes: &'static [u8] = Box::leak(rlp_blob.into_boxed_slice());
+            let trie = ArenaBasedMptNode::decode_from_rlp(leaked_bytes)
+                .map_err(serde::de::Error::custom)?;
             storage_tries.insert(addr, trie);
         }
 
@@ -227,8 +229,10 @@ impl<'de> Deserialize<'de> for EthereumState2 {
     {
         let (state_blob, storage_tries): (OptimizedBytes, StorageTries2) =
             Deserialize::deserialize(deserializer)?;
+        // We need to leak the memory to get a 'static lifetime for serde compatibility
+        let leaked_bytes: &'static [u8] = Box::leak(state_blob.0.into_boxed_slice());
         let state_trie =
-            ArenaBasedMptNode::decode_from_rlp(&state_blob.0).map_err(serde::de::Error::custom)?;
+            ArenaBasedMptNode::decode_from_rlp(leaked_bytes).map_err(serde::de::Error::custom)?;
 
         Ok(EthereumState2 { state_trie, storage_tries })
     }
