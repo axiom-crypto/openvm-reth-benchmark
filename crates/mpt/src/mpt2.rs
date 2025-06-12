@@ -316,6 +316,12 @@ impl ArenaBasedMptNode {
         matches!(&self.nodes[self.root_id], ArenaNodeData::Null)
     }
 
+    /// Returns the RLP-encoded bytes of this trie
+    #[inline]
+    pub fn to_rlp_bytes(&self) -> Vec<u8> {
+        self.to_rlp_id(self.root_id)
+    }
+
     /// Clears the trie, replacing its data with an empty node.
     #[inline]
     pub fn clear(&mut self) {
