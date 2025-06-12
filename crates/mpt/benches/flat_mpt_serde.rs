@@ -73,9 +73,8 @@ fn bench_rlp_codec_comparison(c: &mut Criterion) {
     println!("RLP sizes - MptNode: {} bytes, ArenaNode: {} bytes", mpt_rlp.len(), arena_rlp.len());
 
     // Benchmark RLP encoding (serialization)
-    c.bench_function("rlp_encode_mpt_node", |b| b.iter(|| black_box(alloy_rlp::encode(&mpt_node))));
-
-    c.bench_function("rlp_encode_arena_node", |b| b.iter(|| black_box(arena_node.to_rlp_bytes())));
+    // c.bench_function("rlp_encode_mpt_node", |b| b.iter(|| black_box(alloy_rlp::encode(&mpt_node))));
+    // c.bench_function("rlp_encode_arena_node", |b| b.iter(|| black_box(arena_node.to_rlp_bytes())));
 
     // Benchmark RLP decoding (deserialization) - the main target!
     c.bench_function("rlp_decode_mpt_node", |b| {
@@ -132,11 +131,22 @@ fn bench_hash_computation(c: &mut Criterion) {
 }
 
 fn create_synthetic_ethereum_state(num_storage_tries: usize) -> EthereumState {
-    let state_trie = create_synthetic_mpt_node(4, 8); // Depth 4, breadth 8
+    // Use identical data generation for fair comparison
+    let mut state_trie = MptNode::default();
+    for i in 0..1000 {
+        let key = format!("long_key_prefix_{:08x}", i);
+        let value = format!("value_{}", i);
+        let _ = state_trie.insert(key.as_bytes(), value.into_bytes());
+    }
 
     let mut storage_tries = HashMap::with_hasher(DefaultHashBuilder::default());
     for i in 0..num_storage_tries {
-        let storage_trie = create_synthetic_mpt_node(3, 6); // Smaller storage tries
+        let mut storage_trie = MptNode::default();
+        for j in 0..100 {
+            let key = format!("storage_key_{:08x}", j);
+            let value = format!("storage_value_{}", j);
+            let _ = storage_trie.insert(key.as_bytes(), value.into_bytes());
+        }
         storage_tries.insert(B256::from([i as u8; 32]), storage_trie);
     }
 
@@ -144,11 +154,22 @@ fn create_synthetic_ethereum_state(num_storage_tries: usize) -> EthereumState {
 }
 
 fn create_synthetic_ethereum_state2(num_storage_tries: usize) -> EthereumState2 {
-    let state_trie = create_synthetic_arena_mpt_node(4, 8); // Depth 4, breadth 8
+    // Use identical data generation for fair comparison
+    let mut state_trie = ArenaBasedMptNode::default();
+    for i in 0..1000 {
+        let key = format!("long_key_prefix_{:08x}", i);
+        let value = format!("value_{}", i);
+        let _ = state_trie.insert(key.as_bytes(), value.into_bytes());
+    }
 
     let mut storage_tries = HashMap::with_hasher(DefaultHashBuilder::default());
     for i in 0..num_storage_tries {
-        let storage_trie = create_synthetic_arena_mpt_node(3, 6); // Smaller storage tries
+        let mut storage_trie = ArenaBasedMptNode::default();
+        for j in 0..100 {
+            let key = format!("storage_key_{:08x}", j);
+            let value = format!("storage_value_{}", j);
+            let _ = storage_trie.insert(key.as_bytes(), value.into_bytes());
+        }
         storage_tries.insert(B256::from([i as u8; 32]), storage_trie);
     }
 
@@ -276,13 +297,13 @@ fn bench_rlp_nodes_extraction(c: &mut Criterion) {
 
 criterion_group!(
     benches,
-    bench_rlp_codec_comparison, // NEW: The main test!
-    bench_lookup_performance,   // NEW: Fair lookup comparison
-    bench_hash_computation,     // NEW: Fair hash comparison
+    // bench_rlp_codec_comparison, // NEW: The main test!
+    // bench_lookup_performance,   // NEW: Fair lookup comparison
+    // bench_hash_computation,     // NEW: Fair hash comparison
     bench_ethereum_state_serde,
     bench_ethereum_state2_serde,
-    bench_mpt_node_comparison,
+    // bench_mpt_node_comparison,
     bench_size_comparison,
-    bench_rlp_nodes_extraction
+    // bench_rlp_nodes_extraction
 );
 criterion_main!(benches);
