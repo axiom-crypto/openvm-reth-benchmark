@@ -7,14 +7,14 @@ use core::{cell::RefCell, fmt::Debug};
 use reth_trie::AccountProof;
 use revm::primitives::HashMap;
 use revm_primitives::{keccak256, Address};
-use serde::{de, ser, Deserialize, Serialize};
+use serde::{de, ser};
 
 use eyre::Result;
 
 use crate::word_bytes::OptimizedBytes;
 use crate::{
     mpt::{Error, MptNodeReference, EMPTY_ROOT},
-    utils::{lcp, prefix_nibs, to_encoded_path, to_nibs},
+    utils::{lcp, to_encoded_path, to_nibs},
     EthereumState2, StorageTries2,
 };
 use smallvec::SmallVec;
@@ -58,6 +58,7 @@ pub struct ArenaBasedMptNode<'a> {
     root_id: NodeId,
     // Store owned data for mutations - this is our "arena" for new allocations
     owned_data: Vec<Vec<u8>>,
+    scratch: RefCell<Vec<u8>>, // reusable buffer for RLP encoding
 }
 
 impl ser::Serialize for ArenaBasedMptNode<'_> {
@@ -93,7 +94,13 @@ impl<'a> Default for ArenaBasedMptNode<'a> {
         nodes.push(ArenaNodeData::Null);
         cached_references.push(RefCell::new(None));
 
-        Self { nodes, cached_references, root_id: 0, owned_data: Vec::new() }
+        Self {
+            nodes,
+            cached_references,
+            root_id: 0,
+            owned_data: Vec::new(),
+            scratch: RefCell::new(Vec::with_capacity(128)), // small, grows as needed
+        }
     }
 }
 
@@ -119,7 +126,13 @@ impl<'a> ArenaBasedMptNode<'a> {
         nodes.push(ArenaNodeData::Null);
         cached_references.push(RefCell::new(None));
 
-        Self { nodes, cached_references, root_id: 0, owned_data: Vec::new() }
+        Self {
+            nodes,
+            cached_references,
+            root_id: 0,
+            owned_data: Vec::new(),
+            scratch: RefCell::new(Vec::with_capacity(128)),
+        }
     }
 
     /// Decodes an RLP-encoded node directly into an ArenaBasedMptNode with zero-copy optimization
@@ -253,7 +266,13 @@ impl<'a> ArenaBasedMptNode<'a> {
 impl<'a> ArenaBasedMptNode<'a> {
     fn new(root_id: NodeId, nodes: Vec<ArenaNodeData<'a>>) -> Self {
         let cached_references = (0..nodes.len()).map(|_| RefCell::new(None)).collect();
-        Self { nodes, cached_references, root_id, owned_data: Vec::new() }
+        Self {
+            nodes,
+            cached_references,
+            root_id,
+            owned_data: Vec::new(),
+            scratch: RefCell::new(Vec::with_capacity(128)),
+        }
     }
 
     fn add_node(&mut self, data: ArenaNodeData<'a>) -> NodeId {
@@ -305,14 +324,17 @@ impl<'a> ArenaBasedMptNode<'a> {
                 let payload_length = self.payload_length_id(node_id);
                 let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
 
-                let mut encoded = Vec::with_capacity(rlp_length);
-                self.encode_id_with_payload_len(node_id, payload_length, &mut encoded);
-                debug_assert_eq!(encoded.len(), rlp_length);
+                // Use the reusable scratch buffer
+                let mut buf = self.scratch.borrow_mut();
+                buf.clear();
+                buf.reserve(rlp_length);
+                self.encode_id_with_payload_len(node_id, payload_length, &mut *buf);
+                debug_assert_eq!(buf.len(), rlp_length);
 
                 if rlp_length < 32 {
-                    MptNodeReference::Bytes(encoded)
+                    MptNodeReference::Bytes(buf[..].to_vec())
                 } else {
-                    MptNodeReference::Digest(keccak256(encoded))
+                    MptNodeReference::Digest(keccak256(&buf[..]))
                 }
             }
         }
@@ -1078,6 +1100,7 @@ pub fn resolve_nodes_arena<'a>(
         cached_references: Vec::new(),
         root_id: 0,
         owned_data: Vec::new(),
+        scratch: RefCell::new(Vec::with_capacity(128)),
     };
 
     let root_id = resolve_node_recursive(root, root.root_id, node_store, &mut new_arena);
