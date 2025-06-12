@@ -21,6 +21,31 @@ use smallvec::SmallVec;
 
 pub type NodeId = usize;
 
+/// Optimized conversion from hex-encoded path directly to nibbles SmallVec
+/// Avoids the Vec<u8> -> SmallVec<u8> round-trip that was causing extra allocations
+fn prefix_to_small_nibs(encoded_path: &[u8]) -> SmallVec<[u8; 64]> {
+    if encoded_path.is_empty() {
+        return SmallVec::new();
+    }
+
+    let mut nibs = SmallVec::with_capacity(encoded_path.len() * 2);
+    let first_byte = encoded_path[0];
+    let is_odd = (first_byte & 0x10) != 0;
+
+    // Handle the first nibble if odd length
+    if is_odd {
+        nibs.push(first_byte & 0x0f);
+    }
+
+    // Process remaining bytes, starting from index 1
+    for &byte in &encoded_path[1..] {
+        nibs.push(byte >> 4); // High nibble
+        nibs.push(byte & 0x0f); // Low nibble
+    }
+
+    nibs
+}
+
 /// Represents the root node of a sparse Merkle Patricia Trie.
 ///
 /// This is the new arena-based implementation that stores all nodes in a flat vector
@@ -95,8 +120,8 @@ impl ArenaBasedMptNode {
     /// Decodes an RLP-encoded node directly into an ArenaBasedMptNode
     pub fn decode_from_rlp(bytes: impl AsRef<[u8]>) -> Result<Self, Error> {
         let bytes = bytes.as_ref();
-        // Heuristic: average node is ~40 bytes, so estimate node count
-        let estimated_nodes = (bytes.len() / 40).max(16);
+        // Improved heuristic: real Ethereum nodes average ~20-24 bytes, overshoot to avoid reallocations
+        let estimated_nodes = (bytes.len() / 24).saturating_add(64);
         let mut arena = ArenaBasedMptNode::with_capacity(estimated_nodes);
 
         let mut buf = bytes;
@@ -194,14 +219,14 @@ impl ArenaBasedMptNode {
             if payload_buf.len() < path_header.payload_length {
                 return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
             }
-            let path = payload_buf[..path_header.payload_length].to_vec();
+            let path_slice = &payload_buf[..path_header.payload_length];
             payload_buf.advance(path_header.payload_length);
 
-            if path.is_empty() {
+            if path_slice.is_empty() {
                 return Err(Error::Rlp(alloy_rlp::Error::Custom("empty path")));
             }
 
-            let prefix = path[0];
+            let prefix = path_slice[0];
             if (prefix & 0x20) != 0 {
                 // Leaf node (prefix 0x20 or 0x21)
                 // Manually decode the second item (value)
@@ -216,14 +241,14 @@ impl ArenaBasedMptNode {
                 let value = payload_buf[..value_header.payload_length].to_vec();
                 payload_buf.advance(value_header.payload_length);
 
-                // Convert encoded path to nibbles for internal storage
-                let nibbles = prefix_nibs(&path);
+                // Convert encoded path to nibbles for internal storage - direct conversion without Vec allocation
+                let nibbles = prefix_to_small_nibs(path_slice);
                 Ok(self.add_node(ArenaNodeData::Leaf(nibbles, value)))
             } else {
                 // Extension node (prefix 0x00 or 0x01)
                 let child_id = self.decode_node_recursive(&mut payload_buf)?;
-                // Convert encoded path to nibbles for internal storage
-                let nibbles = prefix_nibs(&path);
+                // Convert encoded path to nibbles for internal storage - direct conversion without Vec allocation
+                let nibbles = prefix_to_small_nibs(path_slice);
                 Ok(self.add_node(ArenaNodeData::Extension(nibbles, child_id)))
             }
         }
