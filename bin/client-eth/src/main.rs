@@ -10,6 +10,21 @@ use {
     openvm_pairing::{bls12_381::Bls12_381G1Affine, bn254::Bn254G1Affine},
 };
 
+// TODO: this getrandom stuff is temporary, it shall be removed as soon as
+// k256 -> ecdsa -> elliptic-curve -> crypto-generic -> getrandom is updated to 0.3
+use core::num::NonZeroU32;
+use getrandom::register_custom_getrandom;
+use getrandom::Error;
+
+// Some application-specific error code
+const MY_CUSTOM_ERROR_CODE: u32 = Error::CUSTOM_START + 42;
+pub fn always_fail(_buf: &mut [u8]) -> Result<(), Error> {
+    let code = NonZeroU32::new(MY_CUSTOM_ERROR_CODE).unwrap();
+    Err(Error::from(code))
+}
+
+register_custom_getrandom!(always_fail);
+
 openvm::init!();
 
 pub fn main() {

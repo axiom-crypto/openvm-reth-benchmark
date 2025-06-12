@@ -219,6 +219,7 @@ dependencies = [
  "paste",
  "proptest",
  "rand 0.9.1",
+ "rayon",
  "ruint",
  "rustc-hash",
  "serde",
@@ -1559,6 +1560,7 @@ dependencies = [
  "allocator-api2",
  "equivalent",
  "foldhash",
+ "rayon",
  "serde",
 ]
 
@@ -1795,6 +1797,7 @@ checksum = "cea70ddb795996207ad57735b50c5982d8844f38ba9ee5f1aedcfb708a2aa11e"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.4",
+ "rayon",
  "serde",
 ]
 
@@ -2301,6 +2304,7 @@ dependencies = [
 name = "openvm-client-eth"
 version = "0.0.0"
 dependencies = [
+ "getrandom 0.2.16",
  "k256",
  "log",
  "openvm",

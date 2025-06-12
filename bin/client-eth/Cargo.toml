@@ -33,6 +33,7 @@ tracing = { version = "0.1", features = [
 
 reth-stateless = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8" }
 reth-execution-types = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8" }
+getrandom = { version = "0.2.16", features = ["custom"] }
 
 [features]
 default = ["kzg-intrinsics"]

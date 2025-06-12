@@ -11,20 +11,15 @@ use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
 use reth_chainspec::MAINNET;
 use reth_consensus::{Consensus, HeaderValidator};
-use reth_ethereum_consensus::validate_block_post_execution;
-use reth_ethereum_consensus::EthBeaconConsensus;
+use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus};
 use reth_evm::execute::{BasicBlockExecutor, Executor};
 use reth_evm_ethereum::EthEvmConfig;
-use reth_primitives::Block;
-use reth_primitives::RecoveredBlock;
+use reth_primitives::{Block, RecoveredBlock};
 use reth_primitives_traits::block::Block as _;
 use reth_revm::db::BundleState;
 use reth_stateless::StatelessInput;
 use revm::database::CacheDB;
-use revm_primitives::Address;
-use revm_primitives::HashMap;
-use revm_primitives::B256;
-use revm_primitives::U256;
+use revm_primitives::{Address, HashMap, B256, U256};
 
 /// An executor that fetches data from a [Provider] to execute blocks in the [ClientExecutor].
 #[derive(Debug, Clone)]
