@@ -11,6 +11,7 @@ use serde::{de, ser, Deserialize, Serialize};
 
 use eyre::Result;
 
+use crate::word_bytes::OptimizedBytes;
 use crate::{
     mpt::{Error, MptNodeReference, EMPTY_ROOT},
     utils::{lcp, prefix_nibs, to_encoded_path, to_nibs},
@@ -38,7 +39,7 @@ impl ser::Serialize for ArenaBasedMptNode {
     {
         // Serialize as a compact RLP blob with ALL children inlined!
         // This is much smaller and faster than serializing the arena structure
-        self.to_full_rlp().serialize(serializer)
+        OptimizedBytes(self.to_full_rlp()).serialize(serializer)
     }
 }
 
@@ -48,8 +49,8 @@ impl<'de> de::Deserialize<'de> for ArenaBasedMptNode {
         D: de::Deserializer<'de>,
     {
         // Deserialize the RLP blob and use our fast streaming decoder!
-        let rlp_blob: Vec<u8> = Vec::deserialize(deserializer)?;
-        ArenaBasedMptNode::decode_from_rlp(&rlp_blob).map_err(de::Error::custom)
+        let rlp_blob: OptimizedBytes = OptimizedBytes::deserialize(deserializer)?;
+        ArenaBasedMptNode::decode_from_rlp(&rlp_blob.0).map_err(de::Error::custom)
     }
 }
 
