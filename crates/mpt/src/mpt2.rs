@@ -134,76 +134,76 @@ impl ArenaBasedMptNode {
         let mut payload_buf = &buf[..header.payload_length];
         buf.advance(header.payload_length);
 
-        // Count items in the list
-        let mut item_count = 0;
-        {
-            let mut counter_buf = payload_buf;
-            while !counter_buf.is_empty() {
-                let item_header =
-                    alloy_rlp::Header::decode(&mut counter_buf).map_err(Error::Rlp)?;
-                counter_buf.advance(item_header.payload_length);
-                item_count += 1;
-            }
+        // Probe the first two items to determine if this is a 2-item or 17-item node
+        // without scanning the entire payload
+        let mut probe_buf = payload_buf;
+
+        // Try to parse the first item from the probe
+        let h1 = alloy_rlp::Header::decode(&mut probe_buf).map_err(Error::Rlp)?;
+        if probe_buf.len() < h1.payload_length {
+            return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
         }
+        probe_buf.advance(h1.payload_length);
 
-        match item_count {
-            2 => {
-                // Either extension or leaf node
-                // Manually decode the first item (path)
-                let path_header =
-                    alloy_rlp::Header::decode(&mut payload_buf).map_err(Error::Rlp)?;
-                if path_header.list {
-                    return Err(Error::Rlp(alloy_rlp::Error::Custom("expected string for path")));
-                }
-                if payload_buf.len() < path_header.payload_length {
-                    return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
-                }
-                let path = payload_buf[..path_header.payload_length].to_vec();
-                payload_buf.advance(path_header.payload_length);
+        // Try to parse the second item
+        let h2 = alloy_rlp::Header::decode(&mut probe_buf).map_err(Error::Rlp)?;
+        if probe_buf.len() < h2.payload_length {
+            return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
+        }
+        probe_buf.advance(h2.payload_length);
 
-                if path.is_empty() {
-                    return Err(Error::Rlp(alloy_rlp::Error::Custom("empty path")));
-                }
+        // If the probe buffer is now empty, it was a 2-item node
+        // Otherwise, it's a 17-item branch node
+        let is_branch = !probe_buf.is_empty();
 
-                let prefix = path[0];
-                if (prefix & 0x20) != 0 {
-                    // Leaf node (prefix 0x20 or 0x21)
-                    // Manually decode the second item (value)
-                    let value_header =
-                        alloy_rlp::Header::decode(&mut payload_buf).map_err(Error::Rlp)?;
-                    if value_header.list {
-                        return Err(Error::Rlp(alloy_rlp::Error::Custom(
-                            "expected string for value",
-                        )));
-                    }
-                    if payload_buf.len() < value_header.payload_length {
-                        return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
-                    }
-                    let value = payload_buf[..value_header.payload_length].to_vec();
-                    payload_buf.advance(value_header.payload_length);
-
-                    // Convert encoded path to nibbles for internal storage
-                    let nibbles = prefix_nibs(&path);
-                    Ok(self.add_node(ArenaNodeData::Leaf(nibbles, value)))
-                } else {
-                    // Extension node (prefix 0x00 or 0x01)
-                    let child_id = self.decode_node_recursive(&mut payload_buf)?;
-                    // Convert encoded path to nibbles for internal storage
-                    let nibbles = prefix_nibs(&path);
-                    Ok(self.add_node(ArenaNodeData::Extension(nibbles, child_id)))
+        if is_branch {
+            // Branch node (17 items)
+            let mut children = [None; 16];
+            for child_opt in children.iter_mut() {
+                let child_id = self.decode_node_recursive(&mut payload_buf)?;
+                if child_id != 0 {
+                    *child_opt = Some(child_id);
                 }
             }
-            17 => {
-                // Branch node
-                let mut children = [None; 16];
-                for child_opt in children.iter_mut() {
-                    let child_id = self.decode_node_recursive(&mut payload_buf)?;
-                    if child_id != 0 {
-                        *child_opt = Some(child_id);
-                    }
-                }
 
-                // Manually decode the final value (should be empty for MPT)
+            // Manually decode the final value (should be empty for MPT)
+            let value_header = alloy_rlp::Header::decode(&mut payload_buf).map_err(Error::Rlp)?;
+            if value_header.list {
+                return Err(Error::Rlp(alloy_rlp::Error::Custom("expected string for value")));
+            }
+            if payload_buf.len() < value_header.payload_length {
+                return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
+            }
+            let value = payload_buf[..value_header.payload_length].to_vec();
+            payload_buf.advance(value_header.payload_length);
+
+            if !value.is_empty() {
+                return Err(Error::ValueInBranch);
+            }
+
+            Ok(self.add_node(ArenaNodeData::Branch(children)))
+        } else {
+            // Leaf or Extension node (2 items)
+            // Either extension or leaf node
+            // Manually decode the first item (path)
+            let path_header = alloy_rlp::Header::decode(&mut payload_buf).map_err(Error::Rlp)?;
+            if path_header.list {
+                return Err(Error::Rlp(alloy_rlp::Error::Custom("expected string for path")));
+            }
+            if payload_buf.len() < path_header.payload_length {
+                return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
+            }
+            let path = payload_buf[..path_header.payload_length].to_vec();
+            payload_buf.advance(path_header.payload_length);
+
+            if path.is_empty() {
+                return Err(Error::Rlp(alloy_rlp::Error::Custom("empty path")));
+            }
+
+            let prefix = path[0];
+            if (prefix & 0x20) != 0 {
+                // Leaf node (prefix 0x20 or 0x21)
+                // Manually decode the second item (value)
                 let value_header =
                     alloy_rlp::Header::decode(&mut payload_buf).map_err(Error::Rlp)?;
                 if value_header.list {
@@ -215,13 +215,16 @@ impl ArenaBasedMptNode {
                 let value = payload_buf[..value_header.payload_length].to_vec();
                 payload_buf.advance(value_header.payload_length);
 
-                if !value.is_empty() {
-                    return Err(Error::ValueInBranch);
-                }
-
-                Ok(self.add_node(ArenaNodeData::Branch(children)))
+                // Convert encoded path to nibbles for internal storage
+                let nibbles = prefix_nibs(&path);
+                Ok(self.add_node(ArenaNodeData::Leaf(nibbles, value)))
+            } else {
+                // Extension node (prefix 0x00 or 0x01)
+                let child_id = self.decode_node_recursive(&mut payload_buf)?;
+                // Convert encoded path to nibbles for internal storage
+                let nibbles = prefix_nibs(&path);
+                Ok(self.add_node(ArenaNodeData::Extension(nibbles, child_id)))
             }
-            _ => Err(Error::Rlp(alloy_rlp::Error::Custom("invalid list length for mpt node"))),
         }
     }
 }
