@@ -8,6 +8,7 @@
 
 use crate::mpt::{keccak, prefix_nibs, to_nibs, EMPTY_ROOT};
 use alloy_primitives::B256;
+use rlp::Rlp;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// A single node in the flat MPT index.
@@ -20,14 +21,14 @@ pub struct FlatNode {
     /// 0: Null, 1: Branch, 2: Leaf, 3: Extension, 4: Digest.
     pub kind: u8,
     /// For a branch, this is a bitmask where the i-th bit is set if the i-th child exists.
-    /// For Leaf/Extension, this stores the length of the prefix nibbles.
+    /// For Leaf/Extension with digest reference, this is the index into prefixes array.
+    /// For Leaf/Extension with inline reference, this is unused (set to 0).
     pub data: u16,
     /// The offset of the node's reference data within the `blob`.
     pub ref_offset: u32,
     /// The length of the node's reference data within the `blob`.
     pub ref_len: u16,
     /// For a Branch or Extension node, this is the index of its first child in the `index` slice.
-    /// For a Branch, its children are stored contiguously from this index.
     /// For a Leaf node, this is the index into leaf_values.
     pub child_idx: u32,
 }
@@ -45,7 +46,7 @@ pub struct FlatTrieOwned {
     pub branch_children: Vec<u32>,
     /// Stores leaf values separately for efficient access
     pub leaf_values: Vec<Vec<u8>>,
-    /// Stores prefix data for leaf and extension nodes
+    /// Stores prefix data only for leaf and extension nodes with digest references
     pub prefixes: Vec<Vec<u8>>,
 }
 
@@ -244,10 +245,21 @@ impl<'a> FlatTrie<'a> {
                     }
                 }
                 2 => {
-                    // Leaf - get prefix from prefixes array and value from leaf_values
-                    let prefix_idx = node.data as usize;
-                    let prefix = &self.prefixes[prefix_idx];
-                    let leaf_nibbles = prefix_nibs(prefix);
+                    // Leaf - handle both inline RLP and digest references
+                    let ref_slice = &self.blob[node.ref_offset as usize
+                        ..(node.ref_offset + node.ref_len as u32) as usize];
+
+                    let leaf_nibbles = if ref_slice.len() == 32 {
+                        // Digest reference - get prefix from prefixes array
+                        let prefix_idx = node.data as usize;
+                        let prefix = &self.prefixes[prefix_idx];
+                        prefix_nibs(prefix)
+                    } else {
+                        // Inline RLP - parse to get prefix
+                        let rlp = Rlp::new(ref_slice);
+                        let prefix_bytes: Vec<u8> = rlp.val_at(0)?;
+                        prefix_nibs(&prefix_bytes)
+                    };
 
                     if leaf_nibbles.as_slice() == nibbles_view {
                         // Get the value from leaf_values using the child_idx as index
@@ -259,10 +271,21 @@ impl<'a> FlatTrie<'a> {
                     return Ok(None);
                 }
                 3 => {
-                    // Extension - get prefix from prefixes array
-                    let prefix_idx = node.data as usize;
-                    let prefix = &self.prefixes[prefix_idx];
-                    let ext_nibbles = prefix_nibs(prefix);
+                    // Extension - handle both inline RLP and digest references
+                    let ref_slice = &self.blob[node.ref_offset as usize
+                        ..(node.ref_offset + node.ref_len as u32) as usize];
+
+                    let ext_nibbles = if ref_slice.len() == 32 {
+                        // Digest reference - get prefix from prefixes array
+                        let prefix_idx = node.data as usize;
+                        let prefix = &self.prefixes[prefix_idx];
+                        prefix_nibs(prefix)
+                    } else {
+                        // Inline RLP - parse to get prefix
+                        let rlp = Rlp::new(ref_slice);
+                        let prefix_bytes: Vec<u8> = rlp.val_at(0)?;
+                        prefix_nibs(&prefix_bytes)
+                    };
 
                     if let Some(remaining_nibbles) =
                         nibbles_view.strip_prefix(ext_nibbles.as_slice())

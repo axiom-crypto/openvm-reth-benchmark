@@ -176,16 +176,30 @@ impl FlatEthereumState {
                 mpt::MptNodeData::Branch(children).into()
             }
             2 => {
-                // Leaf - reconstruct from separate prefix and value storage
-                let prefix_idx = node.data as usize;
-                let prefix = flat_trie.prefixes[prefix_idx].clone();
+                // Leaf - handle both inline RLP and digest references
+                let prefix = if ref_slice.len() == 32 {
+                    // Digest reference - get prefix from prefixes array
+                    let prefix_idx = node.data as usize;
+                    flat_trie.prefixes[prefix_idx].clone()
+                } else {
+                    // Inline RLP - parse to get prefix
+                    let rlp = rlp::Rlp::new(ref_slice);
+                    rlp.val_at(0).unwrap()
+                };
                 let value = flat_trie.leaf_values[node.child_idx as usize].clone();
                 mpt::MptNodeData::Leaf(prefix, value).into()
             }
             3 => {
-                // Extension - reconstruct from separate prefix storage
-                let prefix_idx = node.data as usize;
-                let prefix = flat_trie.prefixes[prefix_idx].clone();
+                // Extension - handle both inline RLP and digest references
+                let prefix = if ref_slice.len() == 32 {
+                    // Digest reference - get prefix from prefixes array
+                    let prefix_idx = node.data as usize;
+                    flat_trie.prefixes[prefix_idx].clone()
+                } else {
+                    // Inline RLP - parse to get prefix
+                    let rlp = rlp::Rlp::new(ref_slice);
+                    rlp.val_at(0).unwrap()
+                };
                 let child_node = self.rebuild_node_from_flat(flat_trie, node.child_idx as usize);
                 mpt::MptNodeData::Extension(prefix, Box::new(child_node)).into()
             }
