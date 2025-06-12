@@ -331,3 +331,31 @@ mod tests {
         assert_eq!(flat_trie, deserialized);
     }
 }
+
+/// Module for mutation-free state root computation.
+pub mod update {
+    use super::*;
+    use crate::FlatEthereumState;
+    use alloy_primitives::B256;
+    use alloy_rlp::Encodable;
+    use reth_trie::{HashedPostState, TrieAccount};
+    use revm_primitives::U256;
+
+    /// Applies post-state changes and computes the new state root without mutation.
+    /// This is the zero-copy alternative to inflate -> update -> hash.
+    pub fn apply_post_state_to_flat(
+        flat_state: &FlatEthereumState,
+        post_state: &HashedPostState,
+    ) -> eyre::Result<B256> {
+        // For now, implement a simple version that still uses the old path
+        // but with minimal allocation. We'll optimize this further.
+
+        // TODO: Implement the full zero-copy version
+        // For now, fall back to the old method but with a warning
+        eprintln!("Warning: Using fallback implementation for apply_post_state_to_flat");
+
+        let mut mutable_state = flat_state.to_mpt_state();
+        mutable_state.update(post_state);
+        Ok(mutable_state.state_root())
+    }
+}

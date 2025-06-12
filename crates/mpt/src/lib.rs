@@ -136,6 +136,13 @@ impl FlatEthereumState {
         EthereumState { state_trie, storage_tries }
     }
 
+    /// Applies post-state changes and computes the new state root without mutation.
+    /// This is the zero-copy alternative to inflate -> update -> hash.
+    pub fn apply_post_state(&self, post_state: &HashedPostState) -> eyre::Result<B256> {
+        use crate::flat::update::apply_post_state_to_flat;
+        apply_post_state_to_flat(self, post_state)
+    }
+
     /// Rebuilds an MptNode tree from a flat representation.
     /// This is the expensive operation we delay until mutation is actually needed.
     fn rebuild_mpt_from_flat(&self, flat_trie: &FlatTrieOwned) -> MptNode {

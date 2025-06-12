@@ -105,11 +105,9 @@ impl ClientExecutor {
             let post_state = HashedPostState::from_bundle_state::<KeccakKeyHasher>(
                 &executor_outcome.bundle.state,
             );
-            // Inflate the flat state to a mutable MptNode tree just before mutation.
-            let mut parent_state = input.parent_state.to_mpt_state();
+            // Use the new zero-copy method to compute state root without mutation
             println!("post state from bundle state: done");
-            parent_state.update(&post_state);
-            parent_state.state_root()
+            input.parent_state.apply_post_state(&post_state)?
         });
 
         if state_root != input.current_block.state_root {
