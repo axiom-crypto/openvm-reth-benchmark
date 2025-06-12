@@ -851,7 +851,7 @@ impl MptNode {
         // Process children first to get their indices in the flat array.
         let (kind, data, child_idx) = match &self.data {
             MptNodeData::Null => (0, 0, u32::MAX),
-            MptNodeData::Leaf(prefix, value) => {
+            MptNodeData::Leaf(_prefix, value) => {
                 // Store the value in leaf_values
                 let value_idx = flat.leaf_values.len() as u32;
                 flat.leaf_values.push(value.clone());
@@ -859,7 +859,7 @@ impl MptNode {
                 // We'll determine if we need to store the prefix separately after we know the reference type
                 (2, 0, value_idx)
             }
-            MptNodeData::Extension(prefix, child) => {
+            MptNodeData::Extension(_prefix, child) => {
                 let flat_child_idx = child.add_to_flat(flat, cache);
 
                 // We'll determine if we need to store the prefix separately after we know the reference type

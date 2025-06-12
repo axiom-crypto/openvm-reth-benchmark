@@ -118,7 +118,7 @@ mod flat_trie_owned_serde {
         }
     }
 
-    pub fn serialize<S>(trie: &FlatTrieOwned, serializer: S) -> Result<S::Ok, S::Error>
+    pub(super) fn serialize<S>(trie: &FlatTrieOwned, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -137,7 +137,7 @@ mod flat_trie_owned_serde {
         state.end()
     }
 
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<FlatTrieOwned, D::Error>
+    pub(super) fn deserialize<'de, D>(deserializer: D) -> Result<FlatTrieOwned, D::Error>
     where
         D: Deserializer<'de>,
     {

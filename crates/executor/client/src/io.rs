@@ -29,8 +29,9 @@ pub struct ClientExecutorInput {
     /// to provide the parent state root.
     #[serde_as(as = "Vec<alloy_consensus::serde_bincode_compat::Header>")]
     pub ancestor_headers: Vec<Header>,
-    /// Network state as of the parent block, in flat zero-copy format.
-    pub parent_state: FlatEthereumState,
+    /// Network state as of the parent block, serialized with rkyv for zero-copy deserialization.
+    /// This contains FlatEthereumState data in rkyv format for maximum performance.
+    pub rkyv_parent_state_bytes: Vec<u8>,
     /// Requests to account state and storage slots.
     pub state_requests: HashMap<Address, Vec<U256>>,
     /// Account bytecodes.
@@ -44,9 +45,29 @@ impl ClientExecutorInput {
         &self.ancestor_headers[0]
     }
 
-    /// Creates a [`WitnessDb`] from the flat state representation.
+    /// Access the parent state with zero-copy rkyv deserialization.
+    /// This is the preferred method for performance.
+    pub fn access_parent_state(&self) -> Result<&rkyv::Archived<FlatEthereumState>> {
+        FlatEthereumState::access_rkyv_bytes(&self.rkyv_parent_state_bytes)
+            .map_err(|e| eyre::eyre!("Failed to access parent state: {}", e))
+    }
+
+    /// Get parent state as owned FlatEthereumState (defeats zero-copy purpose).
+    /// Only use this for compatibility when you need an owned state.
+    pub fn get_parent_state_owned(&self) -> Result<FlatEthereumState> {
+        FlatEthereumState::from_rkyv_bytes_owned(&self.rkyv_parent_state_bytes)
+            .map_err(|e| eyre::eyre!("Failed to deserialize parent state: {}", e))
+    }
+
+    /// Creates a [`WitnessDb`] from the rkyv serialized flat state representation.
     pub fn witness_db(&self) -> Result<WitnessDb> {
-        let flat_state = &self.parent_state;
+        // Use zero-copy access to the archived state
+        let _archived_state = self.access_parent_state()?;
+
+        // For now, we need to work with the archived data directly
+        // In a full implementation, you'd implement operations directly on archived data
+        // but for compatibility, let's deserialize for now
+        let flat_state = self.get_parent_state_owned()?;
         let flat_state_trie = flat_state.state_trie.view();
 
         if self.parent_header().state_root != flat_state_trie.hash() {

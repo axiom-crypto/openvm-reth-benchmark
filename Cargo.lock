@@ -4684,6 +4684,7 @@ dependencies = [
  "reth-trie",
  "revm",
  "revm-primitives 19.1.0",
+ "rkyv",
  "rlp 0.6.1",
  "serde",
  "serde_with",

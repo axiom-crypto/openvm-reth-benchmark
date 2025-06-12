@@ -48,7 +48,7 @@ pub enum ChainVariant {
 }
 
 impl ClientExecutor {
-    pub fn execute(&self, mut input: ClientExecutorInput) -> eyre::Result<Header> {
+    pub fn execute(&self, input: ClientExecutorInput) -> eyre::Result<Header> {
         // Initialize the witnessed database with verified storage proofs.
         let witness_db = input.witness_db()?;
         let cache_db = CacheDB::new(&witness_db);
@@ -107,7 +107,9 @@ impl ClientExecutor {
             );
             // Use the new zero-copy method to compute state root without mutation
             println!("post state from bundle state: done");
-            input.parent_state.apply_post_state(&post_state)?
+            // Get the parent state and apply the post state
+            let flat_state = input.get_parent_state_owned()?;
+            flat_state.apply_post_state(&post_state)?
         });
 
         if state_root != input.current_block.state_root {

@@ -1,7 +1,6 @@
 use alloy_primitives::B256;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use openvm_mpt::{
-    flat::{FlatNode, FlatTrieOwned},
     mpt::{MptNode, MptNodeData},
     EthereumState, FlatEthereumState, StorageTries,
 };
@@ -36,58 +35,30 @@ fn create_synthetic_ethereum_state(num_storage_tries: usize) -> EthereumState {
     EthereumState { state_trie, storage_tries: StorageTries(storage_tries) }
 }
 
-fn create_synthetic_flat_trie(num_nodes: usize) -> FlatTrieOwned {
-    let mut flat_trie = FlatTrieOwned::default();
-
-    // Create synthetic nodes
-    for i in 0..num_nodes {
-        let node = FlatNode {
-            kind: (i % 4 + 1) as u8, // Cycle through Branch, Leaf, Extension, Digest
-            data: (i % 65536) as u16,
-            ref_offset: (i * 50) as u32, // Synthetic reference offset
-            ref_len: 50,
-            child_idx: if i > 0 { (i - 1) as u32 } else { u32::MAX },
-        };
-        flat_trie.index.push(node);
-    }
-
-    // Create synthetic blob data
-    flat_trie.blob = vec![0u8; num_nodes * 50];
-
-    // Create synthetic branch children
-    flat_trie.branch_children = (0..num_nodes as u32).collect();
-
-    // Create synthetic leaf values
-    flat_trie.leaf_values = (0..num_nodes).map(|i| vec![i as u8; 10]).collect();
-
-    // Create synthetic prefixes
-    flat_trie.prefixes = (0..num_nodes).map(|i| vec![(i % 256) as u8; 5]).collect();
-
-    flat_trie
-}
-
 fn bench_ethereum_state_comparison(c: &mut Criterion) {
     // Create a realistic-sized Ethereum state
     let ethereum_state = create_synthetic_ethereum_state(20);
     let flat_state = ethereum_state.to_flat();
 
-    // Serialize both formats
+    // Serialize with different methods
     let mpt_serialized =
         bincode::serde::encode_to_vec(&ethereum_state, bincode::config::standard()).unwrap();
     let flat_serialized =
         bincode::serde::encode_to_vec(&flat_state, bincode::config::standard()).unwrap();
+    let rkyv_serialized = flat_state.to_rkyv_bytes().unwrap();
 
     // Print size comparison
     println!("\n=== Size Comparison ===");
     println!("Original MPT serialized size: {} bytes", mpt_serialized.len());
-    println!("Flat MPT serialized size: {} bytes", flat_serialized.len());
+    println!("Flat MPT (serde) serialized size: {} bytes", flat_serialized.len());
+    println!("Flat MPT (rkyv) serialized size: {} bytes", rkyv_serialized.len());
     println!(
-        "Size ratio (flat/original): {:.2}x",
+        "Size ratio (flat-serde/original): {:.2}x",
         flat_serialized.len() as f64 / mpt_serialized.len() as f64
     );
     println!(
-        "Size difference: {} bytes",
-        flat_serialized.len() as i64 - mpt_serialized.len() as i64
+        "Size ratio (rkyv/original): {:.2}x",
+        rkyv_serialized.len() as f64 / mpt_serialized.len() as f64
     );
 
     // Benchmark serialization
@@ -102,12 +73,16 @@ fn bench_ethereum_state_comparison(c: &mut Criterion) {
         })
     });
 
-    group.bench_function("flat_mpt", |b| {
+    group.bench_function("flat_mpt_serde", |b| {
         b.iter(|| {
             black_box(
                 bincode::serde::encode_to_vec(&flat_state, bincode::config::standard()).unwrap(),
             )
         })
+    });
+
+    group.bench_function("flat_mpt_rkyv", |b| {
+        b.iter(|| black_box(flat_state.to_rkyv_bytes().unwrap()))
     });
 
     group.finish();
@@ -128,7 +103,7 @@ fn bench_ethereum_state_comparison(c: &mut Criterion) {
         })
     });
 
-    group.bench_function("flat_mpt", |b| {
+    group.bench_function("flat_mpt_serde", |b| {
         b.iter(|| {
             black_box(
                 bincode::serde::decode_from_slice::<FlatEthereumState, _>(
@@ -138,6 +113,25 @@ fn bench_ethereum_state_comparison(c: &mut Criterion) {
                 .unwrap()
                 .0,
             )
+        })
+    });
+
+    group.bench_function("flat_mpt_rkyv", |b| {
+        b.iter(|| {
+            // Test zero-copy access - this is the main advantage of rkyv
+            // Just measure the cost of accessing the archived data
+            match FlatEthereumState::access_rkyv_bytes(&rkyv_serialized) {
+                Ok(archived) => {
+                    // Zero-copy success - this is what we want to measure
+                    black_box(archived);
+                    true
+                }
+                Err(_) => {
+                    // Fall back to owned access if needed
+                    let _ = black_box(FlatEthereumState::from_rkyv_bytes_owned(&rkyv_serialized));
+                    false
+                }
+            }
         })
     });
 

@@ -201,10 +201,15 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
         }
 
         // Create the client input.
+        let flat_state = state.to_flat();
+        let rkyv_parent_state_bytes = flat_state
+            .to_rkyv_bytes()
+            .map_err(|e| eyre::eyre!("Failed to serialize state with rkyv: {}", e))?;
+
         let client_input = ClientExecutorInput {
             current_block,
             ancestor_headers,
-            parent_state: state.to_flat(),
+            rkyv_parent_state_bytes,
             state_requests,
             bytecodes: rpc_db.get_bytecodes(),
         };

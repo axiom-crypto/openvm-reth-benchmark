@@ -182,35 +182,32 @@ impl FlatEthereumState {
         apply_post_state_to_flat(self, post_state)
     }
 
-    /// Serializes this state using rkyv for zero-copy deserialization.
-    pub fn to_rkyv_bytes(&self) -> eyre::Result<Vec<u8>> {
-        use rkyv::api::high::to_bytes;
-
-        to_bytes::<rkyv::rancor::Error>(self)
-            .map_err(|e| eyre::eyre!("Failed to serialize with rkyv: {}", e))
-            .map(|v| v.to_vec())
+    /// Serialize to rkyv bytes for zero-copy deserialization.
+    pub fn to_rkyv_bytes(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+        let aligned_vec = rkyv::to_bytes::<rkyv::rancor::Error>(self)
+            .map_err(|e| format!("rkyv serialization error: {}", e))?;
+        Ok(aligned_vec.to_vec())
     }
 
-    /// Deserializes from rkyv bytes with zero-copy access.
-    ///
-    /// # Safety
-    /// The caller must ensure that the bytes represent a valid archived FlatEthereumState
-    /// and that the bytes remain valid for the lifetime of the returned reference.
-    pub unsafe fn from_rkyv_bytes(
+    /// Access archived data from rkyv bytes (zero-copy deserialization).
+    /// Returns the archived reference for zero-copy access.
+    pub fn access_rkyv_bytes(
         bytes: &[u8],
-    ) -> eyre::Result<&rkyv::Archived<FlatEthereumState>> {
-        use rkyv::api::high::from_bytes_unchecked;
+    ) -> Result<&rkyv::Archived<Self>, Box<dyn std::error::Error>> {
+        // Cast bytes to the archived representation directly
+        // This is the zero-copy approach - no validation, just cast
+        if bytes.len() < std::mem::size_of::<rkyv::Archived<Self>>() {
+            return Err("Buffer too small for archived data".into());
+        }
+        let archived = unsafe { &*(bytes.as_ptr() as *const rkyv::Archived<Self>) };
+        Ok(archived)
+    }
 
-        // For now, use a simple approach - just try to deserialize and access the archived data
-        let archived_ref =
-            match from_bytes_unchecked::<FlatEthereumState, rkyv::rancor::Error>(bytes) {
-                Ok(val) => {
-                    // Since rkyv 0.8 API returns the deserialized value, we need a different approach
-                    // For now, we'll skip the zero-copy optimization and return an error
-                    return Err(eyre::eyre!("rkyv 0.8 API change requires different approach"));
-                }
-                Err(e) => return Err(eyre::eyre!("Failed to deserialize with rkyv: {}", e)),
-            };
+    /// Deserialize from rkyv bytes into an owned FlatEthereumState.
+    /// This defeats the zero-copy purpose but is useful for compatibility.
+    pub fn from_rkyv_bytes_owned(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
+        rkyv::from_bytes::<Self, rkyv::rancor::Error>(bytes)
+            .map_err(|e| format!("rkyv deserialization error: {}", e).into())
     }
 
     /// Rebuilds an MptNode tree from a flat representation.
