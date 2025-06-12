@@ -87,8 +87,8 @@ fn bench_ethereum_state_comparison(c: &mut Criterion) {
 
     group.finish();
 
-    // Benchmark deserialization
-    let mut group = c.benchmark_group("ethereum_state_deserialize");
+    // Benchmark REAL deserialization (fair comparison)
+    let mut group = c.benchmark_group("ethereum_state_deserialize_real");
 
     group.bench_function("original_mpt", |b| {
         b.iter(|| {
@@ -116,24 +116,48 @@ fn bench_ethereum_state_comparison(c: &mut Criterion) {
         })
     });
 
-    group.bench_function("flat_mpt_rkyv", |b| {
+    group.bench_function("flat_mpt_rkyv_owned", |b| {
         b.iter(|| {
-            // Test zero-copy access - this is the main advantage of rkyv
-            // Just measure the cost of accessing the archived data
-            match FlatEthereumState::access_rkyv_bytes(&rkyv_serialized) {
-                Ok(archived) => {
-                    // Zero-copy success - this is what we want to measure
-                    black_box(archived);
-                    true
-                }
-                Err(_) => {
-                    // Fall back to owned access if needed
-                    let _ = black_box(FlatEthereumState::from_rkyv_bytes_owned(&rkyv_serialized));
-                    false
-                }
-            }
+            // This is the fair comparison - actual deserialization
+            black_box(FlatEthereumState::from_rkyv_bytes_owned(&rkyv_serialized).unwrap())
         })
     });
+
+    group.finish();
+
+    // Benchmark zero-copy access (rkyv's unique advantage)
+    let mut group = c.benchmark_group("ethereum_state_access");
+
+    group.bench_function("rkyv_zero_copy_access", |b| {
+        b.iter(|| {
+            // This measures the zero-copy pointer arithmetic
+            black_box(FlatEthereumState::access_rkyv_bytes(&rkyv_serialized).unwrap())
+        })
+    });
+
+    group.finish();
+
+    // Benchmark real usage - accessing data after deserialization
+    let mut group = c.benchmark_group("ethereum_state_usage");
+
+    // Deserialize once for usage benchmarks
+    let serde_state: FlatEthereumState =
+        bincode::serde::decode_from_slice(&flat_serialized, bincode::config::standard()).unwrap().0;
+    let rkyv_state = FlatEthereumState::from_rkyv_bytes_owned(&rkyv_serialized).unwrap();
+    let rkyv_archived = FlatEthereumState::access_rkyv_bytes(&rkyv_serialized).unwrap();
+
+    // Test a realistic usage pattern - computing state root
+    group.bench_function("serde_state_root", |b| {
+        b.iter(|| black_box(serde_state.state_trie.view().hash()))
+    });
+
+    group.bench_function("rkyv_owned_state_root", |b| {
+        b.iter(|| black_box(rkyv_state.state_trie.view().hash()))
+    });
+
+    // Note: We can't easily use rkyv_archived.state_trie.view().hash() because
+    // ArchivedFlatEthereumState doesn't have the same methods as FlatEthereumState
+    // This is a limitation of our current rkyv implementation
 
     group.finish();
 }
