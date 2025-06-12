@@ -79,10 +79,26 @@ pub enum ArenaNodeData {
 
 /// Custom RLP decoder that builds ArenaBasedMptNode directly without intermediate boxed structures
 impl ArenaBasedMptNode {
+    /// Creates a new arena with pre-allocated capacity
+    pub fn with_capacity(capacity: usize) -> Self {
+        let mut nodes = Vec::with_capacity(capacity);
+        let mut cached_references = Vec::with_capacity(capacity);
+
+        // Add the initial null node
+        nodes.push(ArenaNodeData::Null);
+        cached_references.push(RefCell::new(None));
+
+        Self { nodes, cached_references, root_id: 0 }
+    }
+
     /// Decodes an RLP-encoded node directly into an ArenaBasedMptNode
     pub fn decode_from_rlp(bytes: impl AsRef<[u8]>) -> Result<Self, Error> {
-        let mut arena = ArenaBasedMptNode::default();
-        let mut buf = bytes.as_ref();
+        let bytes = bytes.as_ref();
+        // Heuristic: average node is ~40 bytes, so estimate node count
+        let estimated_nodes = (bytes.len() / 40).max(16);
+        let mut arena = ArenaBasedMptNode::with_capacity(estimated_nodes);
+
+        let mut buf = bytes;
         let root_id = arena.decode_node_recursive(&mut buf)?;
         if !buf.is_empty() {
             return Err(Error::Rlp(alloy_rlp::Error::Custom("trailing data")));
