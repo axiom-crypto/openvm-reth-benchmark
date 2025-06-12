@@ -324,16 +324,19 @@ impl<'a> ArenaBasedMptNode<'a> {
                 let payload_length = self.payload_length_id(node_id);
                 let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
 
-                // Use the reusable scratch buffer
-                let mut buf = self.scratch.borrow_mut();
-                buf.clear();
-                buf.reserve(rlp_length);
-                self.encode_id_with_payload_len(node_id, payload_length, &mut *buf);
-                debug_assert_eq!(buf.len(), rlp_length);
-
                 if rlp_length < 32 {
-                    MptNodeReference::Bytes(buf[..].to_vec())
+                    // fast-path: encode straight into the final buffer – no extra copy
+                    let mut bytes = Vec::with_capacity(rlp_length);
+                    self.encode_id_with_payload_len(node_id, payload_length, &mut bytes);
+                    debug_assert_eq!(bytes.len(), rlp_length);
+                    MptNodeReference::Bytes(bytes)
                 } else {
+                    // large nodes keep using the reusable scratch buffer to avoid reallocs
+                    let mut buf = self.scratch.borrow_mut();
+                    buf.clear();
+                    buf.reserve(rlp_length);
+                    self.encode_id_with_payload_len(node_id, payload_length, &mut *buf);
+                    debug_assert_eq!(buf.len(), rlp_length);
                     MptNodeReference::Digest(keccak256(&buf[..]))
                 }
             }
@@ -364,10 +367,12 @@ impl<'a> ArenaBasedMptNode<'a> {
             }
             ArenaNodeData::Branch(nodes) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
-                nodes.iter().for_each(|child_id| match child_id {
-                    Some(id) => self.reference_encode_id(*id, out),
-                    None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
-                });
+                for child_id in nodes {
+                    match child_id {
+                        Some(id) => self.reference_encode_id(*id, out),
+                        None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
+                    }
+                }
                 // in the MPT reference, branches have values so always add empty value
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
@@ -400,10 +405,12 @@ impl<'a> ArenaBasedMptNode<'a> {
             }
             ArenaNodeData::Branch(nodes) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
-                nodes.iter().for_each(|child_id| match child_id {
-                    Some(id) => self.encode_full(*id, out), // INLINE children, never use digest!
-                    None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
-                });
+                for child_id in nodes {
+                    match child_id {
+                        Some(id) => self.encode_full(*id, out), // INLINE children, never use digest!
+                        None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
+                    }
+                }
                 // in the MPT reference, branches have values so always add empty value
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }

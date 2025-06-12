@@ -297,13 +297,13 @@ fn bench_rlp_nodes_extraction(c: &mut Criterion) {
 
 criterion_group!(
     benches,
-    // bench_rlp_codec_comparison, // NEW: The main test!
-    // bench_lookup_performance,   // NEW: Fair lookup comparison
-    // bench_hash_computation,     // NEW: Fair hash comparison
+    bench_rlp_codec_comparison, // NEW: The main test!
+    bench_lookup_performance,   // NEW: Fair lookup comparison
+    bench_hash_computation,     // NEW: Fair hash comparison
     bench_ethereum_state_serde,
     bench_ethereum_state2_serde,
-    // bench_mpt_node_comparison,
+    bench_mpt_node_comparison,
     bench_size_comparison,
-    // bench_rlp_nodes_extraction
+    bench_rlp_nodes_extraction
 );
 criterion_main!(benches);
