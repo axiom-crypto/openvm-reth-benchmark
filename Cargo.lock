@@ -4893,10 +4893,12 @@ dependencies = [
  "alloy-trie",
  "anyhow",
  "bincode 2.0.1",
+ "criterion",
  "eyre",
  "hex-literal",
  "itertools 0.13.0",
  "openvm-mpt",
+ "rand 0.8.5",
  "reth-execution-types",
  "reth-primitives",
  "reth-revm",
@@ -4906,6 +4908,7 @@ dependencies = [
  "rlp 0.6.1",
  "rustc-hash 2.1.1",
  "serde",
+ "serde_bytes",
  "smallvec",
  "thiserror 1.0.69",
  "tracing-subscriber 0.3.19",
@@ -7669,6 +7672,15 @@ name = "serde_arrays"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "38636132857f68ec3d5f3eb121166d2af33cb55174c4d5ff645db6165cbef0fd"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "serde_bytes"
+version = "0.11.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8437fd221bde2d4ca316d61b90e337e9e702b3820b87d63caa9ba6c02bd06d96"
 dependencies = [
  "serde",
 ]
