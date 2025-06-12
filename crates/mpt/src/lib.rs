@@ -21,7 +21,7 @@ pub struct EthereumState {
 
 /// Ethereum state trie and account storage tries using arena-based MPT nodes for better
 /// performance.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EthereumState2 {
     pub state_trie: ArenaBasedMptNode,
     pub storage_tries: StorageTries2,
@@ -30,7 +30,7 @@ pub struct EthereumState2 {
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct StorageTries(pub HashMap<B256, MptNode>);
 
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct StorageTries2(pub HashMap<B256, ArenaBasedMptNode>);
 
 impl EthereumState {
@@ -173,6 +173,62 @@ impl EthereumState2 {
     /// Computes the state root.
     pub fn state_root(&self) -> B256 {
         self.state_trie.hash()
+    }
+}
+
+// Custom serde implementations for compact RLP-based serialization
+impl Serialize for StorageTries2 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        // Serialize as Vec<(B256, Vec<u8>)> where Vec<u8> is the RLP blob
+        let storage_blobs: Vec<(B256, Vec<u8>)> =
+            self.0.iter().map(|(addr, trie)| (*addr, trie.to_full_rlp())).collect();
+        storage_blobs.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for StorageTries2 {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let storage_blobs: Vec<(B256, Vec<u8>)> = Vec::deserialize(deserializer)?;
+        let mut storage_tries = HashMap::default();
+
+        for (addr, rlp_blob) in storage_blobs {
+            let trie =
+                ArenaBasedMptNode::decode_from_rlp(&rlp_blob).map_err(serde::de::Error::custom)?;
+            storage_tries.insert(addr, trie);
+        }
+
+        Ok(StorageTries2(storage_tries))
+    }
+}
+
+impl Serialize for EthereumState2 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        // Serialize as (state_trie_blob, storage_tries)
+        let state_blob = self.state_trie.to_full_rlp();
+        (serde_bytes::Bytes::new(&state_blob), &self.storage_tries).serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for EthereumState2 {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let (state_blob, storage_tries): (Vec<u8>, StorageTries2) =
+            Deserialize::deserialize(deserializer)?;
+        let state_trie =
+            ArenaBasedMptNode::decode_from_rlp(&state_blob).map_err(serde::de::Error::custom)?;
+
+        Ok(EthereumState2 { state_trie, storage_tries })
     }
 }
 
