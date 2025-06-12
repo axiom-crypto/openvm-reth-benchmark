@@ -108,8 +108,8 @@ impl ClientExecutor {
             // Use the new zero-copy method to compute state root without mutation
             println!("post state from bundle state: done");
             // Get the parent state and apply the post state
-            let flat_state = input.get_parent_state_owned()?;
-            flat_state.apply_post_state(&post_state)?
+            let flat_state = input.get_parent_state_owned().unwrap();
+            flat_state.apply_post_state(&post_state).unwrap()
         });
 
         if state_root != input.current_block.state_root {
