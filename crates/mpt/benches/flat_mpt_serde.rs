@@ -25,7 +25,7 @@ fn create_synthetic_mpt_node(depth: usize, breadth: usize) -> MptNode {
     MptNodeData::Branch(children).into()
 }
 
-fn create_synthetic_arena_mpt_node(depth: usize, breadth: usize) -> ArenaBasedMptNode {
+fn create_synthetic_arena_mpt_node<'a>(depth: usize, breadth: usize) -> ArenaBasedMptNode<'a> {
     let mut trie = ArenaBasedMptNode::default();
 
     // Create some synthetic data to populate the arena-based trie
@@ -40,7 +40,7 @@ fn create_synthetic_arena_mpt_node(depth: usize, breadth: usize) -> ArenaBasedMp
 }
 
 // NEW: Create identical tries in both formats using the same key set
-fn create_identical_tries(num_keys: usize) -> (MptNode, ArenaBasedMptNode) {
+fn create_identical_tries<'a>(num_keys: usize) -> (MptNode, ArenaBasedMptNode<'a>) {
     let mut mpt_node = MptNode::default();
     let mut arena_node = ArenaBasedMptNode::default();
 
