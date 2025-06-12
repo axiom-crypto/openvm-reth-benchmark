@@ -13,7 +13,7 @@ use openvm_circuit::{
         openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear,
     },
 };
-use openvm_client_executor::{io::ClientExecutorInput, CHAIN_ID_ETH_MAINNET};
+use openvm_client_executor::CHAIN_ID_ETH_MAINNET;
 use openvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
 use openvm_host_executor::HostExecutor;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
@@ -28,6 +28,7 @@ use openvm_sdk::{
 use openvm_stark_sdk::engine::StarkFriEngine;
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 pub use reth_primitives;
+use reth_stateless::StatelessInput;
 use serde_json::json;
 use std::{fs, path::PathBuf, sync::Arc};
 use tracing::info_span;
@@ -232,7 +233,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
         args.block_number,
     )?;
 
-    let client_input = match (client_input_from_cache, provider_config.rpc_url) {
+    let client_input: StatelessInput = match (client_input_from_cache, provider_config.rpc_url) {
         (Some(client_input_from_cache), _) => client_input_from_cache,
         (None, Some(rpc_url)) => {
             // Cache not found but we have RPC
@@ -416,14 +417,14 @@ fn try_load_input_from_cache(
     cache_dir: Option<&PathBuf>,
     chain_id: u64,
     block_number: u64,
-) -> eyre::Result<Option<ClientExecutorInput>> {
+) -> eyre::Result<Option<StatelessInput>> {
     Ok(if let Some(cache_dir) = cache_dir {
         let cache_path = cache_dir.join(format!("input/{}/{}.bin", chain_id, block_number));
 
         if cache_path.exists() {
             // TODO: prune the cache if invalid instead
             let mut cache_file = std::fs::File::open(cache_path)?;
-            let client_input: ClientExecutorInput =
+            let client_input: StatelessInput =
                 bincode::serde::decode_from_std_read(&mut cache_file, bincode::config::standard())?;
 
             Some(client_input)
