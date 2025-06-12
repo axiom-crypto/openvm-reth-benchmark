@@ -7,7 +7,7 @@ use core::{cell::RefCell, fmt::Debug};
 use reth_trie::AccountProof;
 use revm::primitives::HashMap;
 use revm_primitives::{keccak256, Address};
-use serde::{Deserialize, Serialize};
+use serde::{de, ser, Deserialize, Serialize};
 
 use eyre::Result;
 
@@ -24,11 +24,33 @@ pub type NodeId = usize;
 ///
 /// This is the new arena-based implementation that stores all nodes in a flat vector
 /// and uses indices instead of boxed pointers for better memory layout and performance.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ArenaBasedMptNode {
     nodes: Vec<ArenaNodeData>,
     cached_references: Vec<RefCell<Option<MptNodeReference>>>,
     root_id: NodeId,
+}
+
+impl ser::Serialize for ArenaBasedMptNode {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        // Serialize as a compact RLP blob with ALL children inlined!
+        // This is much smaller and faster than serializing the arena structure
+        serde_bytes::serialize(&self.to_full_rlp(), serializer)
+    }
+}
+
+impl<'de> de::Deserialize<'de> for ArenaBasedMptNode {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        // Deserialize the RLP blob and use our fast streaming decoder!
+        let rlp_blob: Vec<u8> = serde_bytes::deserialize(deserializer)?;
+        ArenaBasedMptNode::decode_from_rlp(&rlp_blob).map_err(de::Error::custom)
+    }
 }
 
 impl Default for ArenaBasedMptNode {
@@ -248,6 +270,13 @@ impl ArenaBasedMptNode {
         self.encode_id_with_payload_len(node_id, payload_length, out);
     }
 
+    /// Encodes a node with ALL children inlined (never using digest references).
+    /// This produces the fully-expanded RLP representation.
+    fn encode_full(&self, node_id: NodeId, out: &mut dyn alloy_rlp::BufMut) {
+        let payload_length = self.payload_length_full(node_id);
+        self.encode_full_with_payload_len(node_id, payload_length, out);
+    }
+
     fn encode_id_with_payload_len(
         &self,
         node_id: NodeId,
@@ -280,6 +309,45 @@ impl ArenaBasedMptNode {
                 self.reference_encode_id(*child_id, out);
             }
             ArenaNodeData::Digest(digest) => {
+                digest.encode(out);
+            }
+        }
+    }
+
+    /// Encodes a node with full inline children (never using digest references)
+    fn encode_full_with_payload_len(
+        &self,
+        node_id: NodeId,
+        payload_length: usize,
+        out: &mut dyn alloy_rlp::BufMut,
+    ) {
+        match &self.nodes[node_id] {
+            ArenaNodeData::Null => {
+                out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
+            }
+            ArenaNodeData::Branch(nodes) => {
+                alloy_rlp::Header { list: true, payload_length }.encode(out);
+                nodes.iter().for_each(|child_id| match child_id {
+                    Some(id) => self.encode_full(*id, out), // INLINE children, never use digest!
+                    None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
+                });
+                // in the MPT reference, branches have values so always add empty value
+                out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
+            }
+            ArenaNodeData::Leaf(path_nibs, value) => {
+                alloy_rlp::Header { list: true, payload_length }.encode(out);
+                let encoded_path = to_encoded_path(path_nibs, true);
+                encoded_path.as_slice().encode(out);
+                value.as_slice().encode(out);
+            }
+            ArenaNodeData::Extension(path_nibs, child_id) => {
+                alloy_rlp::Header { list: true, payload_length }.encode(out);
+                let encoded_path = to_encoded_path(path_nibs, false);
+                encoded_path.as_slice().encode(out);
+                self.encode_full(*child_id, out); // INLINE child, never use digest!
+            }
+            ArenaNodeData::Digest(digest) => {
+                // Keep digest nodes as-is (they represent external/unresolved nodes)
                 digest.encode(out);
             }
         }
@@ -320,6 +388,21 @@ impl ArenaBasedMptNode {
     #[inline]
     pub fn to_rlp_bytes(&self) -> Vec<u8> {
         self.to_rlp_id(self.root_id)
+    }
+
+    /// Returns the RLP-encoded bytes with ALL children inlined (never replaced by digest).
+    /// This produces a compact, fully-expanded representation perfect for serialization.
+    #[inline]
+    pub fn to_full_rlp(&self) -> Vec<u8> {
+        let mut out = Vec::with_capacity(self.approx_full_rlp_len());
+        self.encode_full(self.root_id, &mut out);
+        out
+    }
+
+    /// Estimates the upper bound for full RLP length (for Vec capacity)
+    fn approx_full_rlp_len(&self) -> usize {
+        // Rough estimate: each node ~100 bytes average, plus some overhead
+        self.nodes.len() * 100
     }
 
     /// Clears the trie, replacing its data with an empty node.
@@ -697,6 +780,34 @@ impl ArenaBasedMptNode {
             }
             ArenaNodeData::Digest(_) => 32,
         }
+    }
+
+    /// Calculates payload length for full inline encoding (never using digest references)
+    fn payload_length_full(&self, node_id: NodeId) -> usize {
+        match &self.nodes[node_id] {
+            ArenaNodeData::Null => 0,
+            ArenaNodeData::Branch(nodes) => {
+                1 + nodes
+                    .iter()
+                    .map(|child| child.map_or(1, |id| self.full_length(id)))
+                    .sum::<usize>()
+            }
+            ArenaNodeData::Leaf(path_nibs, value) => {
+                let encoded_path = to_encoded_path(path_nibs, true);
+                encoded_path.as_slice().length() + value.as_slice().length()
+            }
+            ArenaNodeData::Extension(path_nibs, node_id) => {
+                let encoded_path = to_encoded_path(path_nibs, false);
+                encoded_path.as_slice().length() + self.full_length(*node_id)
+            }
+            ArenaNodeData::Digest(_) => 32, // Keep digests as-is
+        }
+    }
+
+    /// Returns the full RLP length when inlined (never using digest references)
+    fn full_length(&self, node_id: NodeId) -> usize {
+        let payload_length = self.payload_length_full(node_id);
+        payload_length + alloy_rlp::length_of_length(payload_length)
     }
 
     /// Recursively collects all RLP-encoded trie nodes into the provided HashMap.
