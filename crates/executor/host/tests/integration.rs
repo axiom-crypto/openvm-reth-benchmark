@@ -10,9 +10,9 @@ use url::Url;
 #[tokio::test(flavor = "multi_thread")]
 async fn test_e2e_ethereum() {
     let env_var_key = "RPC_1";
-    let block_number = 18884864;
+    // let block_number = 18884864;
     // Recommended for more complete testing but is 3x slower.
-    // let block_number = 21000000;
+    let block_number = 21882667;
     // let block_number = 18884864; // small
 
     // Initialize the environment variables.
@@ -38,18 +38,18 @@ async fn test_e2e_ethereum() {
     // Setup the client executor.
     let client_executor = ClientExecutor;
 
-    // Execute the client.
-    client_executor.execute(client_input.clone()).expect("failed to execute client");
-
     // Save the client input to a buffer.
     let bincode_config = standard();
     let buffer = bincode::serde::encode_to_vec(&client_input, bincode_config).unwrap();
 
+    // Load the client input from a buffer.
+    let client_input: (ClientExecutorInput, _) =
+        bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
+
+    // Execute the client.
+    client_executor.execute(client_input.0.clone()).expect("failed to execute client");
+
     // Save the buffer to a file for benchmarking
     std::fs::write("client_input_benchmark.bin", &buffer).expect("failed to write benchmark data");
     println!("Saved benchmark data to client_input_benchmark.bin ({} bytes)", buffer.len());
-
-    // Load the client input from a buffer.
-    let _: (ClientExecutorInput, _) =
-        bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
 }
