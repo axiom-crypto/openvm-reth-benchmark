@@ -38,7 +38,7 @@ impl ser::Serialize for ArenaBasedMptNode {
     {
         // Serialize as a compact RLP blob with ALL children inlined!
         // This is much smaller and faster than serializing the arena structure
-        serde_bytes::serialize(&self.to_full_rlp(), serializer)
+        self.to_full_rlp().serialize(serializer)
     }
 }
 
@@ -48,7 +48,7 @@ impl<'de> de::Deserialize<'de> for ArenaBasedMptNode {
         D: de::Deserializer<'de>,
     {
         // Deserialize the RLP blob and use our fast streaming decoder!
-        let rlp_blob: Vec<u8> = serde_bytes::deserialize(deserializer)?;
+        let rlp_blob: Vec<u8> = Vec::deserialize(deserializer)?;
         ArenaBasedMptNode::decode_from_rlp(&rlp_blob).map_err(de::Error::custom)
     }
 }

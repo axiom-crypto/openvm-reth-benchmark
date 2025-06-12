@@ -214,7 +214,7 @@ impl Serialize for EthereumState2 {
     {
         // Serialize as (state_trie_blob, storage_tries)
         let state_blob = self.state_trie.to_full_rlp();
-        (serde_bytes::Bytes::new(&state_blob), &self.storage_tries).serialize(serializer)
+        (state_blob, &self.storage_tries).serialize(serializer)
     }
 }
 
