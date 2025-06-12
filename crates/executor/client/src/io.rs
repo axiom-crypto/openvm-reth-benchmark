@@ -89,8 +89,10 @@ impl ClientExecutorInput {
             if !slots.is_empty() {
                 let mut address_storage = HashMap::default();
 
-                if let Some(storage_trie_view) =
-                    flat_state.storage_tries.0.get(hashed_address).map(|t| t.view())
+                if let Some(storage_trie_view) = flat_state
+                    .storage_tries
+                    .get(&B256::from_slice(hashed_address))
+                    .map(|t| t.view())
                 {
                     for &slot in slots {
                         let slot_bytes = keccak256(slot.to_be_bytes::<32>());

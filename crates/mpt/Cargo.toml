@@ -19,6 +19,8 @@ thiserror.workspace = true
 itertools = "0.13.0"
 bincode.workspace = true
 rustc-hash.workspace = true
+rkyv = { version = "0.8.10" }
+bytecheck = "0.8.1"
 
 # reth
 reth-primitives.workspace = true

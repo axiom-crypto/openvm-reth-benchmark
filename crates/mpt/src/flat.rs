@@ -8,6 +8,7 @@
 
 use crate::mpt::{keccak, prefix_nibs, to_nibs, EMPTY_ROOT};
 use alloy_primitives::B256;
+use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
 use rlp::Rlp;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -15,7 +16,18 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 ///
 /// This struct is designed to be compact and C-compatible for efficient packing.
 #[repr(C)]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Serialize,
+    Deserialize,
+)]
 pub struct FlatNode {
     /// The type of the node.
     /// 0: Null, 1: Branch, 2: Leaf, 3: Extension, 4: Digest.
@@ -37,7 +49,7 @@ pub struct FlatNode {
 ///
 /// The host builds this structure from a traditional `MptNode` tree. It can then be
 /// serialized and sent to the guest.
-#[derive(Debug, Default, PartialEq, Eq, Clone)]
+#[derive(Debug, Default, PartialEq, Eq, Clone, Archive, RkyvSerialize, RkyvDeserialize)]
 pub struct FlatTrieOwned {
     pub index: Vec<FlatNode>,
     /// Stores node references
@@ -330,16 +342,44 @@ mod tests {
 
         assert_eq!(flat_trie, deserialized);
     }
+
+    #[test]
+    fn test_rkyv_serialization() {
+        let mut flat_trie = FlatTrieOwned::default();
+        flat_trie.index.push(FlatNode {
+            kind: 1,
+            data: 42,
+            ref_offset: 0,
+            ref_len: 10,
+            child_idx: 0,
+        });
+        flat_trie.blob = vec![1, 2, 3, 4, 5];
+        flat_trie.branch_children = vec![10, 20, 30];
+        flat_trie.leaf_values = vec![vec![1, 2, 3]];
+        flat_trie.prefixes = vec![vec![4, 5, 6]];
+
+        // Test with rkyv
+        use rkyv::api::high::{from_bytes_unchecked, to_bytes};
+        let bytes = to_bytes::<rkyv::rancor::Error>(&flat_trie).unwrap();
+
+        // Deserialize with zero-copy
+        let archived =
+            unsafe { from_bytes_unchecked::<FlatTrieOwned, rkyv::rancor::Error>(&bytes).unwrap() };
+
+        // Verify the data is accessible
+        assert_eq!(archived.index.len(), 1);
+        assert_eq!(archived.blob.len(), 5);
+        assert_eq!(archived.branch_children.len(), 3);
+        assert_eq!(archived.leaf_values.len(), 1);
+        assert_eq!(archived.prefixes.len(), 1);
+    }
 }
 
 /// Module for mutation-free state root computation.
 pub mod update {
-    use super::*;
     use crate::FlatEthereumState;
     use alloy_primitives::B256;
-    use alloy_rlp::Encodable;
-    use reth_trie::{HashedPostState, TrieAccount};
-    use revm_primitives::U256;
+    use reth_trie::HashedPostState;
 
     /// Applies post-state changes and computes the new state root without mutation.
     /// This is the zero-copy alternative to inflate -> update -> hash.
