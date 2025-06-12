@@ -1,3 +1,4 @@
+use crate::word_bytes::OptimizedBytes;
 use eyre::Result;
 use mpt::{proofs_to_tries, MptNode};
 use mpt2::ArenaBasedMptNode;
@@ -11,6 +12,7 @@ pub mod mpt;
 pub mod mpt2;
 pub mod state;
 pub mod utils;
+pub mod word_bytes;
 
 /// Ethereum state trie and account storage tries.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -213,7 +215,7 @@ impl Serialize for EthereumState2 {
         S: serde::Serializer,
     {
         // Serialize as (state_trie_blob, storage_tries)
-        let state_blob = self.state_trie.to_full_rlp();
+        let state_blob = OptimizedBytes(self.state_trie.to_full_rlp());
         (state_blob, &self.storage_tries).serialize(serializer)
     }
 }
@@ -223,10 +225,10 @@ impl<'de> Deserialize<'de> for EthereumState2 {
     where
         D: serde::Deserializer<'de>,
     {
-        let (state_blob, storage_tries): (Vec<u8>, StorageTries2) =
+        let (state_blob, storage_tries): (OptimizedBytes, StorageTries2) =
             Deserialize::deserialize(deserializer)?;
         let state_trie =
-            ArenaBasedMptNode::decode_from_rlp(&state_blob).map_err(serde::de::Error::custom)?;
+            ArenaBasedMptNode::decode_from_rlp(&state_blob.0).map_err(serde::de::Error::custom)?;
 
         Ok(EthereumState2 { state_trie, storage_tries })
     }
