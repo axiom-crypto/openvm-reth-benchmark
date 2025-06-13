@@ -23,7 +23,7 @@ pub struct EthereumState {
 
 /// Ethereum state trie and account storage tries using arena-based MPT nodes for better
 /// performance.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct EthereumState2 {
     pub state_trie: ArenaBasedMptNode<'static>,
     pub storage_tries: StorageTries2,
@@ -32,7 +32,7 @@ pub struct EthereumState2 {
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct StorageTries(pub HashMap<B256, MptNode>);
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct StorageTries2(pub HashMap<B256, ArenaBasedMptNode<'static>>);
 
 impl EthereumState {
