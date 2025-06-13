@@ -1,6 +1,7 @@
+use std::hint::black_box;
+
 use alloy_primitives::B256;
-use alloy_rlp::Encodable;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use openvm_mpt::{
     mpt::{MptNode, MptNodeData},
     mpt2::ArenaBasedMptNode,
@@ -265,13 +266,11 @@ fn bench_size_comparison(_c: &mut Criterion) {
 
 criterion_group!(
     benches,
-    // bench_rlp_codec_comparison, // NEW: The main test!
-    // bench_lookup_performance,   // NEW: Fair lookup comparison
-    // bench_hash_computation,     // NEW: Fair hash comparison
+    bench_lookup_performance, // NEW: Fair lookup comparison
+    bench_hash_computation,   // NEW: Fair hash comparison
     bench_ethereum_state_serde,
     bench_ethereum_state2_serde,
-    // bench_mpt_node_comparison,
+    bench_mpt_node_comparison,
     bench_size_comparison,
-    // bench_rlp_nodes_extraction
 );
 criterion_main!(benches);
