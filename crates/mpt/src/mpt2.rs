@@ -8,6 +8,7 @@ use reth_trie::AccountProof;
 use revm::primitives::HashMap;
 use revm_primitives::{keccak256, Address};
 use serde::{de, ser};
+use std::borrow::Cow;
 
 use eyre::Result;
 
@@ -56,8 +57,6 @@ pub struct ArenaBasedMptNode<'a> {
     nodes: Vec<ArenaNodeData<'a>>,
     cached_references: Vec<RefCell<Option<MptNodeReference>>>,
     root_id: NodeId,
-    // Store owned data for mutations - this is our "arena" for new allocations
-    owned_data: Vec<Vec<u8>>,
     scratch: RefCell<Vec<u8>>, // reusable buffer for RLP encoding
 }
 
@@ -98,7 +97,6 @@ impl<'a> Default for ArenaBasedMptNode<'a> {
             nodes,
             cached_references,
             root_id: 0,
-            owned_data: Vec::new(),
             scratch: RefCell::new(Vec::with_capacity(128)), // small, grows as needed
         }
     }
@@ -110,8 +108,8 @@ pub enum ArenaNodeData<'a> {
     #[default]
     Null,
     Branch([Option<NodeId>; 16]),
-    Leaf(&'a [u8], &'a [u8]), // (compact_path, value) - borrowed from input
-    Extension(&'a [u8], NodeId), // (compact_path, child_id) - borrowed from input
+    Leaf(Cow<'a, [u8]>, Cow<'a, [u8]>), // (compact_path, value)
+    Extension(Cow<'a, [u8]>, NodeId),   // (compact_path, child_id)
     Digest(B256),
 }
 
@@ -130,7 +128,6 @@ impl<'a> ArenaBasedMptNode<'a> {
             nodes,
             cached_references,
             root_id: 0,
-            owned_data: Vec::new(),
             scratch: RefCell::new(Vec::with_capacity(128)),
         }
     }
@@ -253,11 +250,14 @@ impl<'a> ArenaBasedMptNode<'a> {
                 let value_slice = &payload_buf[..value_header.payload_length];
                 payload_buf.advance(value_header.payload_length);
 
-                Ok(self.add_node(ArenaNodeData::Leaf(path_slice, value_slice)))
+                Ok(self.add_node(ArenaNodeData::Leaf(
+                    Cow::Borrowed(path_slice),
+                    Cow::Borrowed(value_slice),
+                )))
             } else {
                 // Extension node (prefix 0x00 or 0x01)
                 let child_id = self.decode_node_recursive(&mut payload_buf)?;
-                Ok(self.add_node(ArenaNodeData::Extension(path_slice, child_id)))
+                Ok(self.add_node(ArenaNodeData::Extension(Cow::Borrowed(path_slice), child_id)))
             }
         }
     }
@@ -266,13 +266,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 impl<'a> ArenaBasedMptNode<'a> {
     fn new(root_id: NodeId, nodes: Vec<ArenaNodeData<'a>>) -> Self {
         let cached_references = (0..nodes.len()).map(|_| RefCell::new(None)).collect();
-        Self {
-            nodes,
-            cached_references,
-            root_id,
-            owned_data: Vec::new(),
-            scratch: RefCell::new(Vec::with_capacity(128)),
-        }
+        Self { nodes, cached_references, root_id, scratch: RefCell::new(Vec::with_capacity(128)) }
     }
 
     fn add_node(&mut self, data: ArenaNodeData<'a>) -> NodeId {
@@ -282,19 +276,6 @@ impl<'a> ArenaBasedMptNode<'a> {
         id
     }
 
-    /// Helper method to store owned data and return a borrowed slice
-    /// This is used when we need to create new data during mutations
-    fn add_owned_slice(&mut self, data: Vec<u8>) -> &'a [u8] {
-        self.owned_data.push(data);
-        // SAFETY: We're extending the lifetime to 'a, which is safe because:
-        // 1. The data is stored in our owned_data Vec and won't be dropped
-        // 2. The ArenaBasedMptNode itself has lifetime 'a
-        // 3. The slice will not outlive the ArenaBasedMptNode
-        unsafe {
-            std::mem::transmute::<&[u8], &'a [u8]>(self.owned_data.last().unwrap().as_slice())
-        }
-    }
-
     /// Computes and returns the 256-bit hash of the node.
     #[inline]
     pub fn hash(&self) -> B256 {
@@ -302,7 +283,7 @@ impl<'a> ArenaBasedMptNode<'a> {
     }
 
     fn hash_id(&self, node_id: NodeId) -> B256 {
-        match self.nodes[node_id] {
+        match &self.nodes[node_id] {
             ArenaNodeData::Null => EMPTY_ROOT,
             _ => {
                 match self.cached_references[node_id]
@@ -378,13 +359,13 @@ impl<'a> ArenaBasedMptNode<'a> {
             }
             ArenaNodeData::Leaf(encoded_path, value) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
-                encoded_path.encode(out);
-                value.encode(out);
+                encoded_path.as_ref().encode(out);
+                value.as_ref().encode(out);
             }
-            ArenaNodeData::Extension(encoded_path, child_id) => {
+            ArenaNodeData::Extension(encoded_path, node_id) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
-                encoded_path.encode(out);
-                self.reference_encode_id(*child_id, out);
+                encoded_path.as_ref().encode(out);
+                self.reference_encode_id(*node_id, out);
             }
             ArenaNodeData::Digest(digest) => {
                 digest.encode(out);
@@ -416,12 +397,12 @@ impl<'a> ArenaBasedMptNode<'a> {
             }
             ArenaNodeData::Leaf(encoded_path, value) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
-                encoded_path.encode(out);
-                value.encode(out);
+                encoded_path.as_ref().encode(out);
+                value.as_ref().encode(out);
             }
             ArenaNodeData::Extension(encoded_path, child_id) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
-                encoded_path.encode(out);
+                encoded_path.as_ref().encode(out);
                 self.encode_full(*child_id, out); // INLINE child, never use digest!
             }
             ArenaNodeData::Digest(digest) => {
@@ -488,7 +469,6 @@ impl<'a> ArenaBasedMptNode<'a> {
     pub fn clear(&mut self) {
         self.nodes.clear();
         self.cached_references.clear();
-        self.owned_data.clear();
         self.nodes.push(ArenaNodeData::Null);
         self.cached_references.push(RefCell::new(None));
         self.root_id = 0;
@@ -620,33 +600,29 @@ impl<'a> ArenaBasedMptNode<'a> {
                     match child_data {
                         // if the orphan is a leaf, prepend the corresponding nib to it
                         ArenaNodeData::Leaf(path_bytes, value) => {
-                            let path_nibs = prefix_to_small_nibs(path_bytes);
+                            let path_nibs = prefix_to_small_nibs(&path_bytes);
                             let mut new_nibs: SmallVec<[u8; 64]> =
                                 SmallVec::with_capacity(1 + path_nibs.len());
                             new_nibs.push(index as u8);
                             new_nibs.extend_from_slice(&path_nibs);
                             let new_path_bytes = to_encoded_path(&new_nibs, true);
-                            let new_path_slice = self.add_owned_slice(new_path_bytes);
-                            let new_value_slice = self.add_owned_slice(value.to_vec());
-                            ArenaNodeData::Leaf(new_path_slice, new_value_slice)
+                            ArenaNodeData::Leaf(Cow::Owned(new_path_bytes), value)
                         }
                         // if the orphan is an extension, prepend the corresponding nib to it
                         ArenaNodeData::Extension(path_bytes, child_child_id) => {
-                            let path_nibs = prefix_to_small_nibs(path_bytes);
+                            let path_nibs = prefix_to_small_nibs(&path_bytes);
                             let mut new_nibs: SmallVec<[u8; 64]> =
                                 SmallVec::with_capacity(1 + path_nibs.len());
                             new_nibs.push(index as u8);
                             new_nibs.extend_from_slice(&path_nibs);
                             let new_path_bytes = to_encoded_path(&new_nibs, false);
-                            let new_path_slice = self.add_owned_slice(new_path_bytes);
-                            ArenaNodeData::Extension(new_path_slice, child_child_id)
+                            ArenaNodeData::Extension(Cow::Owned(new_path_bytes), child_child_id)
                         }
                         // if the orphan is a branch or digest, convert to an extension
                         ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
                             let ext_nibs: SmallVec<[u8; 1]> = SmallVec::from_slice(&[index as u8]);
                             let new_path_bytes = to_encoded_path(&ext_nibs, false);
-                            let new_path_slice = self.add_owned_slice(new_path_bytes);
-                            ArenaNodeData::Extension(new_path_slice, child_id)
+                            ArenaNodeData::Extension(Cow::Owned(new_path_bytes), child_id)
                         }
                         ArenaNodeData::Null => unreachable!(),
                     }
@@ -660,7 +636,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                 Ok((true, new_node_id))
             }
             ArenaNodeData::Leaf(path_bytes, _) => {
-                let path_nibs = prefix_to_small_nibs(path_bytes);
+                let path_nibs = prefix_to_small_nibs(&path_bytes);
                 if path_nibs.as_slice() != key_nibs {
                     return Ok((false, node_id));
                 }
@@ -669,7 +645,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                 Ok((true, new_node_id))
             }
             ArenaNodeData::Extension(path_bytes, child_id) => {
-                let path_nibs = prefix_to_small_nibs(path_bytes);
+                let path_nibs = prefix_to_small_nibs(&path_bytes);
                 let (updated, new_child_id) =
                     if let Some(tail) = key_nibs.strip_prefix(path_nibs.as_slice()) {
                         let (updated, new_child_id) = self.delete_recursive(child_id, tail)?;
@@ -689,26 +665,23 @@ impl<'a> ArenaBasedMptNode<'a> {
                     ArenaNodeData::Null => ArenaNodeData::Null,
                     // for a leaf, replace the extension with the extended leaf
                     ArenaNodeData::Leaf(child_path_bytes, value) => {
-                        let child_path_nibs = prefix_to_small_nibs(child_path_bytes);
+                        let child_path_nibs = prefix_to_small_nibs(&child_path_bytes);
                         let mut combined_nibs: SmallVec<[u8; 64]> =
                             SmallVec::with_capacity(path_nibs.len() + child_path_nibs.len());
                         combined_nibs.extend_from_slice(&path_nibs);
                         combined_nibs.extend_from_slice(&child_path_nibs);
                         let new_path_bytes = to_encoded_path(&combined_nibs, true);
-                        let new_path_slice = self.add_owned_slice(new_path_bytes);
-                        let new_value_slice = self.add_owned_slice(value.to_vec());
-                        ArenaNodeData::Leaf(new_path_slice, new_value_slice)
+                        ArenaNodeData::Leaf(Cow::Owned(new_path_bytes), value)
                     }
                     // for an extension, replace the extension with the extended extension
                     ArenaNodeData::Extension(child_path_bytes, grandchild_id) => {
-                        let child_path_nibs = prefix_to_small_nibs(child_path_bytes);
+                        let child_path_nibs = prefix_to_small_nibs(&child_path_bytes);
                         let mut combined_nibs: SmallVec<[u8; 64]> =
                             SmallVec::with_capacity(path_nibs.len() + child_path_nibs.len());
                         combined_nibs.extend_from_slice(&path_nibs);
                         combined_nibs.extend_from_slice(&child_path_nibs);
                         let new_path_bytes = to_encoded_path(&combined_nibs, false);
-                        let new_path_slice = self.add_owned_slice(new_path_bytes);
-                        ArenaNodeData::Extension(new_path_slice, grandchild_id)
+                        ArenaNodeData::Extension(Cow::Owned(new_path_bytes), grandchild_id)
                     }
                     // for a branch or digest, the extension is still correct
                     ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
@@ -743,9 +716,8 @@ impl<'a> ArenaBasedMptNode<'a> {
         match node_data {
             ArenaNodeData::Null => {
                 let path_bytes = to_encoded_path(key_nibs, true);
-                let path_slice = self.add_owned_slice(path_bytes);
-                let value_slice = self.add_owned_slice(value);
-                let new_node_id = self.add_node(ArenaNodeData::Leaf(path_slice, value_slice));
+                let new_node_id =
+                    self.add_node(ArenaNodeData::Leaf(Cow::Owned(path_bytes), Cow::Owned(value)));
                 Ok((true, new_node_id))
             }
             ArenaNodeData::Branch(mut children) => {
@@ -765,10 +737,10 @@ impl<'a> ArenaBasedMptNode<'a> {
                         }
                         None => {
                             let path_bytes = to_encoded_path(tail, true);
-                            let path_slice = self.add_owned_slice(path_bytes);
-                            let value_slice = self.add_owned_slice(value);
-                            let new_leaf_id =
-                                self.add_node(ArenaNodeData::Leaf(path_slice, value_slice));
+                            let new_leaf_id = self.add_node(ArenaNodeData::Leaf(
+                                Cow::Owned(path_bytes),
+                                Cow::Owned(value),
+                            ));
                             children[*i as usize] = Some(new_leaf_id);
                             let new_node_id = self.add_node(ArenaNodeData::Branch(children));
                             self.cached_references[new_node_id].borrow_mut().take();
@@ -780,15 +752,15 @@ impl<'a> ArenaBasedMptNode<'a> {
                 }
             }
             ArenaNodeData::Leaf(path_bytes, old_value) => {
-                let path_nibs = prefix_to_small_nibs(path_bytes);
+                let path_nibs = prefix_to_small_nibs(&path_bytes);
                 let common_len = lcp(&path_nibs, key_nibs);
                 if common_len == path_nibs.len() && common_len == key_nibs.len() {
                     // if path_nibs == key_nibs, update the value if it is different
-                    if old_value == value {
+                    if old_value.as_ref() == value.as_slice() {
                         return Ok((false, node_id));
                     }
-                    let value_slice = self.add_owned_slice(value);
-                    let new_node_id = self.add_node(ArenaNodeData::Leaf(path_bytes, value_slice));
+                    let new_node_id =
+                        self.add_node(ArenaNodeData::Leaf(path_bytes, Cow::Owned(value)));
                     self.cached_references[new_node_id].borrow_mut().take();
                     Ok((true, new_node_id))
                 } else if common_len == path_nibs.len() || common_len == key_nibs.len() {
@@ -799,16 +771,14 @@ impl<'a> ArenaBasedMptNode<'a> {
                     let mut children: [Option<NodeId>; 16] = Default::default();
 
                     let leaf1_path_bytes = to_encoded_path(&path_nibs[split_point..], true);
-                    let leaf1_path_slice = self.add_owned_slice(leaf1_path_bytes);
-                    let leaf1_value_slice = self.add_owned_slice(old_value.to_vec());
                     let leaf1_id =
-                        self.add_node(ArenaNodeData::Leaf(leaf1_path_slice, leaf1_value_slice));
+                        self.add_node(ArenaNodeData::Leaf(Cow::Owned(leaf1_path_bytes), old_value));
 
                     let leaf2_path_bytes = to_encoded_path(&key_nibs[split_point..], true);
-                    let leaf2_path_slice = self.add_owned_slice(leaf2_path_bytes);
-                    let leaf2_value_slice = self.add_owned_slice(value);
-                    let leaf2_id =
-                        self.add_node(ArenaNodeData::Leaf(leaf2_path_slice, leaf2_value_slice));
+                    let leaf2_id = self.add_node(ArenaNodeData::Leaf(
+                        Cow::Owned(leaf2_path_bytes),
+                        Cow::Owned(value),
+                    ));
 
                     children[path_nibs[common_len] as usize] = Some(leaf1_id);
                     children[key_nibs[common_len] as usize] = Some(leaf2_id);
@@ -817,8 +787,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                         // create parent extension for new branch
                         let branch_id = self.add_node(ArenaNodeData::Branch(children));
                         let ext_path_bytes = to_encoded_path(&path_nibs[..common_len], false);
-                        let ext_path_slice = self.add_owned_slice(ext_path_bytes);
-                        ArenaNodeData::Extension(ext_path_slice, branch_id)
+                        ArenaNodeData::Extension(Cow::Owned(ext_path_bytes), branch_id)
                     } else {
                         ArenaNodeData::Branch(children)
                     };
@@ -828,7 +797,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                 }
             }
             ArenaNodeData::Extension(path_bytes, child_id) => {
-                let path_nibs = prefix_to_small_nibs(path_bytes);
+                let path_nibs = prefix_to_small_nibs(&path_bytes);
                 let common_len = lcp(&path_nibs, key_nibs);
                 if common_len == path_nibs.len() {
                     // traverse down for update
@@ -851,19 +820,20 @@ impl<'a> ArenaBasedMptNode<'a> {
 
                     if split_point < path_nibs.len() {
                         let ext_path_bytes = to_encoded_path(&path_nibs[split_point..], false);
-                        let ext_path_slice = self.add_owned_slice(ext_path_bytes);
-                        let ext_id =
-                            self.add_node(ArenaNodeData::Extension(ext_path_slice, child_id));
+                        let ext_id = self.add_node(ArenaNodeData::Extension(
+                            Cow::Owned(ext_path_bytes),
+                            child_id,
+                        ));
                         children[path_nibs[common_len] as usize] = Some(ext_id);
                     } else {
                         children[path_nibs[common_len] as usize] = Some(child_id);
                     }
 
                     let leaf_path_bytes = to_encoded_path(&key_nibs[split_point..], true);
-                    let leaf_path_slice = self.add_owned_slice(leaf_path_bytes);
-                    let leaf_value_slice = self.add_owned_slice(value);
-                    let leaf_id =
-                        self.add_node(ArenaNodeData::Leaf(leaf_path_slice, leaf_value_slice));
+                    let leaf_id = self.add_node(ArenaNodeData::Leaf(
+                        Cow::Owned(leaf_path_bytes),
+                        Cow::Owned(value),
+                    ));
                     children[key_nibs[common_len] as usize] = Some(leaf_id);
 
                     let new_node_data = if common_len > 0 {
@@ -871,8 +841,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                         let branch_id = self.add_node(ArenaNodeData::Branch(children));
                         let parent_ext_path_bytes =
                             to_encoded_path(&path_nibs[..common_len], false);
-                        let parent_ext_path_slice = self.add_owned_slice(parent_ext_path_bytes);
-                        ArenaNodeData::Extension(parent_ext_path_slice, branch_id)
+                        ArenaNodeData::Extension(Cow::Owned(parent_ext_path_bytes), branch_id)
                     } else {
                         ArenaNodeData::Branch(children)
                     };
@@ -988,7 +957,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                 }
                 ArenaNodeData::Extension(prefix, child_id) => {
                     let new_child_id = node_mapping[child_id];
-                    self.nodes[new_id] = ArenaNodeData::Extension(*prefix, new_child_id);
+                    self.nodes[new_id] = ArenaNodeData::Extension(prefix.clone(), new_child_id);
                 }
                 _ => {} // Leaf, Null, and Digest nodes don't need reference updates
             }
@@ -1066,7 +1035,7 @@ pub fn mpt_from_proof<'a>(
                     // Replace the child with the replacement trie
                     let replacement_root_in_resolved = resolved.merge_trie(&replacement);
                     resolved.nodes[resolved.root_id] =
-                        ArenaNodeData::Extension(*prefix, replacement_root_in_resolved);
+                        ArenaNodeData::Extension(prefix.clone(), replacement_root_in_resolved);
                     resolved.cached_references[resolved.root_id].borrow_mut().take();
                 } else {
                     panic!("node {} does not reference the successor", i);
@@ -1106,7 +1075,6 @@ pub fn resolve_nodes_arena<'a>(
         nodes: Vec::new(),
         cached_references: Vec::new(),
         root_id: 0,
-        owned_data: Vec::new(),
         scratch: RefCell::new(Vec::with_capacity(128)),
     };
 
@@ -1131,10 +1099,9 @@ fn resolve_node_recursive<'a>(
     let resolved_data = match node_data {
         ArenaNodeData::Null => ArenaNodeData::Null,
         ArenaNodeData::Leaf(prefix, value) => {
-            // Copy the data into the new arena's owned storage
-            let new_prefix = new_arena.add_owned_slice(prefix.to_vec());
-            let new_value = new_arena.add_owned_slice(value.to_vec());
-            ArenaNodeData::Leaf(new_prefix, new_value)
+            // Cloning Cow is cheap for borrowed data, deep for owned.
+            // Since we're creating a new arena, we could also force owned.
+            ArenaNodeData::Leaf(prefix.clone(), value.clone())
         }
         ArenaNodeData::Branch(children) => {
             let mut resolved_children: [Option<NodeId>; 16] = Default::default();
@@ -1150,8 +1117,7 @@ fn resolve_node_recursive<'a>(
         ArenaNodeData::Extension(prefix, child_id) => {
             let resolved_child_id =
                 resolve_node_recursive(original_arena, *child_id, node_store, new_arena);
-            let new_prefix = new_arena.add_owned_slice(prefix.to_vec());
-            ArenaNodeData::Extension(new_prefix, resolved_child_id)
+            ArenaNodeData::Extension(prefix.clone(), resolved_child_id)
         }
         ArenaNodeData::Digest(digest) => {
             // Try to resolve the digest from the node store
@@ -1297,13 +1263,10 @@ fn convert_to_static_lifetime<'a>(node: ArenaBasedMptNode<'a>) -> ArenaBasedMptN
             ArenaNodeData::Null => ArenaNodeData::Null,
             ArenaNodeData::Branch(children) => ArenaNodeData::Branch(children),
             ArenaNodeData::Leaf(path, value) => {
-                let owned_path = static_node.add_owned_slice(path.to_vec());
-                let owned_value = static_node.add_owned_slice(value.to_vec());
-                ArenaNodeData::Leaf(owned_path, owned_value)
+                ArenaNodeData::Leaf(Cow::Owned(path.into_owned()), Cow::Owned(value.into_owned()))
             }
             ArenaNodeData::Extension(path, child_id) => {
-                let owned_path = static_node.add_owned_slice(path.to_vec());
-                ArenaNodeData::Extension(owned_path, child_id)
+                ArenaNodeData::Extension(Cow::Owned(path.into_owned()), child_id)
             }
             ArenaNodeData::Digest(digest) => ArenaNodeData::Digest(digest),
         };
@@ -1336,15 +1299,17 @@ pub fn is_not_included<'a>(
 pub fn shorten_node_path_arena<'a>(node: &ArenaBasedMptNode<'a>) -> Vec<ArenaBasedMptNode<'a>> {
     let mut res = Vec::new();
     let (path_bytes, is_leaf, value, child_id) = match &node.nodes[node.root_id] {
-        ArenaNodeData::Leaf(path_bytes, value) => (Some(*path_bytes), true, Some(*value), None),
+        ArenaNodeData::Leaf(path_bytes, value) => {
+            (Some(path_bytes.clone()), true, Some(value.clone()), None)
+        }
         ArenaNodeData::Extension(path_bytes, child_id) => {
-            (Some(*path_bytes), false, None, Some(*child_id))
+            (Some(path_bytes.clone()), false, None, Some(*child_id))
         }
         _ => (None, false, None, None),
     };
 
     let Some(path_bytes) = path_bytes else { return res };
-    let nibs = prefix_to_small_nibs(path_bytes);
+    let nibs = prefix_to_small_nibs(&path_bytes);
 
     if is_leaf {
         let value = value.unwrap();
@@ -1352,9 +1317,7 @@ pub fn shorten_node_path_arena<'a>(node: &ArenaBasedMptNode<'a>) -> Vec<ArenaBas
             let mut new_node = ArenaBasedMptNode::default();
             let shortened_nibs = &nibs[i..];
             let path = to_encoded_path(shortened_nibs, true);
-            let path_slice = new_node.add_owned_slice(path);
-            let value_slice = new_node.add_owned_slice(value.to_vec());
-            new_node.nodes[0] = ArenaNodeData::Leaf(path_slice, value_slice);
+            new_node.nodes[0] = ArenaNodeData::Leaf(Cow::Owned(path), value.clone());
             res.push(new_node);
         }
     } else {
@@ -1363,8 +1326,7 @@ pub fn shorten_node_path_arena<'a>(node: &ArenaBasedMptNode<'a>) -> Vec<ArenaBas
             let mut new_node = ArenaBasedMptNode::default();
             let shortened_nibs = &nibs[i..];
             let path = to_encoded_path(shortened_nibs, false);
-            let path_slice = new_node.add_owned_slice(path);
-            new_node.nodes[0] = ArenaNodeData::Extension(path_slice, child_id);
+            new_node.nodes[0] = ArenaNodeData::Extension(Cow::Owned(path), child_id);
             res.push(new_node);
         }
     }
@@ -1450,16 +1412,15 @@ mod tests {
 
         // Create the deepest node (a leaf) - using compact path directly
         let mut leaf_trie = ArenaBasedMptNode::default();
-        let path_bytes = leaf_trie.add_owned_slice(vec![0x23]); // compact encoding for nibble [0x03]
-        let value_bytes = leaf_trie.add_owned_slice(b"test_value".to_vec());
+        let path_bytes = Cow::Owned(vec![0x23]); // compact encoding for nibble [0x03]
+        let value_bytes = Cow::Owned(b"test_value".to_vec());
         leaf_trie.nodes[0] = ArenaNodeData::Leaf(path_bytes, value_bytes);
 
         // Create a parent extension that references the leaf by digest
         let mut ext_trie = ArenaBasedMptNode::default();
         let leaf_digest = leaf_trie.hash();
-        ext_trie.nodes[0] = ArenaNodeData::Digest(leaf_digest);
         let ext_child_id = ext_trie.add_node(ArenaNodeData::Digest(leaf_digest));
-        let ext_path_bytes = ext_trie.add_owned_slice(vec![0x01]); // compact encoding for nibble [0x01]
+        let ext_path_bytes = Cow::Owned(vec![0x01]); // compact encoding for nibble [0x01]
         ext_trie.nodes[0] = ArenaNodeData::Extension(ext_path_bytes, ext_child_id);
         ext_trie.root_id = 0;
 

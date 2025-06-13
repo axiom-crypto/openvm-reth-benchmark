@@ -1,5 +1,4 @@
 use alloy_primitives::B256;
-use alloy_rlp::Encodable;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use openvm_mpt::{
     mpt::{MptNode, MptNodeData},
