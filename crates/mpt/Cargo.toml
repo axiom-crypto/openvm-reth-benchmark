@@ -20,6 +20,7 @@ itertools = "0.13.0"
 bincode.workspace = true
 rustc-hash.workspace = true
 smallvec = "1.13"
+bumpalo = "3.18.1"
 
 # reth
 reth-primitives.workspace = true
