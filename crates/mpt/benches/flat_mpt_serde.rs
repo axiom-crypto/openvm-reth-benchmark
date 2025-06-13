@@ -153,36 +153,6 @@ fn create_synthetic_ethereum_state2(num_storage_tries: usize) -> EthereumState2 
     EthereumState2 { state_trie, storage_tries: StorageTries2(storage_tries) }
 }
 
-fn bench_ethereum_state_serde(c: &mut Criterion) {
-    let ethereum_state = create_synthetic_ethereum_state(10);
-
-    // Serialize once
-    let serialized =
-        bincode::serde::encode_to_vec(&ethereum_state, bincode::config::standard()).unwrap();
-
-    // c.bench_function("ethereum_state_v1_serialize", |b| {
-    //     b.iter(|| {
-    //         black_box(
-    //             bincode::serde::encode_to_vec(&ethereum_state, bincode::config::standard())
-    //                 .unwrap(),
-    //         )
-    //     })
-    // });
-
-    c.bench_function("ethereum_state_v1_deserialize", |b| {
-        b.iter(|| {
-            black_box(
-                bincode::serde::decode_from_slice::<EthereumState, _>(
-                    &serialized,
-                    bincode::config::standard(),
-                )
-                .unwrap()
-                .0,
-            )
-        })
-    });
-}
-
 fn bench_ethereum_state2_serde(c: &mut Criterion) {
     let ethereum_state2 = create_synthetic_ethereum_state2(10);
 
@@ -268,7 +238,6 @@ criterion_group!(
     benches,
     bench_lookup_performance, // NEW: Fair lookup comparison
     bench_hash_computation,   // NEW: Fair hash comparison
-    bench_ethereum_state_serde,
     bench_ethereum_state2_serde,
     bench_mpt_node_comparison,
     bench_size_comparison,
