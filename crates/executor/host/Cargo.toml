@@ -21,7 +21,7 @@ tracing.workspace = true
 openvm-rpc-db.workspace = true
 openvm-witness-db.workspace = true
 openvm-client-executor.workspace = true
-openvm-mpt = { workspace = true, features = ["preimage_context"] }
+openvm-mpt = { workspace = true, features = ["preimage_context", "build_mpt"] }
 openvm-primitives.workspace = true
 
 # reth
