@@ -1,20 +1,17 @@
-#![allow(unreachable_pub)]
-#![allow(dead_code)]
-
 use alloy_primitives::B256;
 use alloy_rlp::{Buf, Encodable};
 use core::{cell::RefCell, fmt::Debug};
 use reth_trie::AccountProof;
 use revm::primitives::HashMap;
 use revm_primitives::{keccak256, Address};
-use serde::{de, ser, Deserialize, Serialize};
+use serde::{de, ser};
 
 use eyre::Result;
 
 use crate::word_bytes::OptimizedBytes;
 use crate::{
     mpt::{Error, MptNodeReference, EMPTY_ROOT},
-    utils::{lcp, prefix_nibs, to_encoded_path, to_nibs},
+    utils::{lcp, to_encoded_path, to_nibs},
     EthereumState2, StorageTries2,
 };
 use smallvec::SmallVec;
@@ -251,6 +248,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 }
 
 impl<'a> ArenaBasedMptNode<'a> {
+    #[allow(dead_code)]
     fn new(root_id: NodeId, nodes: Vec<ArenaNodeData<'a>>) -> Self {
         let cached_references = (0..nodes.len()).map(|_| RefCell::new(None)).collect();
         Self { nodes, cached_references, root_id, owned_data: Vec::new() }
@@ -1347,7 +1345,7 @@ mod tests {
     use hex_literal::hex;
 
     #[test]
-    pub fn test_empty() {
+    fn test_empty() {
         let trie = ArenaBasedMptNode::default();
 
         assert!(trie.is_empty());
@@ -1356,7 +1354,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_clear() {
+    fn test_clear() {
         let mut trie = ArenaBasedMptNode::default();
         trie.insert(b"dog", b"puppy".to_vec()).unwrap();
         assert!(!trie.is_empty());
@@ -1368,7 +1366,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_insert() {
+    fn test_insert() {
         let mut trie = ArenaBasedMptNode::default();
         let vals = vec![
             ("painting", "place"),
@@ -1400,7 +1398,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_direct_rlp_decoding() {
+    fn test_direct_rlp_decoding() {
         // Test that we can decode RLP directly into ArenaBasedMptNode
         let mut trie = ArenaBasedMptNode::default();
         trie.insert(b"test", b"value".to_vec()).unwrap();
@@ -1413,7 +1411,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_mpt_from_proof_reconstruction() {
+    fn test_mpt_from_proof_reconstruction() {
         // Create a test proof scenario
         // This mimics how proofs work: we have a sequence of nodes where later nodes
         // reference earlier nodes by digest
