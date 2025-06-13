@@ -4893,6 +4893,7 @@ dependencies = [
  "alloy-trie",
  "anyhow",
  "bincode 2.0.1",
+ "bumpalo",
  "criterion",
  "eyre",
  "hex-literal",

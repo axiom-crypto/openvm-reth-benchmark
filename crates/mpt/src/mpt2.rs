@@ -1,10 +1,13 @@
 use alloy_primitives::B256;
 use alloy_rlp::{Buf, Encodable};
-use core::{cell::RefCell, fmt::Debug};
+use bumpalo::Bump;
+use core::fmt::Debug;
 use reth_trie::AccountProof;
 use revm::primitives::HashMap;
 use revm_primitives::{keccak256, Address};
 use serde::{de, ser};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use eyre::Result;
 
@@ -48,13 +51,13 @@ fn prefix_to_small_nibs(encoded_path: &[u8]) -> SmallVec<[u8; 64]> {
 /// This is the new arena-based implementation that stores all nodes in a flat vector
 /// and uses indices instead of boxed pointers for better memory layout and performance.
 /// The lifetime parameter 'a allows zero-copy deserialization by borrowing from the input buffer.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct ArenaBasedMptNode<'a> {
     nodes: Vec<ArenaNodeData<'a>>,
     cached_references: Vec<RefCell<Option<MptNodeReference>>>,
     root_id: NodeId,
-    // Store owned data for mutations - this is our "arena" for new allocations
-    owned_data: Vec<Vec<u8>>,
+    /// One monotonically‑growing arena that owns every mutated byte slice.
+    bump: Rc<Bump>,
 }
 
 impl ser::Serialize for ArenaBasedMptNode<'_> {
@@ -83,14 +86,13 @@ impl<'de> de::Deserialize<'de> for ArenaBasedMptNode<'de> {
 
 impl<'a> Default for ArenaBasedMptNode<'a> {
     fn default() -> Self {
-        let mut nodes = Vec::new();
-        let mut cached_references = Vec::new();
-
-        // Add the initial null node
-        nodes.push(ArenaNodeData::Null);
-        cached_references.push(RefCell::new(None));
-
-        Self { nodes, cached_references, root_id: 0, owned_data: Vec::new() }
+        let bump = Rc::new(Bump::new());
+        Self {
+            nodes: vec![ArenaNodeData::Null],
+            cached_references: vec![RefCell::new(None)],
+            root_id: 0,
+            bump,
+        }
     }
 }
 
@@ -108,15 +110,14 @@ pub enum ArenaNodeData<'a> {
 /// Custom RLP decoder that builds ArenaBasedMptNode directly without intermediate boxed structures
 impl<'a> ArenaBasedMptNode<'a> {
     /// Creates a new arena with pre-allocated capacity
-    pub fn with_capacity(capacity: usize) -> Self {
-        let mut nodes = Vec::with_capacity(capacity);
-        let mut cached_references = Vec::with_capacity(capacity);
-
-        // Add the initial null node
+    pub fn with_capacity(cap: usize) -> Self {
+        let bump = Rc::new(Bump::new());
+        let mut nodes = Vec::with_capacity(cap.max(1));
+        let mut cached_references = Vec::with_capacity(cap.max(1));
         nodes.push(ArenaNodeData::Null);
         cached_references.push(RefCell::new(None));
 
-        Self { nodes, cached_references, root_id: 0, owned_data: Vec::new() }
+        Self { nodes, cached_references, root_id: 0, bump }
     }
 
     /// Decodes an RLP-encoded node directly into an ArenaBasedMptNode with zero-copy optimization
@@ -251,7 +252,7 @@ impl<'a> ArenaBasedMptNode<'a> {
     #[allow(dead_code)]
     fn new(root_id: NodeId, nodes: Vec<ArenaNodeData<'a>>) -> Self {
         let cached_references = (0..nodes.len()).map(|_| RefCell::new(None)).collect();
-        Self { nodes, cached_references, root_id, owned_data: Vec::new() }
+        Self { nodes, cached_references, root_id, bump: Rc::new(Bump::new()) }
     }
 
     fn add_node(&mut self, data: ArenaNodeData<'a>) -> NodeId {
@@ -261,17 +262,19 @@ impl<'a> ArenaBasedMptNode<'a> {
         id
     }
 
-    /// Helper method to store owned data and return a borrowed slice
-    /// This is used when we need to create new data during mutations
-    fn add_owned_slice(&mut self, data: Vec<u8>) -> &'a [u8] {
-        self.owned_data.push(data);
-        // SAFETY: We're extending the lifetime to 'a, which is safe because:
-        // 1. The data is stored in our owned_data Vec and won't be dropped
-        // 2. The ArenaBasedMptNode itself has lifetime 'a
-        // 3. The slice will not outlive the ArenaBasedMptNode
-        unsafe {
-            std::mem::transmute::<&[u8], &'a [u8]>(self.owned_data.last().unwrap().as_slice())
-        }
+    /// Copies `bytes` into the bump arena and returns a `'a` slice.
+    #[inline]
+    fn alloc_in_bump(&self, bytes: &[u8]) -> &'a [u8] {
+        // `Bump::alloc_slice_copy` only needs `&Bump`, no &mut.
+        let slice = self.bump.alloc_slice_copy(bytes);
+        // Sound because `slice` lives as long as `self.bump`.
+        unsafe { std::mem::transmute::<&[u8], &'a [u8]>(slice) }
+    }
+
+    /// Former `add_owned_slice`, now zero heap‑fragments.
+    #[inline]
+    fn add_owned_slice(&mut self, bytes: impl AsRef<[u8]>) -> &'a [u8] {
+        self.alloc_in_bump(bytes.as_ref())
     }
 
     /// Computes and returns the 256-bit hash of the node.
@@ -401,7 +404,7 @@ impl<'a> ArenaBasedMptNode<'a> {
             .get_or_insert_with(|| self.calc_reference(node_id))
         {
             // if the reference is an RLP-encoded byte slice, copy it directly
-            MptNodeReference::Bytes(bytes) => out.put_slice(bytes),
+            MptNodeReference::Bytes(bytes) => out.put_slice(&bytes),
             // if the reference is a digest, RLP-encode it with its fixed known length
             MptNodeReference::Digest(digest) => {
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE + 32);
@@ -431,14 +434,11 @@ impl<'a> ArenaBasedMptNode<'a> {
     }
 
     /// Clears the trie, replacing its data with an empty node.
+    /// Old `clear()` – keep the old arena for anyone still sharing it,
+    /// switch `self` to a fresh one.
     #[inline]
     pub fn clear(&mut self) {
-        self.nodes.clear();
-        self.cached_references.clear();
-        self.owned_data.clear();
-        self.nodes.push(ArenaNodeData::Null);
-        self.cached_references.push(RefCell::new(None));
-        self.root_id = 0;
+        *self = Self::default();
     }
 
     /// Retrieves the value associated with a given key in the trie.
@@ -559,7 +559,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                 let common_len = lcp(&path_nibs, key_nibs);
                 if common_len == path_nibs.len() && common_len == key_nibs.len() {
                     // if path_nibs == key_nibs, update the value if it is different
-                    if old_value == value {
+                    if old_value == value.as_slice() {
                         return Ok((false, node_id));
                     }
                     let value_slice = self.add_owned_slice(value);
@@ -575,7 +575,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 
                     let leaf1_path_bytes = to_encoded_path(&path_nibs[split_point..], true);
                     let leaf1_path_slice = self.add_owned_slice(leaf1_path_bytes);
-                    let leaf1_value_slice = self.add_owned_slice(old_value.to_vec());
+                    let leaf1_value_slice = self.add_owned_slice(old_value);
                     let leaf1_id =
                         self.add_node(ArenaNodeData::Leaf(leaf1_path_slice, leaf1_value_slice));
 
@@ -854,6 +854,7 @@ impl<'a> ArenaBasedMptNode<'a> {
     }
 }
 
+// IMPORTANT: This code runs on host so it is not as performance critical as the rest of mpt
 #[cfg(feature = "build_mpt")]
 pub mod build_mpt {
     use super::*;
@@ -883,9 +884,15 @@ pub mod build_mpt {
                     }
                     ArenaNodeData::Extension(prefix, child_id) => {
                         let new_child_id = node_mapping[child_id];
-                        self.nodes[new_id] = ArenaNodeData::Extension(*prefix, new_child_id);
+                        let new_prefix = self.add_owned_slice(*prefix);
+                        self.nodes[new_id] = ArenaNodeData::Extension(new_prefix, new_child_id);
                     }
-                    _ => {} // Leaf, Null, and Digest nodes don't need reference updates
+                    ArenaNodeData::Leaf(prefix, value) => {
+                        let new_prefix = self.add_owned_slice(*prefix);
+                        let new_value = self.add_owned_slice(*value);
+                        self.nodes[new_id] = ArenaNodeData::Leaf(new_prefix, new_value);
+                    }
+                    _ => {} // Null, and Digest nodes don't need reference updates
                 }
             }
 
@@ -1033,7 +1040,8 @@ pub mod build_mpt {
     /// Helper function to convert a node with any lifetime to static lifetime
     /// by copying all borrowed data into owned storage
     fn convert_to_static_lifetime<'a>(node: ArenaBasedMptNode<'a>) -> ArenaBasedMptNode<'static> {
-        let mut static_node = ArenaBasedMptNode::default();
+        // Use with_capacity to correctly initialize with a pre-sized Vec and a default Null node.
+        let mut static_node = ArenaBasedMptNode::with_capacity(node.nodes.len());
 
         // Copy all nodes, converting borrowed data to owned
         for (i, node_data) in node.nodes.into_iter().enumerate() {
@@ -1041,19 +1049,21 @@ pub mod build_mpt {
                 ArenaNodeData::Null => ArenaNodeData::Null,
                 ArenaNodeData::Branch(children) => ArenaNodeData::Branch(children),
                 ArenaNodeData::Leaf(path, value) => {
-                    let owned_path = static_node.add_owned_slice(path.to_vec());
-                    let owned_value = static_node.add_owned_slice(value.to_vec());
+                    let owned_path = static_node.add_owned_slice(path);
+                    let owned_value = static_node.add_owned_slice(value);
                     ArenaNodeData::Leaf(owned_path, owned_value)
                 }
                 ArenaNodeData::Extension(path, child_id) => {
-                    let owned_path = static_node.add_owned_slice(path.to_vec());
+                    let owned_path = static_node.add_owned_slice(path);
                     ArenaNodeData::Extension(owned_path, child_id)
                 }
                 ArenaNodeData::Digest(digest) => ArenaNodeData::Digest(digest),
             };
 
             if i == 0 {
+                // Overwrite the initial Null node.
                 static_node.nodes[0] = static_data;
+                // The OnceCell is already new, which is correct.
             } else {
                 static_node.add_node(static_data);
             }
@@ -1200,7 +1210,7 @@ pub mod build_mpt {
             nodes: Vec::new(),
             cached_references: Vec::new(),
             root_id: 0,
-            owned_data: Vec::new(),
+            bump: Rc::new(Bump::new()),
         };
 
         let root_id = resolve_node_recursive(root, root.root_id, node_store, &mut new_arena);
@@ -1273,8 +1283,6 @@ pub mod build_mpt {
 
 #[cfg(test)]
 mod tests {
-    use crate::mpt2::build_mpt::mpt_from_proof;
-
     use super::*;
     use hex_literal::hex;
 
@@ -1340,6 +1348,7 @@ mod tests {
     #[test]
     #[cfg(feature = "build_mpt")]
     fn test_mpt_from_proof_reconstruction() {
+        use crate::mpt2::build_mpt::mpt_from_proof;
         // Create a test proof scenario
         // This mimics how proofs work: we have a sequence of nodes where later nodes
         // reference earlier nodes by digest
