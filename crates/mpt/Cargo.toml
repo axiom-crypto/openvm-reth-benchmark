@@ -48,6 +48,7 @@ openvm-mpt = { path = ".", features = ["preimage_context"] }
 [features]
 default = []
 preimage_context = []
+build_mpt = []
 
 [[bench]]
 name = "flat_mpt_serde"
