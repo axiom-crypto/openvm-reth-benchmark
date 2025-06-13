@@ -14,7 +14,7 @@ use eyre::Result;
 use crate::word_bytes::OptimizedBytes;
 use crate::{
     mpt::{Error, MptNodeReference, EMPTY_ROOT},
-    utils::{lcp, to_encoded_path, to_nibs},
+    utils::{lcp, to_nibs},
     EthereumState2, StorageTries2,
 };
 use smallvec::SmallVec;
@@ -59,6 +59,13 @@ pub struct ArenaBasedMptNode<'a> {
     /// One monotonically‑growing arena that owns every mutated byte slice.
     bump: Rc<Bump>,
 }
+
+impl PartialEq for ArenaBasedMptNode<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.root_id == other.root_id && self.nodes == other.nodes
+    }
+}
+impl Eq for ArenaBasedMptNode<'_> {}
 
 impl ser::Serialize for ArenaBasedMptNode<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -262,6 +269,30 @@ impl<'a> ArenaBasedMptNode<'a> {
         id
     }
 
+    /// Encodes nibbles into the standard hex-prefix format directly into the bump arena.
+    /// This avoids creating an intermediate `Vec`.
+    fn add_encoded_path_slice(&mut self, nibs: &[u8], is_leaf: bool) -> &'a [u8] {
+        let is_odd = nibs.len() % 2 != 0;
+        // Max path is 64 nibs (32 bytes) + 1 prefix byte = 33 bytes.
+        // SmallVec will keep this on the stack, avoiding heap allocations.
+        let mut encoded = SmallVec::<[u8; 33]>::new();
+
+        let mut prefix = if is_leaf { 0x20 } else { 0x00 };
+        if is_odd {
+            prefix |= 0x10;
+            encoded.push(prefix | nibs[0]);
+            for i in (1..nibs.len()).step_by(2) {
+                encoded.push((nibs[i] << 4) | nibs[i + 1]);
+            }
+        } else {
+            encoded.push(prefix);
+            for i in (0..nibs.len()).step_by(2) {
+                encoded.push((nibs[i] << 4) | nibs[i + 1]);
+            }
+        }
+        self.add_owned_slice(&encoded)
+    }
+
     /// Copies `bytes` into the bump arena and returns a `'a` slice.
     #[inline]
     fn alloc_in_bump(&self, bytes: &[u8]) -> &'a [u8] {
@@ -413,6 +444,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         }
     }
 
+    #[inline]
     fn reference_length(&self, node_id: NodeId) -> usize {
         match self.cached_references[node_id]
             .borrow_mut()
@@ -517,8 +549,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         let node_data = self.nodes[node_id].clone();
         match node_data {
             ArenaNodeData::Null => {
-                let path_bytes = to_encoded_path(key_nibs, true);
-                let path_slice = self.add_owned_slice(path_bytes);
+                let path_slice = self.add_encoded_path_slice(key_nibs, true);
                 let value_slice = self.add_owned_slice(value);
                 let new_node_id = self.add_node(ArenaNodeData::Leaf(path_slice, value_slice));
                 Ok((true, new_node_id))
@@ -539,8 +570,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                             }
                         }
                         None => {
-                            let path_bytes = to_encoded_path(tail, true);
-                            let path_slice = self.add_owned_slice(path_bytes);
+                            let path_slice = self.add_encoded_path_slice(tail, true);
                             let value_slice = self.add_owned_slice(value);
                             let new_leaf_id =
                                 self.add_node(ArenaNodeData::Leaf(path_slice, value_slice));
@@ -573,14 +603,14 @@ impl<'a> ArenaBasedMptNode<'a> {
                     // create a branch with two children
                     let mut children: [Option<NodeId>; 16] = Default::default();
 
-                    let leaf1_path_bytes = to_encoded_path(&path_nibs[split_point..], true);
-                    let leaf1_path_slice = self.add_owned_slice(leaf1_path_bytes);
+                    let leaf1_path_slice =
+                        self.add_encoded_path_slice(&path_nibs[split_point..], true);
                     let leaf1_value_slice = self.add_owned_slice(old_value);
                     let leaf1_id =
                         self.add_node(ArenaNodeData::Leaf(leaf1_path_slice, leaf1_value_slice));
 
-                    let leaf2_path_bytes = to_encoded_path(&key_nibs[split_point..], true);
-                    let leaf2_path_slice = self.add_owned_slice(leaf2_path_bytes);
+                    let leaf2_path_slice =
+                        self.add_encoded_path_slice(&key_nibs[split_point..], true);
                     let leaf2_value_slice = self.add_owned_slice(value);
                     let leaf2_id =
                         self.add_node(ArenaNodeData::Leaf(leaf2_path_slice, leaf2_value_slice));
@@ -591,8 +621,8 @@ impl<'a> ArenaBasedMptNode<'a> {
                     let new_node_data = if common_len > 0 {
                         // create parent extension for new branch
                         let branch_id = self.add_node(ArenaNodeData::Branch(children));
-                        let ext_path_bytes = to_encoded_path(&path_nibs[..common_len], false);
-                        let ext_path_slice = self.add_owned_slice(ext_path_bytes);
+                        let ext_path_slice =
+                            self.add_encoded_path_slice(&path_nibs[..common_len], false);
                         ArenaNodeData::Extension(ext_path_slice, branch_id)
                     } else {
                         ArenaNodeData::Branch(children)
@@ -625,8 +655,8 @@ impl<'a> ArenaBasedMptNode<'a> {
                     let mut children: [Option<NodeId>; 16] = Default::default();
 
                     if split_point < path_nibs.len() {
-                        let ext_path_bytes = to_encoded_path(&path_nibs[split_point..], false);
-                        let ext_path_slice = self.add_owned_slice(ext_path_bytes);
+                        let ext_path_slice =
+                            self.add_encoded_path_slice(&path_nibs[split_point..], false);
                         let ext_id =
                             self.add_node(ArenaNodeData::Extension(ext_path_slice, child_id));
                         children[path_nibs[common_len] as usize] = Some(ext_id);
@@ -634,8 +664,8 @@ impl<'a> ArenaBasedMptNode<'a> {
                         children[path_nibs[common_len] as usize] = Some(child_id);
                     }
 
-                    let leaf_path_bytes = to_encoded_path(&key_nibs[split_point..], true);
-                    let leaf_path_slice = self.add_owned_slice(leaf_path_bytes);
+                    let leaf_path_slice =
+                        self.add_encoded_path_slice(&key_nibs[split_point..], true);
                     let leaf_value_slice = self.add_owned_slice(value);
                     let leaf_id =
                         self.add_node(ArenaNodeData::Leaf(leaf_path_slice, leaf_value_slice));
@@ -644,9 +674,8 @@ impl<'a> ArenaBasedMptNode<'a> {
                     let new_node_data = if common_len > 0 {
                         // Create parent extension for new branch
                         let branch_id = self.add_node(ArenaNodeData::Branch(children));
-                        let parent_ext_path_bytes =
-                            to_encoded_path(&path_nibs[..common_len], false);
-                        let parent_ext_path_slice = self.add_owned_slice(parent_ext_path_bytes);
+                        let parent_ext_path_slice =
+                            self.add_encoded_path_slice(&path_nibs[..common_len], false);
                         ArenaNodeData::Extension(parent_ext_path_slice, branch_id)
                     } else {
                         ArenaNodeData::Branch(children)
@@ -717,8 +746,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                                 SmallVec::with_capacity(1 + path_nibs.len());
                             new_nibs.push(index as u8);
                             new_nibs.extend_from_slice(&path_nibs);
-                            let new_path_bytes = to_encoded_path(&new_nibs, true);
-                            let new_path_slice = self.add_owned_slice(new_path_bytes);
+                            let new_path_slice = self.add_encoded_path_slice(&new_nibs, true);
                             let new_value_slice = self.add_owned_slice(value.to_vec());
                             ArenaNodeData::Leaf(new_path_slice, new_value_slice)
                         }
@@ -729,15 +757,13 @@ impl<'a> ArenaBasedMptNode<'a> {
                                 SmallVec::with_capacity(1 + path_nibs.len());
                             new_nibs.push(index as u8);
                             new_nibs.extend_from_slice(&path_nibs);
-                            let new_path_bytes = to_encoded_path(&new_nibs, false);
-                            let new_path_slice = self.add_owned_slice(new_path_bytes);
+                            let new_path_slice = self.add_encoded_path_slice(&new_nibs, false);
                             ArenaNodeData::Extension(new_path_slice, child_child_id)
                         }
                         // if the orphan is a branch or digest, convert to an extension
                         ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
                             let ext_nibs: SmallVec<[u8; 1]> = SmallVec::from_slice(&[index as u8]);
-                            let new_path_bytes = to_encoded_path(&ext_nibs, false);
-                            let new_path_slice = self.add_owned_slice(new_path_bytes);
+                            let new_path_slice = self.add_encoded_path_slice(&ext_nibs, false);
                             ArenaNodeData::Extension(new_path_slice, child_id)
                         }
                         ArenaNodeData::Null => unreachable!(),
@@ -783,8 +809,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                             SmallVec::with_capacity(path_nibs.len() + child_path_nibs.len());
                         combined_nibs.extend_from_slice(&path_nibs);
                         combined_nibs.extend_from_slice(&child_path_nibs);
-                        let new_path_bytes = to_encoded_path(&combined_nibs, true);
-                        let new_path_slice = self.add_owned_slice(new_path_bytes);
+                        let new_path_slice = self.add_encoded_path_slice(&combined_nibs, true);
                         let new_value_slice = self.add_owned_slice(value.to_vec());
                         ArenaNodeData::Leaf(new_path_slice, new_value_slice)
                     }
@@ -795,8 +820,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                             SmallVec::with_capacity(path_nibs.len() + child_path_nibs.len());
                         combined_nibs.extend_from_slice(&path_nibs);
                         combined_nibs.extend_from_slice(&child_path_nibs);
-                        let new_path_bytes = to_encoded_path(&combined_nibs, false);
-                        let new_path_slice = self.add_owned_slice(new_path_bytes);
+                        let new_path_slice = self.add_encoded_path_slice(&combined_nibs, false);
                         ArenaNodeData::Extension(new_path_slice, grandchild_id)
                     }
                     // for a branch or digest, the extension is still correct
@@ -1105,8 +1129,7 @@ pub mod build_mpt {
             for i in 0..=nibs.len() {
                 let mut new_node = ArenaBasedMptNode::default();
                 let shortened_nibs = &nibs[i..];
-                let path = to_encoded_path(shortened_nibs, true);
-                let path_slice = new_node.add_owned_slice(path);
+                let path_slice = new_node.add_encoded_path_slice(shortened_nibs, true);
                 let value_slice = new_node.add_owned_slice(value.to_vec());
                 new_node.nodes[0] = ArenaNodeData::Leaf(path_slice, value_slice);
                 res.push(new_node);
@@ -1116,8 +1139,7 @@ pub mod build_mpt {
             for i in 0..=nibs.len() {
                 let mut new_node = ArenaBasedMptNode::default();
                 let shortened_nibs = &nibs[i..];
-                let path = to_encoded_path(shortened_nibs, false);
-                let path_slice = new_node.add_owned_slice(path);
+                let path_slice = new_node.add_encoded_path_slice(shortened_nibs, false);
                 new_node.nodes[0] = ArenaNodeData::Extension(path_slice, child_id);
                 res.push(new_node);
             }
@@ -1235,8 +1257,8 @@ pub mod build_mpt {
             ArenaNodeData::Null => ArenaNodeData::Null,
             ArenaNodeData::Leaf(prefix, value) => {
                 // Copy the data into the new arena's owned storage
-                let new_prefix = new_arena.add_owned_slice(prefix.to_vec());
-                let new_value = new_arena.add_owned_slice(value.to_vec());
+                let new_prefix = new_arena.add_owned_slice(*prefix);
+                let new_value = new_arena.add_owned_slice(*value);
                 ArenaNodeData::Leaf(new_prefix, new_value)
             }
             ArenaNodeData::Branch(children) => {
@@ -1257,7 +1279,7 @@ pub mod build_mpt {
             ArenaNodeData::Extension(prefix, child_id) => {
                 let resolved_child_id =
                     resolve_node_recursive(original_arena, *child_id, node_store, new_arena);
-                let new_prefix = new_arena.add_owned_slice(prefix.to_vec());
+                let new_prefix = new_arena.add_owned_slice(*prefix);
                 ArenaNodeData::Extension(new_prefix, resolved_child_id)
             }
             ArenaNodeData::Digest(digest) => {
@@ -1355,7 +1377,7 @@ mod tests {
 
         // Create the deepest node (a leaf) - using compact path directly
         let mut leaf_trie = ArenaBasedMptNode::default();
-        let path_bytes = leaf_trie.add_owned_slice(vec![0x23]); // compact encoding for nibble [0x03]
+        let path_bytes = leaf_trie.add_encoded_path_slice(&[0x03], true); // compact encoding for nibble [0x03]
         let value_bytes = leaf_trie.add_owned_slice(b"test_value".to_vec());
         leaf_trie.nodes[0] = ArenaNodeData::Leaf(path_bytes, value_bytes);
 
@@ -1364,7 +1386,7 @@ mod tests {
         let leaf_digest = leaf_trie.hash();
         ext_trie.nodes[0] = ArenaNodeData::Digest(leaf_digest);
         let ext_child_id = ext_trie.add_node(ArenaNodeData::Digest(leaf_digest));
-        let ext_path_bytes = ext_trie.add_owned_slice(vec![0x01]); // compact encoding for nibble [0x01]
+        let ext_path_bytes = ext_trie.add_encoded_path_slice(&[0x01], false); // compact encoding for nibble [0x01]
         ext_trie.nodes[0] = ArenaNodeData::Extension(ext_path_bytes, ext_child_id);
         ext_trie.root_id = 0;
 
