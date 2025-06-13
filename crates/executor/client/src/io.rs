@@ -17,7 +17,7 @@ use serde_with::serde_as;
 /// Instead of passing in the entire state, we only pass in the state roots along with merkle proofs
 /// for the storage slots that were modified and accessed.
 #[serde_as]
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClientExecutorInput {
     /// The current block (which will be executed inside the client).
     #[serde_as(
