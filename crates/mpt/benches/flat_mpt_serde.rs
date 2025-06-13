@@ -236,10 +236,10 @@ fn bench_size_comparison(_c: &mut Criterion) {
 
 criterion_group!(
     benches,
-    bench_lookup_performance, // NEW: Fair lookup comparison
-    bench_hash_computation,   // NEW: Fair hash comparison
+    // bench_lookup_performance, // NEW: Fair lookup comparison
+    // bench_hash_computation,   // NEW: Fair hash comparison
     bench_ethereum_state2_serde,
-    bench_mpt_node_comparison,
-    bench_size_comparison,
+    // bench_mpt_node_comparison,
+    // bench_size_comparison,
 );
 criterion_main!(benches);
