@@ -1,4 +1,5 @@
 use alloy_primitives::B256;
+use alloy_rlp::BufMut;
 use alloy_rlp::{Buf, Encodable};
 use bumpalo::Bump;
 use core::fmt::Debug;
@@ -345,12 +346,20 @@ impl<'a> ArenaBasedMptNode<'a> {
         match &self.nodes[node_id as usize] {
             ArenaNodeData::Null => MptNodeReference::Bytes(vec![alloy_rlp::EMPTY_STRING_CODE]),
             ArenaNodeData::Digest(digest) => MptNodeReference::Digest(*digest),
-            _ => {
-                let payload_length = self.payload_length_id(node_id);
+            ArenaNodeData::Branch(_)
+            | ArenaNodeData::Leaf(_, _)
+            | ArenaNodeData::Extension(_, _) => {
+                // For list nodes, we encode the payload first to get its length, then encode the
+                // header and payload into the final buffer. This avoids a second traversal
+                // to calculate the length.
+                let mut payload_buf = Vec::with_capacity(64);
+                let payload_length = self.encode_id_payload(node_id, &mut payload_buf);
                 let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
 
                 let mut encoded = Vec::with_capacity(rlp_length);
-                self.encode_id_with_payload_len(node_id, payload_length, &mut encoded);
+                alloy_rlp::Header { list: true, payload_length }.encode(&mut encoded);
+                encoded.extend_from_slice(&payload_buf);
+
                 debug_assert_eq!(encoded.len(), rlp_length);
 
                 if rlp_length < 32 {
@@ -369,18 +378,12 @@ impl<'a> ArenaBasedMptNode<'a> {
         self.encode_full_with_payload_len(node_id, payload_length, out);
     }
 
-    fn encode_id_with_payload_len(
-        &self,
-        node_id: NodeId,
-        payload_length: usize,
-        out: &mut dyn alloy_rlp::BufMut,
-    ) {
+    /// Encodes a node's payload and returns its length.
+    /// This is used by `calc_reference` to avoid a double-traversal.
+    fn encode_id_payload(&self, node_id: NodeId, out: &mut Vec<u8>) -> usize {
+        let start_len = out.len();
         match &self.nodes[node_id as usize] {
-            ArenaNodeData::Null => {
-                out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
-            }
             ArenaNodeData::Branch(nodes) => {
-                alloy_rlp::Header { list: true, payload_length }.encode(out);
                 nodes.iter().for_each(|child_id| match child_id {
                     Some(id) => self.reference_encode_id(*id, out),
                     None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
@@ -389,19 +392,18 @@ impl<'a> ArenaBasedMptNode<'a> {
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
             ArenaNodeData::Leaf(encoded_path, value) => {
-                alloy_rlp::Header { list: true, payload_length }.encode(out);
                 encoded_path.encode(out);
                 value.encode(out);
             }
             ArenaNodeData::Extension(encoded_path, child_id) => {
-                alloy_rlp::Header { list: true, payload_length }.encode(out);
                 encoded_path.encode(out);
                 self.reference_encode_id(*child_id, out);
             }
-            ArenaNodeData::Digest(digest) => {
-                digest.encode(out);
+            ArenaNodeData::Null | ArenaNodeData::Digest(_) => {
+                unreachable!("Null and Digest nodes are handled directly in calc_reference")
             }
         }
+        out.len() - start_len
     }
 
     /// Encodes a node with full inline children (never using digest references)
@@ -453,17 +455,6 @@ impl<'a> ArenaBasedMptNode<'a> {
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE + 32);
                 out.put_slice(digest.as_slice());
             }
-        }
-    }
-
-    #[inline]
-    fn reference_length(&self, node_id: NodeId) -> usize {
-        match self.cached_references[node_id as usize]
-            .borrow_mut()
-            .get_or_insert_with(|| self.calc_reference(node_id))
-        {
-            MptNodeReference::Bytes(bytes) => bytes.len(),
-            MptNodeReference::Digest(_) => 1 + 32,
         }
     }
 
@@ -805,23 +796,6 @@ impl<'a> ArenaBasedMptNode<'a> {
             self.invalidate_ref_cache(node_id);
         }
         Ok(updated)
-    }
-
-    fn payload_length_id(&self, node_id: NodeId) -> usize {
-        match &self.nodes[node_id as usize] {
-            ArenaNodeData::Null => 0,
-            ArenaNodeData::Branch(nodes) => {
-                1 + nodes
-                    .iter()
-                    .map(|child| child.map_or(1, |id| self.reference_length(id)))
-                    .sum::<usize>()
-            }
-            ArenaNodeData::Leaf(encoded_path, value) => encoded_path.length() + value.length(),
-            ArenaNodeData::Extension(encoded_path, node_id) => {
-                encoded_path.length() + self.reference_length(*node_id)
-            }
-            ArenaNodeData::Digest(_) => 32,
-        }
     }
 
     /// Calculates payload length for full inline encoding (never using digest references)
