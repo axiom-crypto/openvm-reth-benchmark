@@ -168,14 +168,22 @@ impl<'a> ArenaBasedMptNode<'a> {
         let mut probe_buf = payload_buf;
 
         // Try to parse the first item from the probe
+        let h1_start_ptr = probe_buf.as_ptr();
         let h1 = alloy_rlp::Header::decode(&mut probe_buf).map_err(Error::Rlp)?;
+        let h1_header_len = probe_buf.as_ptr() as usize - h1_start_ptr as usize;
         if probe_buf.len() < h1.payload_length {
             return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
         }
         probe_buf.advance(h1.payload_length);
 
+        if probe_buf.is_empty() {
+            return Err(Error::Rlp(alloy_rlp::Error::Custom("invalid 1-item list node")));
+        }
+
         // Try to parse the second item
+        let h2_start_ptr = probe_buf.as_ptr();
         let h2 = alloy_rlp::Header::decode(&mut probe_buf).map_err(Error::Rlp)?;
+        let h2_header_len = probe_buf.as_ptr() as usize - h2_start_ptr as usize;
         if probe_buf.len() < h2.payload_length {
             return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
         }
@@ -188,10 +196,10 @@ impl<'a> ArenaBasedMptNode<'a> {
         if is_branch {
             // Branch node (17 items)
             let mut children = [None; 16];
-            for child_opt in children.iter_mut() {
+            for i in 0..16 {
                 let child_id = self.decode_node_recursive(&mut payload_buf)?;
                 if child_id != 0 {
-                    *child_opt = Some(child_id);
+                    children[i] = Some(child_id);
                 }
             }
 
@@ -208,11 +216,14 @@ impl<'a> ArenaBasedMptNode<'a> {
             Ok(self.add_node(ArenaNodeData::Branch(children)))
         } else {
             // Leaf or Extension node (2 items)
-            // Manually decode the first item (path) - zero-copy slice
-            let path_header = alloy_rlp::Header::decode(&mut payload_buf).map_err(Error::Rlp)?;
+            // Reuse headers from the probe to avoid re-parsing.
+
+            // 1. Path
+            let path_header = h1;
             if path_header.list {
                 return Err(Error::Rlp(alloy_rlp::Error::Custom("expected string for path")));
             }
+            payload_buf.advance(h1_header_len);
             if payload_buf.len() < path_header.payload_length {
                 return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
             }
@@ -226,12 +237,13 @@ impl<'a> ArenaBasedMptNode<'a> {
             let prefix = path_slice[0];
             if (prefix & 0x20) != 0 {
                 // Leaf node (prefix 0x20 or 0x21)
-                // Manually decode the second item (value) - zero-copy slice
-                let value_header =
-                    alloy_rlp::Header::decode(&mut payload_buf).map_err(Error::Rlp)?;
+
+                // 2. Value
+                let value_header = h2;
                 if value_header.list {
                     return Err(Error::Rlp(alloy_rlp::Error::Custom("expected string for value")));
                 }
+                payload_buf.advance(h2_header_len);
                 if payload_buf.len() < value_header.payload_length {
                     return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
                 }
@@ -241,6 +253,8 @@ impl<'a> ArenaBasedMptNode<'a> {
                 Ok(self.add_node(ArenaNodeData::Leaf(path_slice, value_slice)))
             } else {
                 // Extension node (prefix 0x00 or 0x01)
+                // The second item is a child node, which we must parse recursively.
+                // We cannot reuse h2 because decode_node_recursive needs to see the full RLP.
                 let child_id = self.decode_node_recursive(&mut payload_buf)?;
                 Ok(self.add_node(ArenaNodeData::Extension(path_slice, child_id)))
             }
