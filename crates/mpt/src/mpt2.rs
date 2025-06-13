@@ -1,6 +1,3 @@
-#![allow(unreachable_pub)]
-#![allow(dead_code)]
-
 use alloy_primitives::B256;
 use alloy_rlp::{Buf, Encodable};
 use core::{cell::RefCell, fmt::Debug};
@@ -264,6 +261,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 }
 
 impl<'a> ArenaBasedMptNode<'a> {
+    #[allow(dead_code)]
     fn new(root_id: NodeId, nodes: Vec<ArenaNodeData<'a>>) -> Self {
         let cached_references = (0..nodes.len()).map(|_| RefCell::new(None)).collect();
         Self { nodes, cached_references, root_id, scratch: RefCell::new(Vec::with_capacity(128)) }
@@ -595,9 +593,8 @@ impl<'a> ArenaBasedMptNode<'a> {
                 let new_node_data = if remaining.len() == 1 {
                     let (index, &child_id) = remaining[0];
                     let child_id = child_id.unwrap();
-                    let child_data = self.nodes[child_id].clone();
 
-                    match child_data {
+                    match &self.nodes[child_id] {
                         // if the orphan is a leaf, prepend the corresponding nib to it
                         ArenaNodeData::Leaf(path_bytes, value) => {
                             let path_nibs = prefix_to_small_nibs(&path_bytes);
@@ -606,7 +603,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                             new_nibs.push(index as u8);
                             new_nibs.extend_from_slice(&path_nibs);
                             let new_path_bytes = to_encoded_path(&new_nibs, true);
-                            ArenaNodeData::Leaf(Cow::Owned(new_path_bytes), value)
+                            ArenaNodeData::Leaf(Cow::Owned(new_path_bytes), value.clone())
                         }
                         // if the orphan is an extension, prepend the corresponding nib to it
                         ArenaNodeData::Extension(path_bytes, child_child_id) => {
@@ -616,7 +613,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                             new_nibs.push(index as u8);
                             new_nibs.extend_from_slice(&path_nibs);
                             let new_path_bytes = to_encoded_path(&new_nibs, false);
-                            ArenaNodeData::Extension(Cow::Owned(new_path_bytes), child_child_id)
+                            ArenaNodeData::Extension(Cow::Owned(new_path_bytes), *child_child_id)
                         }
                         // if the orphan is a branch or digest, convert to an extension
                         ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
@@ -659,8 +656,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 
                 // an extension can only point to a branch or a digest; since its sub trie was
                 // modified, we need to make sure that this property still holds
-                let child_data = self.nodes[new_child_id].clone();
-                let new_node_data = match child_data {
+                let new_node_data = match &self.nodes[new_child_id] {
                     // if the child is empty, remove the extension
                     ArenaNodeData::Null => ArenaNodeData::Null,
                     // for a leaf, replace the extension with the extended leaf
@@ -671,7 +667,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                         combined_nibs.extend_from_slice(&path_nibs);
                         combined_nibs.extend_from_slice(&child_path_nibs);
                         let new_path_bytes = to_encoded_path(&combined_nibs, true);
-                        ArenaNodeData::Leaf(Cow::Owned(new_path_bytes), value)
+                        ArenaNodeData::Leaf(Cow::Owned(new_path_bytes), value.clone())
                     }
                     // for an extension, replace the extension with the extended extension
                     ArenaNodeData::Extension(child_path_bytes, grandchild_id) => {
@@ -681,7 +677,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                         combined_nibs.extend_from_slice(&path_nibs);
                         combined_nibs.extend_from_slice(&child_path_nibs);
                         let new_path_bytes = to_encoded_path(&combined_nibs, false);
-                        ArenaNodeData::Extension(Cow::Owned(new_path_bytes), grandchild_id)
+                        ArenaNodeData::Extension(Cow::Owned(new_path_bytes), *grandchild_id)
                     }
                     // for a branch or digest, the extension is still correct
                     ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
@@ -1339,7 +1335,7 @@ mod tests {
     use hex_literal::hex;
 
     #[test]
-    pub fn test_empty() {
+    fn test_empty() {
         let trie = ArenaBasedMptNode::default();
 
         assert!(trie.is_empty());
@@ -1348,7 +1344,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_clear() {
+    fn test_clear() {
         let mut trie = ArenaBasedMptNode::default();
         trie.insert(b"dog", b"puppy".to_vec()).unwrap();
         assert!(!trie.is_empty());
@@ -1360,7 +1356,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_insert() {
+    fn test_insert() {
         let mut trie = ArenaBasedMptNode::default();
         let vals = vec![
             ("painting", "place"),
@@ -1392,7 +1388,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_direct_rlp_decoding() {
+    fn test_direct_rlp_decoding() {
         // Test that we can decode RLP directly into ArenaBasedMptNode
         let mut trie = ArenaBasedMptNode::default();
         trie.insert(b"test", b"value".to_vec()).unwrap();
@@ -1405,7 +1401,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_mpt_from_proof_reconstruction() {
+    fn test_mpt_from_proof_reconstruction() {
         // Create a test proof scenario
         // This mimics how proofs work: we have a sequence of nodes where later nodes
         // reference earlier nodes by digest
