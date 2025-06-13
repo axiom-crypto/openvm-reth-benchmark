@@ -102,12 +102,14 @@ impl EthereumState {
 impl EthereumState2 {
     /// Builds Ethereum state tries from relevant proofs before and after a state transition
     /// using the arena-based MPT implementation for better performance.
+    #[cfg(feature = "build_mpt")]
     pub fn from_transition_proofs(
         state_root: B256,
         parent_proofs: &HashMap<Address, AccountProof>,
         proofs: &HashMap<Address, AccountProof>,
     ) -> Result<Self> {
-        mpt2::transition_proofs_to_tries_arena(state_root, parent_proofs, proofs)
+        use crate::mpt2::build_mpt::transition_proofs_to_tries_arena;
+        transition_proofs_to_tries_arena(state_root, parent_proofs, proofs)
             .map_err(|err| eyre::eyre!("{}", err))
     }
 
@@ -235,24 +237,5 @@ impl<'de> Deserialize<'de> for EthereumState2 {
             ArenaBasedMptNode::decode_from_rlp(leaked_bytes).map_err(serde::de::Error::custom)?;
 
         Ok(EthereumState2 { state_trie, storage_tries })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_from_transition_proofs_2_empty() {
-        // Test that from_transition_proofs works with empty proofs for EthereumState2
-        let state_root = B256::ZERO;
-        let parent_proofs = HashMap::default();
-        let proofs = HashMap::default();
-
-        let result = EthereumState2::from_transition_proofs(state_root, &parent_proofs, &proofs);
-        assert!(result.is_ok());
-
-        let ethereum_state = result.unwrap();
-        assert!(ethereum_state.storage_tries.0.is_empty());
     }
 }

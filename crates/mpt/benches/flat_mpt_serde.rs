@@ -287,14 +287,6 @@ fn bench_size_comparison(_c: &mut Criterion) {
     println!("EthereumState2 (v2) is arena-based - single allocation");
 }
 
-fn bench_rlp_nodes_extraction(c: &mut Criterion) {
-    let ethereum_state2 = create_synthetic_ethereum_state2(5);
-
-    c.bench_function("ethereum_state_v2_extract_rlp_nodes", |b| {
-        b.iter(|| black_box(ethereum_state2.all_rlp_nodes()))
-    });
-}
-
 criterion_group!(
     benches,
     // bench_rlp_codec_comparison, // NEW: The main test!
