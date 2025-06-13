@@ -60,13 +60,6 @@ pub struct ArenaBasedMptNode<'a> {
     bump: Rc<Bump>,
 }
 
-impl PartialEq for ArenaBasedMptNode<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.root_id == other.root_id && self.nodes == other.nodes
-    }
-}
-impl Eq for ArenaBasedMptNode<'_> {}
-
 impl ser::Serialize for ArenaBasedMptNode<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -747,7 +740,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                             new_nibs.push(index as u8);
                             new_nibs.extend_from_slice(&path_nibs);
                             let new_path_slice = self.add_encoded_path_slice(&new_nibs, true);
-                            let new_value_slice = self.add_owned_slice(value.to_vec());
+                            let new_value_slice = self.add_owned_slice(value);
                             ArenaNodeData::Leaf(new_path_slice, new_value_slice)
                         }
                         // if the orphan is an extension, prepend the corresponding nib to it
@@ -810,7 +803,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                         combined_nibs.extend_from_slice(&path_nibs);
                         combined_nibs.extend_from_slice(&child_path_nibs);
                         let new_path_slice = self.add_encoded_path_slice(&combined_nibs, true);
-                        let new_value_slice = self.add_owned_slice(value.to_vec());
+                        let new_value_slice = self.add_owned_slice(value);
                         ArenaNodeData::Leaf(new_path_slice, new_value_slice)
                     }
                     // for an extension, replace the extension with the extended extension
@@ -1130,7 +1123,7 @@ pub mod build_mpt {
                 let mut new_node = ArenaBasedMptNode::default();
                 let shortened_nibs = &nibs[i..];
                 let path_slice = new_node.add_encoded_path_slice(shortened_nibs, true);
-                let value_slice = new_node.add_owned_slice(value.to_vec());
+                let value_slice = new_node.add_owned_slice(value);
                 new_node.nodes[0] = ArenaNodeData::Leaf(path_slice, value_slice);
                 res.push(new_node);
             }
