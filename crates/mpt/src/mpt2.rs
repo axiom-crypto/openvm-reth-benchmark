@@ -19,7 +19,7 @@ use crate::{
 };
 use smallvec::SmallVec;
 
-pub type NodeId = usize;
+pub type NodeId = u32;
 
 /// Optimized conversion from hex-encoded path directly to nibbles SmallVec
 /// Avoids the Vec<u8> -> SmallVec<u8> round-trip that was causing extra allocations
@@ -256,7 +256,7 @@ impl<'a> ArenaBasedMptNode<'a> {
     }
 
     fn add_node(&mut self, data: ArenaNodeData<'a>) -> NodeId {
-        let id = self.nodes.len();
+        let id = self.nodes.len() as NodeId;
         self.nodes.push(data);
         self.cached_references.push(RefCell::new(None));
         id
@@ -308,10 +308,10 @@ impl<'a> ArenaBasedMptNode<'a> {
     }
 
     fn hash_id(&self, node_id: NodeId) -> B256 {
-        match self.nodes[node_id] {
+        match self.nodes[node_id as usize] {
             ArenaNodeData::Null => EMPTY_ROOT,
             _ => {
-                match self.cached_references[node_id]
+                match self.cached_references[node_id as usize]
                     .borrow_mut()
                     .get_or_insert_with(|| self.calc_reference(node_id))
                 {
@@ -323,7 +323,7 @@ impl<'a> ArenaBasedMptNode<'a> {
     }
 
     fn calc_reference(&self, node_id: NodeId) -> MptNodeReference {
-        match &self.nodes[node_id] {
+        match &self.nodes[node_id as usize] {
             ArenaNodeData::Null => MptNodeReference::Bytes(vec![alloy_rlp::EMPTY_STRING_CODE]),
             ArenaNodeData::Digest(digest) => MptNodeReference::Digest(*digest),
             _ => {
@@ -356,7 +356,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         payload_length: usize,
         out: &mut dyn alloy_rlp::BufMut,
     ) {
-        match &self.nodes[node_id] {
+        match &self.nodes[node_id as usize] {
             ArenaNodeData::Null => {
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
@@ -392,7 +392,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         payload_length: usize,
         out: &mut dyn alloy_rlp::BufMut,
     ) {
-        match &self.nodes[node_id] {
+        match &self.nodes[node_id as usize] {
             ArenaNodeData::Null => {
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
@@ -423,7 +423,7 @@ impl<'a> ArenaBasedMptNode<'a> {
     }
 
     fn reference_encode_id(&self, node_id: NodeId, out: &mut dyn alloy_rlp::BufMut) {
-        match self.cached_references[node_id]
+        match self.cached_references[node_id as usize]
             .borrow_mut()
             .get_or_insert_with(|| self.calc_reference(node_id))
         {
@@ -439,7 +439,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 
     #[inline]
     fn reference_length(&self, node_id: NodeId) -> usize {
-        match self.cached_references[node_id]
+        match self.cached_references[node_id as usize]
             .borrow_mut()
             .get_or_insert_with(|| self.calc_reference(node_id))
         {
@@ -482,7 +482,7 @@ impl<'a> ArenaBasedMptNode<'a> {
     }
 
     fn get_recursive(&self, node_id: NodeId, key_nibs: &[u8]) -> Result<Option<Vec<u8>>, Error> {
-        match &self.nodes[node_id] {
+        match &self.nodes[node_id as usize] {
             ArenaNodeData::Null => Ok(None),
             ArenaNodeData::Branch(nodes) => {
                 if let Some((i, tail)) = key_nibs.split_first() {
@@ -539,7 +539,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         key_nibs: &[u8],
         value: Vec<u8>,
     ) -> Result<(bool, NodeId), Error> {
-        let node_data = self.nodes[node_id].clone();
+        let node_data = self.nodes[node_id as usize].clone();
         match node_data {
             ArenaNodeData::Null => {
                 let path_slice = self.add_encoded_path_slice(key_nibs, true);
@@ -556,7 +556,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                             if updated {
                                 children[*i as usize] = Some(new_child_id);
                                 let new_node_id = self.add_node(ArenaNodeData::Branch(children));
-                                self.cached_references[new_node_id].borrow_mut().take();
+                                self.cached_references[new_node_id as usize].borrow_mut().take();
                                 Ok((true, new_node_id))
                             } else {
                                 Ok((false, node_id))
@@ -569,7 +569,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                                 self.add_node(ArenaNodeData::Leaf(path_slice, value_slice));
                             children[*i as usize] = Some(new_leaf_id);
                             let new_node_id = self.add_node(ArenaNodeData::Branch(children));
-                            self.cached_references[new_node_id].borrow_mut().take();
+                            self.cached_references[new_node_id as usize].borrow_mut().take();
                             Ok((true, new_node_id))
                         }
                     }
@@ -587,7 +587,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                     }
                     let value_slice = self.add_owned_slice(value);
                     let new_node_id = self.add_node(ArenaNodeData::Leaf(path_bytes, value_slice));
-                    self.cached_references[new_node_id].borrow_mut().take();
+                    self.cached_references[new_node_id as usize].borrow_mut().take();
                     Ok((true, new_node_id))
                 } else if common_len == path_nibs.len() || common_len == key_nibs.len() {
                     Err(Error::ValueInBranch)
@@ -621,7 +621,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                         ArenaNodeData::Branch(children)
                     };
                     let new_node_id = self.add_node(new_node_data);
-                    self.cached_references[new_node_id].borrow_mut().take();
+                    self.cached_references[new_node_id as usize].borrow_mut().take();
                     Ok((true, new_node_id))
                 }
             }
@@ -635,7 +635,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                     if updated {
                         let new_node_id =
                             self.add_node(ArenaNodeData::Extension(path_bytes, new_child_id));
-                        self.cached_references[new_node_id].borrow_mut().take();
+                        self.cached_references[new_node_id as usize].borrow_mut().take();
                         Ok((true, new_node_id))
                     } else {
                         Ok((false, node_id))
@@ -674,7 +674,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                         ArenaNodeData::Branch(children)
                     };
                     let new_node_id = self.add_node(new_node_data);
-                    self.cached_references[new_node_id].borrow_mut().take();
+                    self.cached_references[new_node_id as usize].borrow_mut().take();
                     Ok((true, new_node_id))
                 }
             }
@@ -699,8 +699,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         node_id: NodeId,
         key_nibs: &[u8],
     ) -> Result<(bool, NodeId), Error> {
-        let node_data = self.nodes[node_id].clone();
-        match node_data {
+        match self.nodes[node_id as usize] {
             ArenaNodeData::Null => Ok((false, node_id)),
             ArenaNodeData::Branch(mut children) => {
                 if let Some((i, tail)) = key_nibs.split_first() {
@@ -713,7 +712,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                             }
                             children[*i as usize] = Some(new_child_id);
 
-                            if matches!(self.nodes[new_child_id], ArenaNodeData::Null) {
+                            if matches!(self.nodes[new_child_id as usize], ArenaNodeData::Null) {
                                 children[*i as usize] = None;
                             }
                         }
@@ -731,7 +730,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                     let (index, &child_id) = remaining[0];
                     let child_id = child_id.unwrap();
 
-                    match self.nodes[child_id] {
+                    match self.nodes[child_id as usize] {
                         // if the orphan is a leaf, prepend the corresponding nib to it
                         ArenaNodeData::Leaf(path_bytes, value) => {
                             let path_nibs = prefix_to_small_nibs(path_bytes);
@@ -792,7 +791,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 
                 // an extension can only point to a branch or a digest; since its sub trie was
                 // modified, we need to make sure that this property still holds
-                let new_node_data = match self.nodes[new_child_id] {
+                let new_node_data = match self.nodes[new_child_id as usize] {
                     // if the child is empty, remove the extension
                     ArenaNodeData::Null => ArenaNodeData::Null,
                     // for a leaf, replace the extension with the extended leaf
@@ -830,7 +829,7 @@ impl<'a> ArenaBasedMptNode<'a> {
     }
 
     fn payload_length_id(&self, node_id: NodeId) -> usize {
-        match &self.nodes[node_id] {
+        match &self.nodes[node_id as usize] {
             ArenaNodeData::Null => 0,
             ArenaNodeData::Branch(nodes) => {
                 1 + nodes
@@ -848,7 +847,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 
     /// Calculates payload length for full inline encoding (never using digest references)
     fn payload_length_full(&self, node_id: NodeId) -> usize {
-        match &self.nodes[node_id] {
+        match &self.nodes[node_id as usize] {
             ArenaNodeData::Null => 0,
             ArenaNodeData::Branch(nodes) => {
                 1 + nodes
@@ -879,17 +878,17 @@ pub mod build_mpt {
     impl<'a> ArenaBasedMptNode<'a> {
         /// Merges another trie into this arena and returns the root NodeId of the merged trie
         fn merge_trie(&mut self, other: &ArenaBasedMptNode<'a>) -> NodeId {
-            let mut node_mapping = HashMap::new();
+            let mut node_mapping = HashMap::<NodeId, NodeId>::new();
 
             // Copy all nodes from other trie into this arena
             for (other_id, other_node) in other.nodes.iter().enumerate() {
                 let new_id = self.add_node(other_node.clone());
-                node_mapping.insert(other_id, new_id);
+                node_mapping.insert(other_id as u32, new_id);
             }
 
             // Update all the node references in the copied nodes
             for (&other_id, &new_id) in &node_mapping {
-                match &other.nodes[other_id] {
+                match &other.nodes[other_id as usize] {
                     ArenaNodeData::Branch(children) => {
                         let mut new_children: [Option<NodeId>; 16] = Default::default();
                         for (i, child) in children.iter().enumerate() {
@@ -897,17 +896,18 @@ pub mod build_mpt {
                                 new_children[i] = Some(node_mapping[child_id]);
                             }
                         }
-                        self.nodes[new_id] = ArenaNodeData::Branch(new_children);
+                        self.nodes[new_id as usize] = ArenaNodeData::Branch(new_children);
                     }
                     ArenaNodeData::Extension(prefix, child_id) => {
                         let new_child_id = node_mapping[child_id];
                         let new_prefix = self.add_owned_slice(*prefix);
-                        self.nodes[new_id] = ArenaNodeData::Extension(new_prefix, new_child_id);
+                        self.nodes[new_id as usize] =
+                            ArenaNodeData::Extension(new_prefix, new_child_id);
                     }
                     ArenaNodeData::Leaf(prefix, value) => {
                         let new_prefix = self.add_owned_slice(*prefix);
                         let new_value = self.add_owned_slice(*value);
-                        self.nodes[new_id] = ArenaNodeData::Leaf(new_prefix, new_value);
+                        self.nodes[new_id as usize] = ArenaNodeData::Leaf(new_prefix, new_value);
                     }
                     _ => {} // Null, and Digest nodes don't need reference updates
                 }
@@ -1106,7 +1106,7 @@ pub mod build_mpt {
     /// node.
     pub fn shorten_node_path_arena<'a>(node: &ArenaBasedMptNode<'a>) -> Vec<ArenaBasedMptNode<'a>> {
         let mut res = Vec::new();
-        let (path_bytes, is_leaf, value, child_id) = match &node.nodes[node.root_id] {
+        let (path_bytes, is_leaf, value, child_id) = match &node.nodes[node.root_id as usize] {
             ArenaNodeData::Leaf(path_bytes, value) => (Some(*path_bytes), true, Some(*value), None),
             ArenaNodeData::Extension(path_bytes, child_id) => {
                 (Some(*path_bytes), false, None, Some(*child_id))
@@ -1161,7 +1161,7 @@ pub mod build_mpt {
 
             // Find the child that references the next node and replace it
             let mut resolved = node.clone();
-            let resolved_root_data = &resolved.nodes[resolved.root_id].clone();
+            let resolved_root_data = &resolved.nodes[resolved.root_id as usize].clone();
 
             match resolved_root_data {
                 ArenaNodeData::Branch(children) => {
@@ -1170,7 +1170,9 @@ pub mod build_mpt {
 
                     for (child_idx, child_id) in children.iter().enumerate() {
                         if let Some(child_id) = child_id {
-                            if let ArenaNodeData::Digest(digest) = &resolved.nodes[*child_id] {
+                            if let ArenaNodeData::Digest(digest) =
+                                &resolved.nodes[*child_id as usize]
+                            {
                                 if *digest == replacement_hash {
                                     // Replace this child with the replacement trie
                                     // We need to merge the replacement trie into our arena
@@ -1188,16 +1190,16 @@ pub mod build_mpt {
                         panic!("node {} does not reference the successor", i);
                     }
 
-                    resolved.nodes[resolved.root_id] = ArenaNodeData::Branch(new_children);
+                    resolved.nodes[resolved.root_id as usize] = ArenaNodeData::Branch(new_children);
                 }
                 ArenaNodeData::Extension(prefix, child_id) => {
-                    if let ArenaNodeData::Digest(digest) = &resolved.nodes[*child_id] {
+                    if let ArenaNodeData::Digest(digest) = &resolved.nodes[*child_id as usize] {
                         if *digest != replacement_hash {
                             panic!("node {} does not reference the successor", i);
                         }
                         // Replace the child with the replacement trie
                         let replacement_root_in_resolved = resolved.merge_trie(&replacement);
-                        resolved.nodes[resolved.root_id] =
+                        resolved.nodes[resolved.root_id as usize] =
                             ArenaNodeData::Extension(*prefix, replacement_root_in_resolved);
                     } else {
                         panic!("node {} does not reference the successor", i);
@@ -1244,7 +1246,7 @@ pub mod build_mpt {
         node_store: &HashMap<MptNodeReference, ArenaBasedMptNode<'a>>,
         new_arena: &mut ArenaBasedMptNode<'a>,
     ) -> NodeId {
-        let node_data = &original_arena.nodes[node_id];
+        let node_data = &original_arena.nodes[node_id as usize];
 
         let resolved_data = match node_data {
             ArenaNodeData::Null => ArenaNodeData::Null,
@@ -1303,7 +1305,7 @@ mod tests {
 
     impl ArenaBasedMptNode<'_> {
         pub fn is_empty(&self) -> bool {
-            matches!(&self.nodes[self.root_id], ArenaNodeData::Null)
+            matches!(&self.nodes[self.root_id as usize], ArenaNodeData::Null)
         }
     }
 
