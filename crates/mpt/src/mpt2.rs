@@ -584,9 +584,8 @@ impl<'a> ArenaBasedMptNode<'a> {
                 let new_node_data = if remaining.len() == 1 {
                     let (index, &child_id) = remaining[0];
                     let child_id = child_id.unwrap();
-                    let child_data = self.nodes[child_id].clone();
 
-                    match child_data {
+                    match self.nodes[child_id] {
                         // if the orphan is a leaf, prepend the corresponding nib to it
                         ArenaNodeData::Leaf(path_bytes, value) => {
                             let path_nibs = prefix_to_small_nibs(path_bytes);
@@ -652,8 +651,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 
                 // an extension can only point to a branch or a digest; since its sub trie was
                 // modified, we need to make sure that this property still holds
-                let child_data = self.nodes[new_child_id].clone();
-                let new_node_data = match child_data {
+                let new_node_data = match self.nodes[new_child_id] {
                     // if the child is empty, remove the extension
                     ArenaNodeData::Null => ArenaNodeData::Null,
                     // for a leaf, replace the extension with the extended leaf
