@@ -316,11 +316,6 @@ impl<'a> ArenaBasedMptNode<'a> {
         }
     }
 
-    fn encode_id(&self, node_id: NodeId, out: &mut dyn alloy_rlp::BufMut) {
-        let payload_length = self.payload_length_id(node_id);
-        self.encode_id_with_payload_len(node_id, payload_length, out);
-    }
-
     /// Encodes a node with ALL children inlined (never using digest references).
     /// This produces the fully-expanded RLP representation.
     fn encode_full(&self, node_id: NodeId, out: &mut dyn alloy_rlp::BufMut) {
@@ -425,31 +420,14 @@ impl<'a> ArenaBasedMptNode<'a> {
         }
     }
 
-    /// Determines if the trie is empty.
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        matches!(&self.nodes[self.root_id], ArenaNodeData::Null)
-    }
-
-    /// Returns the RLP-encoded bytes of this trie
-    #[inline]
-    pub fn to_rlp_bytes(&self) -> Vec<u8> {
-        self.to_rlp_id(self.root_id)
-    }
-
     /// Returns the RLP-encoded bytes with ALL children inlined (never replaced by digest).
     /// This produces a compact, fully-expanded representation perfect for serialization.
     #[inline]
     pub fn to_full_rlp(&self) -> Vec<u8> {
-        let mut out = Vec::with_capacity(self.approx_full_rlp_len());
+        // Rough estimate: each node ~100 bytes average, plus some overhead
+        let mut out = Vec::with_capacity(self.nodes.len() * 100);
         self.encode_full(self.root_id, &mut out);
         out
-    }
-
-    /// Estimates the upper bound for full RLP length (for Vec capacity)
-    fn approx_full_rlp_len(&self) -> usize {
-        // Rough estimate: each node ~100 bytes average, plus some overhead
-        self.nodes.len() * 100
     }
 
     /// Clears the trie, replacing its data with an empty node.
@@ -466,7 +444,7 @@ impl<'a> ArenaBasedMptNode<'a> {
     /// Retrieves the value associated with a given key in the trie.
     #[inline]
     pub fn get(&self, key: &[u8]) -> Result<Option<Vec<u8>>, Error> {
-        self.get_internal(self.root_id, &to_nibs(key))
+        self.get_recursive(self.root_id, &to_nibs(key))
     }
 
     /// Retrieves the RLP-decoded value corresponding to the key.
@@ -478,13 +456,13 @@ impl<'a> ArenaBasedMptNode<'a> {
         }
     }
 
-    fn get_internal(&self, node_id: NodeId, key_nibs: &[u8]) -> Result<Option<Vec<u8>>, Error> {
+    fn get_recursive(&self, node_id: NodeId, key_nibs: &[u8]) -> Result<Option<Vec<u8>>, Error> {
         match &self.nodes[node_id] {
             ArenaNodeData::Null => Ok(None),
             ArenaNodeData::Branch(nodes) => {
                 if let Some((i, tail)) = key_nibs.split_first() {
                     match nodes[*i as usize] {
-                        Some(id) => self.get_internal(id, tail),
+                        Some(id) => self.get_recursive(id, tail),
                         None => Ok(None),
                     }
                 } else {
@@ -504,7 +482,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                 // Convert compact path to nibbles on-demand
                 let path_nibs = prefix_to_small_nibs(path_bytes);
                 if let Some(tail) = key_nibs.strip_prefix(path_nibs.as_slice()) {
-                    self.get_internal(*child_id, tail)
+                    self.get_recursive(*child_id, tail)
                 } else {
                     Ok(None)
                 }
@@ -516,10 +494,10 @@ impl<'a> ArenaBasedMptNode<'a> {
     /// Inserts a key-value pair into the trie.
     #[inline]
     pub fn insert(&mut self, key: &[u8], value: Vec<u8>) -> Result<bool, Error> {
-        if value.is_empty() {
-            panic!("value must not be empty");
-        }
-        self.insert_internal(&to_nibs(key), value)
+        let key_nibs = &to_nibs(key);
+        let (updated, new_root_id) = self.insert_recursive(self.root_id, key_nibs, value)?;
+        self.root_id = new_root_id;
+        Ok(updated)
     }
 
     /// Inserts an RLP-encoded value into the trie.
@@ -527,177 +505,7 @@ impl<'a> ArenaBasedMptNode<'a> {
     pub fn insert_rlp(&mut self, key: &[u8], value: impl Encodable) -> Result<bool, Error> {
         let mut rlp_bytes = Vec::new();
         value.encode(&mut rlp_bytes);
-        self.insert_internal(&to_nibs(key), rlp_bytes)
-    }
-
-    /// Removes a key from the trie.
-    ///
-    /// This method attempts to remove a key-value pair from the trie. If the key is
-    /// present, it returns `true`. Otherwise, it returns `false`.
-    #[inline]
-    pub fn delete(&mut self, key: &[u8]) -> Result<bool, Error> {
-        self.delete_internal(&to_nibs(key))
-    }
-
-    fn delete_internal(&mut self, key_nibs: &[u8]) -> Result<bool, Error> {
-        let (updated, new_root_id) = self.delete_recursive(self.root_id, key_nibs)?;
-        self.root_id = new_root_id;
-        if updated {
-            self.cached_references[self.root_id].borrow_mut().take();
-        }
-        Ok(updated)
-    }
-
-    fn delete_recursive(
-        &mut self,
-        node_id: NodeId,
-        key_nibs: &[u8],
-    ) -> Result<(bool, NodeId), Error> {
-        let node_data = self.nodes[node_id].clone();
-        match node_data {
-            ArenaNodeData::Null => Ok((false, node_id)),
-            ArenaNodeData::Branch(mut children) => {
-                if let Some((i, tail)) = key_nibs.split_first() {
-                    let child_id = children[*i as usize];
-                    match child_id {
-                        Some(id) => {
-                            let (updated, new_child_id) = self.delete_recursive(id, tail)?;
-                            if !updated {
-                                return Ok((false, node_id));
-                            }
-                            children[*i as usize] = Some(new_child_id);
-
-                            if matches!(self.nodes[new_child_id], ArenaNodeData::Null) {
-                                children[*i as usize] = None;
-                            }
-                        }
-                        None => return Ok((false, node_id)),
-                    }
-                } else {
-                    return Err(Error::ValueInBranch);
-                }
-
-                let remaining: Vec<_> =
-                    children.iter().enumerate().filter(|(_, n)| n.is_some()).collect();
-
-                // if there is only exactly one node left, we need to convert the branch
-                let new_node_data = if remaining.len() == 1 {
-                    let (index, &child_id) = remaining[0];
-                    let child_id = child_id.unwrap();
-
-                    match self.nodes[child_id] {
-                        // if the orphan is a leaf, prepend the corresponding nib to it
-                        ArenaNodeData::Leaf(path_bytes, value) => {
-                            let path_nibs = prefix_to_small_nibs(path_bytes);
-                            let mut new_nibs: SmallVec<[u8; 64]> =
-                                SmallVec::with_capacity(1 + path_nibs.len());
-                            new_nibs.push(index as u8);
-                            new_nibs.extend_from_slice(&path_nibs);
-                            let new_path_bytes = to_encoded_path(&new_nibs, true);
-                            let new_path_slice = self.add_owned_slice(new_path_bytes);
-                            let new_value_slice = self.add_owned_slice(value.to_vec());
-                            ArenaNodeData::Leaf(new_path_slice, new_value_slice)
-                        }
-                        // if the orphan is an extension, prepend the corresponding nib to it
-                        ArenaNodeData::Extension(path_bytes, child_child_id) => {
-                            let path_nibs = prefix_to_small_nibs(path_bytes);
-                            let mut new_nibs: SmallVec<[u8; 64]> =
-                                SmallVec::with_capacity(1 + path_nibs.len());
-                            new_nibs.push(index as u8);
-                            new_nibs.extend_from_slice(&path_nibs);
-                            let new_path_bytes = to_encoded_path(&new_nibs, false);
-                            let new_path_slice = self.add_owned_slice(new_path_bytes);
-                            ArenaNodeData::Extension(new_path_slice, child_child_id)
-                        }
-                        // if the orphan is a branch or digest, convert to an extension
-                        ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
-                            let ext_nibs: SmallVec<[u8; 1]> = SmallVec::from_slice(&[index as u8]);
-                            let new_path_bytes = to_encoded_path(&ext_nibs, false);
-                            let new_path_slice = self.add_owned_slice(new_path_bytes);
-                            ArenaNodeData::Extension(new_path_slice, child_id)
-                        }
-                        ArenaNodeData::Null => unreachable!(),
-                    }
-                } else {
-                    // Update the branch with the modified children
-                    ArenaNodeData::Branch(children)
-                };
-
-                let new_node_id = self.add_node(new_node_data);
-                self.cached_references[new_node_id].borrow_mut().take();
-                Ok((true, new_node_id))
-            }
-            ArenaNodeData::Leaf(path_bytes, _) => {
-                let path_nibs = prefix_to_small_nibs(path_bytes);
-                if path_nibs.as_slice() != key_nibs {
-                    return Ok((false, node_id));
-                }
-                let new_node_id = self.add_node(ArenaNodeData::Null);
-                self.cached_references[new_node_id].borrow_mut().take();
-                Ok((true, new_node_id))
-            }
-            ArenaNodeData::Extension(path_bytes, child_id) => {
-                let path_nibs = prefix_to_small_nibs(path_bytes);
-                let (updated, new_child_id) =
-                    if let Some(tail) = key_nibs.strip_prefix(path_nibs.as_slice()) {
-                        let (updated, new_child_id) = self.delete_recursive(child_id, tail)?;
-                        if !updated {
-                            return Ok((false, node_id));
-                        }
-                        (true, new_child_id)
-                    } else {
-                        return Ok((false, node_id));
-                    };
-
-                // an extension can only point to a branch or a digest; since its sub trie was
-                // modified, we need to make sure that this property still holds
-                let new_node_data = match self.nodes[new_child_id] {
-                    // if the child is empty, remove the extension
-                    ArenaNodeData::Null => ArenaNodeData::Null,
-                    // for a leaf, replace the extension with the extended leaf
-                    ArenaNodeData::Leaf(child_path_bytes, value) => {
-                        let child_path_nibs = prefix_to_small_nibs(child_path_bytes);
-                        let mut combined_nibs: SmallVec<[u8; 64]> =
-                            SmallVec::with_capacity(path_nibs.len() + child_path_nibs.len());
-                        combined_nibs.extend_from_slice(&path_nibs);
-                        combined_nibs.extend_from_slice(&child_path_nibs);
-                        let new_path_bytes = to_encoded_path(&combined_nibs, true);
-                        let new_path_slice = self.add_owned_slice(new_path_bytes);
-                        let new_value_slice = self.add_owned_slice(value.to_vec());
-                        ArenaNodeData::Leaf(new_path_slice, new_value_slice)
-                    }
-                    // for an extension, replace the extension with the extended extension
-                    ArenaNodeData::Extension(child_path_bytes, grandchild_id) => {
-                        let child_path_nibs = prefix_to_small_nibs(child_path_bytes);
-                        let mut combined_nibs: SmallVec<[u8; 64]> =
-                            SmallVec::with_capacity(path_nibs.len() + child_path_nibs.len());
-                        combined_nibs.extend_from_slice(&path_nibs);
-                        combined_nibs.extend_from_slice(&child_path_nibs);
-                        let new_path_bytes = to_encoded_path(&combined_nibs, false);
-                        let new_path_slice = self.add_owned_slice(new_path_bytes);
-                        ArenaNodeData::Extension(new_path_slice, grandchild_id)
-                    }
-                    // for a branch or digest, the extension is still correct
-                    ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
-                        ArenaNodeData::Extension(path_bytes, new_child_id)
-                    }
-                };
-
-                let new_node_id = self.add_node(new_node_data);
-                self.cached_references[new_node_id].borrow_mut().take();
-                Ok((updated, new_node_id))
-            }
-            ArenaNodeData::Digest(digest) => Err(Error::NodeNotResolved(digest)),
-        }
-    }
-
-    fn insert_internal(&mut self, key_nibs: &[u8], value: Vec<u8>) -> Result<bool, Error> {
-        let (updated, new_root_id) = self.insert_recursive(self.root_id, key_nibs, value)?;
-        self.root_id = new_root_id;
-        if updated {
-            self.cached_references[self.root_id].borrow_mut().take();
-        }
-        Ok(updated)
+        self.insert(key, rlp_bytes)
     }
 
     fn insert_recursive(
@@ -852,6 +660,158 @@ impl<'a> ArenaBasedMptNode<'a> {
         }
     }
 
+    /// Removes a key from the trie.
+    ///
+    /// This method attempts to remove a key-value pair from the trie. If the key is
+    /// present, it returns `true`. Otherwise, it returns `false`.
+    #[inline]
+    pub fn delete(&mut self, key: &[u8]) -> Result<bool, Error> {
+        let key_nibs = &to_nibs(key);
+        let (updated, new_root_id) = self.delete_recursive(self.root_id, key_nibs)?;
+        self.root_id = new_root_id;
+        Ok(updated)
+    }
+
+    fn delete_recursive(
+        &mut self,
+        node_id: NodeId,
+        key_nibs: &[u8],
+    ) -> Result<(bool, NodeId), Error> {
+        let node_data = self.nodes[node_id].clone();
+        match node_data {
+            ArenaNodeData::Null => Ok((false, node_id)),
+            ArenaNodeData::Branch(mut children) => {
+                if let Some((i, tail)) = key_nibs.split_first() {
+                    let child_id = children[*i as usize];
+                    match child_id {
+                        Some(id) => {
+                            let (updated, new_child_id) = self.delete_recursive(id, tail)?;
+                            if !updated {
+                                return Ok((false, node_id));
+                            }
+                            children[*i as usize] = Some(new_child_id);
+
+                            if matches!(self.nodes[new_child_id], ArenaNodeData::Null) {
+                                children[*i as usize] = None;
+                            }
+                        }
+                        None => return Ok((false, node_id)),
+                    }
+                } else {
+                    return Err(Error::ValueInBranch);
+                }
+
+                let remaining: Vec<_> =
+                    children.iter().enumerate().filter(|(_, n)| n.is_some()).collect();
+
+                // if there is only exactly one node left, we need to convert the branch
+                let new_node_data = if remaining.len() == 1 {
+                    let (index, &child_id) = remaining[0];
+                    let child_id = child_id.unwrap();
+
+                    match self.nodes[child_id] {
+                        // if the orphan is a leaf, prepend the corresponding nib to it
+                        ArenaNodeData::Leaf(path_bytes, value) => {
+                            let path_nibs = prefix_to_small_nibs(path_bytes);
+                            let mut new_nibs: SmallVec<[u8; 64]> =
+                                SmallVec::with_capacity(1 + path_nibs.len());
+                            new_nibs.push(index as u8);
+                            new_nibs.extend_from_slice(&path_nibs);
+                            let new_path_bytes = to_encoded_path(&new_nibs, true);
+                            let new_path_slice = self.add_owned_slice(new_path_bytes);
+                            let new_value_slice = self.add_owned_slice(value.to_vec());
+                            ArenaNodeData::Leaf(new_path_slice, new_value_slice)
+                        }
+                        // if the orphan is an extension, prepend the corresponding nib to it
+                        ArenaNodeData::Extension(path_bytes, child_child_id) => {
+                            let path_nibs = prefix_to_small_nibs(path_bytes);
+                            let mut new_nibs: SmallVec<[u8; 64]> =
+                                SmallVec::with_capacity(1 + path_nibs.len());
+                            new_nibs.push(index as u8);
+                            new_nibs.extend_from_slice(&path_nibs);
+                            let new_path_bytes = to_encoded_path(&new_nibs, false);
+                            let new_path_slice = self.add_owned_slice(new_path_bytes);
+                            ArenaNodeData::Extension(new_path_slice, child_child_id)
+                        }
+                        // if the orphan is a branch or digest, convert to an extension
+                        ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
+                            let ext_nibs: SmallVec<[u8; 1]> = SmallVec::from_slice(&[index as u8]);
+                            let new_path_bytes = to_encoded_path(&ext_nibs, false);
+                            let new_path_slice = self.add_owned_slice(new_path_bytes);
+                            ArenaNodeData::Extension(new_path_slice, child_id)
+                        }
+                        ArenaNodeData::Null => unreachable!(),
+                    }
+                } else {
+                    // Update the branch with the modified children
+                    ArenaNodeData::Branch(children)
+                };
+
+                let new_node_id = self.add_node(new_node_data);
+                Ok((true, new_node_id))
+            }
+            ArenaNodeData::Leaf(path_bytes, _) => {
+                let path_nibs = prefix_to_small_nibs(path_bytes);
+                if path_nibs.as_slice() != key_nibs {
+                    return Ok((false, node_id));
+                }
+                let new_node_id = self.add_node(ArenaNodeData::Null);
+                Ok((true, new_node_id))
+            }
+            ArenaNodeData::Extension(path_bytes, child_id) => {
+                let path_nibs = prefix_to_small_nibs(path_bytes);
+                let (updated, new_child_id) =
+                    if let Some(tail) = key_nibs.strip_prefix(path_nibs.as_slice()) {
+                        let (updated, new_child_id) = self.delete_recursive(child_id, tail)?;
+                        if !updated {
+                            return Ok((false, node_id));
+                        }
+                        (true, new_child_id)
+                    } else {
+                        return Ok((false, node_id));
+                    };
+
+                // an extension can only point to a branch or a digest; since its sub trie was
+                // modified, we need to make sure that this property still holds
+                let new_node_data = match self.nodes[new_child_id] {
+                    // if the child is empty, remove the extension
+                    ArenaNodeData::Null => ArenaNodeData::Null,
+                    // for a leaf, replace the extension with the extended leaf
+                    ArenaNodeData::Leaf(child_path_bytes, value) => {
+                        let child_path_nibs = prefix_to_small_nibs(child_path_bytes);
+                        let mut combined_nibs: SmallVec<[u8; 64]> =
+                            SmallVec::with_capacity(path_nibs.len() + child_path_nibs.len());
+                        combined_nibs.extend_from_slice(&path_nibs);
+                        combined_nibs.extend_from_slice(&child_path_nibs);
+                        let new_path_bytes = to_encoded_path(&combined_nibs, true);
+                        let new_path_slice = self.add_owned_slice(new_path_bytes);
+                        let new_value_slice = self.add_owned_slice(value.to_vec());
+                        ArenaNodeData::Leaf(new_path_slice, new_value_slice)
+                    }
+                    // for an extension, replace the extension with the extended extension
+                    ArenaNodeData::Extension(child_path_bytes, grandchild_id) => {
+                        let child_path_nibs = prefix_to_small_nibs(child_path_bytes);
+                        let mut combined_nibs: SmallVec<[u8; 64]> =
+                            SmallVec::with_capacity(path_nibs.len() + child_path_nibs.len());
+                        combined_nibs.extend_from_slice(&path_nibs);
+                        combined_nibs.extend_from_slice(&child_path_nibs);
+                        let new_path_bytes = to_encoded_path(&combined_nibs, false);
+                        let new_path_slice = self.add_owned_slice(new_path_bytes);
+                        ArenaNodeData::Extension(new_path_slice, grandchild_id)
+                    }
+                    // for a branch or digest, the extension is still correct
+                    ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
+                        ArenaNodeData::Extension(path_bytes, new_child_id)
+                    }
+                };
+
+                let new_node_id = self.add_node(new_node_data);
+                Ok((updated, new_node_id))
+            }
+            ArenaNodeData::Digest(digest) => Err(Error::NodeNotResolved(digest)),
+        }
+    }
+
     fn payload_length_id(&self, node_id: NodeId) -> usize {
         match &self.nodes[node_id] {
             ArenaNodeData::Null => 0,
@@ -891,44 +851,6 @@ impl<'a> ArenaBasedMptNode<'a> {
     fn full_length(&self, node_id: NodeId) -> usize {
         let payload_length = self.payload_length_full(node_id);
         payload_length + alloy_rlp::length_of_length(payload_length)
-    }
-
-    /// Recursively collects all RLP-encoded trie nodes into the provided HashMap.
-    /// Each node is keyed by its Keccak-256 hash to avoid duplicates.
-    pub fn rlp_nodes(&self, nodes: &mut HashMap<B256, Vec<u8>>) {
-        self.rlp_nodes_recursive(self.root_id, nodes);
-    }
-
-    fn rlp_nodes_recursive(&self, node_id: NodeId, nodes: &mut HashMap<B256, Vec<u8>>) {
-        let rlp_bytes = self.to_rlp_id(node_id);
-        let hash = B256::from(keccak256(rlp_bytes.as_slice()));
-
-        // Insert this node into the map (avoiding duplicates)
-        if nodes.contains_key(&hash) {
-            return;
-        }
-        nodes.insert(hash, rlp_bytes);
-
-        // Recursively process child nodes
-        match &self.nodes[node_id] {
-            ArenaNodeData::Branch(children) => {
-                for child in children.iter().flatten() {
-                    self.rlp_nodes_recursive(*child, nodes);
-                }
-            }
-            ArenaNodeData::Extension(_, child) => {
-                self.rlp_nodes_recursive(*child, nodes);
-            }
-            ArenaNodeData::Leaf(_, _) | ArenaNodeData::Null | ArenaNodeData::Digest(_) => {
-                // No child nodes to process
-            }
-        }
-    }
-
-    fn to_rlp_id(&self, node_id: NodeId) -> Vec<u8> {
-        let mut out = Vec::new();
-        self.encode_id(node_id, &mut out);
-        out
     }
 }
 
@@ -1356,6 +1278,12 @@ mod tests {
     use super::*;
     use hex_literal::hex;
 
+    impl ArenaBasedMptNode<'_> {
+        pub fn is_empty(&self) -> bool {
+            matches!(&self.nodes[self.root_id], ArenaNodeData::Null)
+        }
+    }
+
     #[test]
     fn test_empty() {
         let trie = ArenaBasedMptNode::default();
@@ -1407,19 +1335,6 @@ mod tests {
         // check inserting duplicate keys
         assert!(trie.insert(vals[0].0.as_bytes(), b"new".to_vec()).unwrap());
         assert!(!trie.insert(vals[0].0.as_bytes(), b"new".to_vec()).unwrap());
-    }
-
-    #[test]
-    fn test_direct_rlp_decoding() {
-        // Test that we can decode RLP directly into ArenaBasedMptNode
-        let mut trie = ArenaBasedMptNode::default();
-        trie.insert(b"test", b"value".to_vec()).unwrap();
-
-        let rlp_bytes = trie.to_rlp_id(trie.root_id);
-        let decoded = ArenaBasedMptNode::decode_from_rlp(&rlp_bytes).unwrap();
-
-        // The decoded trie should have the same hash as the original
-        assert_eq!(trie.hash(), decoded.hash());
     }
 
     #[test]

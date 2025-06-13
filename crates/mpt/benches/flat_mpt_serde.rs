@@ -62,30 +62,6 @@ fn create_identical_tries<'a>(num_keys: usize) -> (MptNode, ArenaBasedMptNode<'a
     (mpt_node, arena_node)
 }
 
-// NEW: RLP-specific benchmarks - this is what arena was designed for!
-fn bench_rlp_codec_comparison(c: &mut Criterion) {
-    let (mpt_node, arena_node) = create_identical_tries(100);
-
-    // Generate RLP bytes for both
-    let mpt_rlp = alloy_rlp::encode(&mpt_node);
-    let arena_rlp = arena_node.to_rlp_bytes();
-
-    println!("RLP sizes - MptNode: {} bytes, ArenaNode: {} bytes", mpt_rlp.len(), arena_rlp.len());
-
-    // Benchmark RLP encoding (serialization)
-    // c.bench_function("rlp_encode_mpt_node", |b| b.iter(|| black_box(alloy_rlp::encode(&mpt_node))));
-    // c.bench_function("rlp_encode_arena_node", |b| b.iter(|| black_box(arena_node.to_rlp_bytes())));
-
-    // Benchmark RLP decoding (deserialization) - the main target!
-    c.bench_function("rlp_decode_mpt_node", |b| {
-        b.iter(|| black_box(MptNode::decode(&mpt_rlp).unwrap()))
-    });
-
-    c.bench_function("rlp_decode_arena_node", |b| {
-        b.iter(|| black_box(ArenaBasedMptNode::decode_from_rlp(&arena_rlp).unwrap()))
-    });
-}
-
 // NEW: Compare lookup performance on identical tries
 fn bench_lookup_performance(c: &mut Criterion) {
     let (mpt_node, arena_node) = create_identical_tries(1000);
