@@ -121,6 +121,13 @@ impl<'a> ArenaBasedMptNode<'a> {
         Self { nodes, cached_references, root_id: 0, bump }
     }
 
+    /// Reserves capacity for at least `additional` more elements to be inserted
+    /// in the given arena.
+    pub fn reserve(&mut self, additional: usize) {
+        self.nodes.reserve(additional);
+        self.cached_references.reserve(additional);
+    }
+
     /// Decodes an RLP-encoded node directly into an ArenaBasedMptNode with zero-copy optimization
     pub fn decode_from_rlp(bytes: &'a [u8]) -> Result<Self, Error> {
         // Improved heuristic: real Ethereum nodes average ~20-24 bytes, overshoot to avoid reallocations
@@ -872,9 +879,7 @@ pub mod build_mpt {
     }
 
     /// Parses proof bytes into a vector of ArenaBasedMptNodes.
-    pub fn parse_proof(
-        proof: &[impl AsRef<[u8]>],
-    ) -> Result<Vec<ArenaBasedMptNode<'_>>, Error> {
+    pub fn parse_proof(proof: &[impl AsRef<[u8]>]) -> Result<Vec<ArenaBasedMptNode<'_>>, Error> {
         proof
             .iter()
             .map(|bytes| ArenaBasedMptNode::decode_from_rlp(bytes.as_ref()))
