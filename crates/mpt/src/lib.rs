@@ -2,8 +2,10 @@ use crate::word_bytes::OptimizedBytes;
 use eyre::Result;
 use mpt::{proofs_to_tries, MptNode};
 use mpt2::ArenaBasedMptNode;
+use reth_revm::db::BundleState;
 use reth_trie::{AccountProof, TrieAccount};
 use revm::primitives::{Address, HashMap, B256};
+use revm_primitives::keccak256;
 use serde::{Deserialize, Serialize};
 use state::HashedPostState;
 
@@ -151,6 +153,46 @@ impl EthereumState2 {
                 _ => {
                     self.state_trie.delete(hashed_address).unwrap();
                 }
+            }
+        }
+    }
+
+    pub fn update_from_bundle_state(&mut self, bundle_state: &BundleState) {
+        for (address, account) in &bundle_state.state {
+            let hashed_address = keccak256(address);
+
+            if let Some(info) = &account.info {
+                // 1. Update storage trie and get the new storage root
+                let storage_trie = self.storage_tries.0.entry(hashed_address).or_default();
+
+                if account.status.was_destroyed() {
+                    storage_trie.clear();
+                }
+
+                for (slot, value) in &account.storage {
+                    let hashed_slot = keccak256(B256::from(*slot));
+                    if value.present_value.is_zero() {
+                        storage_trie.delete(hashed_slot.as_slice()).unwrap();
+                    } else {
+                        storage_trie
+                            .insert_rlp(hashed_slot.as_slice(), value.present_value)
+                            .unwrap();
+                    }
+                }
+                let storage_root = storage_trie.hash();
+
+                // 2. Create TrieAccount and insert into state trie
+                let state_account = TrieAccount {
+                    nonce: info.nonce,
+                    balance: info.balance,
+                    storage_root,
+                    code_hash: info.code_hash,
+                };
+                self.state_trie.insert_rlp(hashed_address.as_slice(), state_account).unwrap();
+            } else {
+                // account.info is None, which means it was destroyed.
+                self.state_trie.delete(hashed_address.as_slice()).unwrap();
+                self.storage_tries.0.remove(&hashed_address);
             }
         }
     }

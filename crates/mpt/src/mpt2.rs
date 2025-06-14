@@ -84,7 +84,7 @@ impl<'de> de::Deserialize<'de> for ArenaBasedMptNode<'de> {
     }
 }
 
-impl<'a> Default for ArenaBasedMptNode<'a> {
+impl Default for ArenaBasedMptNode<'_> {
     fn default() -> Self {
         let bump = Rc::new(Bump::new());
         Self {
@@ -447,7 +447,7 @@ impl<'a> ArenaBasedMptNode<'a> {
             .get_or_insert_with(|| self.calc_reference(node_id))
         {
             // if the reference is an RLP-encoded byte slice, copy it directly
-            MptNodeReference::Bytes(bytes) => out.put_slice(&bytes),
+            MptNodeReference::Bytes(bytes) => out.put_slice(bytes),
             // if the reference is a digest, RLP-encode it with its fixed known length
             MptNodeReference::Digest(digest) => {
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE + 32);
@@ -898,9 +898,9 @@ pub mod build_mpt {
     }
 
     /// Parses proof bytes into a vector of ArenaBasedMptNodes.
-    pub fn parse_proof<'a>(
-        proof: &'a [impl AsRef<[u8]>],
-    ) -> Result<Vec<ArenaBasedMptNode<'a>>, Error> {
+    pub fn parse_proof(
+        proof: &[impl AsRef<[u8]>],
+    ) -> Result<Vec<ArenaBasedMptNode<'_>>, Error> {
         proof
             .iter()
             .map(|bytes| ArenaBasedMptNode::decode_from_rlp(bytes.as_ref()))
@@ -1010,9 +1010,9 @@ pub mod build_mpt {
     }
 
     /// Adds all the leaf nodes of non-inclusion proofs to the nodes.
-    fn add_orphaned_leafs<'a>(
+    fn add_orphaned_leafs(
         key: impl AsRef<[u8]>,
-        proof: &'a [impl AsRef<[u8]>],
+        proof: &[impl AsRef<[u8]>],
         nodes_by_reference: &mut HashMap<MptNodeReference, ArenaBasedMptNode<'static>>,
     ) -> Result<(), Error> {
         if !proof.is_empty() {
@@ -1035,7 +1035,7 @@ pub mod build_mpt {
 
     /// Helper function to convert a node with any lifetime to static lifetime
     /// by copying all borrowed data into owned storage
-    fn convert_to_static_lifetime<'a>(node: ArenaBasedMptNode<'a>) -> ArenaBasedMptNode<'static> {
+    fn convert_to_static_lifetime(node: ArenaBasedMptNode<'_>) -> ArenaBasedMptNode<'static> {
         // Use with_capacity to correctly initialize with a pre-sized Vec and a default Null node.
         let mut static_node = ArenaBasedMptNode::with_capacity(node.nodes.len());
 
@@ -1144,7 +1144,7 @@ pub mod build_mpt {
 
             match resolved_root_data {
                 ArenaNodeData::Branch(children) => {
-                    let mut new_children = children.clone();
+                    let mut new_children = *children;
                     let mut found = false;
 
                     for (child_idx, child_id) in children.iter().enumerate() {
@@ -1179,7 +1179,7 @@ pub mod build_mpt {
                         // Replace the child with the replacement trie
                         let replacement_root_in_resolved = resolved.merge_trie(&replacement);
                         resolved.nodes[resolved.root_id as usize] =
-                            ArenaNodeData::Extension(*prefix, replacement_root_in_resolved);
+                            ArenaNodeData::Extension(prefix, replacement_root_in_resolved);
                     } else {
                         panic!("node {} does not reference the successor", i);
                     }
@@ -1261,7 +1261,7 @@ pub mod build_mpt {
                 if let Some(resolved_node) = node_store.get(&MptNodeReference::Digest(*digest)) {
                     // Convert the resolved node to arena format and add it
                     return resolve_node_recursive(
-                        &resolved_node,
+                        resolved_node,
                         resolved_node.root_id,
                         node_store,
                         new_arena,
@@ -1352,7 +1352,7 @@ mod tests {
         // Create the deepest node (a leaf) - using compact path directly
         let mut leaf_trie = ArenaBasedMptNode::default();
         let path_bytes = leaf_trie.add_encoded_path_slice(&[0x03], true); // compact encoding for nibble [0x03]
-        let value_bytes = leaf_trie.add_owned_slice(b"test_value".to_vec());
+        let value_bytes = leaf_trie.add_owned_slice(b"test_value");
         leaf_trie.nodes[0] = ArenaNodeData::Leaf(path_bytes, value_bytes);
 
         // Create a parent extension that references the leaf by digest
