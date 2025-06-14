@@ -55,21 +55,36 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
     //     })
     // });
 
-    c.bench_function("update indirectly", |b| {
-        b.iter_with_setup(
-            || {
-                // Setup: This part is NOT timed
-                client_input.parent_state.clone()
-            },
-            |mut parent_state| {
-                // Routine: This part IS timed
-                let post_state = HashedPostState::from_bundle_state(&executor_outcome.bundle.state);
-                parent_state.update(&post_state)
-            },
-        )
+    // c.bench_function("update indirectly", |b| {
+    //     b.iter_with_setup(
+    //         || {
+    //             // Setup: This part is NOT timed
+    //             client_input.parent_state.clone()
+    //         },
+    //         |mut parent_state| {
+    //             // Routine: This part IS timed
+    //             let post_state = HashedPostState::from_bundle_state(&executor_outcome.bundle.state);
+    //             parent_state.update(&post_state)
+    //         },
+    //     )
+    // });
+
+    c.bench_function("deserialize only", |b| {
+        b.iter(|| {
+            let (client_input, _): (ClientExecutorInput, _) =
+                bincode::serde::decode_from_slice(black_box(&buffer), bincode_config).unwrap();
+            black_box(client_input)
+        })
     });
 
-    c.bench_function("update directly", |b| {
+    c.bench_function("witness db only", |b| {
+        b.iter(|| {
+            let witness_db = client_input.witness_db().unwrap();
+            black_box(witness_db)
+        })
+    });
+
+    c.bench_function("update only", |b| {
         b.iter_with_setup(
             || {
                 // Setup: This part is NOT timed
@@ -78,6 +93,22 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
             |mut parent_state| {
                 // Routine: This part IS timed
                 parent_state.update_from_bundle_state(&executor_outcome.bundle)
+            },
+        )
+    });
+
+    c.bench_function("state root only", |b| {
+        b.iter_with_setup(
+            || {
+                // Setup: This part is NOT timed
+                let mut parent_state = client_input.parent_state.clone();
+                parent_state.update_from_bundle_state(&executor_outcome.bundle);
+                parent_state
+            },
+            |parent_state| {
+                // Routine: This part IS timed
+                let state_root = parent_state.state_root();
+                black_box(state_root)
             },
         )
     });

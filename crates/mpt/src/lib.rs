@@ -158,12 +158,23 @@ impl EthereumState2 {
     }
 
     pub fn update_from_bundle_state(&mut self, bundle_state: &BundleState) {
+        // A single insertion can split a leaf into an extension and a branch with two leaves,
+        // adding up to 3 new nodes. A deletion can also cause node modifications.
+        // We use a pessimistic multiplier of 4 to be safe.
+        const MPT_NODE_MULTIPLIER: usize = 4;
+
+        // 1. Reserve capacity for the state trie.
+        let num_changed_accounts = bundle_state.state.len();
+        self.state_trie.reserve(num_changed_accounts * MPT_NODE_MULTIPLIER);
+
+        // 2. Perform the updates, reserving for storage tries just-in-time.
         for (address, account) in &bundle_state.state {
             let hashed_address = keccak256(address);
 
             if let Some(info) = &account.info {
                 // 1. Update storage trie and get the new storage root
                 let storage_trie = self.storage_tries.0.entry(hashed_address).or_default();
+                storage_trie.reserve(account.storage.len() * MPT_NODE_MULTIPLIER);
 
                 if account.status.was_destroyed() {
                     storage_trie.clear();
@@ -175,7 +186,7 @@ impl EthereumState2 {
                         storage_trie.delete(hashed_slot.as_slice()).unwrap();
                     } else {
                         storage_trie
-                            .insert_rlp(hashed_slot.as_slice(), value.present_value)
+                            .insert_rlp(hashed_slot.as_slice(), &value.present_value)
                             .unwrap();
                     }
                 }
