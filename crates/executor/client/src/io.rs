@@ -30,6 +30,10 @@ pub struct ClientExecutorInput {
     pub ancestor_headers: Vec<Header>,
     /// Network state as of the parent block.
     pub parent_state: EthereumState2,
+    /// Pre-fetched account data.
+    pub accounts: HashMap<Address, AccountInfo>,
+    /// Pre-fetched storage data.
+    pub storage: HashMap<Address, HashMap<U256, U256>>,
     /// Requests to account state and storage slots.
     pub state_requests: HashMap<Address, Vec<U256>>,
     /// Account bytecodes.
@@ -43,9 +47,29 @@ impl ClientExecutorInput {
         &self.ancestor_headers[0]
     }
 
-    /// Creates a [`WitnessDb`].
-    pub fn witness_db(&self) -> Result<WitnessDb> {
-        <Self as WitnessInput>::witness_db(self)
+    /// Creates a [`WitnessDb`] by taking ownership of the pre-fetched data.
+    pub fn witness_db(self) -> Result<WitnessDb> {
+        if self.parent_header().state_root != self.parent_state.state_root() {
+            eyre::bail!("parent state root mismatch");
+        }
+
+        // Verify and build block hashes
+        let headers_iter = self.headers();
+        let (lower, _) = headers_iter.size_hint();
+        let mut block_hashes: HashMap<u64, B256, _> = HashMap::with_capacity(lower);
+        for (child_header, parent_header) in headers_iter.tuple_windows() {
+            if parent_header.number != child_header.number - 1 {
+                eyre::bail!("non-consecutive blocks");
+            }
+
+            if parent_header.hash_slow() != child_header.parent_hash {
+                eyre::bail!("parent hash mismatch");
+            }
+
+            block_hashes.insert(parent_header.number, child_header.parent_hash);
+        }
+
+        Ok(WitnessDb { accounts: self.accounts, storage: self.storage, block_hashes })
     }
 }
 

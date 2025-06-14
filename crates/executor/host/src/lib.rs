@@ -16,8 +16,10 @@ use reth_evm_ethereum::EthEvmConfig;
 use reth_execution_types::ExecutionOutcome;
 use reth_primitives::Block;
 use reth_primitives_traits::block::Block as _;
+use reth_trie::TrieAccount;
 use revm::database::CacheDB;
-use revm_primitives::B256;
+use revm::state::AccountInfo;
+use revm_primitives::{keccak256, HashMap, B256, U256};
 
 /// An executor that fetches data from a [Provider] to execute blocks in the [ClientExecutor].
 #[derive(Debug, Clone)]
@@ -197,13 +199,63 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
             ancestor_headers.push(block.header.into());
         }
 
+        // Extract data from rpc_db before creating the client input
+        let bytecodes = rpc_db.get_bytecodes();
+        let state_requests = rpc_db.get_state_requests();
+
+        // Extract accounts and storage from the parent_state MPT (same logic as witness_db)
+        let mut accounts = HashMap::new();
+        let mut storage = HashMap::new();
+
+        for (&address, slots) in &state_requests {
+            let hashed_address = keccak256(address.as_slice());
+
+            let account_in_trie =
+                state.state_trie.get_rlp::<TrieAccount>(hashed_address.as_slice())?;
+
+            accounts.insert(
+                address,
+                match account_in_trie {
+                    Some(account_in_trie) => AccountInfo {
+                        balance: account_in_trie.balance,
+                        nonce: account_in_trie.nonce,
+                        code_hash: account_in_trie.code_hash,
+                        code: rpc_db
+                            .accounts
+                            .borrow()
+                            .get(&address)
+                            .and_then(|acc| acc.code.clone()),
+                    },
+                    _ => Default::default(),
+                },
+            );
+
+            if !slots.is_empty() {
+                let mut address_storage = HashMap::with_capacity(slots.len());
+
+                if let Some(storage_trie) = state.storage_tries.0.get(&hashed_address) {
+                    for &slot in slots {
+                        let slot_bytes = slot.to_be_bytes::<32>();
+                        let slot_hash = keccak256(slot_bytes.as_slice());
+                        let slot_value =
+                            storage_trie.get_rlp::<U256>(slot_hash.as_slice())?.unwrap_or_default();
+                        address_storage.insert(slot, slot_value);
+                    }
+                }
+
+                storage.insert(address, address_storage);
+            }
+        }
+
         // Create the client input.
         let client_input = ClientExecutorInput {
             current_block,
             ancestor_headers,
             parent_state: state,
+            accounts,
+            storage,
             state_requests,
-            bytecodes: rpc_db.get_bytecodes(),
+            bytecodes,
         };
         tracing::info!("successfully generated client input");
 

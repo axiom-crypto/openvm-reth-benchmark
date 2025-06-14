@@ -1,7 +1,6 @@
 use bincode::config::standard;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use openvm_client_executor::io::ClientExecutorInput;
-use openvm_mpt::state::HashedPostState;
 use openvm_primitives::chain_spec::mainnet;
 use reth_evm::execute::{BasicBlockExecutor, Executor};
 use reth_evm_ethereum::EthEvmConfig;
@@ -22,7 +21,7 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
     // Pre-compute the post-state once for the MPT benchmarks (not timed)
     let (client_input, _): (ClientExecutorInput, _) =
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
-    let witness_db = client_input.witness_db().unwrap();
+    let witness_db = client_input.clone().witness_db().unwrap();
     let cache_db = CacheDB::new(&witness_db);
     let spec = Arc::new(mainnet());
     let current_block = client_input.current_block.clone().try_into_recovered().unwrap();
@@ -79,7 +78,7 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
 
     c.bench_function("witness db only", |b| {
         b.iter(|| {
-            let witness_db = client_input.witness_db().unwrap();
+            let witness_db = client_input.clone().witness_db().unwrap();
             black_box(witness_db)
         })
     });

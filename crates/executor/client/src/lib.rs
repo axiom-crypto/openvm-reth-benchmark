@@ -47,7 +47,12 @@ pub enum ChainVariant {
 }
 
 impl ClientExecutor {
-    pub fn execute(&self, mut input: ClientExecutorInput) -> eyre::Result<Header> {
+    pub fn execute(&self, input: ClientExecutorInput) -> eyre::Result<Header> {
+        // Extract data we'll need after consuming input for witness_db
+        let current_block_raw = input.current_block.clone();
+        let parent_header = input.parent_header().clone();
+        let mut parent_state = input.parent_state.clone();
+
         // Initialize the witnessed database with verified storage proofs.
         let witness_db = input.witness_db()?;
         let cache_db = CacheDB::new(&witness_db);
@@ -55,7 +60,7 @@ impl ClientExecutor {
         // Execute the block.
         let spec = Arc::new(mainnet());
         let current_block =
-            profile!("recover senders", { input.current_block.clone().try_into_recovered() })?;
+            profile!("recover senders", { current_block_raw.clone().try_into_recovered() })?;
 
         // validate the block pre-execution
         profile!("validate block pre-execution", {
@@ -95,32 +100,32 @@ impl ClientExecutor {
         let executor_outcome = ExecutionOutcome::new(
             executor_output.state,
             vec![executor_output.result.receipts],
-            input.current_block.header.number,
+            current_block_raw.header.number,
             vec![executor_output.result.requests],
         );
 
         // Verify the state root.
         let state_root = profile!("compute state root", {
-            input.parent_state.update_from_bundle_state(&executor_outcome.bundle);
-            input.parent_state.state_root()
+            parent_state.update_from_bundle_state(&executor_outcome.bundle);
+            parent_state.state_root()
         });
 
-        if state_root != input.current_block.state_root {
+        if state_root != current_block_raw.state_root {
             eyre::bail!("mismatched state root");
         }
 
         // Derive the block header.
         //
         // Note: the receipts root and gas used are verified by `validate_block_post_execution`.
-        let mut header = input.current_block.header.clone();
-        header.parent_hash = input.parent_header().hash_slow();
-        header.ommers_hash = input.current_block.body.calculate_ommers_root();
-        header.state_root = input.current_block.state_root;
-        header.transactions_root = input.current_block.transactions_root;
-        header.receipts_root = input.current_block.header.receipts_root;
-        header.withdrawals_root = input.current_block.body.calculate_withdrawals_root();
+        let mut header = current_block_raw.header.clone();
+        header.parent_hash = parent_header.hash_slow();
+        header.ommers_hash = current_block_raw.body.calculate_ommers_root();
+        header.state_root = current_block_raw.state_root;
+        header.transactions_root = current_block_raw.transactions_root;
+        header.receipts_root = current_block_raw.header.receipts_root;
+        header.withdrawals_root = current_block_raw.body.calculate_withdrawals_root();
         header.logs_bloom = logs_bloom;
-        header.requests_hash = input.current_block.requests_hash;
+        header.requests_hash = current_block_raw.requests_hash;
 
         Ok(header)
     }
