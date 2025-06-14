@@ -49,8 +49,7 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
             // Update MPT with pre-computed post-state (this happens in production)
             // Note: In production, the post-state comes from block execution, but we're
             // using pre-computed data to exclude execution time from the benchmark
-            let post_state = HashedPostState::from_bundle_state(&executor_outcome.bundle.state);
-            client_input.parent_state.update(&post_state);
+            client_input.parent_state.update_from_bundle_state(&executor_outcome.bundle);
             let state_root = client_input.parent_state.state_root();
             black_box(state_root)
         })
