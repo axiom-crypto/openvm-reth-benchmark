@@ -359,7 +359,9 @@ impl<'a> ArenaBasedMptNode<'a> {
                 // For list nodes, we encode the payload first to get its length, then encode the
                 // header and payload into the final buffer. This avoids a second traversal
                 // to calculate the length.
-                let mut payload_buf = Vec::with_capacity(64);
+                // A branch node payload is max 529 bytes (16 * 33-byte refs + 1 byte).
+                // Pre-allocating for the worst case avoids heap re-allocations inside the hot path.
+                let mut payload_buf = Vec::with_capacity(529);
                 let payload_length = self.encode_id_payload(node_id, &mut payload_buf);
                 let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
 
