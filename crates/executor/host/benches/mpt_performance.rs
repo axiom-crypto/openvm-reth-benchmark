@@ -37,22 +37,49 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
 
     // Benchmark the realistic end-to-end workflow (deserialize -> witness_db -> mpt_update)
     // This excludes block execution since that's not what you want to measure
-    c.bench_function("end_to_end_without_execution", |b| {
-        b.iter(|| {
-            // Deserialize (this happens in production)
-            let (mut client_input, _): (ClientExecutorInput, _) =
-                bincode::serde::decode_from_slice(black_box(&buffer), bincode_config).unwrap();
+    // c.bench_function("end_to_end_without_execution", |b| {
+    //     b.iter(|| {
+    //         // Deserialize (this happens in production)
+    //         let (mut client_input, _): (ClientExecutorInput, _) =
+    //             bincode::serde::decode_from_slice(black_box(&buffer), bincode_config).unwrap();
 
-            // Create witness DB (this happens in production)
-            let _witness_db = client_input.witness_db().unwrap();
+    //         // Create witness DB (this happens in production)
+    //         let _witness_db = client_input.witness_db().unwrap();
 
-            // Update MPT with pre-computed post-state (this happens in production)
-            // Note: In production, the post-state comes from block execution, but we're
-            // using pre-computed data to exclude execution time from the benchmark
-            client_input.parent_state.update_from_bundle_state(&executor_outcome.bundle);
-            let state_root = client_input.parent_state.state_root();
-            black_box(state_root)
-        })
+    //         // Update MPT with pre-computed post-state (this happens in production)
+    //         // Note: In production, the post-state comes from block execution, but we're
+    //         // using pre-computed data to exclude execution time from the benchmark
+    //         client_input.parent_state.update_from_bundle_state(&executor_outcome.bundle);
+    //         let state_root = client_input.parent_state.state_root();
+    //         black_box(state_root)
+    //     })
+    // });
+
+    c.bench_function("update indirectly", |b| {
+        b.iter_with_setup(
+            || {
+                // Setup: This part is NOT timed
+                client_input.parent_state.clone()
+            },
+            |mut parent_state| {
+                // Routine: This part IS timed
+                let post_state = HashedPostState::from_bundle_state(&executor_outcome.bundle.state);
+                parent_state.update(&post_state)
+            },
+        )
+    });
+
+    c.bench_function("update directly", |b| {
+        b.iter_with_setup(
+            || {
+                // Setup: This part is NOT timed
+                client_input.parent_state.clone()
+            },
+            |mut parent_state| {
+                // Routine: This part IS timed
+                parent_state.update_from_bundle_state(&executor_outcome.bundle)
+            },
+        )
     });
 }
 
