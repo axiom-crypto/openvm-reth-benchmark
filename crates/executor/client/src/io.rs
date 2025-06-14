@@ -115,13 +115,16 @@ pub trait WitnessInput {
         let bytecodes_by_hash =
             self.bytecodes().map(|code| (code.hash_slow(), code)).collect::<HashMap<_, _>>();
 
-        let mut accounts = HashMap::default();
-        let mut storage = HashMap::default();
-        for (&address, slots) in self.state_requests() {
-            let hashed_address = keccak256(address);
-            let hashed_address = hashed_address.as_slice();
+        let state_requests_iter = self.state_requests();
+        let (lower, _) = state_requests_iter.size_hint();
+        let mut accounts = HashMap::with_capacity(lower);
+        let mut storage = HashMap::with_capacity(lower);
 
-            let account_in_trie = state.state_trie.get_rlp::<TrieAccount>(hashed_address)?;
+        for (&address, slots) in state_requests_iter {
+            let hashed_address = keccak256(address);
+
+            let account_in_trie =
+                state.state_trie.get_rlp::<TrieAccount>(hashed_address.as_slice())?;
 
             accounts.insert(
                 address,
@@ -143,12 +146,12 @@ pub trait WitnessInput {
             );
 
             if !slots.is_empty() {
-                let mut address_storage = HashMap::default();
+                let mut address_storage = HashMap::with_capacity(slots.len());
 
                 let storage_trie = state
                     .storage_tries
                     .0
-                    .get(hashed_address)
+                    .get(&hashed_address)
                     .ok_or_else(|| eyre::eyre!("parent state does not contain storage trie"))?;
 
                 for &slot in slots {
@@ -163,8 +166,10 @@ pub trait WitnessInput {
         }
 
         // Verify and build block hashes
-        let mut block_hashes: HashMap<u64, B256, _> = HashMap::default();
-        for (child_header, parent_header) in self.headers().tuple_windows() {
+        let headers_iter = self.headers();
+        let (lower, _) = headers_iter.size_hint();
+        let mut block_hashes: HashMap<u64, B256, _> = HashMap::with_capacity(lower);
+        for (child_header, parent_header) in headers_iter.tuple_windows() {
             if parent_header.number != child_header.number - 1 {
                 eyre::bail!("non-consecutive blocks");
             }
