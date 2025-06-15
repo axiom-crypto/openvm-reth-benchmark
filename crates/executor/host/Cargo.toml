@@ -37,6 +37,7 @@ reth-evm.workspace = true
 reth-evm-ethereum.workspace = true
 reth-ethereum-consensus.workspace = true
 reth-consensus.workspace = true
+reth-revm.workspace = true
 
 # revm
 revm.workspace = true
@@ -51,15 +52,26 @@ alloy-transport.workspace = true
 alloy-rpc-types.workspace = true
 itertools = "0.13.0"
 futures.workspace = true
+bincode = { workspace = true, features = ["serde", "std"] }
+dhat = "0.3"
 
 [dev-dependencies]
-bincode = { workspace = true, features = ["serde", "std"] }
 dotenv = "0.15.0"
 alloy-primitives.workspace = true
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 criterion = { version = "0.5", features = ["html_reports"] }
 reth-revm.workspace = true
 
+[features]
+dhat-heap = []
+
+[profile.release]
+debug = 1
+
 [[bench]]
 name = "mpt_performance"
 harness = false
+
+[[bin]]
+name = "mpt_profiler"
+path = "src/bin/mpt_profiler.rs"
