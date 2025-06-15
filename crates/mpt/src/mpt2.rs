@@ -58,6 +58,7 @@ pub struct ArenaBasedMptNode<'a> {
     root_id: NodeId,
     /// One monotonically‑growing arena that owns every mutated byte slice.
     bump: Rc<Bump>,
+    encoding_scratch: RefCell<Vec<u8>>,
 }
 
 impl ser::Serialize for ArenaBasedMptNode<'_> {
@@ -92,6 +93,7 @@ impl Default for ArenaBasedMptNode<'_> {
             cached_references: vec![RefCell::new(None)],
             root_id: 0,
             bump,
+            encoding_scratch: RefCell::new(Vec::with_capacity(128)),
         }
     }
 }
@@ -117,7 +119,13 @@ impl<'a> ArenaBasedMptNode<'a> {
         nodes.push(ArenaNodeData::Null);
         cached_references.push(RefCell::new(None));
 
-        Self { nodes, cached_references, root_id: 0, bump }
+        Self {
+            nodes,
+            cached_references,
+            root_id: 0,
+            bump,
+            encoding_scratch: RefCell::new(Vec::with_capacity(128)),
+        }
     }
 
     /// Reserves capacity for at least `additional` more elements to be inserted
@@ -273,7 +281,13 @@ impl<'a> ArenaBasedMptNode<'a> {
     #[allow(dead_code)]
     fn new(root_id: NodeId, nodes: Vec<ArenaNodeData<'a>>) -> Self {
         let cached_references = (0..nodes.len()).map(|_| RefCell::new(None)).collect();
-        Self { nodes, cached_references, root_id, bump: Rc::new(Bump::new()) }
+        Self {
+            nodes,
+            cached_references,
+            root_id,
+            bump: Rc::new(Bump::new()),
+            encoding_scratch: RefCell::new(Vec::with_capacity(128)),
+        }
     }
 
     fn add_node(&mut self, data: ArenaNodeData<'a>) -> NodeId {
@@ -356,14 +370,18 @@ impl<'a> ArenaBasedMptNode<'a> {
                 let payload_length = self.payload_length_id(node_id);
                 let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
 
-                let mut encoded = Vec::with_capacity(rlp_length);
-                self.encode_id_with_payload_len(node_id, payload_length, &mut encoded);
-                debug_assert_eq!(encoded.len(), rlp_length);
-
                 if rlp_length < 32 {
+                    let mut encoded = Vec::with_capacity(rlp_length);
+                    self.encode_id_with_payload_len(node_id, payload_length, &mut encoded);
+                    debug_assert_eq!(encoded.len(), rlp_length);
                     MptNodeReference::Bytes(encoded)
                 } else {
-                    MptNodeReference::Digest(keccak256(encoded))
+                    let mut scratch = self.encoding_scratch.borrow_mut();
+                    scratch.clear();
+                    scratch.reserve(rlp_length);
+                    self.encode_id_with_payload_len(node_id, payload_length, &mut *scratch);
+                    debug_assert_eq!(scratch.len(), rlp_length);
+                    MptNodeReference::Digest(keccak256(&*scratch))
                 }
             }
         }
@@ -1212,6 +1230,7 @@ pub mod build_mpt {
             cached_references: Vec::new(),
             root_id: 0,
             bump: Rc::new(Bump::new()),
+            encoding_scratch: RefCell::new(Vec::with_capacity(128)),
         };
 
         let root_id = resolve_node_recursive(root, root.root_id, node_store, &mut new_arena);
