@@ -562,7 +562,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 
     /// Inserts a key-value pair into the trie.
     #[inline]
-    pub fn insert(&mut self, key: &[u8], value: Vec<u8>) -> Result<bool, Error> {
+    pub fn insert(&mut self, key: &[u8], value: &[u8]) -> Result<bool, Error> {
         let key_nibs = &to_nibs(key);
         self.insert_recursive(self.root_id, key_nibs, value)
     }
@@ -572,7 +572,7 @@ impl<'a> ArenaBasedMptNode<'a> {
     pub fn insert_rlp(&mut self, key: &[u8], value: impl Encodable) -> Result<bool, Error> {
         let mut rlp_bytes = Vec::new();
         value.encode(&mut rlp_bytes);
-        self.insert(key, rlp_bytes)
+        self.insert(key, &rlp_bytes)
     }
 
     /// Inserts an RLP-encoded value into the trie, reusing a buffer for encoding.
@@ -585,14 +585,14 @@ impl<'a> ArenaBasedMptNode<'a> {
     ) -> Result<bool, Error> {
         buf.clear();
         value.encode(buf);
-        self.insert(key, buf.clone())
+        self.insert(key, buf)
     }
 
     fn insert_recursive(
         &mut self,
         node_id: NodeId,
         key_nibs: &[u8],
-        value: Vec<u8>,
+        value: &[u8],
     ) -> Result<bool, Error> {
         let updated = match self.nodes[node_id as usize] {
             ArenaNodeData::Null => {
@@ -625,7 +625,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                 let common_len = lcp(&path_nibs, key_nibs);
 
                 if common_len == path_nibs.len() && common_len == key_nibs.len() {
-                    if old_value == value.as_slice() {
+                    if old_value == value {
                         return Ok(false);
                     }
                     let value_slice = self.add_owned_slice(value);
@@ -1337,7 +1337,7 @@ mod tests {
     #[test]
     fn test_clear() {
         let mut trie = ArenaBasedMptNode::default();
-        trie.insert(b"dog", b"puppy".to_vec()).unwrap();
+        trie.insert(b"dog", b"puppy").unwrap();
         assert!(!trie.is_empty());
         assert_ne!(trie.hash(), EMPTY_ROOT);
 
@@ -1362,7 +1362,7 @@ mod tests {
             ("menu", "fear"),
         ];
         for (key, val) in &vals {
-            assert!(trie.insert(key.as_bytes(), val.as_bytes().to_vec()).unwrap());
+            assert!(trie.insert(key.as_bytes(), val.as_bytes()).unwrap());
         }
 
         let expected = hex!("2bab6cdf91a23ebf3af683728ea02403a98346f99ed668eec572d55c70a4b08f");
@@ -1374,8 +1374,8 @@ mod tests {
         }
 
         // check inserting duplicate keys
-        assert!(trie.insert(vals[0].0.as_bytes(), b"new".to_vec()).unwrap());
-        assert!(!trie.insert(vals[0].0.as_bytes(), b"new".to_vec()).unwrap());
+        assert!(trie.insert(vals[0].0.as_bytes(), b"new").unwrap());
+        assert!(!trie.insert(vals[0].0.as_bytes(), b"new").unwrap());
     }
 
     #[test]
