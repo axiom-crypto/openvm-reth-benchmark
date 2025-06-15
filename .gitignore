@@ -30,3 +30,6 @@ metrics.json
 
 # Local mpt benchmark data
 client_input_benchmark.bin
+
+# Dhat heap profile
+**/dhat-heap.json
