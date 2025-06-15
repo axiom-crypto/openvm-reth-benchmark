@@ -575,6 +575,19 @@ impl<'a> ArenaBasedMptNode<'a> {
         self.insert(key, rlp_bytes)
     }
 
+    /// Inserts an RLP-encoded value into the trie, reusing a buffer for encoding.
+    #[inline]
+    pub fn insert_rlp_with_buf(
+        &mut self,
+        key: &[u8],
+        value: impl Encodable,
+        buf: &mut Vec<u8>,
+    ) -> Result<bool, Error> {
+        buf.clear();
+        value.encode(buf);
+        self.insert(key, buf.clone())
+    }
+
     fn insert_recursive(
         &mut self,
         node_id: NodeId,
