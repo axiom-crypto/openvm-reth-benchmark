@@ -34,7 +34,7 @@ fn create_synthetic_arena_mpt_node<'a>(depth: usize, breadth: usize) -> ArenaBas
     for i in 0..(breadth.pow(depth as u32).min(1000)) {
         let key = format!("long_key_prefix_{:08x}", i);
         let value = format!("value_{}", i);
-        let _ = trie.insert(key.as_bytes(), value.into_bytes());
+        let _ = trie.insert(key.as_bytes(), value.as_bytes());
     }
 
     trie
@@ -56,8 +56,8 @@ fn create_identical_tries<'a>(num_keys: usize) -> (MptNode, ArenaBasedMptNode<'a
 
     // Insert same keys into both tries
     for (key, value) in &keys {
-        mpt_node.insert(key, value.clone()).unwrap();
-        arena_node.insert(key, value.clone()).unwrap();
+        mpt_node.insert(key, value.to_vec()).unwrap();
+        arena_node.insert(key, &value).unwrap();
     }
 
     (mpt_node, arena_node)
@@ -136,7 +136,7 @@ fn create_synthetic_ethereum_state2(num_storage_tries: usize) -> EthereumState2 
     for i in 0..1000 {
         let key = format!("long_key_prefix_{:08x}", i);
         let value = format!("value_{}", i);
-        let _ = state_trie.insert(key.as_bytes(), value.into_bytes());
+        let _ = state_trie.insert(key.as_bytes(), value.as_bytes());
     }
 
     let mut storage_tries = HashMap::with_hasher(DefaultHashBuilder::default());
@@ -145,7 +145,7 @@ fn create_synthetic_ethereum_state2(num_storage_tries: usize) -> EthereumState2 
         for j in 0..100 {
             let key = format!("storage_key_{:08x}", j);
             let value = format!("storage_value_{}", j);
-            let _ = storage_trie.insert(key.as_bytes(), value.into_bytes());
+            let _ = storage_trie.insert(key.as_bytes(), value.as_bytes());
         }
         storage_tries.insert(B256::from([i as u8; 32]), storage_trie);
     }
@@ -205,7 +205,7 @@ fn bench_mpt_node_comparison(c: &mut Criterion) {
             for i in 0..50 {
                 let key = format!("unique_insert_key_prefix_{:08x}", i);
                 let value = format!("insert_value_{}", i);
-                black_box(node.insert(key.as_bytes(), value.into_bytes()).unwrap());
+                black_box(node.insert(key.as_bytes(), value.as_bytes()).unwrap());
             }
         })
     });
