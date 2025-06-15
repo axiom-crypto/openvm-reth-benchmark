@@ -167,6 +167,9 @@ impl EthereumState2 {
         let num_changed_accounts = bundle_state.state.len();
         self.state_trie.reserve(num_changed_accounts * MPT_NODE_MULTIPLIER);
 
+        // Create a reusable buffer for RLP encoding to reduce allocations.
+        let mut rlp_buf = Vec::with_capacity(128);
+
         // 2. Perform the updates, reserving for storage tries just-in-time.
         for (address, account) in &bundle_state.state {
             let hashed_address = keccak256(address);
@@ -186,7 +189,11 @@ impl EthereumState2 {
                         storage_trie.delete(hashed_slot.as_slice()).unwrap();
                     } else {
                         storage_trie
-                            .insert_rlp(hashed_slot.as_slice(), &value.present_value)
+                            .insert_rlp_with_buf(
+                                hashed_slot.as_slice(),
+                                &value.present_value,
+                                &mut rlp_buf,
+                            )
                             .unwrap();
                     }
                 }
@@ -199,7 +206,9 @@ impl EthereumState2 {
                     storage_root,
                     code_hash: info.code_hash,
                 };
-                self.state_trie.insert_rlp(hashed_address.as_slice(), state_account).unwrap();
+                self.state_trie
+                    .insert_rlp_with_buf(hashed_address.as_slice(), state_account, &mut rlp_buf)
+                    .unwrap();
             } else {
                 // account.info is None, which means it was destroyed.
                 self.state_trie.delete(hashed_address.as_slice()).unwrap();
