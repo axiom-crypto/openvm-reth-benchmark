@@ -599,6 +599,19 @@ impl MptNode {
         self.insert_internal(&to_nibs(key), value.to_rlp())
     }
 
+    /// Inserts an RLP-encoded value into the trie, reusing a buffer for encoding.
+    #[inline]
+    pub fn insert_rlp_with_buf(
+        &mut self,
+        key: &[u8],
+        value: impl Encodable,
+        buf: &mut Vec<u8>,
+    ) -> Result<bool, Error> {
+        buf.clear();
+        value.encode(buf);
+        self.insert(key, buf.clone())
+    }
+
     fn insert_internal(&mut self, key_nibs: &[u8], value: Vec<u8>) -> Result<bool, Error> {
         match &mut self.data {
             MptNodeData::Null => {

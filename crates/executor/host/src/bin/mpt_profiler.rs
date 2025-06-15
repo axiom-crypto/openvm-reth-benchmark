@@ -18,11 +18,8 @@ fn main() {
 
     let operation = if args.len() > 1 { args[1].as_str() } else { "all" };
 
-    let iterations = if args.len() > 2 { args[2].parse::<usize>().unwrap_or(1) } else { 1 };
-
     println!("MPT Memory Profiler");
     println!("Operation: {}", operation);
-    println!("Iterations: {}", iterations);
     println!();
 
     // Load the benchmark data file
@@ -54,23 +51,23 @@ fn main() {
     match operation {
         "all" | "end-to-end" => {
             println!("Profiling: End-to-end workflow (without execution)");
-            profile_end_to_end(&buffer, &executor_outcome, iterations);
+            profile_end_to_end(&buffer, &executor_outcome);
         }
         "deserialize" => {
             println!("Profiling: Deserialization only");
-            profile_deserialize(&buffer, iterations);
+            profile_deserialize(&buffer);
         }
         "witness" => {
             println!("Profiling: Witness DB creation only");
-            profile_witness_db(&client_input, iterations);
+            profile_witness_db(&client_input);
         }
         "update" => {
             println!("Profiling: MPT update only");
-            profile_update(&client_input, &executor_outcome, iterations);
+            profile_update(client_input.parent_state, &executor_outcome);
         }
         "state-root" => {
-            println!("Profiling: State root computation only");
-            profile_state_root(&client_input, &executor_outcome, iterations);
+            println!("Profiling: Update and state root computation only");
+            profile_state_root(client_input.parent_state, &executor_outcome);
         }
         _ => {
             println!("Unknown operation: {}", operation);
@@ -82,91 +79,57 @@ fn main() {
     println!("Profiling complete! Check the generated .dhat file.");
 }
 
-fn profile_end_to_end(buffer: &[u8], executor_outcome: &ExecutionOutcome, iterations: usize) {
+fn profile_end_to_end(buffer: &[u8], executor_outcome: &ExecutionOutcome) {
     let _profiler = Profiler::new_heap();
     let bincode_config = standard();
 
-    for i in 0..iterations {
-        if iterations > 1 {
-            println!("  Iteration {}/{}", i + 1, iterations);
-        }
+    // Deserialize
+    let (mut client_input, _): (ClientExecutorInput, _) =
+        bincode::serde::decode_from_slice(buffer, bincode_config).unwrap();
 
-        // Deserialize
-        let (mut client_input, _): (ClientExecutorInput, _) =
-            bincode::serde::decode_from_slice(buffer, bincode_config).unwrap();
+    // Create witness DB
+    let _witness_db = client_input.witness_db().unwrap();
 
-        // Create witness DB
-        let _witness_db = client_input.witness_db().unwrap();
-
-        // Update MPT with pre-computed post-state
-        client_input.parent_state.update_from_bundle_state(&executor_outcome.bundle);
-        let _state_root = client_input.parent_state.state_root();
-    }
+    // Update MPT with pre-computed post-state
+    client_input.parent_state.update_from_bundle_state(&executor_outcome.bundle);
+    let _state_root = client_input.parent_state.state_root();
 }
 
-fn profile_deserialize(buffer: &[u8], iterations: usize) {
+fn profile_deserialize(buffer: &[u8]) {
     let _profiler = Profiler::new_heap();
     let bincode_config = standard();
 
-    for i in 0..iterations {
-        if iterations > 1 {
-            println!("  Iteration {}/{}", i + 1, iterations);
-        }
-
-        let (_client_input, _): (ClientExecutorInput, _) =
-            bincode::serde::decode_from_slice(buffer, bincode_config).unwrap();
-    }
+    let (_client_input, _): (ClientExecutorInput, _) =
+        bincode::serde::decode_from_slice(buffer, bincode_config).unwrap();
 }
 
-fn profile_witness_db(client_input: &ClientExecutorInput, iterations: usize) {
+fn profile_witness_db(client_input: &ClientExecutorInput) {
     let _profiler = Profiler::new_heap();
 
-    for i in 0..iterations {
-        if iterations > 1 {
-            println!("  Iteration {}/{}", i + 1, iterations);
-        }
-
-        let _witness_db = client_input.witness_db().unwrap();
-    }
+    let _witness_db = client_input.witness_db().unwrap();
 }
 
 fn profile_update(
-    client_input: &ClientExecutorInput,
+    mut parent_state: openvm_mpt::EthereumState2,
     executor_outcome: &ExecutionOutcome,
-    iterations: usize,
 ) {
     let _profiler = Profiler::new_heap();
 
-    for i in 0..iterations {
-        if iterations > 1 {
-            println!("  Iteration {}/{}", i + 1, iterations);
-        }
-
-        let mut parent_state = client_input.parent_state.clone();
-        parent_state.update_from_bundle_state(&executor_outcome.bundle);
-    }
+    parent_state.update_from_bundle_state(&executor_outcome.bundle);
 }
 
 fn profile_state_root(
-    client_input: &ClientExecutorInput,
+    mut parent_state: openvm_mpt::EthereumState2,
     executor_outcome: &ExecutionOutcome,
-    iterations: usize,
 ) {
     let _profiler = Profiler::new_heap();
 
-    for i in 0..iterations {
-        if iterations > 1 {
-            println!("  Iteration {}/{}", i + 1, iterations);
-        }
-
-        let mut parent_state = client_input.parent_state.clone();
-        parent_state.update_from_bundle_state(&executor_outcome.bundle);
-        let _state_root = parent_state.state_root();
-    }
+    parent_state.update_from_bundle_state(&executor_outcome.bundle);
+    let _state_root = parent_state.state_root();
 }
 
 fn print_usage() {
-    println!("Usage: mpt_profiler [operation] [iterations]");
+    println!("Usage: mpt_profiler [operation]");
     println!();
     println!("Operations:");
     println!("  all, end-to-end  - Profile the complete workflow (default)");
@@ -177,6 +140,6 @@ fn print_usage() {
     println!();
     println!("Examples:");
     println!("  mpt_profiler");
-    println!("  mpt_profiler update 5");
-    println!("  mpt_profiler state-root 10");
+    println!("  mpt_profiler update");
+    println!("  mpt_profiler state-root");
 }
