@@ -86,8 +86,6 @@ fn prefix_to_small_nibs(encoded_path: &[u8]) -> SmallVec<[u8; 64]> {
     nibs
 }
 
-/// Represents the root node of a sparse Merkle Patricia Trie.
-///
 /// This is the new arena-based implementation that stores all nodes in a flat vector
 /// and uses indices instead of boxed pointers for better memory layout and performance.
 /// The lifetime parameter 'a allows zero-copy deserialization by borrowing from the input buffer.
@@ -127,12 +125,11 @@ impl<'de> de::Deserialize<'de> for ArenaBasedMptNode<'de> {
 
 impl Default for ArenaBasedMptNode<'_> {
     fn default() -> Self {
-        let bump = Rc::new(Bump::new());
         Self {
             nodes: vec![ArenaNodeData::Null],
             cached_references: vec![RefCell::new(None)],
             root_id: 0,
-            bump,
+            bump: Rc::new(Bump::new()),
             encoding_scratch: RefCell::new(Vec::with_capacity(128)),
         }
     }
@@ -151,9 +148,12 @@ pub enum ArenaNodeData<'a> {
 
 /// Custom RLP decoder that builds ArenaBasedMptNode directly without intermediate boxed structures
 impl<'a> ArenaBasedMptNode<'a> {
+    pub fn nodes_len(&self) -> usize {
+        self.nodes.len()
+    }
+
     /// Creates a new arena with pre-allocated capacity
     pub fn with_capacity(cap: usize) -> Self {
-        let bump = Rc::new(Bump::new());
         let mut nodes = Vec::with_capacity(cap.max(1));
         let mut cached_references = Vec::with_capacity(cap.max(1));
         nodes.push(ArenaNodeData::Null);
@@ -163,13 +163,12 @@ impl<'a> ArenaBasedMptNode<'a> {
             nodes,
             cached_references,
             root_id: 0,
-            bump,
+            bump: Rc::new(Bump::new()),
             encoding_scratch: RefCell::new(Vec::with_capacity(128)),
         }
     }
 
     /// Reserves capacity for at least `additional` more elements to be inserted
-    /// in the given arena.
     pub fn reserve(&mut self, additional: usize) {
         self.nodes.reserve(additional);
         self.cached_references.reserve(additional);
@@ -177,11 +176,15 @@ impl<'a> ArenaBasedMptNode<'a> {
 
     /// Decodes an RLP-encoded node directly into an ArenaBasedMptNode with zero-copy optimization
     pub fn decode_from_rlp(bytes: &'a [u8], num_nodes: usize) -> Result<Self, Error> {
-        // It seems that bumpalo allocator reallocates not only when there is not enough space but also when full capacity is reached.
-        // So we add 1 to the capacity to avoid reallocations.
-        let growth_factor = 1.1;
-        let mut arena =
-            ArenaBasedMptNode::with_capacity((num_nodes as f64 * growth_factor) as usize);
+        // A growth factor applied to the node vector's capacity during deserialization.
+        // This is a pragmatic optimization to pre-allocate a buffer for nodes that will be
+        // added during the `update` phase. It prevents a "reallocation storm" where the
+        // main trie and dozens of storage tries all try to reallocate their full node
+        // vectors on the first update. A more advanced solution could involve the host
+        // pre-executing the block to determine the exact final size of each trie.
+        const VEC_CAPACITY_GROWTH_FACTOR: f64 = 1.1;
+        let capacity = (num_nodes as f64 * VEC_CAPACITY_GROWTH_FACTOR) as usize + 1;
+        let mut arena = ArenaBasedMptNode::with_capacity(capacity);
 
         let mut buf = bytes;
         let root_id = arena.decode_node_recursive(&mut buf)?;
@@ -317,20 +320,6 @@ impl<'a> ArenaBasedMptNode<'a> {
             }
         }
     }
-}
-
-impl<'a> ArenaBasedMptNode<'a> {
-    #[allow(dead_code)]
-    fn new(root_id: NodeId, nodes: Vec<ArenaNodeData<'a>>) -> Self {
-        let cached_references = (0..nodes.len()).map(|_| RefCell::new(None)).collect();
-        Self {
-            nodes,
-            cached_references,
-            root_id,
-            bump: Rc::new(Bump::new()),
-            encoding_scratch: RefCell::new(Vec::with_capacity(128)),
-        }
-    }
 
     fn add_node(&mut self, data: ArenaNodeData<'a>) -> NodeId {
         let id = self.nodes.len() as NodeId;
@@ -366,7 +355,6 @@ impl<'a> ArenaBasedMptNode<'a> {
     /// Copies `bytes` into the bump arena and returns a `'a` slice.
     #[inline]
     fn alloc_in_bump(&self, bytes: &[u8]) -> &'a [u8] {
-        // `Bump::alloc_slice_copy` only needs `&Bump`, no &mut.
         let slice = self.bump.alloc_slice_copy(bytes);
         // Sound because `slice` lives as long as `self.bump`.
         unsafe { std::mem::transmute::<&[u8], &'a [u8]>(slice) }
@@ -554,7 +542,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 
     /// Retrieves the value associated with a given key in the trie.
     #[inline]
-    pub fn get(&self, key: &[u8]) -> Result<Option<Vec<u8>>, Error> {
+    pub fn get<'s>(&'s self, key: &[u8]) -> Result<Option<&'a [u8]>, Error> {
         self.get_recursive(self.root_id, &to_nibs(key))
     }
 
@@ -562,12 +550,19 @@ impl<'a> ArenaBasedMptNode<'a> {
     #[inline]
     pub fn get_rlp<T: alloy_rlp::Decodable>(&self, key: &[u8]) -> Result<Option<T>, Error> {
         match self.get(key)? {
-            Some(bytes) => Ok(Some(T::decode(&mut bytes.as_slice())?)),
+            Some(bytes) => {
+                let mut slice = bytes;
+                Ok(Some(T::decode(&mut slice)?))
+            }
             None => Ok(None),
         }
     }
 
-    fn get_recursive(&self, node_id: NodeId, key_nibs: &[u8]) -> Result<Option<Vec<u8>>, Error> {
+    fn get_recursive<'s>(
+        &'s self,
+        node_id: NodeId,
+        key_nibs: &[u8],
+    ) -> Result<Option<&'a [u8]>, Error> {
         match &self.nodes[node_id as usize] {
             ArenaNodeData::Null => Ok(None),
             ArenaNodeData::Branch(nodes) => {
@@ -584,7 +579,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                 // Convert compact path to nibbles on-demand
                 let path_nibs = prefix_to_small_nibs(path_bytes);
                 if path_nibs.as_slice() == key_nibs {
-                    Ok(Some(value.to_vec()))
+                    Ok(Some(value))
                 } else {
                     Ok(None)
                 }
