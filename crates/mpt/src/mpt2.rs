@@ -5,8 +5,7 @@ use core::fmt::Debug;
 use reth_trie::AccountProof;
 use revm::primitives::HashMap;
 use revm_primitives::{b256, keccak256, Address};
-use rlp::DecoderError;
-use serde::{Deserialize, Serialize};
+use serde::{de, ser, Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -14,6 +13,7 @@ use eyre::Result;
 
 use crate::{
     utils::{lcp, to_nibs},
+    word_bytes::OptimizedBytes,
     EthereumState2, StorageTries2,
 };
 use smallvec::SmallVec;
@@ -118,9 +118,9 @@ impl<'de> de::Deserialize<'de> for ArenaBasedMptNode<'de> {
         D: de::Deserializer<'de>,
     {
         // Deserialize the RLP blob and use our fast streaming decoder!
-        let rlp_blob: OptimizedBytes = OptimizedBytes::deserialize(deserializer)?;
+        let OptimizedBytes(rlp_blob) = OptimizedBytes::deserialize(deserializer)?;
         // We need to leak the memory to get a 'de lifetime - this is a limitation of serde
-        let leaked_bytes: &'de [u8] = Box::leak(rlp_blob.0.into_boxed_slice());
+        let leaked_bytes: &'de [u8] = Box::leak(rlp_blob.into_boxed_slice());
         ArenaBasedMptNode::decode_from_rlp(leaked_bytes).map_err(de::Error::custom)
     }
 }
