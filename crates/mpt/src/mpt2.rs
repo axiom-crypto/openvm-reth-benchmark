@@ -106,9 +106,8 @@ impl ser::Serialize for ArenaBasedMptNode<'_> {
     where
         S: ser::Serializer,
     {
-        // Serialize as a compact RLP blob with ALL children inlined!
-        // This is much smaller and faster than serializing the arena structure
-        OptimizedBytes(self.to_full_rlp()).serialize(serializer)
+        // Serialize as a tuple of (node_count, rlp_blob) for efficient deserialization.
+        (self.nodes.len(), OptimizedBytes(self.to_full_rlp())).serialize(serializer)
     }
 }
 
@@ -117,11 +116,12 @@ impl<'de> de::Deserialize<'de> for ArenaBasedMptNode<'de> {
     where
         D: de::Deserializer<'de>,
     {
-        // Deserialize the RLP blob and use our fast streaming decoder!
-        let OptimizedBytes(rlp_blob) = OptimizedBytes::deserialize(deserializer)?;
+        // Deserialize the (node_count, rlp_blob) tuple.
+        let (num_nodes, OptimizedBytes(rlp_blob)) =
+            <(usize, OptimizedBytes)>::deserialize(deserializer)?;
         // We need to leak the memory to get a 'de lifetime - this is a limitation of serde
         let leaked_bytes: &'de [u8] = Box::leak(rlp_blob.into_boxed_slice());
-        ArenaBasedMptNode::decode_from_rlp(leaked_bytes).map_err(de::Error::custom)
+        ArenaBasedMptNode::decode_from_rlp(leaked_bytes, num_nodes).map_err(de::Error::custom)
     }
 }
 
@@ -176,11 +176,10 @@ impl<'a> ArenaBasedMptNode<'a> {
     }
 
     /// Decodes an RLP-encoded node directly into an ArenaBasedMptNode with zero-copy optimization
-    pub fn decode_from_rlp(bytes: &'a [u8]) -> Result<Self, Error> {
-        // Improved heuristic: real Ethereum nodes average ~20-24 bytes, overshoot to avoid reallocations
-        eprintln!("bytes len: {}", bytes.len());
-        let estimated_nodes = bytes.len() / 29 + 3;
-        let mut arena = ArenaBasedMptNode::with_capacity(estimated_nodes);
+    pub fn decode_from_rlp(bytes: &'a [u8], num_nodes: usize) -> Result<Self, Error> {
+        // It seems that bumpalo allocator reallocates not only when there is not enough space but also when full capacity is reached.
+        // So we add 1 to the capacity to avoid reallocations.
+        let mut arena = ArenaBasedMptNode::with_capacity(num_nodes + 1);
 
         let mut buf = bytes;
         let root_id = arena.decode_node_recursive(&mut buf)?;
@@ -980,7 +979,7 @@ pub mod build_mpt {
     pub fn parse_proof(proof: &[impl AsRef<[u8]>]) -> Result<Vec<ArenaBasedMptNode<'_>>, Error> {
         proof
             .iter()
-            .map(|bytes| ArenaBasedMptNode::decode_from_rlp(bytes.as_ref()))
+            .map(|bytes| ArenaBasedMptNode::decode_from_rlp(bytes.as_ref(), 0))
             .collect::<Result<Vec<_>, _>>()
     }
 
