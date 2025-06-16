@@ -16,7 +16,7 @@ pub mod word_bytes;
 
 /// Ethereum state trie and account storage tries using arena-based MPT nodes for better
 /// performance.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct EthereumState2 {
     pub state_trie: ArenaBasedMptNode<'static>,
     pub storage_tries: StorageTries2,
@@ -153,10 +153,10 @@ impl Serialize for StorageTries2 {
     where
         S: serde::Serializer,
     {
-        // Serialize as Vec<(B256, Vec<u8>)> where Vec<u8> is the RLP blob
-        let storage_blobs: Vec<(B256, Vec<u8>)> =
-            self.0.iter().map(|(addr, trie)| (*addr, trie.to_full_rlp())).collect();
-        storage_blobs.serialize(serializer)
+        // Serialize as Vec<(B256, ArenaBasedMptNode)> for deterministic serialization
+        let mut storage_vec: Vec<(&B256, &ArenaBasedMptNode<'static>)> = self.0.iter().collect();
+        storage_vec.sort_by_key(|(k, _)| *k);
+        storage_vec.serialize(serializer)
     }
 }
 
@@ -165,29 +165,16 @@ impl<'de> Deserialize<'de> for StorageTries2 {
     where
         D: serde::Deserializer<'de>,
     {
-        let storage_blobs: Vec<(B256, Vec<u8>)> = Vec::deserialize(deserializer)?;
-        let mut storage_tries = HashMap::default();
-
-        for (addr, rlp_blob) in storage_blobs {
-            // We need to leak the memory to get a 'static lifetime for serde compatibility
-            let leaked_bytes: &'static [u8] = Box::leak(rlp_blob.into_boxed_slice());
-            let trie = ArenaBasedMptNode::decode_from_rlp(leaked_bytes)
-                .map_err(serde::de::Error::custom)?;
-            storage_tries.insert(addr, trie);
+        let storage_vec: Vec<(B256, ArenaBasedMptNode<'de>)> = Vec::deserialize(deserializer)?;
+        let mut storage_tries = HashMap::with_capacity(storage_vec.len());
+        for (addr, trie) in storage_vec {
+            // The deserialized node has lifetime 'de, but we need 'static.
+            // This is safe because ArenaBasedMptNode::deserialize already leaks the
+            // underlying buffer, giving it a static lifetime effectively.
+            let static_trie = unsafe { std::mem::transmute(trie) };
+            storage_tries.insert(addr, static_trie);
         }
-
         Ok(StorageTries2(storage_tries))
-    }
-}
-
-impl Serialize for EthereumState2 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        // Serialize as (state_trie_blob, storage_tries)
-        let state_blob = OptimizedBytes(self.state_trie.to_full_rlp());
-        (state_blob, &self.storage_tries).serialize(serializer)
     }
 }
 
@@ -196,13 +183,19 @@ impl<'de> Deserialize<'de> for EthereumState2 {
     where
         D: serde::Deserializer<'de>,
     {
-        let (state_blob, storage_tries): (OptimizedBytes, StorageTries2) =
-            Deserialize::deserialize(deserializer)?;
-        // We need to leak the memory to get a 'static lifetime for serde compatibility
-        let leaked_bytes: &'static [u8] = Box::leak(state_blob.0.into_boxed_slice());
-        let state_trie =
-            ArenaBasedMptNode::decode_from_rlp(leaked_bytes).map_err(serde::de::Error::custom)?;
+        #[derive(Deserialize)]
+        #[serde(bound(deserialize = "'a: 'de"))]
+        struct Helper<'a> {
+            #[serde(borrow)]
+            state_trie: ArenaBasedMptNode<'a>,
+            storage_tries: StorageTries2,
+        }
 
-        Ok(EthereumState2 { state_trie, storage_tries })
+        let helper = Helper::deserialize(deserializer)?;
+        // This is safe because ArenaBasedMptNode::deserialize already leaks the
+        // underlying buffer, giving it a static lifetime effectively.
+        let state_trie = unsafe { std::mem::transmute(helper.state_trie) };
+
+        Ok(EthereumState2 { state_trie, storage_tries: helper.storage_tries })
     }
 }
