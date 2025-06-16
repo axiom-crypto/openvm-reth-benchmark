@@ -1,7 +1,8 @@
 use alloy_provider::RootProvider;
 use bincode::config::standard;
-use openvm_client_executor::{io::ClientExecutorInput, ClientExecutor};
+use openvm_client_executor::ClientExecutor;
 use openvm_host_executor::HostExecutor;
+use reth_stateless::StatelessInput;
 use tracing_subscriber::{
     filter::EnvFilter, fmt, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
 };
@@ -10,7 +11,8 @@ use url::Url;
 #[tokio::test(flavor = "multi_thread")]
 async fn test_e2e_ethereum() {
     let env_var_key = "RPC_1";
-    let block_number = 18884864;
+    //let block_number = 18884864;
+    let block_number = 21000000;
 
     // Initialize the environment variables.
     dotenv::dotenv().ok();
@@ -38,11 +40,11 @@ async fn test_e2e_ethereum() {
     // Execute the client.
     client_executor.execute(client_input.clone()).expect("failed to execute client");
 
-    // Save the client input to a buffer.
+    // // Save the client input to a buffer.
     let bincode_config = standard();
     let buffer = bincode::serde::encode_to_vec(&client_input, bincode_config).unwrap();
 
     // Load the client input from a buffer.
-    let _: (ClientExecutorInput, _) =
+    let _: (StatelessInput, _) =
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
 }

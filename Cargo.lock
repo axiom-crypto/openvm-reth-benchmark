@@ -315,7 +315,7 @@ dependencies = [
  "cfg-if",
  "const-hex",
  "derive_more 0.99.20",
- "hex-literal",
+ "hex-literal 0.4.1",
  "itoa",
  "ruint",
  "tiny-keccak",
@@ -332,7 +332,7 @@ dependencies = [
  "cfg-if",
  "const-hex",
  "derive_more 0.99.20",
- "hex-literal",
+ "hex-literal 0.4.1",
  "itoa",
  "ruint",
  "tiny-keccak",
@@ -500,6 +500,16 @@ dependencies = [
  "alloy-consensus-any",
  "alloy-rpc-types-eth",
  "alloy-serde",
+]
+
+[[package]]
+name = "alloy-rpc-types-debug"
+version = "1.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c832f2e851801093928dbb4b7bd83cd22270faf76b2e080646b806a285c8757"
+dependencies = [
+ "alloy-primitives 1.2.0",
+ "serde",
 ]
 
 [[package]]
@@ -833,12 +843,6 @@ dependencies = [
  "once_cell_polyfill",
  "windows-sys 0.59.0",
 ]
-
-[[package]]
-name = "anyhow"
-version = "1.0.98"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 
 [[package]]
 name = "ariadne"
@@ -2814,9 +2818,9 @@ checksum = "07e28edb80900c19c28f1072f2e8aeca7fa06b23cd4169cefe1af5aa3260783f"
 
 [[package]]
 name = "glam"
-version = "0.30.3"
+version = "0.30.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b46b9ca4690308844c644e7c634d68792467260e051c8543e0c7871662b3ba7"
+checksum = "50a99dbe56b72736564cfa4b85bf9a33079f16ae8b74983ab06af3b1a3696b11"
 
 [[package]]
 name = "glob"
@@ -3100,6 +3104,12 @@ name = "hex-literal"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
+
+[[package]]
+name = "hex-literal"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bcaaec4551594c969335c98c903c1397853d4198408ea609190f420500f6be71"
 
 [[package]]
 name = "hmac"
@@ -4519,27 +4529,14 @@ dependencies = [
 name = "openvm-client-executor"
 version = "0.1.0"
 dependencies = [
- "alloy-consensus",
  "alloy-primitives 1.2.0",
  "eyre",
- "itertools 0.13.0",
- "openvm-mpt",
  "openvm-primitives",
- "openvm-witness-db",
- "reth-consensus",
- "reth-ethereum-consensus",
- "reth-ethereum-primitives",
- "reth-evm",
  "reth-evm-ethereum",
- "reth-execution-types",
  "reth-primitives",
- "reth-primitives-traits",
- "reth-revm",
- "reth-trie",
+ "reth-stateless",
  "revm",
  "revm-primitives 19.2.0",
- "serde",
- "serde_with",
 ]
 
 [[package]]
@@ -4575,7 +4572,7 @@ dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
  "eyre",
- "hex-literal",
+ "hex-literal 0.4.1",
  "lazy_static",
  "num-bigint 0.4.6",
  "num-integer",
@@ -4649,33 +4646,25 @@ dependencies = [
  "alloy-provider",
  "alloy-rlp",
  "alloy-rpc-types",
- "alloy-transport",
+ "alloy-rpc-types-debug",
  "bincode 2.0.1",
  "dotenv",
  "eyre",
- "futures",
- "itertools 0.13.0",
  "openvm-client-executor",
  "openvm-mpt",
  "openvm-primitives",
  "openvm-rpc-db",
- "openvm-witness-db",
  "reth-chainspec",
- "reth-codecs",
  "reth-consensus",
- "reth-errors",
  "reth-ethereum-consensus",
  "reth-evm",
  "reth-evm-ethereum",
- "reth-execution-types",
  "reth-primitives",
  "reth-primitives-traits",
- "reth-storage-errors",
- "reth-trie",
+ "reth-revm",
+ "reth-stateless",
  "revm",
  "revm-primitives 19.2.0",
- "serde",
- "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber 0.3.19",
@@ -4791,10 +4780,9 @@ dependencies = [
  "alloy-rlp",
  "alloy-rpc-types",
  "alloy-trie",
- "anyhow",
  "bincode 2.0.1",
  "eyre",
- "hex-literal",
+ "hex-literal 1.0.0",
  "itertools 0.13.0",
  "openvm-mpt",
  "reth-execution-types",
@@ -4806,7 +4794,7 @@ dependencies = [
  "rlp",
  "rustc-hash 2.1.1",
  "serde",
- "thiserror 1.0.69",
+ "thiserror 2.0.12",
  "tracing-subscriber 0.3.19",
 ]
 
@@ -4945,7 +4933,7 @@ version = "1.2.1-rc.0"
 source = "git+https://github.com/openvm-org/openvm.git?tag=v1.2.1-rc.1#152b6b6c85eda34b367ec261f2f65b0457b9b2d9"
 dependencies = [
  "halo2curves-axiom",
- "hex-literal",
+ "hex-literal 0.4.1",
  "itertools 0.14.0",
  "lazy_static",
  "num-bigint 0.4.6",
@@ -5053,6 +5041,7 @@ dependencies = [
  "openvm-stark-sdk",
  "openvm-transpiler",
  "reth-primitives",
+ "reth-stateless",
  "serde",
  "serde_json",
  "tokio",
@@ -5085,7 +5074,7 @@ dependencies = [
  "reth-storage-errors",
  "reth-trie",
  "rustc-hash 2.1.1",
- "thiserror 1.0.69",
+ "thiserror 2.0.12",
  "tokio",
  "tracing",
 ]
@@ -5348,16 +5337,6 @@ dependencies = [
  "rrs-lib",
  "rustc-demangle",
  "thiserror 1.0.69",
-]
-
-[[package]]
-name = "openvm-witness-db"
-version = "0.1.0"
-dependencies = [
- "openvm-primitives",
- "reth-revm",
- "reth-storage-errors",
- "serde",
 ]
 
 [[package]]
@@ -6811,6 +6790,32 @@ source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.8#127595e23079de2c494
 dependencies = [
  "alloy-primitives 1.2.0",
  "reth-trie-common",
+]
+
+[[package]]
+name = "reth-stateless"
+version = "1.4.8"
+source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.8#127595e23079de2c494048d0821ea1f1107eb624"
+dependencies = [
+ "alloy-consensus",
+ "alloy-primitives 1.2.0",
+ "alloy-rlp",
+ "alloy-rpc-types-debug",
+ "alloy-trie",
+ "itertools 0.14.0",
+ "reth-chainspec",
+ "reth-consensus",
+ "reth-errors",
+ "reth-ethereum-consensus",
+ "reth-ethereum-primitives",
+ "reth-evm",
+ "reth-primitives-traits",
+ "reth-revm",
+ "reth-trie-common",
+ "reth-trie-sparse",
+ "serde",
+ "serde_with",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -8879,9 +8884,9 @@ dependencies = [
 
 [[package]]
 name = "windows-link"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76840935b766e1b0a05c0066835fb9ec80071d4c09a16f6bd5f7e655e3c14c38"
+checksum = "d3bfe459f85da17560875b8bf1423d6f113b7a87a5d942e7da0ac71be7c61f8b"
 
 [[package]]
 name = "windows-result"
