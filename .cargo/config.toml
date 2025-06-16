@@ -1,9 +1,10 @@
+# Copy to config.toml for local patches
 [net]
 git-fetch-with-cli = true
 
-[patch."https://github.com/openvm-org/stark-backend.git"]
-openvm-stark-backend = { git = "ssh://git@github.com/openvm-org/stark-backend.git", tag = "v1.0.1" }
-openvm-stark-sdk = { git = "ssh://git@github.com/openvm-org/stark-backend.git", tag = "v1.0.1" }
+# [patch."https://github.com/openvm-org/stark-backend.git"]
+# openvm-stark-backend = { git = "ssh://git@github.com/openvm-org/stark-backend.git", tag = "v1.0.1" }
+# openvm-stark-sdk = { git = "ssh://git@github.com/openvm-org/stark-backend.git", tag = "v1.0.1" }
 
 [patch."https://github.com/openvm-org/openvm.git"]
 openvm-benchmarks-prove = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
@@ -55,8 +56,19 @@ openvm-rv32im-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", br
 openvm-rv32im-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
 openvm-rv32im-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
 
+# # Guest Libs
+# k256 = { path = "../openvm-org/openvm/guest-libs/k256" }
+# p256 = { path = "../openvm-org/openvm/guest-libs/p256" }
+# ruint = { path = "../openvm-org/openvm/guest-libs/ruint" }
+# openvm-keccak256 = { path = "../openvm-org/openvm/guest-libs/keccak256" }
+# openvm-sha2 = { path = "../openvm-org/openvm/guest-libs/sha2" }
+# openvm-pairing = { path = "../openvm-org/openvm/guest-libs/pairing" }
+
 # [patch.crates-io]
-# revm = { path = "../revm/crates/revm" }
-# revm-primitives = { path = "../revm/crates/primitives" }
-# revm-interpreter = { path = "../revm/crates/interpreter" }
-# revm-precompile = { path = "../revm/crates/precompile" }
+# k256 = { path = "../openvm-org/openvm/guest-libs/k256" }
+# p256 = { path = "../openvm-org/openvm/guest-libs/p256" }
+# ruint = { path = "../openvm-org/openvm/guest-libs/ruint" }
+# # revm = { path = "../revm/crates/revm" }
+# # revm-primitives = { path = "../revm/crates/primitives" }
+# # revm-interpreter = { path = "../revm/crates/interpreter" }
+# # revm-precompile = { path = "../revm/crates/precompile" }

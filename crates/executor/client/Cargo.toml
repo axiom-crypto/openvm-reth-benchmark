@@ -11,32 +11,26 @@ workspace = true
 
 [dependencies]
 eyre.workspace = true
-serde_json.workspace = true
 serde.workspace = true
-tokio.workspace = true
-bincode_derive.workspace = true
-bincode.workspace = true
-rustc-hash.workspace = true
-hashbrown = { version = "0.14", features = ["rayon"] }
+serde_with.workspace = true
 
 # workspace
 openvm-witness-db.workspace = true
-openvm-primitives.workspace = true
 openvm-mpt.workspace = true
+openvm-primitives.workspace = true
 
 # reth
+reth-consensus.workspace = true
+reth-ethereum-primitives = { workspace = true, features = [
+    "serde-bincode-compat",
+] }
 reth-ethereum-consensus.workspace = true
-reth-optimism-consensus.workspace = true
 reth-execution-types.workspace = true
-reth-primitives.workspace = true
-reth-storage-errors.workspace = true
+reth-primitives = { workspace = true }
+reth-primitives-traits.workspace = true
 reth-trie.workspace = true
 reth-evm.workspace = true
 reth-evm-ethereum.workspace = true
-reth-evm-optimism.workspace = true
-reth-errors.workspace = true
-reth-chainspec.workspace = true
-reth-optimism-chainspec.workspace = true
 reth-revm.workspace = true
 
 # revm
@@ -44,14 +38,12 @@ revm.workspace = true
 revm-primitives.workspace = true
 
 # alloy
-alloy-primitives.workspace = true
-alloy-rlp.workspace = true
+alloy-primitives = { workspace = true, features = ["rayon", "map-foldhash"] }
+alloy-consensus.workspace = true
 itertools = "0.13.0"
-url.workspace = true
-futures.workspace = true
 
 [target.'cfg(target_os = "zkvm")'.dependencies]
-revm-primitives = { workspace = true, features = ["hashbrown"] }
+# revm-primitives = { workspace = true, features = ["hashbrown"] }
 alloy-primitives = { workspace = true, features = ["native-keccak"] }
 # revm must have feature `kzg-rs` or `openvm-kzg` enabled. Due to patching we cannot enable `openvm-kzg` here.
 

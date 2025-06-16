@@ -1,7 +1,6 @@
-use alloy_provider::ReqwestProvider;
-use openvm_client_executor::{
-    ChainVariant, ClientExecutor, EthereumVariant, LineaVariant, OptimismVariant, Variant,
-};
+use alloy_provider::RootProvider;
+use bincode::config::standard;
+use openvm_client_executor::{io::ClientExecutorInput, ClientExecutor};
 use openvm_host_executor::HostExecutor;
 use tracing_subscriber::{
     filter::EnvFilter, fmt, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
@@ -10,23 +9,9 @@ use url::Url;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_e2e_ethereum() {
-    run_e2e::<EthereumVariant>(ChainVariant::Ethereum, "RPC_1", 18884864).await;
-}
+    let env_var_key = "RPC_1";
+    let block_number = 18884864;
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_e2e_optimism() {
-    run_e2e::<OptimismVariant>(ChainVariant::Optimism, "RPC_10", 122853660).await;
-}
-
-#[tokio::test(flavor = "multi_thread")]
-async fn test_e2e_linea() {
-    run_e2e::<LineaVariant>(ChainVariant::Linea, "RPC_59144", 5600000).await;
-}
-
-async fn run_e2e<V>(variant: ChainVariant, env_var_key: &str, block_number: u64)
-where
-    V: Variant,
-{
     // Initialize the environment variables.
     dotenv::dotenv().ok();
 
@@ -39,24 +24,25 @@ where
     // Setup the provider.
     let rpc_url =
         Url::parse(std::env::var(env_var_key).unwrap().as_str()).expect("invalid rpc url");
-    let provider = ReqwestProvider::new_http(rpc_url);
+    let provider = RootProvider::new_http(rpc_url);
 
     // Setup the host executor.
     let host_executor = HostExecutor::new(provider);
 
     // Execute the host.
-    let client_input =
-        host_executor.execute(block_number, variant).await.expect("failed to execute host");
+    let client_input = host_executor.execute(block_number).await.expect("failed to execute host");
 
     // Setup the client executor.
     let client_executor = ClientExecutor;
 
     // Execute the client.
-    client_executor.execute::<V>(client_input.clone()).expect("failed to execute client");
+    client_executor.execute(client_input.clone()).expect("failed to execute client");
 
-    // // Save the client input to a buffer.
-    // let buffer = bincode::serialize(&client_input).unwrap();
+    // Save the client input to a buffer.
+    let bincode_config = standard();
+    let buffer = bincode::serde::encode_to_vec(&client_input, bincode_config).unwrap();
 
-    // // Load the client input from a buffer.
-    // let _: ClientExecutorInput = bincode::deserialize(&buffer).unwrap();
+    // Load the client input from a buffer.
+    let _: (ClientExecutorInput, _) =
+        bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
 }

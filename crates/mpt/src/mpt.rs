@@ -30,14 +30,13 @@ use core::{
 };
 use reth_trie::AccountProof;
 use revm::primitives::HashMap;
-use rustc_hash::FxBuildHasher;
+use revm_primitives::{map::DefaultHashBuilder, Address};
 use serde::{Deserialize, Serialize};
 
 use rlp::{Decodable, DecoderError, Prototype, Rlp};
 use thiserror::Error as ThisError;
 
 use anyhow::{Context, Result};
-use reth_primitives::Address;
 
 use crate::StorageTries;
 
@@ -96,24 +95,13 @@ pub fn keccak(data: impl AsRef<[u8]>) -> [u8; 32] {
 /// optimizing storage. However, operations targeting a truncated part will fail and
 /// return an error. Another distinction of this implementation is that branches cannot
 /// store values, aligning with the construction of MPTs in Ethereum.
-#[derive(
-    Clone,
-    Debug,
-    Default,
-    PartialEq,
-    Eq,
-    Ord,
-    PartialOrd,
-    bincode::Encode,
-    bincode::Decode,
-    Serialize,
-    Deserialize,
-)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct MptNode {
     /// The type and data of the node.
     pub data: MptNodeData,
     /// Cache for a previously computed reference of this node. This is skipped during
     /// serialization.
+    #[serde(skip)]
     pub cached_reference: RefCell<Option<MptNodeReference>>,
 }
 
@@ -147,19 +135,7 @@ pub enum Error {
 /// Each node in the trie can be of one of several types, each with its own specific data
 /// structure. This enum provides a clear and type-safe way to represent the data
 /// associated with each node type.
-#[derive(
-    Clone,
-    Debug,
-    Default,
-    PartialEq,
-    Eq,
-    Ord,
-    PartialOrd,
-    bincode::Encode,
-    bincode::Decode,
-    Serialize,
-    Deserialize,
-)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum MptNodeData {
     /// Represents an empty trie node.
     #[default]
@@ -173,7 +149,7 @@ pub enum MptNodeData {
     Extension(Vec<u8>, Box<MptNode>),
     /// Represents a sub-trie by its hash, allowing for efficient storage of large
     /// sub-tries without storing their entire content.
-    Digest(#[bincode(with_serde)] B256),
+    Digest(B256),
 }
 
 /// Represents the ways in which one node can reference another node inside the sparse
@@ -182,26 +158,14 @@ pub enum MptNodeData {
 /// Nodes in the MPT can reference other nodes either directly through their byte
 /// representation or indirectly through a hash of their encoding. This enum provides a
 /// clear and type-safe way to represent these references.
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-    Eq,
-    Hash,
-    Ord,
-    PartialOrd,
-    bincode::Encode,
-    bincode::Decode,
-    Serialize,
-    Deserialize,
-)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum MptNodeReference {
     /// Represents a direct reference to another node using its byte encoding. Typically
     /// used for short encodings that are less than 32 bytes in length.
     Bytes(Vec<u8>),
     /// Represents an indirect reference to another node using the Keccak hash of its long
     /// encoding. Used for encodings that are not less than 32 bytes in length.
-    Digest(#[bincode(with_serde)] B256),
+    Digest(B256),
 }
 
 /// Provides a conversion from [MptNodeData] to [MptNode].
@@ -945,10 +909,7 @@ pub fn is_not_included(key: &[u8], proof_nodes: &[MptNode]) -> Result<bool> {
 }
 
 /// Creates a new MPT trie where all the digests contained in `node_store` are resolved.
-pub fn resolve_nodes(
-    root: &MptNode,
-    node_store: &HashMap<MptNodeReference, MptNode, FxBuildHasher>,
-) -> MptNode {
+pub fn resolve_nodes(root: &MptNode, node_store: &HashMap<MptNodeReference, MptNode>) -> MptNode {
     let trie = match root.as_data() {
         MptNodeData::Null | MptNodeData::Leaf(_, _) => root.clone(),
         MptNodeData::Branch(children) => {
@@ -1004,7 +965,7 @@ pub fn shorten_node_path(node: &MptNode) -> Vec<MptNode> {
 
 pub fn proofs_to_tries(
     state_root: B256,
-    proofs: &HashMap<Address, AccountProof, FxBuildHasher>,
+    proofs: &HashMap<Address, AccountProof>,
 ) -> Result<EthereumState> {
     // if no addresses are provided, return the trie only consisting of the state root
     if proofs.is_empty() {
@@ -1014,10 +975,10 @@ pub fn proofs_to_tries(
         });
     }
 
-    let mut storage: HashMap<B256, MptNode, FxBuildHasher> =
-        HashMap::with_capacity_and_hasher(proofs.len(), FxBuildHasher);
+    let mut storage: HashMap<B256, MptNode> =
+        HashMap::with_capacity_and_hasher(proofs.len(), DefaultHashBuilder::default());
 
-    let mut state_nodes = HashMap::<_, _, FxBuildHasher>::default();
+    let mut state_nodes = HashMap::<_, _>::default();
     let mut state_root_node = MptNode::default();
     for (address, proof) in proofs {
         let proof_nodes = parse_proof(&proof.proof).unwrap();
@@ -1040,7 +1001,7 @@ pub fn proofs_to_tries(
             continue;
         }
 
-        let mut storage_nodes = HashMap::<_, _, FxBuildHasher>::default();
+        let mut storage_nodes = HashMap::<_, _>::default();
         let mut storage_root_node = MptNode::default();
         for storage_proof in &proof.storage_proofs {
             let proof_nodes = parse_proof(&storage_proof.proof).unwrap();
@@ -1070,8 +1031,8 @@ pub fn proofs_to_tries(
 
 pub fn transition_proofs_to_tries(
     state_root: B256,
-    parent_proofs: &HashMap<Address, AccountProof, FxBuildHasher>,
-    proofs: &HashMap<Address, AccountProof, FxBuildHasher>,
+    parent_proofs: &HashMap<Address, AccountProof>,
+    proofs: &HashMap<Address, AccountProof>,
 ) -> Result<EthereumState> {
     // if no addresses are provided, return the trie only consisting of the state root
     if parent_proofs.is_empty() {
@@ -1082,9 +1043,9 @@ pub fn transition_proofs_to_tries(
     }
 
     let mut storage: HashMap<B256, MptNode, _> =
-        HashMap::with_capacity_and_hasher(parent_proofs.len(), FxBuildHasher);
+        HashMap::with_capacity_and_hasher(parent_proofs.len(), DefaultHashBuilder::default());
 
-    let mut state_nodes = HashMap::<_, _, FxBuildHasher>::default();
+    let mut state_nodes = HashMap::<_, _, DefaultHashBuilder>::default();
     let mut state_root_node = MptNode::default();
     for (address, proof) in parent_proofs {
         let proof_nodes = parse_proof(&proof.proof).unwrap();
@@ -1112,7 +1073,7 @@ pub fn transition_proofs_to_tries(
             continue;
         }
 
-        let mut storage_nodes = HashMap::<_, _, FxBuildHasher>::default();
+        let mut storage_nodes = HashMap::<_, _>::default();
         let mut storage_root_node = MptNode::default();
         for storage_proof in &proof.storage_proofs {
             let proof_nodes = parse_proof(&storage_proof.proof).unwrap();
@@ -1148,7 +1109,7 @@ pub fn transition_proofs_to_tries(
 fn add_orphaned_leafs(
     key: impl AsRef<[u8]>,
     proof: &[impl AsRef<[u8]>],
-    nodes_by_reference: &mut HashMap<MptNodeReference, MptNode, FxBuildHasher>,
+    nodes_by_reference: &mut HashMap<MptNodeReference, MptNode>,
 ) -> Result<()> {
     if !proof.is_empty() {
         let proof_nodes = parse_proof(proof).context("invalid proof encoding")?;

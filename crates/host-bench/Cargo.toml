@@ -25,6 +25,7 @@ openvm-host-executor.workspace = true
 openvm-client-executor.workspace = true
 
 # alloy
+alloy-primitives.workspace = true
 alloy-provider.workspace = true
 alloy-rpc-client.workspace = true
 alloy-transport.workspace = true
@@ -53,8 +54,10 @@ derive_more = "1.0.0"
 halo2-axiom = { version = "0.5.0", default-features = false }
 
 [features]
-default = ["mimalloc", "bench-metrics"]
+default = ["mimalloc", "bench-metrics", "evm-verify"]
 bench-metrics = ["openvm-benchmarks-prove/bench-metrics"]
+evm-prove = ["openvm-sdk/evm-prove"]
+evm-verify = ["evm-prove", "openvm-sdk/evm-verify"]
 profiling = ["openvm-sdk/profiling", "openvm-benchmarks-prove/profiling"]
 mimalloc = ["openvm-benchmarks-prove/mimalloc"]
 jemalloc = ["openvm-benchmarks-prove/jemalloc"]

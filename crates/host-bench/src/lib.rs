@@ -1,3 +1,4 @@
+use alloy_primitives::hex::ToHexExt;
 use alloy_provider::RootProvider;
 use alloy_rpc_client::RpcClient;
 use alloy_transport::layers::RetryBackoffLayer;
@@ -15,10 +16,7 @@ use openvm_circuit::{
         openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear,
     },
 };
-use openvm_client_executor::{
-    io::ClientExecutorInput, ChainVariant, CHAIN_ID_ETH_MAINNET, CHAIN_ID_LINEA_MAINNET,
-    CHAIN_ID_OP_MAINNET,
-};
+use openvm_client_executor::{io::ClientExecutorInput, CHAIN_ID_ETH_MAINNET};
 use openvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
 use openvm_host_executor::HostExecutor;
 use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
@@ -33,7 +31,6 @@ use openvm_sdk::{
 use openvm_stark_sdk::engine::StarkFriEngine;
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 pub use reth_primitives;
-use reth_primitives::hex::ToHexExt;
 use serde_json::json;
 use std::{fs, path::PathBuf, sync::Arc};
 use tracing::info_span;
@@ -189,13 +186,13 @@ pub fn reth_vm_config(
         SECP256K1_CONFIG.modulus.clone(),
         SECP256K1_CONFIG.scalar.clone(),
     ];
-    let mut supported_complex_moduli = vec![bn_config.modulus.clone()];
+    let mut supported_complex_moduli = vec![("Bn254Fp2".to_string(), bn_config.modulus.clone())];
     let mut supported_curves = vec![bn_config.clone(), SECP256K1_CONFIG.clone()];
     let mut supported_pairing_curves = vec![PairingCurve::Bn254];
     if use_kzg_intrinsics {
         supported_moduli.push(bls_config.modulus.clone());
         supported_moduli.push(bls_config.scalar.clone());
-        supported_complex_moduli.push(bls_config.modulus.clone());
+        supported_complex_moduli.push(("Bls12_381Fp2".to_string(), bls_config.modulus.clone()));
         supported_curves.push(bls_config.clone());
         supported_pairing_curves.push(PairingCurve::Bls12_381);
     }
@@ -233,10 +230,8 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
     let mut args = args;
     let provider_config = args.provider.into_provider().await?;
 
-    let variant = match provider_config.chain_id {
-        CHAIN_ID_ETH_MAINNET => ChainVariant::Ethereum,
-        CHAIN_ID_OP_MAINNET => ChainVariant::Optimism,
-        CHAIN_ID_LINEA_MAINNET => ChainVariant::Linea,
+    match provider_config.chain_id {
+        CHAIN_ID_ETH_MAINNET => (),
         _ => {
             eyre::bail!("unknown chain ID: {}", provider_config.chain_id);
         }
@@ -261,10 +256,8 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
             let host_executor = HostExecutor::new(provider);
 
             // Execute the host.
-            let client_input = host_executor
-                .execute(args.block_number, variant)
-                .await
-                .expect("failed to execute host");
+            let client_input =
+                host_executor.execute(args.block_number).await.expect("failed to execute host");
 
             if let Some(cache_dir) = args.cache_dir {
                 let input_folder = cache_dir.join(format!("input/{}", provider_config.chain_id));
@@ -317,8 +310,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
         segment_max_cells,
         !args.no_kzg_intrinsics,
     );
-    let mut sdk = GenericSdk::<E>::new();
-    sdk.set_agg_tree_config(args.benchmark.agg_tree_config);
+    let sdk = GenericSdk::<E>::default().with_agg_tree_config(args.benchmark.agg_tree_config);
     let elf = Elf::decode(openvm_client_eth_elf, MEM_SIZE as u32)?;
     let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
