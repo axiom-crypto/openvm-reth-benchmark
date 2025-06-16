@@ -784,45 +784,53 @@ impl<'a> ArenaBasedMptNode<'a> {
                     return Err(Error::ValueInBranch);
                 }
 
-                let remaining: Vec<_> =
-                    children.iter().enumerate().filter(|(_, n)| n.is_some()).collect();
+                let mut remaining_iter = children.iter().enumerate().filter(|(_, n)| n.is_some());
 
-                if remaining.len() == 1 {
-                    let (index, &child_id) = remaining[0];
-                    let child_id = child_id.unwrap();
-                    let child_node_data = self.nodes[child_id as usize].clone();
+                if let Some(first_remaining) = remaining_iter.next() {
+                    // One child found, check if there are more.
+                    if remaining_iter.next().is_none() {
+                        // Exactly one child remains, collapse the branch node.
+                        let (index, &child_id) = first_remaining;
+                        let child_id = child_id.unwrap();
+                        let child_node_data = self.nodes[child_id as usize].clone();
 
-                    let new_node_data = match child_node_data {
-                        ArenaNodeData::Leaf(path_bytes, value) => {
-                            let path_nibs = prefix_to_small_nibs(path_bytes);
-                            let mut new_nibs: SmallVec<[u8; 64]> =
-                                SmallVec::with_capacity(1 + path_nibs.len());
-                            new_nibs.push(index as u8);
-                            new_nibs.extend_from_slice(&path_nibs);
-                            let new_path_slice = self.add_encoded_path_slice(&new_nibs, true);
-                            let new_value_slice = self.add_owned_slice(value);
-                            ArenaNodeData::Leaf(new_path_slice, new_value_slice)
-                        }
-                        ArenaNodeData::Extension(path_bytes, child_child_id) => {
-                            let path_nibs = prefix_to_small_nibs(path_bytes);
-                            let mut new_nibs: SmallVec<[u8; 64]> =
-                                SmallVec::with_capacity(1 + path_nibs.len());
-                            new_nibs.push(index as u8);
-                            new_nibs.extend_from_slice(&path_nibs);
-                            let new_path_slice = self.add_encoded_path_slice(&new_nibs, false);
-                            ArenaNodeData::Extension(new_path_slice, child_child_id)
-                        }
-                        ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
-                            let ext_nibs: SmallVec<[u8; 1]> = SmallVec::from_slice(&[index as u8]);
-                            let new_path_slice = self.add_encoded_path_slice(&ext_nibs, false);
-                            ArenaNodeData::Extension(new_path_slice, child_id)
-                        }
-                        ArenaNodeData::Null => unreachable!(),
-                    };
-                    self.nodes[node_id as usize] = new_node_data;
+                        let new_node_data = match child_node_data {
+                            ArenaNodeData::Leaf(path_bytes, value) => {
+                                let path_nibs = prefix_to_small_nibs(path_bytes);
+                                let mut new_nibs: SmallVec<[u8; 64]> =
+                                    SmallVec::with_capacity(1 + path_nibs.len());
+                                new_nibs.push(index as u8);
+                                new_nibs.extend_from_slice(&path_nibs);
+                                let new_path_slice = self.add_encoded_path_slice(&new_nibs, true);
+                                let new_value_slice = self.add_owned_slice(value);
+                                ArenaNodeData::Leaf(new_path_slice, new_value_slice)
+                            }
+                            ArenaNodeData::Extension(path_bytes, child_child_id) => {
+                                let path_nibs = prefix_to_small_nibs(path_bytes);
+                                let mut new_nibs: SmallVec<[u8; 64]> =
+                                    SmallVec::with_capacity(1 + path_nibs.len());
+                                new_nibs.push(index as u8);
+                                new_nibs.extend_from_slice(&path_nibs);
+                                let new_path_slice = self.add_encoded_path_slice(&new_nibs, false);
+                                ArenaNodeData::Extension(new_path_slice, child_child_id)
+                            }
+                            ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
+                                let ext_nibs: SmallVec<[u8; 1]> =
+                                    SmallVec::from_slice(&[index as u8]);
+                                let new_path_slice = self.add_encoded_path_slice(&ext_nibs, false);
+                                ArenaNodeData::Extension(new_path_slice, child_id)
+                            }
+                            ArenaNodeData::Null => unreachable!(),
+                        };
+                        self.nodes[node_id as usize] = new_node_data;
+                    } else {
+                        // More than one child remains, just update the branch node.
+                        self.nodes[node_id as usize] = ArenaNodeData::Branch(children);
+                    }
                 } else {
+                    // No children left, update to an empty branch node.
                     self.nodes[node_id as usize] = ArenaNodeData::Branch(children);
-                };
+                }
 
                 Ok(true)
             }
@@ -1447,7 +1455,7 @@ mod tests {
         // The reconstructed trie should be able to retrieve the value
         // Key would be [0x01] + [0x03] = nibbles [0x01, 0x03] = key bytes [0x13]
         let retrieved = reconstructed.get(b"\x13").unwrap();
-        assert_eq!(retrieved, Some(b"test_value".to_vec()));
+        assert_eq!(retrieved, Some(&b"test_value"[..]));
 
         // The hash should match what we expect
         assert!(!reconstructed.is_empty());
