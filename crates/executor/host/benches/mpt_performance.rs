@@ -1,7 +1,6 @@
 use bincode::config::standard;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use openvm_client_executor::io::ClientExecutorInput;
-use openvm_mpt::state::HashedPostState;
 use openvm_primitives::chain_spec::mainnet;
 use reth_evm::execute::{BasicBlockExecutor, Executor};
 use reth_evm_ethereum::EthEvmConfig;
