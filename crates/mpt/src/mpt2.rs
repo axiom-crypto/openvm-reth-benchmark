@@ -138,7 +138,8 @@ impl<'a> ArenaBasedMptNode<'a> {
     /// Decodes an RLP-encoded node directly into an ArenaBasedMptNode with zero-copy optimization
     pub fn decode_from_rlp(bytes: &'a [u8]) -> Result<Self, Error> {
         // Improved heuristic: real Ethereum nodes average ~20-24 bytes, overshoot to avoid reallocations
-        let estimated_nodes = (bytes.len() / 24).saturating_add(64);
+        eprintln!("bytes len: {}", bytes.len());
+        let estimated_nodes = bytes.len() / 29 + 3;
         let mut arena = ArenaBasedMptNode::with_capacity(estimated_nodes);
 
         let mut buf = bytes;
