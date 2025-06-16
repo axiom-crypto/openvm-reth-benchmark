@@ -1,4 +1,3 @@
-use crate::word_bytes::OptimizedBytes;
 use eyre::Result;
 use mpt2::ArenaBasedMptNode;
 use reth_revm::db::BundleState;

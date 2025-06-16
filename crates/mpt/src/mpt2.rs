@@ -179,7 +179,9 @@ impl<'a> ArenaBasedMptNode<'a> {
     pub fn decode_from_rlp(bytes: &'a [u8], num_nodes: usize) -> Result<Self, Error> {
         // It seems that bumpalo allocator reallocates not only when there is not enough space but also when full capacity is reached.
         // So we add 1 to the capacity to avoid reallocations.
-        let mut arena = ArenaBasedMptNode::with_capacity(num_nodes + 1);
+        let growth_factor = 1.1;
+        let mut arena =
+            ArenaBasedMptNode::with_capacity((num_nodes as f64 * growth_factor) as usize);
 
         let mut buf = bytes;
         let root_id = arena.decode_node_recursive(&mut buf)?;
