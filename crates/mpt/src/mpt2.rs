@@ -4,22 +4,62 @@ use bumpalo::Bump;
 use core::fmt::Debug;
 use reth_trie::AccountProof;
 use revm::primitives::HashMap;
-use revm_primitives::{keccak256, Address};
-use serde::{de, ser};
+use revm_primitives::{b256, keccak256, Address};
+use rlp::DecoderError;
+use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
 
 use eyre::Result;
 
-use crate::word_bytes::OptimizedBytes;
 use crate::{
-    mpt::{Error, MptNodeReference, EMPTY_ROOT},
     utils::{lcp, to_nibs},
     EthereumState2, StorageTries2,
 };
 use smallvec::SmallVec;
+use thiserror::Error as ThisError;
 
 pub type NodeId = u32;
+
+/// Root hash of an empty trie.
+pub const EMPTY_ROOT: B256 =
+    b256!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
+
+/// Represents the ways in which one node can reference another node inside the sparse
+/// Merkle Patricia Trie (MPT).
+///
+/// Nodes in the MPT can reference other nodes either directly through their byte
+/// representation or indirectly through a hash of their encoding. This enum provides a
+/// clear and type-safe way to represent these references.
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+pub enum MptNodeReference {
+    /// Represents a direct reference to another node using its byte encoding. Typically
+    /// used for short encodings that are less than 32 bytes in length.
+    Bytes(Vec<u8>),
+    /// Represents an indirect reference to another node using the Keccak hash of its long
+    /// encoding. Used for encodings that are not less than 32 bytes in length.
+    Digest(B256),
+}
+
+/// Represents custom error types for the sparse Merkle Patricia Trie (MPT).
+///
+/// These errors cover various scenarios that can occur during trie operations, such as
+/// encountering unresolved nodes, finding values in branches where they shouldn't be, and
+/// issues related to RLP (Recursive Length Prefix) encoding and decoding.
+#[derive(Debug, ThisError)]
+pub enum Error {
+    /// Triggered when an operation reaches an unresolved node. The associated `B256`
+    /// value provides details about the unresolved node.
+    #[error("reached an unresolved node: {0:#}")]
+    NodeNotResolved(B256),
+    /// Occurs when a value is unexpectedly found in a branch node.
+    #[error("branch node with value")]
+    ValueInBranch,
+    /// Represents errors related to the RLP encoding and decoding using the `alloy_rlp`
+    /// library.
+    #[error("RLP error")]
+    Rlp(#[from] alloy_rlp::Error),
+}
 
 /// Optimized conversion from hex-encoded path directly to nibbles SmallVec
 /// Avoids the Vec<u8> -> SmallVec<u8> round-trip that was causing extra allocations
