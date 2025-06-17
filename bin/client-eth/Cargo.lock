@@ -2309,6 +2309,7 @@ dependencies = [
  "alloy-rpc-types",
  "anyhow",
  "bincode",
+ "bumpalo",
  "eyre",
  "itertools 0.13.0",
  "reth-execution-types",
