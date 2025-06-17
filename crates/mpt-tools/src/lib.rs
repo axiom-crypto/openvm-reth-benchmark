@@ -2,7 +2,3 @@
 //!
 //! This crate contains utilities for performance analysis and optimization
 //! of Merkle Patricia Trie operations.
-
-pub mod utils {
-    //! Utility functions for MPT development tools
-}
