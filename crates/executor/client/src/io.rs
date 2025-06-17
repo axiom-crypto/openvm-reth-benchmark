@@ -7,7 +7,7 @@ use openvm_witness_db::WitnessDb;
 use reth_primitives::{Block, Header, TransactionSigned};
 use reth_trie::TrieAccount;
 use revm::state::{AccountInfo, Bytecode};
-use revm_primitives::{keccak256, Address, HashMap, B256, U256};
+use revm_primitives::{keccak256, map::DefaultHashBuilder, Address, HashMap, B256, U256};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
@@ -126,8 +126,8 @@ pub trait WitnessInput {
 
         let state_requests_iter = self.state_requests();
         let (lower, _) = state_requests_iter.size_hint();
-        let mut accounts = HashMap::with_capacity(lower);
-        let mut storage = HashMap::with_capacity(lower);
+        let mut accounts = HashMap::with_capacity_and_hasher(lower, DefaultHashBuilder::default());
+        let mut storage = HashMap::with_capacity_and_hasher(lower, DefaultHashBuilder::default());
 
         for (&address, slots) in state_requests_iter {
             let hashed_address = keccak256(address);
@@ -155,7 +155,8 @@ pub trait WitnessInput {
             );
 
             if !slots.is_empty() {
-                let mut address_storage = HashMap::with_capacity(slots.len());
+                let mut address_storage =
+                    HashMap::with_capacity_and_hasher(slots.len(), DefaultHashBuilder::default());
 
                 let storage_trie = state
                     .storage_tries
@@ -177,7 +178,8 @@ pub trait WitnessInput {
         // Verify and build block hashes
         let headers_iter = self.headers();
         let (lower, _) = headers_iter.size_hint();
-        let mut block_hashes: HashMap<u64, B256, _> = HashMap::with_capacity(lower);
+        let mut block_hashes: HashMap<u64, B256, _> =
+            HashMap::with_capacity_and_hasher(lower, DefaultHashBuilder::default());
         for (child_header, parent_header) in headers_iter.tuple_windows() {
             if parent_header.number != child_header.number - 1 {
                 eyre::bail!("non-consecutive blocks");
