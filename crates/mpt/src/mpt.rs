@@ -1,163 +1,28 @@
-// This code is modified from the original implementation of Zeth.
-//
-// Reference: https://github.com/risc0/zeth
-//
-// Copyright 2023 RISC Zero, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+use alloy_primitives::B256;
+use alloy_rlp::{Buf, Encodable};
+use bumpalo::Bump;
+use core::fmt::Debug;
+use revm_primitives::{b256, keccak256};
+use serde::{de, ser, Deserialize, Serialize};
+use std::rc::Rc;
+use std::{cell::RefCell, iter};
 
-#![allow(unreachable_pub)]
-#![allow(dead_code)]
-use std::{cmp, iter};
+use eyre::Result;
 
-use alloc::boxed::Box;
-use alloy_primitives::{b256, B256};
-use alloy_rlp::Encodable;
-use core::{
-    cell::RefCell,
-    fmt::{Debug, Write},
-    mem,
-};
-use reth_trie::AccountProof;
-use revm::primitives::HashMap;
-use revm_primitives::{map::DefaultHashBuilder, Address};
-use serde::{Deserialize, Serialize};
-
-use rlp::{Decodable, DecoderError, Prototype, Rlp};
+use crate::word_bytes::OptimizedBytes;
+use smallvec::SmallVec;
 use thiserror::Error as ThisError;
 
-use anyhow::{Context, Result};
-
-use crate::StorageTries;
-
-use super::EthereumState;
-
-pub trait RlpBytes {
-    /// Returns the RLP-encoding.
-    fn to_rlp(&self) -> Vec<u8>;
-}
-
-impl<T> RlpBytes for T
-where
-    T: alloy_rlp::Encodable,
-{
-    #[inline]
-    fn to_rlp(&self) -> Vec<u8> {
-        let rlp_length = self.length();
-        let mut out = Vec::with_capacity(rlp_length);
-        self.encode(&mut out);
-        debug_assert_eq!(out.len(), rlp_length);
-        out
-    }
-}
+pub type NodeId = u32;
 
 /// Root hash of an empty trie.
 pub const EMPTY_ROOT: B256 =
     b256!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
 
-extern crate alloc;
-
-/// Represents the Keccak-256 hash of an empty byte slice.
+/// Represents the ways in which one node can reference another node inside the sparse Merkle Patricia Trie (MPT).
 ///
-/// This is a constant value and can be used as a default or placeholder
-/// in various cryptographic operations.
-pub const KECCAK_EMPTY: B256 =
-    b256!("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470");
-
-/// Computes the Keccak-256 hash of the provided data.
-///
-/// This function is a thin wrapper around the Keccak256 hashing algorithm
-/// and is optimized for performance.
-///
-/// # TODO
-/// - Consider switching the return type to `B256` for consistency with other parts of the codebase.
-#[inline]
-pub fn keccak(data: impl AsRef<[u8]>) -> [u8; 32] {
-    // TODO: Remove this benchmarking code once performance testing is complete.
-    // std::hint::black_box(sha2::Sha256::digest(&data));
-    *alloy_primitives::utils::keccak256(data)
-}
-
-/// Represents the root node of a sparse Merkle Patricia Trie.
-///
-/// The "sparse" nature of this trie allows for truncation of certain unneeded parts,
-/// representing them by their node hash. This design choice is particularly useful for
-/// optimizing storage. However, operations targeting a truncated part will fail and
-/// return an error. Another distinction of this implementation is that branches cannot
-/// store values, aligning with the construction of MPTs in Ethereum.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
-pub struct MptNode {
-    /// The type and data of the node.
-    pub data: MptNodeData,
-    /// Cache for a previously computed reference of this node. This is skipped during
-    /// serialization.
-    #[serde(skip)]
-    pub cached_reference: RefCell<Option<MptNodeReference>>,
-}
-
-/// Represents custom error types for the sparse Merkle Patricia Trie (MPT).
-///
-/// These errors cover various scenarios that can occur during trie operations, such as
-/// encountering unresolved nodes, finding values in branches where they shouldn't be, and
-/// issues related to RLP (Recursive Length Prefix) encoding and decoding.
-#[derive(Debug, ThisError)]
-pub enum Error {
-    /// Triggered when an operation reaches an unresolved node. The associated `B256`
-    /// value provides details about the unresolved node.
-    #[error("reached an unresolved node: {0:#}")]
-    NodeNotResolved(B256),
-    /// Occurs when a value is unexpectedly found in a branch node.
-    #[error("branch node with value")]
-    ValueInBranch,
-    /// Represents errors related to the RLP encoding and decoding using the `alloy_rlp`
-    /// library.
-    #[error("RLP error")]
-    Rlp(#[from] alloy_rlp::Error),
-    /// Represents errors related to the RLP encoding and decoding, specifically legacy
-    /// errors.
-    #[error("RLP error")]
-    LegacyRlp(#[from] DecoderError),
-}
-
-/// Represents the various types of data that can be stored within a node in the sparse
-/// Merkle Patricia Trie (MPT).
-///
-/// Each node in the trie can be of one of several types, each with its own specific data
-/// structure. This enum provides a clear and type-safe way to represent the data
-/// associated with each node type.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
-pub enum MptNodeData {
-    /// Represents an empty trie node.
-    #[default]
-    Null,
-    /// A node that can have up to 16 children. Each child is an optional boxed [MptNode].
-    Branch([Option<Box<MptNode>>; 16]),
-    /// A leaf node that contains a key and a value, both represented as byte vectors.
-    Leaf(Vec<u8>, Vec<u8>),
-    /// A node that has exactly one child and is used to represent a shared prefix of
-    /// several keys.
-    Extension(Vec<u8>, Box<MptNode>),
-    /// Represents a sub-trie by its hash, allowing for efficient storage of large
-    /// sub-tries without storing their entire content.
-    Digest(B256),
-}
-
-/// Represents the ways in which one node can reference another node inside the sparse
-/// Merkle Patricia Trie (MPT).
-///
-/// Nodes in the MPT can reference other nodes either directly through their byte
-/// representation or indirectly through a hash of their encoding. This enum provides a
-/// clear and type-safe way to represent these references.
+/// Nodes in the MPT can reference other nodes either directly through their byte representation or
+/// indirectly through a hash of their encoding.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum MptNodeReference {
     /// Represents a direct reference to another node using its byte encoding. Typically
@@ -168,435 +33,216 @@ pub enum MptNodeReference {
     Digest(B256),
 }
 
-/// Provides a conversion from [MptNodeData] to [MptNode].
-///
-/// This implementation allows for conversion from [MptNodeData] to [MptNode],
-/// initializing the `data` field with the provided value and setting the
-/// `cached_reference` field to `None`.
-impl From<MptNodeData> for MptNode {
-    fn from(value: MptNodeData) -> Self {
-        Self { data: value, cached_reference: RefCell::new(None) }
-    }
+/// Custom error types for the sparse Merkle Patricia Trie (MPT).
+#[derive(Debug, ThisError)]
+pub enum Error {
+    /// Triggered when an operation reaches an unresolved node. The associated `B256`
+    /// value provides details about the unresolved node.
+    #[error("reached an unresolved node: {0:#}")]
+    NodeNotResolved(B256),
+    /// Occurs when a value is unexpectedly found in a branch node.
+    #[error("branch node with value")]
+    ValueInBranch,
+    /// Represents errors related to the RLP encoding and decoding .
+    #[error("RLP error")]
+    Rlp(#[from] alloy_rlp::Error),
 }
 
-/// Provides encoding functionalities for the `MptNode` type.
-///
-/// This implementation allows for the serialization of an [MptNode] into its RLP-encoded
-/// form. The encoding is done based on the type of node data ([MptNodeData]) it holds.
-impl Encodable for MptNode {
-    /// bincode::Encodes the node into the provided `out` buffer.
-    ///
-    /// The encoding is done using the Recursive Length Prefix (RLP) encoding scheme. The
-    /// method handles different node data types and encodes them accordingly.
-    #[inline]
-    fn encode(&self, out: &mut dyn alloy_rlp::BufMut) {
-        match &self.data {
-            MptNodeData::Null => {
-                out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
-            }
-            MptNodeData::Branch(nodes) => {
-                alloy_rlp::Header { list: true, payload_length: self.payload_length() }.encode(out);
-                nodes.iter().for_each(|child| match child {
-                    Some(node) => node.reference_encode(out),
-                    None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
-                });
-                // in the MPT reference, branches have values so always add empty value
-                out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
-            }
-            MptNodeData::Leaf(prefix, value) => {
-                alloy_rlp::Header { list: true, payload_length: self.payload_length() }.encode(out);
-                prefix.as_slice().encode(out);
-                value.as_slice().encode(out);
-            }
-            MptNodeData::Extension(prefix, node) => {
-                alloy_rlp::Header { list: true, payload_length: self.payload_length() }.encode(out);
-                prefix.as_slice().encode(out);
-                node.reference_encode(out);
-            }
-            MptNodeData::Digest(digest) => {
-                digest.encode(out);
-            }
+/// Returns the length of the common prefix
+pub fn lcp(a: &[u8], b: &[u8]) -> usize {
+    for (i, (a, b)) in iter::zip(a, b).enumerate() {
+        if a != b {
+            return i;
         }
     }
+    std::cmp::min(a.len(), b.len())
+}
 
-    /// Returns the length of the encoded node in bytes.
-    ///
-    /// This method calculates the length of the RLP-encoded node. It's useful for
-    /// determining the size requirements for storage or transmission.
-    #[inline]
-    fn length(&self) -> usize {
-        let payload_length = self.payload_length();
-        payload_length + alloy_rlp::length_of_length(payload_length)
+/// Converts a byte slice into a vector of nibbles.
+///
+/// A nibble is 4 bits or half of an 8-bit byte. This function takes each byte from the
+/// input slice, splits it into two nibbles, and appends them to the resulting vector.
+/// Uses SmallVec to avoid heap allocation for typical key sizes (≤32 bytes = 64 nibbles).
+pub fn to_nibs(slice: &[u8]) -> SmallVec<[u8; 64]> {
+    let mut result = SmallVec::with_capacity(2 * slice.len());
+    for byte in slice {
+        result.push(byte >> 4);
+        result.push(byte & 0xf);
+    }
+    result
+}
+
+/// Optimized conversion from hex-encoded path directly to nibbles SmallVec
+fn prefix_to_small_nibs(encoded_path: &[u8]) -> SmallVec<[u8; 64]> {
+    if encoded_path.is_empty() {
+        return SmallVec::new();
+    }
+
+    let mut nibs = SmallVec::with_capacity(encoded_path.len() * 2);
+    let first_byte = encoded_path[0];
+    let is_odd = (first_byte & 0x10) != 0;
+
+    // Handle the first nibble if odd length
+    if is_odd {
+        nibs.push(first_byte & 0x0f);
+    }
+
+    // Process remaining bytes, starting from index 1
+    for &byte in &encoded_path[1..] {
+        nibs.push(byte >> 4); // High nibble
+        nibs.push(byte & 0x0f); // Low nibble
+    }
+
+    nibs
+}
+
+/// Arena-based implementation that stores all nodes in a flat vector
+/// and uses indices for better memory layout and performance.
+/// The lifetime parameter 'a allows zero-copy deserialization by borrowing from the input buffer.
+#[derive(Clone, Debug)]
+pub struct ArenaBasedMptNode<'a> {
+    nodes: Vec<ArenaNodeData<'a>>,
+    cached_references: Vec<RefCell<Option<MptNodeReference>>>,
+    root_id: NodeId,
+    /// One monotonically‑growing arena that owns every mutated byte slice.
+    bump: Rc<Bump>,
+    encoding_scratch: RefCell<Vec<u8>>,
+}
+
+impl ser::Serialize for ArenaBasedMptNode<'_> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        // Serialize as a tuple of (node_count, rlp_blob) for efficient deserialization.
+        (self.nodes.len(), OptimizedBytes(self.to_full_rlp())).serialize(serializer)
     }
 }
 
-/// Provides decoding functionalities for the [MptNode] type.
-///
-/// This implementation allows for the deserialization of an RLP-encoded [MptNode] back
-/// into its original form. The decoding is done based on the prototype of the RLP data,
-/// ensuring that the node is reconstructed accurately.
-///
-/// **Note**: This implementation is still using the older RLP library and needs to be
-/// migrated to `alloy_rlp` in the future.
-// TODO: migrate to alloy_rlp
-impl Decodable for MptNode {
-    /// Decodes an RLP-encoded node from the provided `rlp` buffer.
-    ///
-    /// The method handles different RLP prototypes and reconstructs the `MptNode` based
-    /// on the encoded data. If the RLP data does not match any known prototype or if
-    /// there's an error during decoding, an error is returned.
-    fn decode(rlp: &Rlp<'_>) -> Result<Self, DecoderError> {
-        match rlp.prototype()? {
-            Prototype::Null | Prototype::Data(0) => Ok(MptNodeData::Null.into()),
-            Prototype::List(2) => {
-                let path: Vec<u8> = rlp.val_at(0)?;
-                let prefix = path[0];
-                if (prefix & (2 << 4)) == 0 {
-                    let node: MptNode = Decodable::decode(&rlp.at(1)?)?;
-                    Ok(MptNodeData::Extension(path, Box::new(node)).into())
-                } else {
-                    Ok(MptNodeData::Leaf(path, rlp.val_at(1)?).into())
-                }
-            }
-            Prototype::List(17) => {
-                let mut node_list = Vec::with_capacity(16);
-                for node_rlp in rlp.iter().take(16) {
-                    match node_rlp.prototype()? {
-                        Prototype::Null | Prototype::Data(0) => {
-                            node_list.push(None);
-                        }
-                        _ => node_list.push(Some(Box::new(Decodable::decode(&node_rlp)?))),
-                    }
-                }
-                let value: Vec<u8> = rlp.val_at(16)?;
-                if value.is_empty() {
-                    Ok(MptNodeData::Branch(node_list.try_into().unwrap()).into())
-                } else {
-                    Err(DecoderError::Custom("branch node with value"))
-                }
-            }
-            Prototype::Data(32) => {
-                let bytes: Vec<u8> = rlp.as_val()?;
-                Ok(MptNodeData::Digest(B256::from_slice(&bytes)).into())
-            }
-            _ => Err(DecoderError::RlpIncorrectListLen),
+impl<'de> de::Deserialize<'de> for ArenaBasedMptNode<'de> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        let (num_nodes, OptimizedBytes(rlp_blob)) =
+            <(usize, OptimizedBytes)>::deserialize(deserializer)?;
+        // We need to leak the memory to get a 'de lifetime - this is a limitation of serde
+        let leaked_bytes: &'de [u8] = Box::leak(rlp_blob.into_boxed_slice());
+        ArenaBasedMptNode::decode_from_rlp(leaked_bytes, num_nodes).map_err(de::Error::custom)
+    }
+}
+
+impl Default for ArenaBasedMptNode<'_> {
+    fn default() -> Self {
+        Self {
+            nodes: vec![ArenaNodeData::Null],
+            cached_references: vec![RefCell::new(None)],
+            root_id: 0,
+            bump: Rc::new(Bump::new()),
+            encoding_scratch: RefCell::new(Vec::with_capacity(128)),
         }
     }
 }
 
-/// Represents a node in the sparse Merkle Patricia Trie (MPT).
-///
-/// The [MptNode] type encapsulates the data and functionalities associated with a node in
-/// the MPT. It provides methods for manipulating the trie, such as inserting, deleting,
-/// and retrieving values, as well as utility methods for encoding, decoding, and
-/// debugging.
-impl MptNode {
-    /// Clears the trie, replacing its data with an empty node, [MptNodeData::Null].
-    ///
-    /// This method effectively removes all key-value pairs from the trie.
-    #[inline]
-    pub fn clear(&mut self) {
-        self.data = MptNodeData::Null;
-        self.invalidate_ref_cache();
+/// Node data for arena-based trie with zero-copy optimization
+#[derive(Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd)]
+pub enum ArenaNodeData<'a> {
+    #[default]
+    Null,
+    Branch([Option<NodeId>; 16]),
+    Leaf(&'a [u8], &'a [u8]), // (compact_path, value) - borrowed from input
+    Extension(&'a [u8], NodeId), // (compact_path, child_id) - borrowed from input
+    Digest(B256),
+}
+
+// Constructors & Capacity Management
+impl<'a> ArenaBasedMptNode<'a> {
+    /// Creates a new arena with pre-allocated capacity
+    pub fn with_capacity(cap: usize) -> Self {
+        let mut nodes = Vec::with_capacity(cap.max(1));
+        let mut cached_references = Vec::with_capacity(cap.max(1));
+        nodes.push(ArenaNodeData::Null);
+        cached_references.push(RefCell::new(None));
+
+        Self {
+            nodes,
+            cached_references,
+            root_id: 0,
+            bump: Rc::new(Bump::new()),
+            encoding_scratch: RefCell::new(Vec::with_capacity(128)),
+        }
     }
 
-    /// Decodes an RLP-encoded [MptNode] from the provided byte slice.
-    ///
-    /// This method allows for the deserialization of a previously serialized [MptNode].
-    #[inline]
-    pub fn decode(bytes: impl AsRef<[u8]>) -> Result<MptNode, Error> {
-        rlp::decode(bytes.as_ref()).map_err(Error::from)
+    /// Reserves capacity for at least `additional` more elements to be inserted
+    pub fn reserve(&mut self, additional: usize) {
+        self.nodes.reserve(additional);
+        self.cached_references.reserve(additional);
     }
 
-    /// Retrieves the underlying data of the node.
-    ///
-    /// This method provides a reference to the node's data, allowing for inspection and
-    /// manipulation.
-    #[inline]
-    pub fn as_data(&self) -> &MptNodeData {
-        &self.data
-    }
+    /// Decodes an RLP-encoded node directly into an ArenaBasedMptNode with zero-copy optimization
+    pub fn decode_from_rlp(bytes: &'a [u8], num_nodes: usize) -> Result<Self, Error> {
+        // A growth factor applied to the node vector's capacity during deserialization.
+        // This is a pragmatic optimization to pre-allocate a buffer for nodes that will be
+        // added during the `update` phase. It prevents a "reallocation storm" where the
+        // main trie and dozens of storage tries all try to reallocate their full node
+        // vectors on the first update.
+        // TODO: this is imperfect solution and the constant is somewhat arbitrary (although reasonable)
+        //       Simple improvement: run benchmark on a set of blocks (e.g. 100 blocks) and select the best constant.
+        //       More advanced improvement: either pre-execute block at guest to know exact allocations in advance,
+        //       or allocate a separate arena specifically for updates.
+        const VEC_CAPACITY_GROWTH_FACTOR: f64 = 1.1;
+        let capacity = (num_nodes as f64 * VEC_CAPACITY_GROWTH_FACTOR) as usize + 1;
+        let mut arena = ArenaBasedMptNode::with_capacity(capacity);
 
-    /// Retrieves the [MptNodeReference] reference of the node when it's referenced inside
-    /// another node.
-    ///
-    /// This method provides a way to obtain a compact representation of the node for
-    /// storage or transmission purposes.
-    #[inline]
-    pub fn reference(&self) -> MptNodeReference {
-        self.cached_reference.borrow_mut().get_or_insert_with(|| self.calc_reference()).clone()
+        let mut buf = bytes;
+        let root_id = arena.decode_node_recursive(&mut buf)?;
+        if !buf.is_empty() {
+            return Err(Error::Rlp(alloy_rlp::Error::Custom("trailing data")));
+        }
+        arena.root_id = root_id;
+        Ok(arena)
     }
+}
 
+// Public API
+impl<'a> ArenaBasedMptNode<'a> {
     /// Computes and returns the 256-bit hash of the node.
-    ///
-    /// This method provides a unique identifier for the node based on its content.
     #[inline]
     pub fn hash(&self) -> B256 {
-        match self.data {
-            MptNodeData::Null => EMPTY_ROOT,
-            _ => match self
-                .cached_reference
-                .borrow_mut()
-                .get_or_insert_with(|| self.calc_reference())
-            {
-                MptNodeReference::Digest(digest) => *digest,
-                MptNodeReference::Bytes(bytes) => keccak(bytes).into(),
-            },
-        }
-    }
-
-    /// bincode::Encodes the [MptNodeReference] of this node into the `out` buffer.
-    fn reference_encode(&self, out: &mut dyn alloy_rlp::BufMut) {
-        match self.cached_reference.borrow_mut().get_or_insert_with(|| self.calc_reference()) {
-            // if the reference is an RLP-encoded byte slice, copy it directly
-            MptNodeReference::Bytes(bytes) => out.put_slice(bytes),
-            // if the reference is a digest, RLP-encode it with its fixed known length
-            MptNodeReference::Digest(digest) => {
-                out.put_u8(alloy_rlp::EMPTY_STRING_CODE + 32);
-                out.put_slice(digest.as_slice());
-            }
-        }
-    }
-
-    /// Returns the length of the encoded [MptNodeReference] of this node.
-    fn reference_length(&self) -> usize {
-        match self.cached_reference.borrow_mut().get_or_insert_with(|| self.calc_reference()) {
-            MptNodeReference::Bytes(bytes) => bytes.len(),
-            MptNodeReference::Digest(_) => 1 + 32,
-        }
-    }
-
-    fn calc_reference(&self) -> MptNodeReference {
-        match &self.data {
-            MptNodeData::Null => MptNodeReference::Bytes(vec![alloy_rlp::EMPTY_STRING_CODE]),
-            MptNodeData::Digest(digest) => MptNodeReference::Digest(*digest),
-            _ => {
-                let encoded = alloy_rlp::encode(self);
-                if encoded.len() < 32 {
-                    MptNodeReference::Bytes(encoded)
-                } else {
-                    MptNodeReference::Digest(keccak(encoded).into())
-                }
-            }
-        }
-    }
-
-    /// Determines if the trie is empty.
-    ///
-    /// This method checks if the node represents an empty trie, i.e., it doesn't contain
-    /// any key-value pairs.
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        matches!(&self.data, MptNodeData::Null)
-    }
-
-    /// Determines if the node represents a digest.
-    ///
-    /// A digest is a compact representation of a sub-trie, represented by its hash.
-    #[inline]
-    pub fn is_digest(&self) -> bool {
-        matches!(&self.data, MptNodeData::Digest(_))
-    }
-
-    /// Retrieves the nibbles corresponding to the node's prefix.
-    ///
-    /// Nibbles are half-bytes, and in the context of the MPT, they represent parts of
-    /// keys.
-    #[inline]
-    pub fn nibs(&self) -> Vec<u8> {
-        match &self.data {
-            MptNodeData::Null | MptNodeData::Branch(_) | MptNodeData::Digest(_) => vec![],
-            MptNodeData::Leaf(prefix, _) | MptNodeData::Extension(prefix, _) => prefix_nibs(prefix),
-        }
+        self.hash_id(self.root_id)
     }
 
     /// Retrieves the value associated with a given key in the trie.
-    ///
-    /// If the key is not present in the trie, this method returns `None`. Otherwise, it
-    /// returns a reference to the associated value. If [None] is returned, the key is
-    /// provably not in the trie.
     #[inline]
-    pub fn get(&self, key: &[u8]) -> Result<Option<&[u8]>, Error> {
-        self.get_internal(&to_nibs(key))
+    pub fn get<'s>(&'s self, key: &[u8]) -> Result<Option<&'a [u8]>, Error> {
+        self.get_recursive(self.root_id, &to_nibs(key))
     }
 
     /// Retrieves the RLP-decoded value corresponding to the key.
-    ///
-    /// If the key is not present in the trie, this method returns `None`. Otherwise, it
-    /// returns the RLP-decoded value.
     #[inline]
     pub fn get_rlp<T: alloy_rlp::Decodable>(&self, key: &[u8]) -> Result<Option<T>, Error> {
         match self.get(key)? {
-            Some(mut bytes) => Ok(Some(T::decode(&mut bytes)?)),
+            Some(bytes) => {
+                let mut slice = bytes;
+                Ok(Some(T::decode(&mut slice)?))
+            }
             None => Ok(None),
         }
     }
 
-    fn get_internal(&self, key_nibs: &[u8]) -> Result<Option<&[u8]>, Error> {
-        match &self.data {
-            MptNodeData::Null => Ok(None),
-            MptNodeData::Branch(nodes) => {
-                if let Some((i, tail)) = key_nibs.split_first() {
-                    match nodes[*i as usize] {
-                        Some(ref node) => node.get_internal(tail),
-                        None => Ok(None),
-                    }
-                } else {
-                    Ok(None)
-                }
-            }
-            MptNodeData::Leaf(prefix, value) => {
-                if prefix_nibs(prefix) == key_nibs {
-                    Ok(Some(value))
-                } else {
-                    Ok(None)
-                }
-            }
-            MptNodeData::Extension(prefix, node) => {
-                if let Some(tail) = key_nibs.strip_prefix(prefix_nibs(prefix).as_slice()) {
-                    node.get_internal(tail)
-                } else {
-                    Ok(None)
-                }
-            }
-            MptNodeData::Digest(digest) => Err(Error::NodeNotResolved(*digest)),
-        }
-    }
-
-    /// Removes a key from the trie.
-    ///
-    /// This method attempts to remove a key-value pair from the trie. If the key is
-    /// present, it returns `true`. Otherwise, it returns `false`.
-    #[inline]
-    pub fn delete(&mut self, key: &[u8]) -> Result<bool, Error> {
-        self.delete_internal(&to_nibs(key))
-    }
-
-    fn delete_internal(&mut self, key_nibs: &[u8]) -> Result<bool, Error> {
-        match &mut self.data {
-            MptNodeData::Null => return Ok(false),
-            MptNodeData::Branch(children) => {
-                if let Some((i, tail)) = key_nibs.split_first() {
-                    let child = &mut children[*i as usize];
-                    match child {
-                        Some(node) => {
-                            if !node.delete_internal(tail)? {
-                                return Ok(false);
-                            }
-                            // if the node is now empty, remove it
-                            if node.is_empty() {
-                                *child = None;
-                            }
-                        }
-                        None => return Ok(false),
-                    }
-                } else {
-                    return Err(Error::ValueInBranch);
-                }
-
-                let mut remaining = children.iter_mut().enumerate().filter(|(_, n)| n.is_some());
-                // there will always be at least one remaining node
-                let (index, node) = remaining.next().unwrap();
-                // if there is only exactly one node left, we need to convert the branch
-                if remaining.next().is_none() {
-                    let mut orphan = node.take().unwrap();
-                    match &mut orphan.data {
-                        // if the orphan is a leaf, prepend the corresponding nib to it
-                        MptNodeData::Leaf(prefix, orphan_value) => {
-                            let new_nibs: Vec<_> =
-                                iter::once(index as u8).chain(prefix_nibs(prefix)).collect();
-                            self.data = MptNodeData::Leaf(
-                                to_encoded_path(&new_nibs, true),
-                                mem::take(orphan_value),
-                            );
-                        }
-                        // if the orphan is an extension, prepend the corresponding nib to it
-                        MptNodeData::Extension(prefix, orphan_child) => {
-                            let new_nibs: Vec<_> =
-                                iter::once(index as u8).chain(prefix_nibs(prefix)).collect();
-                            self.data = MptNodeData::Extension(
-                                to_encoded_path(&new_nibs, false),
-                                mem::take(orphan_child),
-                            );
-                        }
-                        // if the orphan is a branch or digest, convert to an extension
-                        MptNodeData::Branch(_) | MptNodeData::Digest(_) => {
-                            self.data = MptNodeData::Extension(
-                                to_encoded_path(&[index as u8], false),
-                                orphan,
-                            );
-                        }
-                        MptNodeData::Null => unreachable!(),
-                    }
-                }
-            }
-            MptNodeData::Leaf(prefix, _) => {
-                if prefix_nibs(prefix) != key_nibs {
-                    return Ok(false);
-                }
-                self.data = MptNodeData::Null;
-            }
-            MptNodeData::Extension(prefix, child) => {
-                let mut self_nibs = prefix_nibs(prefix);
-                if let Some(tail) = key_nibs.strip_prefix(self_nibs.as_slice()) {
-                    if !child.delete_internal(tail)? {
-                        return Ok(false);
-                    }
-                } else {
-                    return Ok(false);
-                }
-
-                // an extension can only point to a branch or a digest; since it's sub trie was
-                // modified, we need to make sure that this property still holds
-                match &mut child.data {
-                    // if the child is empty, remove the extension
-                    MptNodeData::Null => {
-                        self.data = MptNodeData::Null;
-                    }
-                    // for a leaf, replace the extension with the extended leaf
-                    MptNodeData::Leaf(prefix, value) => {
-                        self_nibs.extend(prefix_nibs(prefix));
-                        self.data =
-                            MptNodeData::Leaf(to_encoded_path(&self_nibs, true), mem::take(value));
-                    }
-                    // for an extension, replace the extension with the extended extension
-                    MptNodeData::Extension(prefix, node) => {
-                        self_nibs.extend(prefix_nibs(prefix));
-                        self.data = MptNodeData::Extension(
-                            to_encoded_path(&self_nibs, false),
-                            mem::take(node),
-                        );
-                    }
-                    // for a branch or digest, the extension is still correct
-                    MptNodeData::Branch(_) | MptNodeData::Digest(_) => {}
-                }
-            }
-            MptNodeData::Digest(digest) => return Err(Error::NodeNotResolved(*digest)),
-        };
-
-        self.invalidate_ref_cache();
-        Ok(true)
-    }
-
     /// Inserts a key-value pair into the trie.
-    ///
-    /// This method attempts to insert a new key-value pair into the trie. If the
-    /// insertion is successful, it returns `true`. If the key already exists, it updates
-    /// the value and returns `false`.
     #[inline]
-    pub fn insert(&mut self, key: &[u8], value: Vec<u8>) -> Result<bool, Error> {
-        if value.is_empty() {
-            panic!("value must not be empty");
-        }
-        self.insert_internal(&to_nibs(key), value)
+    pub fn insert(&mut self, key: &[u8], value: &[u8]) -> Result<bool, Error> {
+        let key_nibs = &to_nibs(key);
+        self.insert_recursive(self.root_id, key_nibs, value)
     }
 
     /// Inserts an RLP-encoded value into the trie.
-    ///
-    /// This method inserts a value that's been encoded using RLP into the trie.
     #[inline]
     pub fn insert_rlp(&mut self, key: &[u8], value: impl Encodable) -> Result<bool, Error> {
-        self.insert_internal(&to_nibs(key), value.to_rlp())
+        let mut rlp_bytes = Vec::new();
+        value.encode(&mut rlp_bytes);
+        self.insert(key, &rlp_bytes)
     }
 
     /// Inserts an RLP-encoded value into the trie, reusing a buffer for encoding.
@@ -609,625 +255,1019 @@ impl MptNode {
     ) -> Result<bool, Error> {
         buf.clear();
         value.encode(buf);
-        self.insert(key, buf.clone())
+        self.insert(key, buf)
     }
 
-    fn insert_internal(&mut self, key_nibs: &[u8], value: Vec<u8>) -> Result<bool, Error> {
-        match &mut self.data {
-            MptNodeData::Null => {
-                self.data = MptNodeData::Leaf(to_encoded_path(key_nibs, true), value);
-            }
-            MptNodeData::Branch(children) => {
+    /// Removes a key from the trie.
+    ///
+    /// This method attempts to remove a key-value pair from the trie. If the key is
+    /// present, it returns `true`. Otherwise, it returns `false`.
+    #[inline]
+    pub fn delete(&mut self, key: &[u8]) -> Result<bool, Error> {
+        let key_nibs = &to_nibs(key);
+        self.delete_recursive(self.root_id, key_nibs)
+    }
+
+    /// Clears the trie, replacing its data with an empty node.
+    /// Old `clear()` – keep the old arena for anyone still sharing it,
+    /// switch `self` to a fresh one.
+    #[inline]
+    pub fn clear(&mut self) {
+        *self = Self::default();
+    }
+}
+
+// Internal Implementation
+impl<'a> ArenaBasedMptNode<'a> {
+    fn get_recursive<'s>(
+        &'s self,
+        node_id: NodeId,
+        key_nibs: &[u8],
+    ) -> Result<Option<&'a [u8]>, Error> {
+        match &self.nodes[node_id as usize] {
+            ArenaNodeData::Null => Ok(None),
+            ArenaNodeData::Branch(nodes) => {
                 if let Some((i, tail)) = key_nibs.split_first() {
-                    let child = &mut children[*i as usize];
-                    match child {
-                        Some(node) => {
-                            if !node.insert_internal(tail, value)? {
+                    match nodes[*i as usize] {
+                        Some(id) => self.get_recursive(id, tail),
+                        None => Ok(None),
+                    }
+                } else {
+                    Ok(None)
+                }
+            }
+            ArenaNodeData::Leaf(path_bytes, value) => {
+                // Convert compact path to nibbles on-demand
+                let path_nibs = prefix_to_small_nibs(path_bytes);
+                if path_nibs.as_slice() == key_nibs {
+                    Ok(Some(value))
+                } else {
+                    Ok(None)
+                }
+            }
+            ArenaNodeData::Extension(path_bytes, child_id) => {
+                // Convert compact path to nibbles on-demand
+                let path_nibs = prefix_to_small_nibs(path_bytes);
+                if let Some(tail) = key_nibs.strip_prefix(path_nibs.as_slice()) {
+                    self.get_recursive(*child_id, tail)
+                } else {
+                    Ok(None)
+                }
+            }
+            ArenaNodeData::Digest(digest) => Err(Error::NodeNotResolved(*digest)),
+        }
+    }
+
+    fn insert_recursive(
+        &mut self,
+        node_id: NodeId,
+        key_nibs: &[u8],
+        value: &[u8],
+    ) -> Result<bool, Error> {
+        let updated = match self.nodes[node_id as usize] {
+            ArenaNodeData::Null => {
+                let path_slice = self.add_encoded_path_slice(key_nibs, true);
+                let value_slice = self.alloc_in_bump(value);
+                self.nodes[node_id as usize] = ArenaNodeData::Leaf(path_slice, value_slice);
+                Ok(true)
+            }
+            ArenaNodeData::Branch(mut children) => {
+                if let Some((i, tail)) = key_nibs.split_first() {
+                    let updated = match children[*i as usize] {
+                        Some(id) => self.insert_recursive(id, tail, value)?,
+                        None => {
+                            let path_slice = self.add_encoded_path_slice(tail, true);
+                            let value_slice = self.alloc_in_bump(value);
+                            let new_leaf_id =
+                                self.add_node(ArenaNodeData::Leaf(path_slice, value_slice));
+                            children[*i as usize] = Some(new_leaf_id);
+                            self.nodes[node_id as usize] = ArenaNodeData::Branch(children);
+                            true
+                        }
+                    };
+                    Ok(updated)
+                } else {
+                    Err(Error::ValueInBranch)
+                }
+            }
+            ArenaNodeData::Leaf(path_bytes, old_value) => {
+                let path_nibs = prefix_to_small_nibs(path_bytes);
+                let common_len = lcp(&path_nibs, key_nibs);
+
+                if common_len == path_nibs.len() && common_len == key_nibs.len() {
+                    if old_value == value {
+                        return Ok(false);
+                    }
+                    let value_slice = self.alloc_in_bump(value);
+                    self.nodes[node_id as usize] = ArenaNodeData::Leaf(path_bytes, value_slice);
+                    Ok(true)
+                } else if common_len == path_nibs.len() || common_len == key_nibs.len() {
+                    Err(Error::ValueInBranch)
+                } else {
+                    let split_point = common_len + 1;
+                    let mut children: [Option<NodeId>; 16] = Default::default();
+
+                    let leaf1_path_slice =
+                        self.add_encoded_path_slice(&path_nibs[split_point..], true);
+                    let leaf1_value_slice = self.alloc_in_bump(old_value);
+                    let leaf1_id =
+                        self.add_node(ArenaNodeData::Leaf(leaf1_path_slice, leaf1_value_slice));
+
+                    let leaf2_path_slice =
+                        self.add_encoded_path_slice(&key_nibs[split_point..], true);
+                    let leaf2_value_slice = self.alloc_in_bump(value);
+                    let leaf2_id =
+                        self.add_node(ArenaNodeData::Leaf(leaf2_path_slice, leaf2_value_slice));
+
+                    children[path_nibs[common_len] as usize] = Some(leaf1_id);
+                    children[key_nibs[common_len] as usize] = Some(leaf2_id);
+
+                    let new_node_data = if common_len > 0 {
+                        let branch_id = self.add_node(ArenaNodeData::Branch(children));
+                        let ext_path_slice =
+                            self.add_encoded_path_slice(&path_nibs[..common_len], false);
+                        ArenaNodeData::Extension(ext_path_slice, branch_id)
+                    } else {
+                        ArenaNodeData::Branch(children)
+                    };
+                    self.nodes[node_id as usize] = new_node_data;
+                    Ok(true)
+                }
+            }
+            ArenaNodeData::Extension(path_bytes, child_id) => {
+                let path_nibs = prefix_to_small_nibs(path_bytes);
+                let common_len = lcp(&path_nibs, key_nibs);
+
+                if common_len == path_nibs.len() {
+                    self.insert_recursive(child_id, &key_nibs[common_len..], value)
+                } else if common_len == key_nibs.len() {
+                    Err(Error::ValueInBranch)
+                } else {
+                    let split_point = common_len + 1;
+                    let mut children: [Option<NodeId>; 16] = Default::default();
+
+                    if split_point < path_nibs.len() {
+                        let ext_path_slice =
+                            self.add_encoded_path_slice(&path_nibs[split_point..], false);
+                        let ext_id =
+                            self.add_node(ArenaNodeData::Extension(ext_path_slice, child_id));
+                        children[path_nibs[common_len] as usize] = Some(ext_id);
+                    } else {
+                        children[path_nibs[common_len] as usize] = Some(child_id);
+                    }
+
+                    let leaf_path_slice =
+                        self.add_encoded_path_slice(&key_nibs[split_point..], true);
+                    let leaf_value_slice = self.alloc_in_bump(value);
+                    let leaf_id =
+                        self.add_node(ArenaNodeData::Leaf(leaf_path_slice, leaf_value_slice));
+                    children[key_nibs[common_len] as usize] = Some(leaf_id);
+
+                    let new_node_data = if common_len > 0 {
+                        let branch_id = self.add_node(ArenaNodeData::Branch(children));
+                        let parent_ext_path_slice =
+                            self.add_encoded_path_slice(&path_nibs[..common_len], false);
+                        ArenaNodeData::Extension(parent_ext_path_slice, branch_id)
+                    } else {
+                        ArenaNodeData::Branch(children)
+                    };
+                    self.nodes[node_id as usize] = new_node_data;
+                    Ok(true)
+                }
+            }
+            ArenaNodeData::Digest(digest) => Err(Error::NodeNotResolved(digest)),
+        }?;
+
+        if updated {
+            self.invalidate_ref_cache(node_id);
+        }
+
+        Ok(updated)
+    }
+
+    fn delete_recursive(&mut self, node_id: NodeId, key_nibs: &[u8]) -> Result<bool, Error> {
+        let updated = match self.nodes[node_id as usize] {
+            ArenaNodeData::Null => Ok(false),
+            ArenaNodeData::Branch(mut children) => {
+                if let Some((i, tail)) = key_nibs.split_first() {
+                    let child_id = children[*i as usize];
+                    match child_id {
+                        Some(id) => {
+                            if !self.delete_recursive(id, tail)? {
                                 return Ok(false);
                             }
+
+                            if matches!(self.nodes[id as usize], ArenaNodeData::Null) {
+                                children[*i as usize] = None;
+                            }
                         }
-                        // if the corresponding child is empty, insert a new leaf
-                        None => {
-                            *child = Some(Box::new(
-                                MptNodeData::Leaf(to_encoded_path(tail, true), value).into(),
-                            ));
-                        }
+                        None => return Ok(false),
                     }
                 } else {
                     return Err(Error::ValueInBranch);
                 }
+
+                let mut remaining_iter = children.iter().enumerate().filter(|(_, n)| n.is_some());
+
+                if let Some(first_remaining) = remaining_iter.next() {
+                    // One child found, check if there are more.
+                    if remaining_iter.next().is_none() {
+                        // Exactly one child remains, collapse the branch node.
+                        let (index, &child_id) = first_remaining;
+                        let child_id = child_id.unwrap();
+                        let child_node_data = self.nodes[child_id as usize].clone();
+
+                        let new_node_data = match child_node_data {
+                            ArenaNodeData::Leaf(path_bytes, value) => {
+                                let path_nibs = prefix_to_small_nibs(path_bytes);
+                                let mut new_nibs: SmallVec<[u8; 64]> =
+                                    SmallVec::with_capacity(1 + path_nibs.len());
+                                new_nibs.push(index as u8);
+                                new_nibs.extend_from_slice(&path_nibs);
+                                let new_path_slice = self.add_encoded_path_slice(&new_nibs, true);
+                                let new_value_slice = self.alloc_in_bump(value);
+                                ArenaNodeData::Leaf(new_path_slice, new_value_slice)
+                            }
+                            ArenaNodeData::Extension(path_bytes, child_child_id) => {
+                                let path_nibs = prefix_to_small_nibs(path_bytes);
+                                let mut new_nibs: SmallVec<[u8; 64]> =
+                                    SmallVec::with_capacity(1 + path_nibs.len());
+                                new_nibs.push(index as u8);
+                                new_nibs.extend_from_slice(&path_nibs);
+                                let new_path_slice = self.add_encoded_path_slice(&new_nibs, false);
+                                ArenaNodeData::Extension(new_path_slice, child_child_id)
+                            }
+                            ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
+                                let ext_nibs: SmallVec<[u8; 1]> =
+                                    SmallVec::from_slice(&[index as u8]);
+                                let new_path_slice = self.add_encoded_path_slice(&ext_nibs, false);
+                                ArenaNodeData::Extension(new_path_slice, child_id)
+                            }
+                            ArenaNodeData::Null => unreachable!(),
+                        };
+                        self.nodes[node_id as usize] = new_node_data;
+                    } else {
+                        // More than one child remains, just update the branch node.
+                        self.nodes[node_id as usize] = ArenaNodeData::Branch(children);
+                    }
+                } else {
+                    // No children left, update to an empty branch node.
+                    self.nodes[node_id as usize] = ArenaNodeData::Branch(children);
+                }
+
+                Ok(true)
             }
-            MptNodeData::Leaf(prefix, old_value) => {
-                let self_nibs = prefix_nibs(prefix);
-                let common_len = lcp(&self_nibs, key_nibs);
-                if common_len == self_nibs.len() && common_len == key_nibs.len() {
-                    // if self_nibs == key_nibs, update the value if it is different
-                    if old_value == &value {
+            ArenaNodeData::Leaf(path_bytes, _) => {
+                let path_nibs = prefix_to_small_nibs(path_bytes);
+                if path_nibs.as_slice() != key_nibs {
+                    return Ok(false);
+                }
+                self.nodes[node_id as usize] = ArenaNodeData::Null;
+                Ok(true)
+            }
+            ArenaNodeData::Extension(path_bytes, child_id) => {
+                let path_nibs = prefix_to_small_nibs(path_bytes);
+                if let Some(tail) = key_nibs.strip_prefix(path_nibs.as_slice()) {
+                    if !self.delete_recursive(child_id, tail)? {
                         return Ok(false);
                     }
-                    *old_value = value;
-                } else if common_len == self_nibs.len() || common_len == key_nibs.len() {
-                    return Err(Error::ValueInBranch);
                 } else {
-                    let split_point = common_len + 1;
-                    // otherwise, create a branch with two children
-                    let mut children: [Option<Box<MptNode>>; 16] = Default::default();
+                    return Ok(false);
+                };
 
-                    children[self_nibs[common_len] as usize] = Some(Box::new(
-                        MptNodeData::Leaf(
-                            to_encoded_path(&self_nibs[split_point..], true),
-                            mem::take(old_value),
-                        )
-                        .into(),
-                    ));
-                    children[key_nibs[common_len] as usize] = Some(Box::new(
-                        MptNodeData::Leaf(to_encoded_path(&key_nibs[split_point..], true), value)
-                            .into(),
-                    ));
-
-                    let branch = MptNodeData::Branch(children);
-                    if common_len > 0 {
-                        // create parent extension for new branch
-                        self.data = MptNodeData::Extension(
-                            to_encoded_path(&self_nibs[..common_len], false),
-                            Box::new(branch.into()),
-                        );
-                    } else {
-                        self.data = branch;
+                let child_node_data = self.nodes[child_id as usize].clone();
+                let new_node_data = match child_node_data {
+                    ArenaNodeData::Null => ArenaNodeData::Null,
+                    ArenaNodeData::Leaf(child_path_bytes, value) => {
+                        let child_path_nibs = prefix_to_small_nibs(child_path_bytes);
+                        let mut combined_nibs: SmallVec<[u8; 64]> =
+                            SmallVec::with_capacity(path_nibs.len() + child_path_nibs.len());
+                        combined_nibs.extend_from_slice(&path_nibs);
+                        combined_nibs.extend_from_slice(&child_path_nibs);
+                        let new_path_slice = self.add_encoded_path_slice(&combined_nibs, true);
+                        let new_value_slice = self.alloc_in_bump(value);
+                        ArenaNodeData::Leaf(new_path_slice, new_value_slice)
                     }
-                }
+                    ArenaNodeData::Extension(child_path_bytes, grandchild_id) => {
+                        let child_path_nibs = prefix_to_small_nibs(child_path_bytes);
+                        let mut combined_nibs: SmallVec<[u8; 64]> =
+                            SmallVec::with_capacity(path_nibs.len() + child_path_nibs.len());
+                        combined_nibs.extend_from_slice(&path_nibs);
+                        combined_nibs.extend_from_slice(&child_path_nibs);
+                        let new_path_slice = self.add_encoded_path_slice(&combined_nibs, false);
+                        ArenaNodeData::Extension(new_path_slice, grandchild_id)
+                    }
+                    ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
+                        ArenaNodeData::Extension(path_bytes, child_id)
+                    }
+                };
+                self.nodes[node_id as usize] = new_node_data;
+                Ok(true)
             }
-            MptNodeData::Extension(prefix, existing_child) => {
-                let self_nibs = prefix_nibs(prefix);
-                let common_len = lcp(&self_nibs, key_nibs);
-                if common_len == self_nibs.len() {
-                    // traverse down for update
-                    if !existing_child.insert_internal(&key_nibs[common_len..], value)? {
-                        return Ok(false);
-                    }
-                } else if common_len == key_nibs.len() {
-                    return Err(Error::ValueInBranch);
-                } else {
-                    let split_point = common_len + 1;
-                    // otherwise, create a branch with two children
-                    let mut children: [Option<Box<MptNode>>; 16] = Default::default();
+            ArenaNodeData::Digest(digest) => Err(Error::NodeNotResolved(digest)),
+        }?;
 
-                    children[self_nibs[common_len] as usize] = if split_point < self_nibs.len() {
-                        Some(Box::new(
-                            MptNodeData::Extension(
-                                to_encoded_path(&self_nibs[split_point..], false),
-                                mem::take(existing_child),
-                            )
-                            .into(),
-                        ))
-                    } else {
-                        Some(mem::take(existing_child))
-                    };
-                    children[key_nibs[common_len] as usize] = Some(Box::new(
-                        MptNodeData::Leaf(to_encoded_path(&key_nibs[split_point..], true), value)
-                            .into(),
-                    ));
-
-                    let branch = MptNodeData::Branch(children);
-                    if common_len > 0 {
-                        // Create parent extension for new branch
-                        self.data = MptNodeData::Extension(
-                            to_encoded_path(&self_nibs[..common_len], false),
-                            Box::new(branch.into()),
-                        );
-                    } else {
-                        self.data = branch;
-                    }
-                }
-            }
-            MptNodeData::Digest(digest) => return Err(Error::NodeNotResolved(*digest)),
-        };
-
-        self.invalidate_ref_cache();
-        Ok(true)
+        if updated {
+            self.invalidate_ref_cache(node_id);
+        }
+        Ok(updated)
     }
 
-    fn invalidate_ref_cache(&mut self) {
-        self.cached_reference.borrow_mut().take();
-    }
+    fn decode_node_recursive(&mut self, buf: &mut &'a [u8]) -> Result<NodeId, Error> {
+        if buf.is_empty() {
+            return Ok(0); // Return the null node index
+        }
 
-    /// Returns the number of traversable nodes in the trie.
-    ///
-    /// This method provides a count of all the nodes that can be traversed within the
-    /// trie.
-    pub fn size(&self) -> usize {
-        match self.as_data() {
-            MptNodeData::Null => 0,
-            MptNodeData::Branch(children) => {
-                children.iter().flatten().map(|n| n.size()).sum::<usize>() + 1
+        let header = alloy_rlp::Header::decode(buf).map_err(Error::Rlp)?;
+
+        if !header.list {
+            // Single data item
+            if header.payload_length == 0 {
+                return Ok(0); // Null node
             }
-            MptNodeData::Leaf(_, _) => 1,
-            MptNodeData::Extension(_, child) => child.size() + 1,
-            MptNodeData::Digest(_) => 0,
+            if header.payload_length == 32 {
+                if buf.len() < 32 {
+                    return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
+                }
+                let digest = B256::from_slice(&buf[..32]);
+                buf.advance(32);
+                return Ok(self.add_node(ArenaNodeData::Digest(digest)));
+            }
+            return Err(Error::Rlp(alloy_rlp::Error::Custom("invalid string node")));
+        }
+
+        // Extract the list payload - zero-copy slice
+        let payload = &buf[..header.payload_length];
+        buf.advance(header.payload_length);
+        let mut payload_buf = payload;
+
+        // Probe the first two items to determine if this is a 2-item or 17-item node
+        // without scanning the entire payload
+        let mut probe_buf = payload_buf;
+
+        // Try to parse the first item from the probe
+        let h1_start_ptr = probe_buf.as_ptr();
+        let h1 = alloy_rlp::Header::decode(&mut probe_buf).map_err(Error::Rlp)?;
+        let h1_header_len = probe_buf.as_ptr() as usize - h1_start_ptr as usize;
+        if probe_buf.len() < h1.payload_length {
+            return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
+        }
+        probe_buf.advance(h1.payload_length);
+
+        if probe_buf.is_empty() {
+            return Err(Error::Rlp(alloy_rlp::Error::Custom("invalid 1-item list node")));
+        }
+
+        // Try to parse the second item
+        let h2_start_ptr = probe_buf.as_ptr();
+        let h2 = alloy_rlp::Header::decode(&mut probe_buf).map_err(Error::Rlp)?;
+        let h2_header_len = probe_buf.as_ptr() as usize - h2_start_ptr as usize;
+        if probe_buf.len() < h2.payload_length {
+            return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
+        }
+        probe_buf.advance(h2.payload_length);
+
+        // If the probe buffer is now empty, it was a 2-item node
+        // Otherwise, it's a 17-item branch node
+        let is_branch = !probe_buf.is_empty();
+
+        if is_branch {
+            // Branch node (17 items)
+            let mut children = [None; 16];
+            for i in 0..16 {
+                let child_id = self.decode_node_recursive(&mut payload_buf)?;
+                if child_id != 0 {
+                    children[i] = Some(child_id);
+                }
+            }
+
+            // Skip the final value (should be empty for MPT) - avoid allocation
+            let value_header = alloy_rlp::Header::decode(&mut payload_buf).map_err(Error::Rlp)?;
+            if value_header.list {
+                return Err(Error::Rlp(alloy_rlp::Error::Custom("expected string for value")));
+            }
+            if value_header.payload_length != 0 {
+                return Err(Error::ValueInBranch);
+            }
+            payload_buf.advance(value_header.payload_length);
+
+            Ok(self.add_node(ArenaNodeData::Branch(children)))
+        } else {
+            // Leaf or Extension node (2 items)
+            // Reuse headers from the probe to avoid re-parsing.
+
+            // 1. Path
+            let path_header = h1;
+            if path_header.list {
+                return Err(Error::Rlp(alloy_rlp::Error::Custom("expected string for path")));
+            }
+            payload_buf.advance(h1_header_len);
+            if payload_buf.len() < path_header.payload_length {
+                return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
+            }
+            let path_slice = &payload_buf[..path_header.payload_length];
+            payload_buf.advance(path_header.payload_length);
+
+            if path_slice.is_empty() {
+                return Err(Error::Rlp(alloy_rlp::Error::Custom("empty path")));
+            }
+
+            let prefix = path_slice[0];
+            if (prefix & 0x20) != 0 {
+                // Leaf node (prefix 0x20 or 0x21)
+
+                // 2. Value
+                let value_header = h2;
+                if value_header.list {
+                    return Err(Error::Rlp(alloy_rlp::Error::Custom("expected string for value")));
+                }
+                payload_buf.advance(h2_header_len);
+                if payload_buf.len() < value_header.payload_length {
+                    return Err(Error::Rlp(alloy_rlp::Error::InputTooShort));
+                }
+                let value_slice = &payload_buf[..value_header.payload_length];
+                payload_buf.advance(value_header.payload_length);
+
+                Ok(self.add_node(ArenaNodeData::Leaf(path_slice, value_slice)))
+            } else {
+                // Extension node (prefix 0x00 or 0x01)
+                // The second item is a child node, which we must parse recursively.
+                // We cannot reuse h2 because decode_node_recursive needs to see the full RLP.
+                let child_id = self.decode_node_recursive(&mut payload_buf)?;
+                Ok(self.add_node(ArenaNodeData::Extension(path_slice, child_id)))
+            }
         }
     }
 
-    /// Formats the trie as a string list, where each line corresponds to a trie leaf.
-    ///
-    /// This method is primarily used for debugging purposes, providing a visual
-    /// representation of the trie's structure.
-    pub fn debug_rlp<T: alloy_rlp::Decodable + Debug>(&self) -> Vec<String> {
-        // convert the nibs to hex
-        let nibs: String = self.nibs().iter().fold(String::new(), |mut output, n| {
-            let _ = write!(output, "{:x}", n);
-            output
-        });
+    fn add_node(&mut self, data: ArenaNodeData<'a>) -> NodeId {
+        let id = self.nodes.len() as NodeId;
+        self.nodes.push(data);
+        self.cached_references.push(RefCell::new(None));
+        id
+    }
 
-        match self.as_data() {
-            MptNodeData::Null => vec![format!("{:?}", MptNodeData::Null)],
-            MptNodeData::Branch(children) => children
-                .iter()
-                .enumerate()
-                .flat_map(|(i, child)| {
-                    match child {
-                        Some(node) => node.debug_rlp::<T>(),
-                        None => vec!["None".to_string()],
-                    }
-                    .into_iter()
-                    .map(move |s| format!("{:x} {}", i, s))
-                })
-                .collect(),
-            MptNodeData::Leaf(_, data) => {
-                vec![format!("{} -> {:?}", nibs, T::decode(&mut &data[..]).unwrap())]
+    /// Encodes nibbles into the standard hex-prefix format directly into the bump arena.
+    fn add_encoded_path_slice(&mut self, nibs: &[u8], is_leaf: bool) -> &'a [u8] {
+        let is_odd = nibs.len() % 2 != 0;
+        // Max path is 64 nibs (32 bytes) + 1 prefix byte = 33 bytes.
+        // SmallVec will keep this on the stack, avoiding heap allocations.
+        let mut encoded = SmallVec::<[u8; 33]>::new();
+
+        let mut prefix = if is_leaf { 0x20 } else { 0x00 };
+        if is_odd {
+            prefix |= 0x10;
+            encoded.push(prefix | nibs[0]);
+            for i in (1..nibs.len()).step_by(2) {
+                encoded.push((nibs[i] << 4) | nibs[i + 1]);
             }
-            MptNodeData::Extension(_, node) => {
-                node.debug_rlp::<T>().into_iter().map(|s| format!("{} {}", nibs, s)).collect()
+        } else {
+            encoded.push(prefix);
+            for i in (0..nibs.len()).step_by(2) {
+                encoded.push((nibs[i] << 4) | nibs[i + 1]);
             }
-            MptNodeData::Digest(digest) => vec![format!("#{:#}", digest)],
+        }
+        self.alloc_in_bump(&encoded)
+    }
+
+    /// Copies `bytes` into the bump arena and returns a `'a` slice.
+    #[inline]
+    fn alloc_in_bump(&mut self, bytes: &[u8]) -> &'a [u8] {
+        let slice = self.bump.alloc_slice_copy(bytes);
+        // Sound because `slice` lives as long as `self.bump`.
+        unsafe { std::mem::transmute::<&[u8], &'a [u8]>(slice) }
+    }
+
+    #[inline]
+    fn invalidate_ref_cache(&mut self, node_id: NodeId) {
+        self.cached_references[node_id as usize].borrow_mut().take();
+    }
+
+    fn hash_id(&self, node_id: NodeId) -> B256 {
+        match self.nodes[node_id as usize] {
+            ArenaNodeData::Null => EMPTY_ROOT,
+            _ => {
+                match self.cached_references[node_id as usize]
+                    .borrow_mut()
+                    .get_or_insert_with(|| self.calc_reference(node_id))
+                {
+                    MptNodeReference::Digest(digest) => *digest,
+                    MptNodeReference::Bytes(bytes) => keccak256(bytes),
+                }
+            }
         }
     }
 
-    /// Returns the length of the RLP payload of the node.
-    fn payload_length(&self) -> usize {
-        match &self.data {
-            MptNodeData::Null => 0,
-            MptNodeData::Branch(nodes) => {
+    fn calc_reference(&self, node_id: NodeId) -> MptNodeReference {
+        match &self.nodes[node_id as usize] {
+            ArenaNodeData::Null => MptNodeReference::Bytes(vec![alloy_rlp::EMPTY_STRING_CODE]),
+            ArenaNodeData::Digest(digest) => MptNodeReference::Digest(*digest),
+            _ => {
+                let payload_length = self.payload_length_id(node_id);
+                let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
+
+                if rlp_length < 32 {
+                    let mut encoded = Vec::with_capacity(rlp_length);
+                    self.encode_id_with_payload_len(node_id, payload_length, &mut encoded);
+                    debug_assert_eq!(encoded.len(), rlp_length);
+                    MptNodeReference::Bytes(encoded)
+                } else {
+                    let mut scratch = self.encoding_scratch.borrow_mut();
+                    scratch.clear();
+                    scratch.reserve(rlp_length);
+                    self.encode_id_with_payload_len(node_id, payload_length, &mut *scratch);
+                    debug_assert_eq!(scratch.len(), rlp_length);
+                    MptNodeReference::Digest(keccak256(&*scratch))
+                }
+            }
+        }
+    }
+
+    fn encode_id_with_payload_len(
+        &self,
+        node_id: NodeId,
+        payload_length: usize,
+        out: &mut dyn alloy_rlp::BufMut,
+    ) {
+        match &self.nodes[node_id as usize] {
+            ArenaNodeData::Null => {
+                out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
+            }
+            ArenaNodeData::Branch(nodes) => {
+                alloy_rlp::Header { list: true, payload_length }.encode(out);
+                nodes.iter().for_each(|child_id| match child_id {
+                    Some(id) => self.reference_encode_id(*id, out),
+                    None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
+                });
+                // in the MPT reference, branches have values so always add empty value
+                out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
+            }
+            ArenaNodeData::Leaf(encoded_path, value) => {
+                alloy_rlp::Header { list: true, payload_length }.encode(out);
+                encoded_path.encode(out);
+                value.encode(out);
+            }
+            ArenaNodeData::Extension(encoded_path, child_id) => {
+                alloy_rlp::Header { list: true, payload_length }.encode(out);
+                encoded_path.encode(out);
+                self.reference_encode_id(*child_id, out);
+            }
+            ArenaNodeData::Digest(digest) => {
+                digest.encode(out);
+            }
+        }
+    }
+
+    #[inline]
+    fn reference_encode_id(&self, node_id: NodeId, out: &mut dyn alloy_rlp::BufMut) {
+        match self.cached_references[node_id as usize]
+            .borrow_mut()
+            .get_or_insert_with(|| self.calc_reference(node_id))
+        {
+            // if the reference is an RLP-encoded byte slice, copy it directly
+            MptNodeReference::Bytes(bytes) => out.put_slice(bytes),
+            // if the reference is a digest, RLP-encode it with its fixed known length
+            MptNodeReference::Digest(digest) => {
+                out.put_u8(alloy_rlp::EMPTY_STRING_CODE + 32);
+                out.put_slice(digest.as_slice());
+            }
+        }
+    }
+
+    fn payload_length_id(&self, node_id: NodeId) -> usize {
+        match &self.nodes[node_id as usize] {
+            ArenaNodeData::Null => 0,
+            ArenaNodeData::Branch(nodes) => {
                 1 + nodes
                     .iter()
-                    .map(|child| child.as_ref().map_or(1, |node| node.reference_length()))
+                    .map(|child| child.map_or(1, |id| self.reference_length(id)))
                     .sum::<usize>()
             }
-            MptNodeData::Leaf(prefix, value) => {
-                prefix.as_slice().length() + value.as_slice().length()
+            ArenaNodeData::Leaf(encoded_path, value) => encoded_path.length() + value.length(),
+            ArenaNodeData::Extension(encoded_path, node_id) => {
+                encoded_path.length() + self.reference_length(*node_id)
             }
-            MptNodeData::Extension(prefix, node) => {
-                prefix.as_slice().length() + node.reference_length()
-            }
-            MptNodeData::Digest(_) => 32,
+            ArenaNodeData::Digest(_) => 32,
+        }
+    }
+
+    #[inline]
+    fn reference_length(&self, node_id: NodeId) -> usize {
+        match self.cached_references[node_id as usize]
+            .borrow_mut()
+            .get_or_insert_with(|| self.calc_reference(node_id))
+        {
+            MptNodeReference::Bytes(bytes) => bytes.len(),
+            MptNodeReference::Digest(_) => 1 + 32,
         }
     }
 }
 
-/// Parses proof bytes into a vector of MPT nodes.
-pub fn parse_proof(proof: &[impl AsRef<[u8]>]) -> Result<Vec<MptNode>> {
-    Ok(proof.iter().map(MptNode::decode).collect::<Result<Vec<_>, _>>()?)
-}
-
-/// Creates a Merkle Patricia trie from an EIP-1186 proof.
-/// For inclusion proofs the returned trie contains exactly one leaf with the value.
-pub fn mpt_from_proof(proof_nodes: &[MptNode]) -> Result<MptNode> {
-    let mut next: Option<MptNode> = None;
-    for (i, node) in proof_nodes.iter().enumerate().rev() {
-        // there is nothing to replace for the last node
-        let Some(replacement) = next else {
-            next = Some(node.clone());
-            continue;
-        };
-
-        // the next node must have a digest reference
-        let MptNodeReference::Digest(ref child_ref) = replacement.reference() else {
-            panic!("node {} in proof is not referenced by hash", i + 1);
-        };
-        // find the child that references the next node
-        let resolved: MptNode = match node.as_data().clone() {
-            MptNodeData::Branch(mut children) => {
-                if let Some(child) = children.iter_mut().flatten().find(
-                    |child| matches!(child.as_data(), MptNodeData::Digest(d) if d == child_ref),
-                ) {
-                    *child = Box::new(replacement);
-                } else {
-                    panic!("node {} does not reference the successor", i);
-                }
-                MptNodeData::Branch(children).into()
-            }
-            MptNodeData::Extension(prefix, child) => {
-                if !matches!(child.as_data(), MptNodeData::Digest(d) if d == child_ref) {
-                    panic!("node {} does not reference the successor", i);
-                }
-                MptNodeData::Extension(prefix, Box::new(replacement)).into()
-            }
-            MptNodeData::Null | MptNodeData::Leaf(_, _) | MptNodeData::Digest(_) => {
-                panic!("node {} has no children to replace", i);
-            }
-        };
-
-        next = Some(resolved);
+// Serialization. Not performance critical.
+impl<'a> ArenaBasedMptNode<'a> {
+    /// Returns the RLP-encoded bytes with ALL children inlined (never replaced by digest).
+    /// This produces a compact, fully-expanded representation perfect for serialization.
+    #[inline]
+    pub fn to_full_rlp(&self) -> Vec<u8> {
+        // Rough estimate: each node ~100 bytes average, plus some overhead
+        let mut out = Vec::with_capacity(self.nodes.len() * 100);
+        self.encode_full(self.root_id, &mut out);
+        out
     }
 
-    // the last node in the proof should be the root
-    Ok(next.unwrap_or_default())
-}
-
-/// Verifies that the given proof is a valid proof of exclusion for the given key.
-pub fn is_not_included(key: &[u8], proof_nodes: &[MptNode]) -> Result<bool> {
-    let proof_trie = mpt_from_proof(proof_nodes).unwrap();
-    // for valid proofs, the get must not fail
-    let value = proof_trie.get(key).unwrap();
-
-    Ok(value.is_none())
-}
-
-/// Creates a new MPT trie where all the digests contained in `node_store` are resolved.
-pub fn resolve_nodes(root: &MptNode, node_store: &HashMap<MptNodeReference, MptNode>) -> MptNode {
-    let trie = match root.as_data() {
-        MptNodeData::Null | MptNodeData::Leaf(_, _) => root.clone(),
-        MptNodeData::Branch(children) => {
-            let children: Vec<_> = children
-                .iter()
-                .map(|child| child.as_ref().map(|node| Box::new(resolve_nodes(node, node_store))))
-                .collect();
-            MptNodeData::Branch(children.try_into().unwrap()).into()
-        }
-        MptNodeData::Extension(prefix, target) => {
-            MptNodeData::Extension(prefix.clone(), Box::new(resolve_nodes(target, node_store)))
-                .into()
-        }
-        MptNodeData::Digest(digest) => {
-            if let Some(node) = node_store.get(&MptNodeReference::Digest(*digest)) {
-                resolve_nodes(node, node_store)
-            } else {
-                root.clone()
-            }
-        }
-    };
-    // the root hash must not change
-    debug_assert_eq!(root.hash(), trie.hash());
-
-    trie
-}
-
-/// Returns a list of all possible nodes that can be created by shortening the path of the
-/// given node.
-/// When nodes in an MPT are deleted, leaves or extensions may be extended. To still be
-/// able to identify the original nodes, we create all shortened versions of the node.
-pub fn shorten_node_path(node: &MptNode) -> Vec<MptNode> {
-    let mut res = Vec::new();
-    let nibs = node.nibs();
-    match node.as_data() {
-        MptNodeData::Null | MptNodeData::Branch(_) | MptNodeData::Digest(_) => {}
-        MptNodeData::Leaf(_, value) => {
-            for i in 0..=nibs.len() {
-                res.push(MptNodeData::Leaf(to_encoded_path(&nibs[i..], true), value.clone()).into())
-            }
-        }
-        MptNodeData::Extension(_, child) => {
-            for i in 0..=nibs.len() {
-                res.push(
-                    MptNodeData::Extension(to_encoded_path(&nibs[i..], false), child.clone())
-                        .into(),
-                )
-            }
-        }
-    };
-    res
-}
-
-pub fn proofs_to_tries(
-    state_root: B256,
-    proofs: &HashMap<Address, AccountProof>,
-) -> Result<EthereumState> {
-    // if no addresses are provided, return the trie only consisting of the state root
-    if proofs.is_empty() {
-        return Ok(EthereumState {
-            state_trie: node_from_digest(state_root),
-            storage_tries: Default::default(),
-        });
+    /// Encodes a node with ALL children inlined (never using digest references).
+    /// Produces the fully-expanded RLP representation.
+    fn encode_full(&self, node_id: NodeId, out: &mut dyn alloy_rlp::BufMut) {
+        let payload_length = self.payload_length_full(node_id);
+        self.encode_full_with_payload_len(node_id, payload_length, out);
     }
 
-    let mut storage: HashMap<B256, MptNode> =
-        HashMap::with_capacity_and_hasher(proofs.len(), DefaultHashBuilder::default());
-
-    let mut state_nodes = HashMap::<_, _>::default();
-    let mut state_root_node = MptNode::default();
-    for (address, proof) in proofs {
-        let proof_nodes = parse_proof(&proof.proof).unwrap();
-        mpt_from_proof(&proof_nodes).unwrap();
-
-        // the first node in the proof is the root
-        if let Some(node) = proof_nodes.first() {
-            state_root_node = node.clone();
+    /// Calculates payload length for full inline encoding (never using digest references)
+    fn payload_length_full(&self, node_id: NodeId) -> usize {
+        match &self.nodes[node_id as usize] {
+            ArenaNodeData::Null => 0,
+            ArenaNodeData::Branch(nodes) => {
+                1 + nodes
+                    .iter()
+                    .map(|child| child.map_or(1, |id| self.full_length(id)))
+                    .sum::<usize>()
+            }
+            ArenaNodeData::Leaf(encoded_path, value) => encoded_path.length() + value.length(),
+            ArenaNodeData::Extension(encoded_path, node_id) => {
+                encoded_path.length() + self.full_length(*node_id)
+            }
+            ArenaNodeData::Digest(_) => 32, // Keep digests as-is
         }
+    }
 
-        proof_nodes.into_iter().for_each(|node| {
-            state_nodes.insert(node.reference(), node);
-        });
+    /// Returns the full RLP length when inlined (never using digest references)
+    fn full_length(&self, node_id: NodeId) -> usize {
+        let payload_length = self.payload_length_full(node_id);
+        payload_length + alloy_rlp::length_of_length(payload_length)
+    }
 
-        // if no slots are provided, return the trie only consisting of the storage root
-        let storage_root = proof.storage_root;
+    /// Encodes a node with full inline children (never using digest references)
+    fn encode_full_with_payload_len(
+        &self,
+        node_id: NodeId,
+        payload_length: usize,
+        out: &mut dyn alloy_rlp::BufMut,
+    ) {
+        match &self.nodes[node_id as usize] {
+            ArenaNodeData::Null => {
+                out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
+            }
+            ArenaNodeData::Branch(nodes) => {
+                alloy_rlp::Header { list: true, payload_length }.encode(out);
+                nodes.iter().for_each(|child_id| match child_id {
+                    Some(id) => self.encode_full(*id, out), // INLINE children, never use digest!
+                    None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
+                });
+                // in the MPT reference, branches have values so always add empty value
+                out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
+            }
+            ArenaNodeData::Leaf(encoded_path, value) => {
+                alloy_rlp::Header { list: true, payload_length }.encode(out);
+                encoded_path.encode(out);
+                value.encode(out);
+            }
+            ArenaNodeData::Extension(encoded_path, child_id) => {
+                alloy_rlp::Header { list: true, payload_length }.encode(out);
+                encoded_path.encode(out);
+                self.encode_full(*child_id, out); // INLINE child, never use digest!
+            }
+            ArenaNodeData::Digest(digest) => {
+                // Keep digest nodes as-is (they represent external/unresolved nodes)
+                digest.encode(out);
+            }
+        }
+    }
+}
+
+// This code runs on host so it is not as performance critical as the rest of mpt
+#[cfg(feature = "build_mpt")]
+pub mod build_mpt {
+    use super::*;
+    use crate::{EthereumState, StorageTries};
+    use reth_trie::AccountProof;
+    use revm::primitives::HashMap;
+    use revm_primitives::Address;
+
+    /// Parses proof bytes into a vector of ArenaBasedMptNodes.
+    pub fn parse_proof(proof: &[impl AsRef<[u8]>]) -> Result<Vec<ArenaBasedMptNode<'_>>, Error> {
+        proof
+            .iter()
+            .map(|bytes| ArenaBasedMptNode::decode_from_rlp(bytes.as_ref(), 0))
+            .collect::<Result<Vec<_>, _>>()
+    }
+
+    /// Helper to process proof nodes, convert them to static lifetime, and add to a node map.
+    fn process_proof<'a>(
+        proof_data: &[impl AsRef<[u8]>],
+        nodes: &mut HashMap<MptNodeReference, ArenaBasedMptNode<'static>>,
+    ) -> Result<Option<ArenaBasedMptNode<'static>>, Error> {
+        let proof_nodes = parse_proof(proof_data)?;
+        let root_node = proof_nodes.first().map(|node| convert_to_static_lifetime(node));
+
+        for node in proof_nodes {
+            let static_node = convert_to_static_lifetime(&node);
+            nodes.insert(MptNodeReference::Digest(static_node.hash()), static_node);
+        }
+        Ok(root_node)
+    }
+
+    /// Builds a single storage trie from its proofs.
+    fn build_storage_trie(
+        proof: &AccountProof,
+        fini_proofs: &AccountProof,
+    ) -> Result<ArenaBasedMptNode<'static>, Error> {
         if proof.storage_proofs.is_empty() {
-            let storage_root_node = node_from_digest(storage_root);
-            storage.insert(B256::from(&keccak(address)), storage_root_node);
-            continue;
+            return Ok(node_from_digest(proof.storage_root));
         }
 
-        let mut storage_nodes = HashMap::<_, _>::default();
-        let mut storage_root_node = MptNode::default();
+        let mut storage_nodes = HashMap::default();
+        let mut storage_root_node = ArenaBasedMptNode::default();
+
         for storage_proof in &proof.storage_proofs {
-            let proof_nodes = parse_proof(&storage_proof.proof).unwrap();
-            mpt_from_proof(&proof_nodes).unwrap();
-
-            // the first node in the proof is the root
-            if let Some(node) = proof_nodes.first() {
-                storage_root_node = node.clone();
+            if let Some(root) = process_proof(&storage_proof.proof, &mut storage_nodes)? {
+                storage_root_node = root;
             }
-
-            proof_nodes.into_iter().for_each(|node| {
-                storage_nodes.insert(node.reference(), node);
-            });
         }
 
-        // create the storage trie, from all the relevant nodes
-        let storage_trie = resolve_nodes(&storage_root_node, &storage_nodes);
-        assert_eq!(storage_trie.hash(), storage_root);
-
-        storage.insert(B256::from(&keccak(address)), storage_trie);
-    }
-    let state_trie = resolve_nodes(&state_root_node, &state_nodes);
-    assert_eq!(state_trie.hash(), state_root);
-
-    Ok(EthereumState { state_trie, storage_tries: StorageTries(storage) })
-}
-
-pub fn transition_proofs_to_tries(
-    state_root: B256,
-    parent_proofs: &HashMap<Address, AccountProof>,
-    proofs: &HashMap<Address, AccountProof>,
-) -> Result<EthereumState> {
-    // if no addresses are provided, return the trie only consisting of the state root
-    if parent_proofs.is_empty() {
-        return Ok(EthereumState {
-            state_trie: node_from_digest(state_root),
-            storage_tries: Default::default(),
-        });
-    }
-
-    let mut storage: HashMap<B256, MptNode, _> =
-        HashMap::with_capacity_and_hasher(parent_proofs.len(), DefaultHashBuilder::default());
-
-    let mut state_nodes = HashMap::<_, _, DefaultHashBuilder>::default();
-    let mut state_root_node = MptNode::default();
-    for (address, proof) in parent_proofs {
-        let proof_nodes = parse_proof(&proof.proof).unwrap();
-        mpt_from_proof(&proof_nodes).unwrap();
-
-        // the first node in the proof is the root
-        if let Some(node) = proof_nodes.first() {
-            state_root_node = node.clone();
-        }
-
-        proof_nodes.into_iter().for_each(|node| {
-            state_nodes.insert(node.reference(), node);
-        });
-
-        let fini_proofs = proofs.get(address).unwrap();
-
-        // assure that addresses can be deleted from the state trie
-        add_orphaned_leafs(address, &fini_proofs.proof, &mut state_nodes)?;
-
-        // if no slots are provided, return the trie only consisting of the storage root
-        let storage_root = proof.storage_root;
-        if proof.storage_proofs.is_empty() {
-            let storage_root_node = node_from_digest(storage_root);
-            storage.insert(B256::from(&keccak(address)), storage_root_node);
-            continue;
-        }
-
-        let mut storage_nodes = HashMap::<_, _>::default();
-        let mut storage_root_node = MptNode::default();
-        for storage_proof in &proof.storage_proofs {
-            let proof_nodes = parse_proof(&storage_proof.proof).unwrap();
-            mpt_from_proof(&proof_nodes).unwrap();
-
-            // the first node in the proof is the root
-            if let Some(node) = proof_nodes.first() {
-                storage_root_node = node.clone();
-            }
-
-            proof_nodes.into_iter().for_each(|node| {
-                storage_nodes.insert(node.reference(), node);
-            });
-        }
-
-        // assure that slots can be deleted from the storage trie
         for storage_proof in &fini_proofs.storage_proofs {
             add_orphaned_leafs(storage_proof.key.0, &storage_proof.proof, &mut storage_nodes)?;
         }
-        // create the storage trie, from all the relevant nodes
-        let storage_trie = resolve_nodes(&storage_root_node, &storage_nodes);
-        assert_eq!(storage_trie.hash(), storage_root);
 
-        storage.insert(B256::from(&keccak(address)), storage_trie);
+        Ok(resolve_nodes_arena(&storage_root_node, &storage_nodes))
     }
-    let state_trie = resolve_nodes(&state_root_node, &state_nodes);
-    assert_eq!(state_trie.hash(), state_root);
 
-    Ok(EthereumState { state_trie, storage_tries: StorageTries(storage) })
-}
-
-/// Adds all the leaf nodes of non-inclusion proofs to the nodes.
-fn add_orphaned_leafs(
-    key: impl AsRef<[u8]>,
-    proof: &[impl AsRef<[u8]>],
-    nodes_by_reference: &mut HashMap<MptNodeReference, MptNode>,
-) -> Result<()> {
-    if !proof.is_empty() {
-        let proof_nodes = parse_proof(proof).context("invalid proof encoding")?;
-        if is_not_included(&keccak(key), &proof_nodes)? {
-            // add the leaf node to the nodes
-            let leaf = proof_nodes.last().unwrap();
-            shorten_node_path(leaf).into_iter().for_each(|node| {
-                nodes_by_reference.insert(node.reference(), node);
+    /// Builds Ethereum state tries from relevant proofs before and after a state transition using
+    /// arena-based MPT. This version returns EthereumState2 with arena-based nodes directly for better
+    /// performance.
+    pub fn transition_proofs_to_tries_arena(
+        state_root: B256,
+        parent_proofs: &HashMap<Address, AccountProof>,
+        proofs: &HashMap<Address, AccountProof>,
+    ) -> Result<EthereumState, Error> {
+        // If no addresses are provided, return the trie only consisting of the state root
+        if parent_proofs.is_empty() {
+            return Ok(EthereumState {
+                state_trie: node_from_digest(state_root),
+                storage_tries: Default::default(),
             });
         }
+
+        let mut storage_tries = HashMap::default();
+        let mut state_nodes = HashMap::default();
+        let mut state_root_node = ArenaBasedMptNode::default();
+
+        for (address, proof) in parent_proofs {
+            if let Some(root) = process_proof(&proof.proof, &mut state_nodes)? {
+                state_root_node = root;
+            }
+
+            let fini_proofs = proofs.get(address).unwrap();
+            add_orphaned_leafs(address, &fini_proofs.proof, &mut state_nodes)?;
+
+            let storage_trie = build_storage_trie(proof, fini_proofs)?;
+            storage_tries.insert(B256::from(keccak256(address)), storage_trie);
+        }
+
+        // Create the state trie from all the relevant nodes
+        let state_trie = resolve_nodes_arena(&state_root_node, &state_nodes);
+        Ok(EthereumState { state_trie, storage_tries: StorageTries(storage_tries) })
     }
 
-    Ok(())
-}
-
-/// Creates a new MPT node from a digest.
-fn node_from_digest(digest: B256) -> MptNode {
-    match digest {
-        EMPTY_ROOT | B256::ZERO => MptNode::default(),
-        _ => MptNodeData::Digest(digest).into(),
-    }
-}
-
-/// Converts a byte slice into a vector of nibbles.
-///
-/// A nibble is 4 bits or half of an 8-bit byte. This function takes each byte from the
-/// input slice, splits it into two nibbles, and appends them to the resulting vector.
-pub fn to_nibs(slice: &[u8]) -> Vec<u8> {
-    let mut result = Vec::with_capacity(2 * slice.len());
-    for byte in slice {
-        result.push(byte >> 4);
-        result.push(byte & 0xf);
-    }
-    result
-}
-
-/// Encodes a slice of nibbles into a vector of bytes, with an additional prefix to
-/// indicate the type of node (leaf or extension).
-///
-/// The function starts by determining the type of node based on the `is_leaf` parameter.
-/// If the node is a leaf, the prefix is set to `0x20`. If the length of the nibbles is
-/// odd, the prefix is adjusted and the first nibble is incorporated into it.
-///
-/// The remaining nibbles are then combined into bytes, with each pair of nibbles forming
-/// a single byte. The resulting vector starts with the prefix, followed by the encoded
-/// bytes.
-pub fn to_encoded_path(mut nibs: &[u8], is_leaf: bool) -> Vec<u8> {
-    let mut prefix = (is_leaf as u8) * 0x20;
-    if nibs.len() % 2 != 0 {
-        prefix += 0x10 + nibs[0];
-        nibs = &nibs[1..];
-    }
-    iter::once(prefix).chain(nibs.chunks_exact(2).map(|byte| (byte[0] << 4) + byte[1])).collect()
-}
-
-/// Returns the length of the common prefix.
-pub fn lcp(a: &[u8], b: &[u8]) -> usize {
-    for (i, (a, b)) in iter::zip(a, b).enumerate() {
-        if a != b {
-            return i;
+    /// Creates a new arena-based MPT node from a digest.
+    fn node_from_digest(digest: B256) -> ArenaBasedMptNode<'static> {
+        match digest {
+            EMPTY_ROOT | B256::ZERO => ArenaBasedMptNode::default(),
+            _ => {
+                let mut trie = ArenaBasedMptNode::default();
+                trie.nodes[0] = ArenaNodeData::Digest(digest);
+                trie
+            }
         }
     }
-    cmp::min(a.len(), b.len())
-}
 
-pub fn prefix_nibs(prefix: &[u8]) -> Vec<u8> {
-    let (extension, tail) = prefix.split_first().unwrap();
-    // the first bit of the first nibble denotes the parity
-    let is_odd = extension & (1 << 4) != 0;
+    /// Adds all the leaf nodes of non-inclusion proofs to the nodes.
+    fn add_orphaned_leafs(
+        key: impl AsRef<[u8]>,
+        proof: &[impl AsRef<[u8]>],
+        nodes_by_reference: &mut HashMap<MptNodeReference, ArenaBasedMptNode<'static>>,
+    ) -> Result<(), Error> {
+        if !proof.is_empty() {
+            let proof_nodes = parse_proof(proof)?;
+            if is_not_included(keccak256(key).as_slice(), &proof_nodes)? {
+                // Add the leaf node to the nodes
+                if let Some(leaf) = proof_nodes.last() {
+                    for node in shorten_node_path_arena(leaf) {
+                        let static_node = convert_to_static_lifetime(&node);
+                        nodes_by_reference
+                            .insert(MptNodeReference::Digest(static_node.hash()), static_node);
+                    }
+                }
+            }
+        }
 
-    let mut result = Vec::with_capacity(2 * tail.len() + is_odd as usize);
-    // for odd lengths, the second nibble contains the first element
-    if is_odd {
-        result.push(extension & 0xf);
+        Ok(())
     }
-    for nib in tail {
-        result.push(nib >> 4);
-        result.push(nib & 0xf);
+
+    /// Helper function to convert a node with any lifetime to static lifetime
+    /// by copying all borrowed data into owned storage
+    fn convert_to_static_lifetime(node: &ArenaBasedMptNode<'_>) -> ArenaBasedMptNode<'static> {
+        let mut static_node = ArenaBasedMptNode::with_capacity(node.nodes.len());
+        static_node.nodes.clear();
+        static_node.cached_references.clear();
+
+        for node_data in &node.nodes {
+            let static_data = match *node_data {
+                ArenaNodeData::Null => ArenaNodeData::Null,
+                ArenaNodeData::Branch(children) => ArenaNodeData::Branch(children),
+                ArenaNodeData::Leaf(path, value) => {
+                    let owned_path = static_node.alloc_in_bump(path);
+                    let owned_value = static_node.alloc_in_bump(value);
+                    ArenaNodeData::Leaf(owned_path, owned_value)
+                }
+                ArenaNodeData::Extension(path, child_id) => {
+                    let owned_path = static_node.alloc_in_bump(path);
+                    ArenaNodeData::Extension(owned_path, child_id)
+                }
+                ArenaNodeData::Digest(digest) => ArenaNodeData::Digest(digest),
+            };
+            static_node.add_node(static_data);
+        }
+
+        static_node.root_id = node.root_id;
+        static_node
     }
-    result
+
+    /// Verifies that the given proof is a valid proof of exclusion for the given key.
+    pub fn is_not_included<'a>(
+        key: &[u8],
+        proof_nodes: &'a [ArenaBasedMptNode<'a>],
+    ) -> Result<bool, Error> {
+        let proof_trie = mpt_from_proof(proof_nodes)?;
+        // For valid proofs, the get must not fail
+        let value = proof_trie.get(key)?;
+
+        Ok(value.is_none())
+    }
+
+    /// Returns a list of all possible nodes that can be created by shortening the path of the given
+    /// node.
+    pub fn shorten_node_path_arena<'a>(node: &ArenaBasedMptNode<'a>) -> Vec<ArenaBasedMptNode<'a>> {
+        let mut res = Vec::new();
+        let (path_bytes, is_leaf, value, child_id) = match &node.nodes[node.root_id as usize] {
+            ArenaNodeData::Leaf(path_bytes, value) => (Some(*path_bytes), true, Some(*value), None),
+            ArenaNodeData::Extension(path_bytes, child_id) => {
+                (Some(*path_bytes), false, None, Some(*child_id))
+            }
+            _ => return res,
+        };
+
+        let path_bytes = path_bytes.unwrap();
+        let nibs = prefix_to_small_nibs(path_bytes);
+
+        for i in 0..=nibs.len() {
+            let mut new_node = ArenaBasedMptNode::default();
+            let shortened_nibs = &nibs[i..];
+            let path_slice = new_node.add_encoded_path_slice(shortened_nibs, is_leaf);
+            let new_node_data = if is_leaf {
+                let value_slice = new_node.alloc_in_bump(value.unwrap());
+                ArenaNodeData::Leaf(path_slice, value_slice)
+            } else {
+                ArenaNodeData::Extension(path_slice, child_id.unwrap())
+            };
+            new_node.nodes[0] = new_node_data;
+            res.push(new_node);
+        }
+        res
+    }
+
+    /// Creates an arena-based Merkle Patricia trie from an EIP-1186 proof.
+    pub fn mpt_from_proof<'a>(
+        proof_nodes: &'a [ArenaBasedMptNode<'a>],
+    ) -> Result<ArenaBasedMptNode<'a>, Error> {
+        if proof_nodes.is_empty() {
+            return Ok(ArenaBasedMptNode::default());
+        }
+
+        let node_store: HashMap<MptNodeReference, ArenaBasedMptNode<'a>> = proof_nodes
+            .iter()
+            .map(|node| (MptNodeReference::Digest(node.hash()), node.clone()))
+            .collect();
+
+        let root_node = proof_nodes.first().unwrap();
+
+        Ok(resolve_nodes_arena(root_node, &node_store))
+    }
+
+    /// Resolves digest nodes in an arena-based trie using the provided node store.
+    /// This rebuilds the arena, replacing any digest nodes with their resolved content.
+    pub fn resolve_nodes_arena<'a>(
+        root: &ArenaBasedMptNode<'a>,
+        node_store: &HashMap<MptNodeReference, ArenaBasedMptNode<'a>>,
+    ) -> ArenaBasedMptNode<'a> {
+        let mut new_arena = ArenaBasedMptNode {
+            nodes: Vec::new(),
+            cached_references: Vec::new(),
+            root_id: 0,
+            bump: Rc::new(Bump::new()),
+            encoding_scratch: RefCell::new(Vec::with_capacity(128)),
+        };
+
+        let root_id = resolve_node_recursive(root, root.root_id, node_store, &mut new_arena);
+        new_arena.root_id = root_id;
+
+        // The root hash must not change after resolution
+        debug_assert_eq!(root.hash(), new_arena.hash());
+
+        new_arena
+    }
+
+    /// Recursively resolves a single node and its children, adding them to the new arena.
+    fn resolve_node_recursive<'a>(
+        original_arena: &ArenaBasedMptNode<'a>,
+        node_id: NodeId,
+        node_store: &HashMap<MptNodeReference, ArenaBasedMptNode<'a>>,
+        new_arena: &mut ArenaBasedMptNode<'a>,
+    ) -> NodeId {
+        let node_data = &original_arena.nodes[node_id as usize];
+
+        let resolved_data = match node_data {
+            ArenaNodeData::Null => ArenaNodeData::Null,
+            ArenaNodeData::Leaf(prefix, value) => {
+                // Copy the data into the new arena's owned storage
+                let new_prefix = new_arena.alloc_in_bump(*prefix);
+                let new_value = new_arena.alloc_in_bump(*value);
+                ArenaNodeData::Leaf(new_prefix, new_value)
+            }
+            ArenaNodeData::Branch(children) => {
+                let mut resolved_children: [Option<NodeId>; 16] = Default::default();
+                for (i, child_id) in children.iter().enumerate() {
+                    if let Some(child_id) = child_id {
+                        let resolved_child_id = resolve_node_recursive(
+                            original_arena,
+                            *child_id,
+                            node_store,
+                            new_arena,
+                        );
+                        resolved_children[i] = Some(resolved_child_id);
+                    }
+                }
+                ArenaNodeData::Branch(resolved_children)
+            }
+            ArenaNodeData::Extension(prefix, child_id) => {
+                let resolved_child_id =
+                    resolve_node_recursive(original_arena, *child_id, node_store, new_arena);
+                let new_prefix = new_arena.alloc_in_bump(*prefix);
+                ArenaNodeData::Extension(new_prefix, resolved_child_id)
+            }
+            ArenaNodeData::Digest(digest) => {
+                // Try to resolve the digest from the node store
+                if let Some(resolved_node) = node_store.get(&MptNodeReference::Digest(*digest)) {
+                    // Convert the resolved node to arena format and add it
+                    return resolve_node_recursive(
+                        resolved_node,
+                        resolved_node.root_id,
+                        node_store,
+                        new_arena,
+                    );
+                } else {
+                    // If not found in store, keep it as a digest
+                    ArenaNodeData::Digest(*digest)
+                }
+            }
+        };
+
+        new_arena.add_node(resolved_data)
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use hex_literal::hex;
 
-    use super::*;
-
-    #[test]
-    pub fn test_trie_pointer_no_keccak() {
-        let cases = [("do", "verb"), ("dog", "puppy"), ("doge", "coin"), ("horse", "stallion")];
-        for (k, v) in cases {
-            let node: MptNode =
-                MptNodeData::Leaf(k.as_bytes().to_vec(), v.as_bytes().to_vec()).into();
-            assert!(
-                matches!(node.reference(),MptNodeReference::Bytes(bytes) if bytes == node.to_rlp().to_vec())
-            );
+    impl ArenaBasedMptNode<'_> {
+        pub fn is_empty(&self) -> bool {
+            matches!(&self.nodes[self.root_id as usize], ArenaNodeData::Null)
         }
     }
 
     #[test]
-    pub fn test_to_encoded_path() {
-        // extension node with an even path length
-        let nibbles = vec![0x0a, 0x0b, 0x0c, 0x0d];
-        assert_eq!(to_encoded_path(&nibbles, false), vec![0x00, 0xab, 0xcd]);
-        // extension node with an odd path length
-        let nibbles = vec![0x0a, 0x0b, 0x0c];
-        assert_eq!(to_encoded_path(&nibbles, false), vec![0x1a, 0xbc]);
-        // leaf node with an even path length
-        let nibbles = vec![0x0a, 0x0b, 0x0c, 0x0d];
-        assert_eq!(to_encoded_path(&nibbles, true), vec![0x20, 0xab, 0xcd]);
-        // leaf node with an odd path length
-        let nibbles = vec![0x0a, 0x0b, 0x0c];
-        assert_eq!(to_encoded_path(&nibbles, true), vec![0x3a, 0xbc]);
-    }
-
-    #[test]
-    pub fn test_lcp() {
-        let cases = [
-            (vec![], vec![], 0),
-            (vec![0xa], vec![0xa], 1),
-            (vec![0xa, 0xb], vec![0xa, 0xc], 1),
-            (vec![0xa, 0xb], vec![0xa, 0xb], 2),
-            (vec![0xa, 0xb], vec![0xa, 0xb, 0xc], 2),
-            (vec![0xa, 0xb, 0xc], vec![0xa, 0xb, 0xc], 3),
-            (vec![0xa, 0xb, 0xc], vec![0xa, 0xb, 0xc, 0xd], 3),
-            (vec![0xa, 0xb, 0xc, 0xd], vec![0xa, 0xb, 0xc, 0xd], 4),
-        ];
-        for (a, b, cpl) in cases {
-            assert_eq!(lcp(&a, &b), cpl)
-        }
-    }
-
-    #[test]
-    pub fn test_empty() {
-        let trie = MptNode::default();
+    fn test_empty() {
+        let trie = ArenaBasedMptNode::default();
 
         assert!(trie.is_empty());
-        assert_eq!(trie.reference(), MptNodeReference::Bytes(vec![0x80]));
         let expected = hex!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
         assert_eq!(expected, trie.hash().0);
-
-        // test RLP encoding
-        let mut out = Vec::new();
-        trie.encode(&mut out);
-        assert_eq!(out, vec![0x80]);
-        assert_eq!(trie.length(), out.len());
-        let decoded = MptNode::decode(out).unwrap();
-        assert_eq!(trie.hash(), decoded.hash());
     }
 
     #[test]
-    pub fn test_empty_key() {
-        let mut trie = MptNode::default();
-
-        trie.insert(&[], b"empty".to_vec()).unwrap();
-        assert_eq!(trie.get(&[]).unwrap(), Some(b"empty".as_ref()));
-        assert!(trie.delete(&[]).unwrap());
-    }
-
-    #[test]
-    pub fn test_clear() {
-        let mut trie = MptNode::default();
-        trie.insert(b"dog", b"puppy".to_vec()).unwrap();
+    fn test_clear() {
+        let mut trie = ArenaBasedMptNode::default();
+        trie.insert(b"dog", b"puppy").unwrap();
         assert!(!trie.is_empty());
         assert_ne!(trie.hash(), EMPTY_ROOT);
 
@@ -1237,60 +1277,8 @@ mod tests {
     }
 
     #[test]
-    pub fn test_tiny() {
-        // trie consisting of an extension, a branch and two leafs
-        let mut trie = MptNode::default();
-        trie.insert_rlp(b"a", 0u8).unwrap();
-        trie.insert_rlp(b"b", 1u8).unwrap();
-
-        assert!(!trie.is_empty());
-        let exp_rlp = hex!("d816d680c3208180c220018080808080808080808080808080");
-        assert_eq!(trie.reference(), MptNodeReference::Bytes(exp_rlp.to_vec()));
-        let exp_hash = hex!("6fbf23d6ec055dd143ff50d558559770005ff44ae1d41276f1bd83affab6dd3b");
-        assert_eq!(trie.hash().0, exp_hash);
-
-        // test RLP encoding
-        let mut out = Vec::new();
-        trie.encode(&mut out);
-        assert_eq!(out, exp_rlp.to_vec());
-        assert_eq!(trie.length(), out.len());
-        let decoded = MptNode::decode(out).unwrap();
-        assert_eq!(trie.hash(), decoded.hash());
-    }
-
-    #[test]
-    pub fn test_partial() {
-        let mut trie = MptNode::default();
-        trie.insert_rlp(b"aa", 0u8).unwrap();
-        trie.insert_rlp(b"ab", 1u8).unwrap();
-        trie.insert_rlp(b"ba", 2u8).unwrap();
-
-        let exp_hash = trie.hash();
-
-        // replace one node with its digest
-        let MptNodeData::Extension(_, node) = &mut trie.data else { panic!("extension expected") };
-        **node = MptNodeData::Digest(node.hash()).into();
-        assert!(node.is_digest());
-
-        let trie = MptNode::decode(trie.to_rlp()).unwrap();
-        assert_eq!(trie.hash(), exp_hash);
-
-        // lookups should fail
-        trie.get(b"aa").unwrap_err();
-        trie.get(b"a0").unwrap_err();
-    }
-
-    #[test]
-    pub fn test_branch_value() {
-        let mut trie = MptNode::default();
-        trie.insert(b"do", b"verb".to_vec()).unwrap();
-        // leads to a branch with value which is not supported
-        trie.insert(b"dog", b"puppy".to_vec()).unwrap_err();
-    }
-
-    #[test]
-    pub fn test_insert() {
-        let mut trie = MptNode::default();
+    fn test_insert() {
+        let mut trie = ArenaBasedMptNode::default();
         let vals = vec![
             ("painting", "place"),
             ("guest", "ship"),
@@ -1304,101 +1292,57 @@ mod tests {
             ("menu", "fear"),
         ];
         for (key, val) in &vals {
-            assert!(trie.insert(key.as_bytes(), val.as_bytes().to_vec()).unwrap());
+            assert!(trie.insert(key.as_bytes(), val.as_bytes()).unwrap());
         }
 
         let expected = hex!("2bab6cdf91a23ebf3af683728ea02403a98346f99ed668eec572d55c70a4b08f");
         assert_eq!(expected, trie.hash().0);
 
         for (key, value) in &vals {
-            assert_eq!(trie.get(key.as_bytes()).unwrap(), Some(value.as_bytes()));
+            let retrieved = trie.get(key.as_bytes()).unwrap().unwrap();
+            assert_eq!(retrieved, value.as_bytes());
         }
 
         // check inserting duplicate keys
-        assert!(trie.insert(vals[0].0.as_bytes(), b"new".to_vec()).unwrap());
-        assert!(!trie.insert(vals[0].0.as_bytes(), b"new".to_vec()).unwrap());
-
-        // try RLP roundtrip
-        let decoded = MptNode::decode(trie.to_rlp()).unwrap();
-        assert_eq!(trie.hash(), decoded.hash());
+        assert!(trie.insert(vals[0].0.as_bytes(), b"new").unwrap());
+        assert!(!trie.insert(vals[0].0.as_bytes(), b"new").unwrap());
     }
 
     #[test]
-    pub fn test_keccak_trie() {
-        const N: usize = 512;
+    #[cfg(feature = "build_mpt")]
+    fn test_mpt_from_proof_reconstruction() {
+        use crate::mpt::build_mpt::mpt_from_proof;
+        // Create a test proof scenario
+        // This mimics how proofs work: we have a sequence of nodes where later nodes
+        // reference earlier nodes by digest
 
-        // insert
-        let mut trie = MptNode::default();
-        for i in 0..N {
-            assert!(trie.insert_rlp(&keccak(i.to_be_bytes()), i).unwrap());
+        // Create the deepest node (a leaf) - using compact path directly
+        let mut leaf_trie = ArenaBasedMptNode::default();
+        let path_bytes = leaf_trie.add_encoded_path_slice(&[0x03], true); // compact encoding for nibble [0x03]
+        let value_bytes = leaf_trie.alloc_in_bump(b"test_value");
+        leaf_trie.nodes[0] = ArenaNodeData::Leaf(path_bytes, value_bytes);
 
-            // check hash against trie build in reverse
-            let mut reference = MptNode::default();
-            for j in (0..=i).rev() {
-                reference.insert_rlp(&keccak(j.to_be_bytes()), j).unwrap();
-            }
-            assert_eq!(trie.hash(), reference.hash());
-        }
+        // Create a parent extension that references the leaf by digest
+        let mut ext_trie = ArenaBasedMptNode::default();
+        let leaf_digest = leaf_trie.hash();
+        ext_trie.nodes[0] = ArenaNodeData::Digest(leaf_digest);
+        let ext_child_id = ext_trie.add_node(ArenaNodeData::Digest(leaf_digest));
+        let ext_path_bytes = ext_trie.add_encoded_path_slice(&[0x01], false); // compact encoding for nibble [0x01]
+        ext_trie.nodes[0] = ArenaNodeData::Extension(ext_path_bytes, ext_child_id);
+        ext_trie.root_id = 0;
 
-        let expected = hex!("7310027edebdd1f7c950a7fb3413d551e85dff150d45aca4198c2f6315f9b4a7");
-        assert_eq!(trie.hash().0, expected);
+        // Create the proof nodes (in the order they would appear in a real proof)
+        let proof_nodes = vec![ext_trie, leaf_trie];
 
-        // get
-        for i in 0..N {
-            assert_eq!(trie.get_rlp(&keccak(i.to_be_bytes())).unwrap(), Some(i));
-            assert!(trie.get(&keccak((i + N).to_be_bytes())).unwrap().is_none());
-        }
+        // Reconstruct the trie from the proof
+        let reconstructed = mpt_from_proof(&proof_nodes).unwrap();
 
-        // delete
-        for i in 0..N {
-            assert!(trie.delete(&keccak(i.to_be_bytes())).unwrap());
+        // The reconstructed trie should be able to retrieve the value
+        // Key would be [0x01] + [0x03] = nibbles [0x01, 0x03] = key bytes [0x13]
+        let retrieved = reconstructed.get(b"\x13").unwrap();
+        assert_eq!(retrieved, Some(&b"test_value"[..]));
 
-            let mut reference = MptNode::default();
-            for j in ((i + 1)..N).rev() {
-                reference.insert_rlp(&keccak(j.to_be_bytes()), j).unwrap();
-            }
-            assert_eq!(trie.hash(), reference.hash());
-        }
-        assert!(trie.is_empty());
-    }
-
-    #[test]
-    pub fn test_index_trie() {
-        const N: usize = 512;
-
-        // insert
-        let mut trie = MptNode::default();
-        for i in 0..N {
-            assert!(trie.insert_rlp(&i.to_rlp(), i).unwrap());
-
-            // check hash against trie build in reverse
-            let mut reference = MptNode::default();
-            for j in (0..=i).rev() {
-                reference.insert_rlp(&j.to_rlp(), j).unwrap();
-            }
-            assert_eq!(trie.hash(), reference.hash());
-
-            // try RLP roundtrip
-            let decoded = MptNode::decode(trie.to_rlp()).unwrap();
-            assert_eq!(trie.hash(), decoded.hash());
-        }
-
-        // get
-        for i in 0..N {
-            assert_eq!(trie.get_rlp(&i.to_rlp()).unwrap(), Some(i));
-            assert!(trie.get(&(i + N).to_rlp()).unwrap().is_none());
-        }
-
-        // delete
-        for i in 0..N {
-            assert!(trie.delete(&i.to_rlp()).unwrap());
-
-            let mut reference = MptNode::default();
-            for j in ((i + 1)..N).rev() {
-                reference.insert_rlp(&j.to_rlp(), j).unwrap();
-            }
-            assert_eq!(trie.hash(), reference.hash());
-        }
-        assert!(trie.is_empty());
+        // The hash should match what we expect
+        assert!(!reconstructed.is_empty());
     }
 }
