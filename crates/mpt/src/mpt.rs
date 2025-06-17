@@ -107,6 +107,7 @@ pub struct ArenaBasedMptNode<'a> {
     /// One monotonically‑growing arena that owns every mutated byte slice.
     bump: Rc<Bump>,
     encoding_scratch: RefCell<Vec<u8>>,
+    dirty_nodes: RefCell<Vec<NodeId>>,
 }
 
 impl ser::Serialize for ArenaBasedMptNode<'_> {
@@ -140,7 +141,70 @@ impl Default for ArenaBasedMptNode<'_> {
             root_id: 0,
             bump: Rc::new(Bump::new()),
             encoding_scratch: RefCell::new(Vec::with_capacity(128)),
+            dirty_nodes: RefCell::new(Vec::new()),
         }
+    }
+}
+
+/// An optimized representation for the 16 children of a branch node.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Ord, PartialOrd)]
+#[repr(C)]
+pub struct BranchChildren {
+    /// A bitmask where the i-th bit is set if a child is present at that index.
+    mask: u16,
+    /// An array of node IDs. The value is only valid if the corresponding bit in the mask is set.
+    slots: [NodeId; 16],
+}
+
+impl Default for BranchChildren {
+    fn default() -> Self {
+        Self { mask: 0, slots: [0; 16] }
+    }
+}
+
+impl BranchChildren {
+    /// Returns the child node ID at a given index if it exists.
+    #[inline]
+    pub fn child(&self, index: u8) -> Option<NodeId> {
+        if (self.mask >> index) & 1 == 1 {
+            // SAFETY: The mask check ensures this memory access is valid.
+            Some(unsafe { *self.slots.get_unchecked(index as usize) })
+        } else {
+            None
+        }
+    }
+
+    /// Sets or removes a child at a given index.
+    #[inline]
+    pub fn set_child(&mut self, index: u8, node_id: Option<NodeId>) {
+        if let Some(id) = node_id {
+            self.mask |= 1 << index;
+            self.slots[index as usize] = id;
+        } else {
+            self.mask &= !(1 << index);
+        }
+    }
+
+    /// Returns an iterator over the existing children, yielding their index and node ID.
+    #[inline]
+    pub fn iter(&self) -> impl Iterator<Item = (usize, NodeId)> + '_ {
+        let mut mask = self.mask;
+        std::iter::from_fn(move || {
+            if mask == 0 {
+                return None;
+            }
+            let index = mask.trailing_zeros() as usize;
+            mask &= mask - 1; // Clear the lowest set bit
+
+            // SAFETY: The mask guarantees the index is valid and the slot is initialized.
+            Some((index, unsafe { *self.slots.get_unchecked(index) }))
+        })
+    }
+
+    /// Returns an iterator over all 16 potential child slots.
+    #[inline]
+    pub fn iter_all(&self) -> impl Iterator<Item = Option<NodeId>> + '_ {
+        (0..16).map(|i| self.child(i))
     }
 }
 
@@ -149,7 +213,7 @@ impl Default for ArenaBasedMptNode<'_> {
 pub enum ArenaNodeData<'a> {
     #[default]
     Null,
-    Branch([Option<NodeId>; 16]),
+    Branch(BranchChildren),
     Leaf(&'a [u8], &'a [u8]), // (compact_path, value) - borrowed from input
     Extension(&'a [u8], NodeId), // (compact_path, child_id) - borrowed from input
     Digest(B256),
@@ -170,6 +234,7 @@ impl<'a> ArenaBasedMptNode<'a> {
             root_id: 0,
             bump: Rc::new(Bump::new()),
             encoding_scratch: RefCell::new(Vec::with_capacity(128)),
+            dirty_nodes: RefCell::new(Vec::new()),
         }
     }
 
@@ -287,9 +352,9 @@ impl<'a> ArenaBasedMptNode<'a> {
     ) -> Result<Option<&'a [u8]>, Error> {
         match &self.nodes[node_id as usize] {
             ArenaNodeData::Null => Ok(None),
-            ArenaNodeData::Branch(nodes) => {
+            ArenaNodeData::Branch(children) => {
                 if let Some((i, tail)) = key_nibs.split_first() {
-                    match nodes[*i as usize] {
+                    match children.child(*i) {
                         Some(id) => self.get_recursive(id, tail),
                         None => Ok(None),
                     }
@@ -334,14 +399,14 @@ impl<'a> ArenaBasedMptNode<'a> {
             }
             ArenaNodeData::Branch(mut children) => {
                 if let Some((i, tail)) = key_nibs.split_first() {
-                    let updated = match children[*i as usize] {
+                    let updated = match children.child(*i) {
                         Some(id) => self.insert_recursive(id, tail, value)?,
                         None => {
                             let path_slice = self.add_encoded_path_slice(tail, true);
                             let value_slice = self.alloc_in_bump(value);
                             let new_leaf_id =
                                 self.add_node(ArenaNodeData::Leaf(path_slice, value_slice));
-                            children[*i as usize] = Some(new_leaf_id);
+                            children.set_child(*i, Some(new_leaf_id));
                             self.nodes[node_id as usize] = ArenaNodeData::Branch(children);
                             true
                         }
@@ -366,7 +431,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                     Err(Error::ValueInBranch)
                 } else {
                     let split_point = common_len + 1;
-                    let mut children: [Option<NodeId>; 16] = Default::default();
+                    let mut children: BranchChildren = Default::default();
 
                     let leaf1_path_slice =
                         self.add_encoded_path_slice(&path_nibs[split_point..], true);
@@ -380,8 +445,8 @@ impl<'a> ArenaBasedMptNode<'a> {
                     let leaf2_id =
                         self.add_node(ArenaNodeData::Leaf(leaf2_path_slice, leaf2_value_slice));
 
-                    children[path_nibs[common_len] as usize] = Some(leaf1_id);
-                    children[key_nibs[common_len] as usize] = Some(leaf2_id);
+                    children.set_child(path_nibs[common_len], Some(leaf1_id));
+                    children.set_child(key_nibs[common_len], Some(leaf2_id));
 
                     let new_node_data = if common_len > 0 {
                         let branch_id = self.add_node(ArenaNodeData::Branch(children));
@@ -405,16 +470,16 @@ impl<'a> ArenaBasedMptNode<'a> {
                     Err(Error::ValueInBranch)
                 } else {
                     let split_point = common_len + 1;
-                    let mut children: [Option<NodeId>; 16] = Default::default();
+                    let mut children: BranchChildren = Default::default();
 
                     if split_point < path_nibs.len() {
                         let ext_path_slice =
                             self.add_encoded_path_slice(&path_nibs[split_point..], false);
                         let ext_id =
                             self.add_node(ArenaNodeData::Extension(ext_path_slice, child_id));
-                        children[path_nibs[common_len] as usize] = Some(ext_id);
+                        children.set_child(path_nibs[common_len], Some(ext_id));
                     } else {
-                        children[path_nibs[common_len] as usize] = Some(child_id);
+                        children.set_child(path_nibs[common_len], Some(child_id));
                     }
 
                     let leaf_path_slice =
@@ -422,7 +487,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                     let leaf_value_slice = self.alloc_in_bump(value);
                     let leaf_id =
                         self.add_node(ArenaNodeData::Leaf(leaf_path_slice, leaf_value_slice));
-                    children[key_nibs[common_len] as usize] = Some(leaf_id);
+                    children.set_child(key_nibs[common_len], Some(leaf_id));
 
                     let new_node_data = if common_len > 0 {
                         let branch_id = self.add_node(ArenaNodeData::Branch(children));
@@ -451,7 +516,7 @@ impl<'a> ArenaBasedMptNode<'a> {
             ArenaNodeData::Null => Ok(false),
             ArenaNodeData::Branch(mut children) => {
                 if let Some((i, tail)) = key_nibs.split_first() {
-                    let child_id = children[*i as usize];
+                    let child_id = children.child(*i);
                     match child_id {
                         Some(id) => {
                             if !self.delete_recursive(id, tail)? {
@@ -459,7 +524,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                             }
 
                             if matches!(self.nodes[id as usize], ArenaNodeData::Null) {
-                                children[*i as usize] = None;
+                                children.set_child(*i, None);
                             }
                         }
                         None => return Ok(false),
@@ -468,14 +533,13 @@ impl<'a> ArenaBasedMptNode<'a> {
                     return Err(Error::ValueInBranch);
                 }
 
-                let mut remaining_iter = children.iter().enumerate().filter(|(_, n)| n.is_some());
+                let mut remaining_iter = children.iter();
 
                 if let Some(first_remaining) = remaining_iter.next() {
                     // One child found, check if there are more.
                     if remaining_iter.next().is_none() {
                         // Exactly one child remains, collapse the branch node.
-                        let (index, &child_id) = first_remaining;
-                        let child_id = child_id.unwrap();
+                        let (index, child_id) = first_remaining;
                         let child_node_data = self.nodes[child_id as usize].clone();
 
                         let new_node_data = match child_node_data {
@@ -634,11 +698,11 @@ impl<'a> ArenaBasedMptNode<'a> {
 
         if is_branch {
             // Branch node (17 items)
-            let mut children = [None; 16];
-            for child in children.iter_mut() {
+            let mut children = BranchChildren::default();
+            for i in 0..16 {
                 let child_id = self.decode_node_recursive(&mut payload_buf)?;
                 if child_id != 0 {
-                    *child = Some(child_id);
+                    children.set_child(i, Some(child_id));
                 }
             }
 
@@ -793,12 +857,14 @@ impl<'a> ArenaBasedMptNode<'a> {
             ArenaNodeData::Null => {
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
-            ArenaNodeData::Branch(nodes) => {
+            ArenaNodeData::Branch(children) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
-                nodes.iter().for_each(|child_id| match child_id {
-                    Some(id) => self.reference_encode_id(*id, out),
-                    None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
-                });
+                for child_id in children.iter_all() {
+                    match child_id {
+                        Some(id) => self.reference_encode_id(id, out),
+                        None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
+                    }
+                }
                 // in the MPT reference, branches have values so always add empty value
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
@@ -837,9 +903,9 @@ impl<'a> ArenaBasedMptNode<'a> {
     fn payload_length_id(&self, node_id: NodeId) -> usize {
         match &self.nodes[node_id as usize] {
             ArenaNodeData::Null => 0,
-            ArenaNodeData::Branch(nodes) => {
-                1 + nodes
-                    .iter()
+            ArenaNodeData::Branch(children) => {
+                1 + children
+                    .iter_all()
                     .map(|child| child.map_or(1, |id| self.reference_length(id)))
                     .sum::<usize>()
             }
@@ -886,9 +952,9 @@ impl ArenaBasedMptNode<'_> {
     fn payload_length_full(&self, node_id: NodeId) -> usize {
         match &self.nodes[node_id as usize] {
             ArenaNodeData::Null => 0,
-            ArenaNodeData::Branch(nodes) => {
-                1 + nodes
-                    .iter()
+            ArenaNodeData::Branch(children) => {
+                1 + children
+                    .iter_all()
                     .map(|child| child.map_or(1, |id| self.full_length(id)))
                     .sum::<usize>()
             }
@@ -917,12 +983,14 @@ impl ArenaBasedMptNode<'_> {
             ArenaNodeData::Null => {
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
-            ArenaNodeData::Branch(nodes) => {
+            ArenaNodeData::Branch(children) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
-                nodes.iter().for_each(|child_id| match child_id {
-                    Some(id) => self.encode_full(*id, out), // INLINE children, never use digest!
-                    None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
-                });
+                for child_id in children.iter_all() {
+                    match child_id {
+                        Some(id) => self.encode_full(id, out), // INLINE children, never use digest!
+                        None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
+                    }
+                }
                 // in the MPT reference, branches have values so always add empty value
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
@@ -1175,6 +1243,7 @@ pub mod build_mpt {
             root_id: 0,
             bump: Rc::new(Bump::new()),
             encoding_scratch: RefCell::new(Vec::with_capacity(128)),
+            dirty_nodes: RefCell::new(Vec::new()),
         };
 
         let root_id = resolve_node_recursive(root, root.root_id, node_store, &mut new_arena);
@@ -1204,17 +1273,11 @@ pub mod build_mpt {
                 ArenaNodeData::Leaf(new_prefix, new_value)
             }
             ArenaNodeData::Branch(children) => {
-                let mut resolved_children: [Option<NodeId>; 16] = Default::default();
-                for (i, child_id) in children.iter().enumerate() {
-                    if let Some(child_id) = child_id {
-                        let resolved_child_id = resolve_node_recursive(
-                            original_arena,
-                            *child_id,
-                            node_store,
-                            new_arena,
-                        );
-                        resolved_children[i] = Some(resolved_child_id);
-                    }
+                let mut resolved_children: BranchChildren = Default::default();
+                for (i, child_id) in children.iter() {
+                    let resolved_child_id =
+                        resolve_node_recursive(original_arena, child_id, node_store, new_arena);
+                    resolved_children.set_child(i as u8, Some(resolved_child_id));
                 }
                 ArenaNodeData::Branch(resolved_children)
             }
