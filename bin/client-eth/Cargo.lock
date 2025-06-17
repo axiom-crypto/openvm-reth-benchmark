@@ -35,9 +35,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-consensus"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0dc46cb8a5322c5a65509622a111f1c3f4161f7bfaae883f0c939bcd50d0fd6"
+checksum = "659c33e85c4a9f8bb1b9a2400f4f3d0dd52fbc4bd3650e08d22df1e17d5d92ee"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -60,9 +60,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-consensus-any"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2492d3548408746e0d3fddcaeb033b1ee9041aa449dcf7df35fb18008fe921a2"
+checksum = "d48fdc146414932cec2114f749f5f65a8960ee7547b1638a97bb0d04160d09e4"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -112,9 +112,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-eips"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3165f56b57a11d2b77742ed2f48319ac9857de122855b43773bd0e26478131d"
+checksum = "8390cb5c872d53560635dabc02d616c1bb626dd0f7d6893f8725edb822573fed"
 dependencies = [
  "alloy-eip2124",
  "alloy-eip2930",
@@ -149,9 +149,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-genesis"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "833b10a7a4bece11e7e2cc2193894dcb07014fa5fdcb23ab4cfa94d4e0667581"
+checksum = "a18ce1538291d8409d4a7d826176d461a6f9eb28632d7185f801bda43a138260"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -175,9 +175,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-network-primitives"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3596f4179ab18a06f2bd6c14db01e0c29263a5a7a31732a54dfd05b07d428002"
+checksum = "7cecb975fc2f2e1eb09c513428c34e0d8c13e28b5ff1dbdf68e0f64a1a92c5f3"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -238,9 +238,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-rpc-types"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11e31c3a481349044899e47c73cca6047563bf359b203861627e53bea679a757"
+checksum = "82fed036edc62cd79476fe0340277a1c47b07c173f6ac0244f24193e1183b8e4"
 dependencies = [
  "alloy-primitives",
  "alloy-rpc-types-eth",
@@ -250,9 +250,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-rpc-types-engine"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49377b741a373b8e3b69b90abf40ec255c1f6a344ab4156c2a0e4ee9204c5996"
+checksum = "505224e162e239980c6df7632c99f0bc5abbcf630017502810979e9e01f3c86e"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -264,9 +264,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-rpc-types-eth"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c5740de94e37e8977aef7d8e084eba8fbce485c43f04d32de55b629e42b32f0"
+checksum = "20ff509ca40537042b7cc9bede6b415ef807c9c5c48024e9fe10b8c8ad0757ef"
 dependencies = [
  "alloy-consensus",
  "alloy-consensus-any",
@@ -284,9 +284,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-serde"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61b6134af56345296cc2f624ebf621f79330cb8a80b0d7bb29e4e41ee729dcaf"
+checksum = "f9873512b1e99505f4a65e1d3a3105cb689f112f8e3cab3c632b20a97a46adae"
 dependencies = [
  "alloy-primitives",
  "serde",
@@ -369,9 +369,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-tx-macros"
-version = "1.0.10"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cde95928532e9c79f8c7488da0170bc9e94c6e7d02a09aa21d8a1bdd8e84e2ab"
+checksum = "d642ba58c32547ad9742c613f9849a2aedc47914b02948224326e4cb62b91040"
 dependencies = [
  "alloy-primitives",
  "darling",
@@ -2318,6 +2318,7 @@ dependencies = [
  "eyre",
  "reth-primitives",
  "reth-revm",
+ "reth-trie",
  "revm",
  "revm-primitives",
  "rlp 0.6.1",
