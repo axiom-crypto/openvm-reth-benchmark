@@ -3,7 +3,7 @@ use mpt2::ArenaBasedMptNode;
 use reth_revm::db::BundleState;
 use reth_trie::{AccountProof, TrieAccount};
 use revm::primitives::{Address, HashMap, B256};
-use revm_primitives::keccak256;
+use revm_primitives::{keccak256, map::DefaultHashBuilder};
 use serde::{Deserialize, Serialize};
 use state::HashedPostState;
 
@@ -164,7 +164,8 @@ impl<'de> Deserialize<'de> for StorageTries2 {
         D: serde::Deserializer<'de>,
     {
         let storage_vec: Vec<(B256, ArenaBasedMptNode<'de>)> = Vec::deserialize(deserializer)?;
-        let mut storage_tries = HashMap::with_capacity(storage_vec.len());
+        let mut storage_tries =
+            HashMap::with_capacity_and_hasher(storage_vec.len(), DefaultHashBuilder::default());
         for (addr, trie) in storage_vec {
             // The deserialized node has lifetime 'de, but we need 'static.
             // This is safe because ArenaBasedMptNode::deserialize already leaks the
