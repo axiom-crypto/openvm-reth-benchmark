@@ -110,7 +110,7 @@ fn profile_witness_db(client_input: &ClientExecutorInput) {
 }
 
 fn profile_update(
-    mut parent_state: openvm_mpt::EthereumState2,
+    mut parent_state: openvm_mpt::EthereumState,
     executor_outcome: &ExecutionOutcome,
 ) {
     let _profiler = Profiler::new_heap();
@@ -119,7 +119,7 @@ fn profile_update(
 }
 
 fn profile_state_root(
-    mut parent_state: openvm_mpt::EthereumState2,
+    mut parent_state: openvm_mpt::EthereumState,
     executor_outcome: &ExecutionOutcome,
 ) {
     let _profiler = Profiler::new_heap();

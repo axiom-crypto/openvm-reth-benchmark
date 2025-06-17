@@ -144,7 +144,7 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
             after_storage_proofs.push(eip1186_proof_to_account_proof(storage_proof));
         }
 
-        let state = EthereumState2::from_transition_proofs(
+        let state = EthereumState::from_transition_proofs(
             previous_block.state_root,
             &before_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
             &after_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
