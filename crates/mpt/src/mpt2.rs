@@ -195,8 +195,11 @@ impl<'a> ArenaBasedMptNode<'a> {
         // This is a pragmatic optimization to pre-allocate a buffer for nodes that will be
         // added during the `update` phase. It prevents a "reallocation storm" where the
         // main trie and dozens of storage tries all try to reallocate their full node
-        // vectors on the first update. A more advanced solution could involve the host
-        // pre-executing the block to determine the exact final size of each trie.
+        // vectors on the first update.
+        // TODO: this is imperfect solution and the constant is somewhat arbitrary (although reasonable)
+        //       Simple improvement: run benchmark on a set of blocks (e.g. 100 blocks) and select the best constant.
+        //       More advanced improvement: either pre-execute block at guest to know exact allocations in advance,
+        //       or allocate a separate arena specifically for updates.
         const VEC_CAPACITY_GROWTH_FACTOR: f64 = 1.1;
         let capacity = (num_nodes as f64 * VEC_CAPACITY_GROWTH_FACTOR) as usize + 1;
         let mut arena = ArenaBasedMptNode::with_capacity(capacity);
@@ -960,6 +963,46 @@ pub mod build_mpt {
             .collect::<Result<Vec<_>, _>>()
     }
 
+    /// Helper to process proof nodes, convert them to static lifetime, and add to a node map.
+    fn process_proof<'a>(
+        proof_data: &[impl AsRef<[u8]>],
+        nodes: &mut HashMap<MptNodeReference, ArenaBasedMptNode<'static>>,
+    ) -> Result<Option<ArenaBasedMptNode<'static>>, Error> {
+        let proof_nodes = parse_proof(proof_data)?;
+        let root_node = proof_nodes.first().map(|node| convert_to_static_lifetime(node));
+
+        for node in proof_nodes {
+            let static_node = convert_to_static_lifetime(&node);
+            nodes.insert(MptNodeReference::Digest(static_node.hash()), static_node);
+        }
+        Ok(root_node)
+    }
+
+    /// Builds a single storage trie from its proofs.
+    fn build_storage_trie(
+        proof: &AccountProof,
+        fini_proofs: &AccountProof,
+    ) -> Result<ArenaBasedMptNode<'static>, Error> {
+        if proof.storage_proofs.is_empty() {
+            return Ok(node_from_digest(proof.storage_root));
+        }
+
+        let mut storage_nodes = HashMap::default();
+        let mut storage_root_node = ArenaBasedMptNode::default();
+
+        for storage_proof in &proof.storage_proofs {
+            if let Some(root) = process_proof(&storage_proof.proof, &mut storage_nodes)? {
+                storage_root_node = root;
+            }
+        }
+
+        for storage_proof in &fini_proofs.storage_proofs {
+            add_orphaned_leafs(storage_proof.key.0, &storage_proof.proof, &mut storage_nodes)?;
+        }
+
+        Ok(resolve_nodes_arena(&storage_root_node, &storage_nodes))
+    }
+
     /// Builds Ethereum state tries from relevant proofs before and after a state transition using
     /// arena-based MPT. This version returns EthereumState2 with arena-based nodes directly for better
     /// performance.
@@ -971,83 +1014,30 @@ pub mod build_mpt {
         // If no addresses are provided, return the trie only consisting of the state root
         if parent_proofs.is_empty() {
             return Ok(EthereumState2 {
-                state_trie: match state_root {
-                    EMPTY_ROOT | B256::ZERO => ArenaBasedMptNode::default(),
-                    _ => node_from_digest(state_root),
-                },
+                state_trie: node_from_digest(state_root),
                 storage_tries: Default::default(),
             });
         }
 
-        let mut storage: HashMap<B256, ArenaBasedMptNode<'static>> = HashMap::default();
-
-        let mut state_nodes = HashMap::<MptNodeReference, ArenaBasedMptNode<'static>>::default();
+        let mut storage_tries = HashMap::default();
+        let mut state_nodes = HashMap::default();
         let mut state_root_node = ArenaBasedMptNode::default();
 
         for (address, proof) in parent_proofs {
-            let proof_nodes = parse_proof(&proof.proof)?;
-
-            // The first node in the proof is the root
-            if let Some(node) = proof_nodes.first() {
-                state_root_node = convert_to_static_lifetime(node.clone());
+            if let Some(root) = process_proof(&proof.proof, &mut state_nodes)? {
+                state_root_node = root;
             }
-
-            proof_nodes.into_iter().for_each(|node| {
-                // Convert to static lifetime and use a digest reference based on the node's hash
-                let static_node = convert_to_static_lifetime(node);
-                state_nodes.insert(MptNodeReference::Digest(static_node.hash()), static_node);
-            });
 
             let fini_proofs = proofs.get(address).unwrap();
-
-            // Add orphaned leafs for deletions
             add_orphaned_leafs(address, &fini_proofs.proof, &mut state_nodes)?;
 
-            // Handle storage proofs
-            let storage_root = proof.storage_root;
-            if proof.storage_proofs.is_empty() {
-                let storage_root_node = match storage_root {
-                    EMPTY_ROOT | B256::ZERO => ArenaBasedMptNode::default(),
-                    _ => node_from_digest(storage_root),
-                };
-                storage.insert(B256::from(keccak256(address)), storage_root_node);
-                continue;
-            }
-
-            let mut storage_nodes =
-                HashMap::<MptNodeReference, ArenaBasedMptNode<'static>>::default();
-            let mut storage_root_node = ArenaBasedMptNode::default();
-
-            for storage_proof in &proof.storage_proofs {
-                let proof_nodes = parse_proof(&storage_proof.proof)?;
-
-                // The first node in the proof is the root
-                if let Some(node) = proof_nodes.first() {
-                    storage_root_node = convert_to_static_lifetime(node.clone());
-                }
-
-                proof_nodes.into_iter().for_each(|node| {
-                    // Convert to static lifetime and use a digest reference based on the node's hash
-                    let static_node = convert_to_static_lifetime(node);
-                    storage_nodes.insert(MptNodeReference::Digest(static_node.hash()), static_node);
-                });
-            }
-
-            // Assure that slots can be deleted from the storage trie
-            for storage_proof in &fini_proofs.storage_proofs {
-                add_orphaned_leafs(storage_proof.key.0, &storage_proof.proof, &mut storage_nodes)?;
-            }
-
-            // Create the storage trie from all the relevant nodes - keep as arena-based
-            let storage_trie = resolve_nodes_arena(&storage_root_node, &storage_nodes);
-
-            storage.insert(B256::from(keccak256(address)), storage_trie);
+            let storage_trie = build_storage_trie(proof, fini_proofs)?;
+            storage_tries.insert(B256::from(keccak256(address)), storage_trie);
         }
 
-        // Create the state trie from all the relevant nodes - keep as arena-based
+        // Create the state trie from all the relevant nodes
         let state_trie = resolve_nodes_arena(&state_root_node, &state_nodes);
-
-        Ok(EthereumState2 { state_trie, storage_tries: StorageTries2(storage) })
+        Ok(EthereumState2 { state_trie, storage_tries: StorageTries2(storage_tries) })
     }
 
     /// Creates a new arena-based MPT node from a digest.
@@ -1072,13 +1062,12 @@ pub mod build_mpt {
             let proof_nodes = parse_proof(proof)?;
             if is_not_included(keccak256(key).as_slice(), &proof_nodes)? {
                 // Add the leaf node to the nodes
-                let leaf = proof_nodes.last().unwrap();
-                // Convert to static lifetime by cloning the data
-                for node in shorten_node_path_arena(leaf) {
-                    // Create a static version by copying all data
-                    let static_node = convert_to_static_lifetime(node);
-                    nodes_by_reference
-                        .insert(MptNodeReference::Digest(static_node.hash()), static_node);
+                if let Some(leaf) = proof_nodes.last() {
+                    for node in shorten_node_path_arena(leaf) {
+                        let static_node = convert_to_static_lifetime(&node);
+                        nodes_by_reference
+                            .insert(MptNodeReference::Digest(static_node.hash()), static_node);
+                    }
                 }
             }
         }
@@ -1088,13 +1077,13 @@ pub mod build_mpt {
 
     /// Helper function to convert a node with any lifetime to static lifetime
     /// by copying all borrowed data into owned storage
-    fn convert_to_static_lifetime(node: ArenaBasedMptNode<'_>) -> ArenaBasedMptNode<'static> {
-        // Use with_capacity to correctly initialize with a pre-sized Vec and a default Null node.
+    fn convert_to_static_lifetime(node: &ArenaBasedMptNode<'_>) -> ArenaBasedMptNode<'static> {
         let mut static_node = ArenaBasedMptNode::with_capacity(node.nodes.len());
+        static_node.nodes.clear();
+        static_node.cached_references.clear();
 
-        // Copy all nodes, converting borrowed data to owned
-        for (i, node_data) in node.nodes.into_iter().enumerate() {
-            let static_data = match node_data {
+        for node_data in &node.nodes {
+            let static_data = match *node_data {
                 ArenaNodeData::Null => ArenaNodeData::Null,
                 ArenaNodeData::Branch(children) => ArenaNodeData::Branch(children),
                 ArenaNodeData::Leaf(path, value) => {
@@ -1108,14 +1097,7 @@ pub mod build_mpt {
                 }
                 ArenaNodeData::Digest(digest) => ArenaNodeData::Digest(digest),
             };
-
-            if i == 0 {
-                // Overwrite the initial Null node.
-                static_node.nodes[0] = static_data;
-                // The OnceCell is already new, which is correct.
-            } else {
-                static_node.add_node(static_data);
-            }
+            static_node.add_node(static_data);
         }
 
         static_node.root_id = node.root_id;
