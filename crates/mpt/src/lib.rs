@@ -68,7 +68,7 @@ impl EthereumState {
                         storage_trie
                             .insert_rlp_with_buf(
                                 hashed_slot.as_slice(),
-                                &value.present_value,
+                                value.present_value,
                                 &mut rlp_buf,
                             )
                             .unwrap();
@@ -125,7 +125,9 @@ impl<'de> Deserialize<'de> for StorageTries {
             // The deserialized node has lifetime 'de, but we need 'static.
             // This is safe because ArenaBasedMptNode::deserialize already leaks the
             // underlying buffer, giving it a static lifetime effectively.
-            let static_trie = unsafe { std::mem::transmute(trie) };
+            let static_trie = unsafe {
+                std::mem::transmute::<ArenaBasedMptNode<'de>, ArenaBasedMptNode<'static>>(trie)
+            };
             storage_tries.insert(addr, static_trie);
         }
         Ok(StorageTries(storage_tries))
@@ -148,7 +150,11 @@ impl<'de> Deserialize<'de> for EthereumState {
         let helper = Helper::deserialize(deserializer)?;
         // This is safe because ArenaBasedMptNode::deserialize already leaks the
         // underlying buffer, giving it a static lifetime effectively.
-        let state_trie = unsafe { std::mem::transmute(helper.state_trie) };
+        let state_trie = unsafe {
+            std::mem::transmute::<ArenaBasedMptNode<'de>, ArenaBasedMptNode<'static>>(
+                helper.state_trie,
+            )
+        };
 
         Ok(EthereumState { state_trie, storage_tries: helper.storage_tries })
     }

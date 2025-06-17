@@ -4,8 +4,7 @@ use core::fmt::Debug;
 use revm::primitives::B256;
 use revm_primitives::{b256, keccak256};
 use serde::{de, ser, Deserialize, Serialize};
-use std::rc::Rc;
-use std::{cell::RefCell, iter};
+use std::{cell::RefCell, iter, rc::Rc};
 
 use eyre::Result;
 
@@ -19,7 +18,8 @@ pub type NodeId = u32;
 pub const EMPTY_ROOT: B256 =
     b256!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
 
-/// Represents the ways in which one node can reference another node inside the sparse Merkle Patricia Trie (MPT).
+/// Represents the ways in which one node can reference another node inside the sparse Merkle
+/// Patricia Trie (MPT).
 ///
 /// Nodes in the MPT can reference other nodes either directly through their byte representation or
 /// indirectly through a hash of their encoding.
@@ -186,9 +186,10 @@ impl<'a> ArenaBasedMptNode<'a> {
         // added during the `update` phase. It prevents a "reallocation storm" where the
         // main trie and dozens of storage tries all try to reallocate their full node
         // vectors on the first update.
-        // TODO: this is imperfect solution and the constant is somewhat arbitrary (although reasonable)
-        //       Simple improvement: run benchmark on a set of blocks (e.g. 100 blocks) and select the best constant.
-        //       More advanced improvement: either pre-execute block at guest to know exact allocations in advance,
+        // TODO: this is imperfect solution and the constant is somewhat arbitrary (although
+        // reasonable)       Simple improvement: run benchmark on a set of blocks (e.g. 100
+        // blocks) and select the best constant.       More advanced improvement: either
+        // pre-execute block at guest to know exact allocations in advance,
         //       or allocate a separate arena specifically for updates.
         const VEC_CAPACITY_GROWTH_FACTOR: f64 = 1.1;
         let capacity = (num_nodes as f64 * VEC_CAPACITY_GROWTH_FACTOR) as usize + 1;
@@ -634,10 +635,10 @@ impl<'a> ArenaBasedMptNode<'a> {
         if is_branch {
             // Branch node (17 items)
             let mut children = [None; 16];
-            for i in 0..16 {
+            for child in children.iter_mut() {
                 let child_id = self.decode_node_recursive(&mut payload_buf)?;
                 if child_id != 0 {
-                    children[i] = Some(child_id);
+                    *child = Some(child_id);
                 }
             }
 
@@ -863,7 +864,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 }
 
 // Serialization. Not performance critical.
-impl<'a> ArenaBasedMptNode<'a> {
+impl ArenaBasedMptNode<'_> {
     /// Returns the RLP-encoded bytes with ALL children inlined (never replaced by digest).
     /// This produces a compact, fully-expanded representation perfect for serialization.
     #[inline]
@@ -961,7 +962,7 @@ pub mod build_mpt {
     }
 
     /// Helper to process proof nodes, convert them to static lifetime, and add to a node map.
-    fn process_proof<'a>(
+    fn process_proof(
         proof_data: &[impl AsRef<[u8]>],
         nodes: &mut HashMap<MptNodeReference, ArenaBasedMptNode<'static>>,
     ) -> Result<Option<ArenaBasedMptNode<'static>>, Error> {
@@ -1001,8 +1002,8 @@ pub mod build_mpt {
     }
 
     /// Builds Ethereum state tries from relevant proofs before and after a state transition using
-    /// arena-based MPT. This version returns EthereumState2 with arena-based nodes directly for better
-    /// performance.
+    /// arena-based MPT. This version returns EthereumState2 with arena-based nodes directly for
+    /// better performance.
     pub fn transition_proofs_to_tries_arena(
         state_root: B256,
         parent_proofs: &HashMap<Address, AccountProof>,
@@ -1198,8 +1199,8 @@ pub mod build_mpt {
             ArenaNodeData::Null => ArenaNodeData::Null,
             ArenaNodeData::Leaf(prefix, value) => {
                 // Copy the data into the new arena's owned storage
-                let new_prefix = new_arena.alloc_in_bump(*prefix);
-                let new_value = new_arena.alloc_in_bump(*value);
+                let new_prefix = new_arena.alloc_in_bump(prefix);
+                let new_value = new_arena.alloc_in_bump(value);
                 ArenaNodeData::Leaf(new_prefix, new_value)
             }
             ArenaNodeData::Branch(children) => {
@@ -1220,7 +1221,7 @@ pub mod build_mpt {
             ArenaNodeData::Extension(prefix, child_id) => {
                 let resolved_child_id =
                     resolve_node_recursive(original_arena, *child_id, node_store, new_arena);
-                let new_prefix = new_arena.alloc_in_bump(*prefix);
+                let new_prefix = new_arena.alloc_in_bump(prefix);
                 ArenaNodeData::Extension(new_prefix, resolved_child_id)
             }
             ArenaNodeData::Digest(digest) => {
