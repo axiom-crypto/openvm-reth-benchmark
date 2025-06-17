@@ -21,7 +21,7 @@ tracing.workspace = true
 openvm-rpc-db.workspace = true
 openvm-witness-db.workspace = true
 openvm-client-executor.workspace = true
-openvm-mpt = { workspace = true, features = ["preimage_context", "build_mpt"] }
+openvm-mpt = { workspace = true, features = ["build_mpt"] }
 openvm-primitives.workspace = true
 
 # reth
@@ -50,7 +50,6 @@ alloy-rlp.workspace = true
 alloy-provider.workspace = true
 alloy-transport.workspace = true
 alloy-rpc-types.workspace = true
-itertools = "0.13.0"
 futures.workspace = true
 bincode = { workspace = true, features = ["serde", "std"] }
 dhat = "0.3"
@@ -59,7 +58,7 @@ dhat = "0.3"
 dotenv = "0.15.0"
 alloy-primitives.workspace = true
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.6", features = ["html_reports"] }
 reth-revm.workspace = true
 
 [features]
