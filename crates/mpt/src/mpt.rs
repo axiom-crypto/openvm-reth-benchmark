@@ -107,6 +107,7 @@ pub struct ArenaBasedMptNode<'a> {
     /// One monotonically‑growing arena that owns every mutated byte slice.
     bump: Rc<Bump>,
     encoding_scratch: RefCell<Vec<u8>>,
+    dirty_nodes: RefCell<Vec<NodeId>>,
 }
 
 impl ser::Serialize for ArenaBasedMptNode<'_> {
@@ -140,6 +141,7 @@ impl Default for ArenaBasedMptNode<'_> {
             root_id: 0,
             bump: Rc::new(Bump::new()),
             encoding_scratch: RefCell::new(Vec::with_capacity(128)),
+            dirty_nodes: RefCell::new(Vec::new()),
         }
     }
 }
@@ -170,6 +172,7 @@ impl<'a> ArenaBasedMptNode<'a> {
             root_id: 0,
             bump: Rc::new(Bump::new()),
             encoding_scratch: RefCell::new(Vec::with_capacity(128)),
+            dirty_nodes: RefCell::new(Vec::with_capacity(cap / 4)),
         }
     }
 
@@ -210,6 +213,7 @@ impl<'a> ArenaBasedMptNode<'a> {
     /// Computes and returns the 256-bit hash of the node.
     #[inline]
     pub fn hash(&self) -> B256 {
+        self.rehash_dirty_nodes();
         self.hash_id(self.root_id)
     }
 
@@ -440,7 +444,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         }?;
 
         if updated {
-            self.invalidate_ref_cache(node_id);
+            self.mark_as_dirty(node_id);
         }
 
         Ok(updated)
@@ -569,7 +573,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         }?;
 
         if updated {
-            self.invalidate_ref_cache(node_id);
+            self.mark_as_dirty(node_id);
         }
         Ok(updated)
     }
@@ -738,9 +742,32 @@ impl<'a> ArenaBasedMptNode<'a> {
         unsafe { std::mem::transmute::<&[u8], &'a [u8]>(slice) }
     }
 
+    /// Marks a node as dirty, invalidating its cached reference and adding it to the
+    /// re-hashing queue. The check prevents a node from being added to the queue twice.
     #[inline]
-    fn invalidate_ref_cache(&mut self, node_id: NodeId) {
-        self.cached_references[node_id as usize].borrow_mut().take();
+    fn mark_as_dirty(&self, node_id: NodeId) {
+        if self.cached_references[node_id as usize].borrow_mut().take().is_some() {
+            self.dirty_nodes.borrow_mut().push(node_id);
+        }
+    }
+
+    /// Iteratively re-hashes all nodes that have been marked as dirty since the last
+    /// hashing operation. This is more efficient than recursive hashing.
+    fn rehash_dirty_nodes(&self) {
+        let mut dirty_nodes = self.dirty_nodes.borrow_mut();
+        if dirty_nodes.is_empty() {
+            return;
+        }
+
+        // The dirty_nodes list is in post-order, so iterating forwards ensures
+        // that when we calculate a parent's hash, its children's hashes have
+        // already been re-calculated and cached.
+        for &node_id in dirty_nodes.iter() {
+            let reference = self.calc_reference(node_id);
+            *self.cached_references[node_id as usize].borrow_mut() = Some(reference);
+        }
+
+        dirty_nodes.clear();
     }
 
     fn hash_id(&self, node_id: NodeId) -> B256 {
@@ -1175,6 +1202,7 @@ pub mod build_mpt {
             root_id: 0,
             bump: Rc::new(Bump::new()),
             encoding_scratch: RefCell::new(Vec::with_capacity(128)),
+            dirty_nodes: RefCell::new(Vec::new()),
         };
 
         let root_id = resolve_node_recursive(root, root.root_id, node_store, &mut new_arena);
