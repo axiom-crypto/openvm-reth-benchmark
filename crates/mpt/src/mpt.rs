@@ -191,7 +191,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         // blocks) and select the best constant.       More advanced improvement: either
         // pre-execute block at guest to know exact allocations in advance,
         //       or allocate a separate arena specifically for updates.
-        const VEC_CAPACITY_GROWTH_FACTOR: f64 = 1.1;
+        const VEC_CAPACITY_GROWTH_FACTOR: f64 = 1.11;
         let capacity = (num_nodes as f64 * VEC_CAPACITY_GROWTH_FACTOR) as usize + 1;
         let mut arena = ArenaBasedMptNode::with_capacity(capacity);
 
