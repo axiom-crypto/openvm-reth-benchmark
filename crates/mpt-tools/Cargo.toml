@@ -45,8 +45,6 @@ alloy-transport.workspace = true
 
 [features]
 default = []
-# Memory profiling feature
-dhat-heap = []
 
 [[bin]]
 name = "mpt_profiler"
