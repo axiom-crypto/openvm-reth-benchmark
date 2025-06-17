@@ -1,6 +1,6 @@
 use std::iter::once;
 
-use eyre::Result;
+use eyre::{OptionExt, Result};
 use itertools::Itertools;
 use openvm_mpt::EthereumState;
 use openvm_witness_db::WitnessDb;
@@ -136,7 +136,7 @@ pub trait WitnessInput {
                         code: Some(
                             (*bytecodes_by_hash
                                 .get(&account_in_trie.code_hash)
-                                .ok_or_else(|| eyre::eyre!("missing bytecode"))?)
+                                .ok_or_eyre("missing bytecode")?)
                             // Cloning here is fine as `Bytes` is cheap to clone.
                             .to_owned(),
                         ),
@@ -153,7 +153,7 @@ pub trait WitnessInput {
                     .storage_tries
                     .0
                     .get(&hashed_address)
-                    .ok_or_else(|| eyre::eyre!("parent state does not contain storage trie"))?;
+                    .ok_or_eyre("parent state does not contain storage trie")?;
 
                 for &slot in slots {
                     let slot_value = storage_trie

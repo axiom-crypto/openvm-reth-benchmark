@@ -1,5 +1,5 @@
 use bincode::config::standard;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use openvm_client_executor::io::ClientExecutorInput;
 use openvm_primitives::chain_spec::mainnet;
 use reth_evm::execute::{BasicBlockExecutor, Executor};
@@ -7,7 +7,7 @@ use reth_evm_ethereum::EthEvmConfig;
 use reth_execution_types::ExecutionOutcome;
 use reth_primitives_traits::Block;
 use reth_revm::db::CacheDB;
-use std::{fs, sync::Arc};
+use std::{fs, hint::black_box, sync::Arc};
 
 fn benchmark_mpt_operations(c: &mut Criterion) {
     // Load the benchmark data file (this is not counted in benchmark timing)
