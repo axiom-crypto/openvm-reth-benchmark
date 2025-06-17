@@ -16,9 +16,9 @@ BLOCK=18884864 cargo run --bin generate_benchmark_data     # Custom block
 ### Memory Profiling
 
 ```bash
-cargo run --bin mpt_profiler --features dhat-heap          # Profile all operations
-cargo run --bin mpt_profiler --features dhat-heap update   # Profile specific operation
-BLOCK=18884864 cargo run --bin mpt_profiler --features dhat-heap update
+cargo run --bin mpt_profiler                               # Profile all operations
+cargo run --bin mpt_profiler update                        # Profile specific operation
+BLOCK=18884864 cargo run --bin mpt_profiler update
 ```
 
 ### Performance Benchmarking
@@ -32,7 +32,7 @@ BLOCK=18884864 cargo bench                                  # Custom block
 
 ```bash
 cargo run --bin generate_benchmark_data                     # Generate data (21000000.bin)
-cargo run --bin mpt_profiler --features dhat-heap           # Profile memory
+cargo run --bin mpt_profiler                                # Profile memory
 cargo bench                                                 # Benchmark performance
 ```
 
