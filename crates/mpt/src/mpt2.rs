@@ -952,49 +952,6 @@ impl<'a> ArenaBasedMptNode<'a> {
 pub mod build_mpt {
     use super::*;
 
-    impl<'a> ArenaBasedMptNode<'a> {
-        /// Merges another trie into this arena and returns the root NodeId of the merged trie
-        fn merge_trie(&mut self, other: &ArenaBasedMptNode<'a>) -> NodeId {
-            let mut node_mapping = HashMap::<NodeId, NodeId>::new();
-
-            // Copy all nodes from other trie into this arena
-            for (other_id, other_node) in other.nodes.iter().enumerate() {
-                let new_id = self.add_node(other_node.clone());
-                node_mapping.insert(other_id as u32, new_id);
-            }
-
-            // Update all the node references in the copied nodes
-            for (&other_id, &new_id) in &node_mapping {
-                match &other.nodes[other_id as usize] {
-                    ArenaNodeData::Branch(children) => {
-                        let mut new_children: [Option<NodeId>; 16] = Default::default();
-                        for (i, child) in children.iter().enumerate() {
-                            if let Some(child_id) = child {
-                                new_children[i] = Some(node_mapping[child_id]);
-                            }
-                        }
-                        self.nodes[new_id as usize] = ArenaNodeData::Branch(new_children);
-                    }
-                    ArenaNodeData::Extension(prefix, child_id) => {
-                        let new_child_id = node_mapping[child_id];
-                        let new_prefix = self.add_owned_slice(*prefix);
-                        self.nodes[new_id as usize] =
-                            ArenaNodeData::Extension(new_prefix, new_child_id);
-                    }
-                    ArenaNodeData::Leaf(prefix, value) => {
-                        let new_prefix = self.add_owned_slice(*prefix);
-                        let new_value = self.add_owned_slice(*value);
-                        self.nodes[new_id as usize] = ArenaNodeData::Leaf(new_prefix, new_value);
-                    }
-                    _ => {} // Null, and Digest nodes don't need reference updates
-                }
-            }
-
-            // Return the root of the merged trie
-            node_mapping[&other.root_id]
-        }
-    }
-
     /// Parses proof bytes into a vector of ArenaBasedMptNodes.
     pub fn parse_proof(proof: &[impl AsRef<[u8]>]) -> Result<Vec<ArenaBasedMptNode<'_>>, Error> {
         proof
@@ -1186,31 +1143,24 @@ pub mod build_mpt {
             ArenaNodeData::Extension(path_bytes, child_id) => {
                 (Some(*path_bytes), false, None, Some(*child_id))
             }
-            _ => (None, false, None, None),
+            _ => return res,
         };
 
-        let Some(path_bytes) = path_bytes else { return res };
+        let path_bytes = path_bytes.unwrap();
         let nibs = prefix_to_small_nibs(path_bytes);
 
-        if is_leaf {
-            let value = value.unwrap();
-            for i in 0..=nibs.len() {
-                let mut new_node = ArenaBasedMptNode::default();
-                let shortened_nibs = &nibs[i..];
-                let path_slice = new_node.add_encoded_path_slice(shortened_nibs, true);
-                let value_slice = new_node.add_owned_slice(value);
-                new_node.nodes[0] = ArenaNodeData::Leaf(path_slice, value_slice);
-                res.push(new_node);
-            }
-        } else {
-            let child_id = child_id.unwrap();
-            for i in 0..=nibs.len() {
-                let mut new_node = ArenaBasedMptNode::default();
-                let shortened_nibs = &nibs[i..];
-                let path_slice = new_node.add_encoded_path_slice(shortened_nibs, false);
-                new_node.nodes[0] = ArenaNodeData::Extension(path_slice, child_id);
-                res.push(new_node);
-            }
+        for i in 0..=nibs.len() {
+            let mut new_node = ArenaBasedMptNode::default();
+            let shortened_nibs = &nibs[i..];
+            let path_slice = new_node.add_encoded_path_slice(shortened_nibs, is_leaf);
+            let new_node_data = if is_leaf {
+                let value_slice = new_node.add_owned_slice(value.unwrap());
+                ArenaNodeData::Leaf(path_slice, value_slice)
+            } else {
+                ArenaNodeData::Extension(path_slice, child_id.unwrap())
+            };
+            new_node.nodes[0] = new_node_data;
+            res.push(new_node);
         }
         res
     }
@@ -1223,73 +1173,14 @@ pub mod build_mpt {
             return Ok(ArenaBasedMptNode::default());
         }
 
-        let mut next: Option<ArenaBasedMptNode<'a>> = None;
-        for (i, node) in proof_nodes.iter().enumerate().rev() {
-            // There is nothing to replace for the last node
-            let Some(replacement) = next else {
-                next = Some(node.clone());
-                continue;
-            };
+        let node_store: HashMap<MptNodeReference, ArenaBasedMptNode<'a>> = proof_nodes
+            .iter()
+            .map(|node| (MptNodeReference::Digest(node.hash()), node.clone()))
+            .collect();
 
-            // The next node must have a digest reference
-            let replacement_hash = replacement.hash();
+        let root_node = proof_nodes.first().unwrap();
 
-            // Find the child that references the next node and replace it
-            let mut resolved = node.clone();
-            let resolved_root_data = &resolved.nodes[resolved.root_id as usize].clone();
-
-            match resolved_root_data {
-                ArenaNodeData::Branch(children) => {
-                    let mut new_children = *children;
-                    let mut found = false;
-
-                    for (child_idx, child_id) in children.iter().enumerate() {
-                        if let Some(child_id) = child_id {
-                            if let ArenaNodeData::Digest(digest) =
-                                &resolved.nodes[*child_id as usize]
-                            {
-                                if *digest == replacement_hash {
-                                    // Replace this child with the replacement trie
-                                    // We need to merge the replacement trie into our arena
-                                    let replacement_root_in_resolved =
-                                        resolved.merge_trie(&replacement);
-                                    new_children[child_idx] = Some(replacement_root_in_resolved);
-                                    found = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if !found {
-                        panic!("node {} does not reference the successor", i);
-                    }
-
-                    resolved.nodes[resolved.root_id as usize] = ArenaNodeData::Branch(new_children);
-                }
-                ArenaNodeData::Extension(prefix, child_id) => {
-                    if let ArenaNodeData::Digest(digest) = &resolved.nodes[*child_id as usize] {
-                        if *digest != replacement_hash {
-                            panic!("node {} does not reference the successor", i);
-                        }
-                        // Replace the child with the replacement trie
-                        let replacement_root_in_resolved = resolved.merge_trie(&replacement);
-                        resolved.nodes[resolved.root_id as usize] =
-                            ArenaNodeData::Extension(prefix, replacement_root_in_resolved);
-                    } else {
-                        panic!("node {} does not reference the successor", i);
-                    }
-                }
-                ArenaNodeData::Null | ArenaNodeData::Leaf(_, _) | ArenaNodeData::Digest(_) => {
-                    panic!("node {} has no children to replace", i);
-                }
-            }
-
-            next = Some(resolved);
-        }
-
-        // The last node in the proof should be the root
-        Ok(next.unwrap_or_default())
+        Ok(resolve_nodes_arena(root_node, &node_store))
     }
 
     /// Resolves digest nodes in an arena-based trie using the provided node store.
