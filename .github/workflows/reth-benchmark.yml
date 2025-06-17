@@ -44,6 +44,7 @@ on:
         description: Running mode
         options:
           - execute
+          - execute_metered
           - tracegen
           - prove-app
           - prove-stark
@@ -122,7 +123,7 @@ on:
       mode:
         type: string
         required: false
-        description: Running mode, one of {execute, tracegen, prove-app, prove-stark, prove-evm}
+        description: Running mode, one of {execute, execute_metered, tracegen, prove-app, prove-stark, prove-evm}
         default: prove-evm
       profiling:
         type: string

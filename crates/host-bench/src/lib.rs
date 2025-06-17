@@ -45,6 +45,8 @@ use cli::ProviderArgs;
 pub enum BenchMode {
     /// Execute the VM without generating a proof.
     Execute,
+    /// Execute the VM with metering to get segments information.
+    ExecuteMetered,
     /// Generate trace data without proving.
     Tracegen,
     /// Generate sequence of app proofs for continuation segments.
@@ -61,6 +63,7 @@ impl std::fmt::Display for BenchMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Execute => write!(f, "execute"),
+            Self::ExecuteMetered => write!(f, "execute_metered"),
             Self::Tracegen => write!(f, "tracegen"),
             Self::ProveApp => write!(f, "prove_app"),
             Self::ProveStark => write!(f, "prove_stark"),
@@ -331,6 +334,17 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                             .map(|x| x.as_canonical_u32().try_into().unwrap())
                             .collect::<Vec<_>>();
                         println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+                    }
+                    BenchMode::ExecuteMetered => {
+                        let app_pk = sdk.app_keygen(app_config)?;
+                        let (widths, interactions) =
+                            get_widths_and_interactions_from_vkey(app_pk.app_vm_pk.vm_pk.get_vk());
+                        let executor = VmExecutor::new(app_pk.app_vm_pk.vm_config.clone());
+                        let segments = info_span!("execute_metered", group = program_name)
+                            .in_scope(|| {
+                                executor.execute_metered(exe, stdin, widths, interactions)
+                            })?;
+                        println!("Number of segments: {}", segments.len());
                     }
                     BenchMode::Tracegen => {
                         let app_pk = sdk.app_keygen(app_config)?;
