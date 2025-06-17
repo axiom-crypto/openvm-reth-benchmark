@@ -1,29 +1,26 @@
 use eyre::Result;
-use mpt2::ArenaBasedMptNode;
+use mpt::ArenaBasedMptNode;
 use reth_revm::db::BundleState;
 use reth_trie::TrieAccount;
 use revm::primitives::{HashMap, B256};
 use revm_primitives::{keccak256, map::DefaultHashBuilder};
 use serde::{Deserialize, Serialize};
-use state::HashedPostState;
 
-/// Module containing MPT code adapted from `zeth`.
-pub mod mpt2;
-pub mod state;
+pub mod mpt;
 pub mod word_bytes;
 
 /// Ethereum state trie and account storage tries using arena-based MPT nodes for better
 /// performance.
 #[derive(Debug, Clone, Serialize)]
-pub struct EthereumState2 {
+pub struct EthereumState {
     pub state_trie: ArenaBasedMptNode<'static>,
-    pub storage_tries: StorageTries2,
+    pub storage_tries: StorageTries,
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct StorageTries2(pub HashMap<B256, ArenaBasedMptNode<'static>>);
+pub struct StorageTries(pub HashMap<B256, ArenaBasedMptNode<'static>>);
 
-impl EthereumState2 {
+impl EthereumState {
     /// Builds Ethereum state tries from relevant proofs before and after a state transition
     /// using the arena-based MPT implementation for better performance.
     #[cfg(feature = "build_mpt")]
@@ -32,51 +29,9 @@ impl EthereumState2 {
         parent_proofs: &HashMap<revm_primitives::Address, reth_trie::AccountProof>,
         proofs: &HashMap<revm_primitives::Address, reth_trie::AccountProof>,
     ) -> Result<Self> {
-        use crate::mpt2::build_mpt::transition_proofs_to_tries_arena;
+        use crate::mpt::build_mpt::transition_proofs_to_tries_arena;
         transition_proofs_to_tries_arena(state_root, parent_proofs, proofs)
             .map_err(|err| eyre::eyre!("{}", err))
-    }
-
-    /// Mutates state based on diffs provided in [`HashedPostState`].
-    pub fn update(&mut self, post_state: &HashedPostState) {
-        for (hashed_address, account) in post_state.accounts.iter() {
-            let hashed_address = hashed_address.as_slice();
-
-            match account {
-                Some(account) => {
-                    let state_storage = &post_state.storages.get(hashed_address).unwrap();
-                    let storage_root = {
-                        let storage_trie = self.storage_tries.0.get_mut(hashed_address).unwrap();
-
-                        if state_storage.wiped {
-                            storage_trie.clear();
-                        }
-
-                        for (key, value) in state_storage.storage.iter() {
-                            let key = key.as_slice();
-                            if value.is_zero() {
-                                storage_trie.delete(key).unwrap();
-                            } else {
-                                storage_trie.insert_rlp(key, *value).unwrap();
-                            }
-                        }
-
-                        storage_trie.hash()
-                    };
-
-                    let state_account = TrieAccount {
-                        nonce: account.nonce,
-                        balance: account.balance,
-                        storage_root,
-                        code_hash: account.get_bytecode_hash(),
-                    };
-                    self.state_trie.insert_rlp(hashed_address, state_account).unwrap();
-                }
-                _ => {
-                    self.state_trie.delete(hashed_address).unwrap();
-                }
-            }
-        }
     }
 
     pub fn update_from_bundle_state(&mut self, bundle_state: &BundleState) {
@@ -146,7 +101,7 @@ impl EthereumState2 {
 }
 
 // Custom serde implementations for compact RLP-based serialization
-impl Serialize for StorageTries2 {
+impl Serialize for StorageTries {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -158,7 +113,7 @@ impl Serialize for StorageTries2 {
     }
 }
 
-impl<'de> Deserialize<'de> for StorageTries2 {
+impl<'de> Deserialize<'de> for StorageTries {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -173,11 +128,11 @@ impl<'de> Deserialize<'de> for StorageTries2 {
             let static_trie = unsafe { std::mem::transmute(trie) };
             storage_tries.insert(addr, static_trie);
         }
-        Ok(StorageTries2(storage_tries))
+        Ok(StorageTries(storage_tries))
     }
 }
 
-impl<'de> Deserialize<'de> for EthereumState2 {
+impl<'de> Deserialize<'de> for EthereumState {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -187,7 +142,7 @@ impl<'de> Deserialize<'de> for EthereumState2 {
         struct Helper<'a> {
             #[serde(borrow)]
             state_trie: ArenaBasedMptNode<'a>,
-            storage_tries: StorageTries2,
+            storage_tries: StorageTries,
         }
 
         let helper = Helper::deserialize(deserializer)?;
@@ -195,6 +150,6 @@ impl<'de> Deserialize<'de> for EthereumState2 {
         // underlying buffer, giving it a static lifetime effectively.
         let state_trie = unsafe { std::mem::transmute(helper.state_trie) };
 
-        Ok(EthereumState2 { state_trie, storage_tries: helper.storage_tries })
+        Ok(EthereumState { state_trie, storage_tries: helper.storage_tries })
     }
 }
