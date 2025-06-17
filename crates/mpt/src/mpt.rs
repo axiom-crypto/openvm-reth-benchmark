@@ -1,7 +1,7 @@
-use alloy_primitives::B256;
 use alloy_rlp::{Buf, Encodable};
 use bumpalo::Bump;
 use core::fmt::Debug;
+use revm::primitives::B256;
 use revm_primitives::{b256, keccak256};
 use serde::{de, ser, Deserialize, Serialize};
 use std::rc::Rc;
