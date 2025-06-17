@@ -11,33 +11,25 @@ workspace = true
 
 [dependencies]
 eyre.workspace = true
-serde_json.workspace = true
 url.workspace = true
-serde.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 
 # workspace
 openvm-rpc-db.workspace = true
-openvm-witness-db.workspace = true
 openvm-client-executor.workspace = true
 openvm-mpt = { workspace = true, features = ["build_mpt"] }
 openvm-primitives.workspace = true
 
 # reth
-reth-codecs.workspace = true
 reth-primitives = { workspace = true, features = ["secp256k1"] }
 reth-primitives-traits.workspace = true
-reth-storage-errors.workspace = true
-reth-trie.workspace = true
 reth-execution-types.workspace = true
-reth-errors.workspace = true
 reth-chainspec.workspace = true
 reth-evm.workspace = true
 reth-evm-ethereum.workspace = true
 reth-ethereum-consensus.workspace = true
 reth-consensus.workspace = true
-reth-revm.workspace = true
 
 # revm
 revm.workspace = true
@@ -46,31 +38,11 @@ revm-primitives.workspace = true
 # alloy
 alloy-consensus.workspace = true
 alloy-primitives.workspace = true
-alloy-rlp.workspace = true
 alloy-provider.workspace = true
-alloy-transport.workspace = true
 alloy-rpc-types.workspace = true
-futures.workspace = true
 bincode = { workspace = true, features = ["serde", "std"] }
-dhat = "0.3"
 
 [dev-dependencies]
 dotenv = "0.15.0"
 alloy-primitives.workspace = true
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
-criterion = { version = "0.6", features = ["html_reports"] }
-reth-revm.workspace = true
-
-[features]
-dhat-heap = []
-
-[profile.release]
-debug = 1
-
-[[bench]]
-name = "mpt_performance"
-harness = false
-
-[[bin]]
-name = "mpt_profiler"
-path = "src/bin/mpt_profiler.rs"
