@@ -4,6 +4,7 @@ members = [
     "crates/executor/client",
     "crates/executor/host",
     "crates/mpt",
+    "crates/mpt-tools",
     "crates/primitives",
     "crates/storage/rpc-db",
     "crates/storage/witness-db",
@@ -159,3 +160,8 @@ codegen-units = 1
 
 [profile.dev]
 opt-level = 3
+
+# Profile with debugging symbols for memory profiling
+[profile.bench-with-debug]
+inherits = "release"
+debug = 1

@@ -16,15 +16,32 @@ use std::{env, fs, sync::Arc};
 fn main() {
     let args: Vec<String> = env::args().collect();
 
+    // Check for help
+    if args.len() > 1 && (args[1] == "--help" || args[1] == "-h") {
+        print_usage();
+        return;
+    }
+
+    // Get operation from args
     let operation = if args.len() > 1 { args[1].as_str() } else { "all" };
+
+    // Get block number from environment
+    let block_number = env::var("BLOCK")
+        .unwrap_or_else(|_| "21000000".to_string())
+        .parse::<u64>()
+        .unwrap_or_else(|_| panic!("Invalid BLOCK number"));
+
+    let input_file = format!("{}.bin", block_number);
 
     println!("MPT Memory Profiler");
     println!("Operation: {}", operation);
+    println!("Block: {}", block_number);
+    println!("Input file: {}", input_file);
     println!();
 
     // Load the benchmark data file
-    let buffer = fs::read("client_input_benchmark.bin")
-        .expect("Failed to read benchmark data. Run the integration test first to generate it.");
+    let buffer = fs::read(&input_file)
+        .unwrap_or_else(|_| panic!("Failed to read benchmark data from '{}'. Run 'BLOCK={} cargo run --bin generate_benchmark_data' first to generate it.", input_file, block_number));
 
     println!("Loaded benchmark data: {} bytes", buffer.len());
 
@@ -129,17 +146,19 @@ fn profile_state_root(
 }
 
 fn print_usage() {
-    println!("Usage: mpt_profiler [operation]");
+    println!("Usage: cargo run --bin mpt_profiler [operation]");
+    println!("       BLOCK=18884864 cargo run --bin mpt_profiler update");
+    println!();
+    println!("Arguments:");
+    println!("  operation    Operation to profile (default: all)");
+    println!();
+    println!("Environment:");
+    println!("  BLOCK        Block number for data file (default: 21000000)");
     println!();
     println!("Operations:");
-    println!("  all, end-to-end  - Profile the complete workflow (default)");
-    println!("  deserialize      - Profile only deserialization");
-    println!("  witness          - Profile only witness DB creation");
-    println!("  update           - Profile only MPT update");
-    println!("  state-root       - Profile only state root computation");
-    println!();
-    println!("Examples:");
-    println!("  mpt_profiler");
-    println!("  mpt_profiler update");
-    println!("  mpt_profiler state-root");
+    println!("  all          Complete workflow (default)");
+    println!("  deserialize  Deserialization only");
+    println!("  witness      Witness DB creation only");
+    println!("  update       MPT update only");
+    println!("  state-root   State root computation only");
 }

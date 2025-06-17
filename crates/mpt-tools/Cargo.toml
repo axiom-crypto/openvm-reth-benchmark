@@ -1,0 +1,61 @@
+[package]
+name = "openvm-mpt-tools"
+description = "Development tools for MPT profiling and benchmarking"
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+eyre.workspace = true
+serde_json.workspace = true
+url.workspace = true
+serde.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+dotenv = "0.15.0"
+bincode = { workspace = true, features = ["serde", "std"] }
+
+# Memory profiling
+dhat = "0.3"
+criterion = { version = "0.6", features = ["html_reports"] }
+
+# workspace
+openvm-host-executor.workspace = true
+openvm-client-executor.workspace = true
+openvm-primitives.workspace = true
+openvm-mpt = { workspace = true, features = ["build_mpt"] }
+
+# reth dependencies for benchmarking and profiling
+reth-evm.workspace = true
+reth-evm-ethereum.workspace = true
+reth-execution-types.workspace = true
+reth-primitives-traits.workspace = true
+reth-revm.workspace = true
+reth-chainspec.workspace = true
+
+# alloy
+alloy-primitives.workspace = true
+alloy-provider.workspace = true
+alloy-transport.workspace = true
+
+[features]
+default = []
+# Memory profiling feature
+dhat-heap = []
+
+[[bin]]
+name = "mpt_profiler"
+path = "src/bin/mpt_profiler.rs"
+
+[[bin]]
+name = "generate_benchmark_data"
+path = "src/bin/generate_benchmark_data.rs"
+
+[[bench]]
+name = "mpt_performance"
+harness = false

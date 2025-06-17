@@ -29,7 +29,7 @@ elf
 metrics.json
 
 # Local mpt benchmark data
-client_input_benchmark.bin
+[0-9]*.bin
 
 # Dhat heap profile
 **/dhat-heap.json

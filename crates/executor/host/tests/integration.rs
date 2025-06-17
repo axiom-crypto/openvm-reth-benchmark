@@ -10,10 +10,7 @@ use url::Url;
 #[tokio::test(flavor = "multi_thread")]
 async fn test_e2e_ethereum() {
     let env_var_key = "RPC_1";
-    // let block_number = 18884864;
-    // Recommended for more complete testing but is 3x slower.
-    let block_number = 21882667;
-    // let block_number = 18884864; // small
+    let block_number = 18884864;
 
     // Initialize the environment variables.
     dotenv::dotenv().ok();
@@ -38,18 +35,17 @@ async fn test_e2e_ethereum() {
     // Setup the client executor.
     let client_executor = ClientExecutor;
 
-    // Save the client input to a buffer.
+    // Test serialization/deserialization round-trip
     let bincode_config = standard();
     let buffer = bincode::serde::encode_to_vec(&client_input, bincode_config).unwrap();
-
-    // Load the client input from a buffer.
-    let client_input: (ClientExecutorInput, _) =
+    let (deserialized_input, _): (ClientExecutorInput, _) =
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
 
-    // Execute the client.
-    client_executor.execute(client_input.0.clone()).expect("failed to execute client");
+    // Execute the client with the original input
+    client_executor.execute(client_input).expect("failed to execute client");
 
-    // Save the buffer to a file for benchmarking
-    std::fs::write("client_input_benchmark.bin", &buffer).expect("failed to write benchmark data");
-    println!("Saved benchmark data to client_input_benchmark.bin ({} bytes)", buffer.len());
+    // Execute the client with the deserialized input to test round-trip
+    client_executor
+        .execute(deserialized_input)
+        .expect("failed to execute client with deserialized input");
 }
