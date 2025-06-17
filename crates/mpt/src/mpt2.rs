@@ -6,16 +6,12 @@ use reth_trie::AccountProof;
 use revm::primitives::HashMap;
 use revm_primitives::{b256, keccak256, Address};
 use serde::{de, ser, Deserialize, Serialize};
-use std::cell::RefCell;
 use std::rc::Rc;
+use std::{cell::RefCell, iter};
 
 use eyre::Result;
 
-use crate::{
-    utils::{lcp, to_nibs},
-    word_bytes::OptimizedBytes,
-    EthereumState2, StorageTries2,
-};
+use crate::{word_bytes::OptimizedBytes, EthereumState2, StorageTries2};
 use smallvec::SmallVec;
 use thiserror::Error as ThisError;
 
@@ -61,8 +57,31 @@ pub enum Error {
     Rlp(#[from] alloy_rlp::Error),
 }
 
+/// Returns the length of the common prefix.
+pub fn lcp(a: &[u8], b: &[u8]) -> usize {
+    for (i, (a, b)) in iter::zip(a, b).enumerate() {
+        if a != b {
+            return i;
+        }
+    }
+    std::cmp::min(a.len(), b.len())
+}
+
+/// Converts a byte slice into a vector of nibbles.
+///
+/// A nibble is 4 bits or half of an 8-bit byte. This function takes each byte from the
+/// input slice, splits it into two nibbles, and appends them to the resulting vector.
+/// Uses SmallVec to avoid heap allocation for typical key sizes (≤32 bytes = 64 nibbles).
+pub fn to_nibs(slice: &[u8]) -> SmallVec<[u8; 64]> {
+    let mut result = SmallVec::with_capacity(2 * slice.len());
+    for byte in slice {
+        result.push(byte >> 4);
+        result.push(byte & 0xf);
+    }
+    result
+}
+
 /// Optimized conversion from hex-encoded path directly to nibbles SmallVec
-/// Avoids the Vec<u8> -> SmallVec<u8> round-trip that was causing extra allocations
 fn prefix_to_small_nibs(encoded_path: &[u8]) -> SmallVec<[u8; 64]> {
     if encoded_path.is_empty() {
         return SmallVec::new();
@@ -148,10 +167,6 @@ pub enum ArenaNodeData<'a> {
 
 /// Custom RLP decoder that builds ArenaBasedMptNode directly without intermediate boxed structures
 impl<'a> ArenaBasedMptNode<'a> {
-    pub fn nodes_len(&self) -> usize {
-        self.nodes.len()
-    }
-
     /// Creates a new arena with pre-allocated capacity
     pub fn with_capacity(cap: usize) -> Self {
         let mut nodes = Vec::with_capacity(cap.max(1));
@@ -932,7 +947,7 @@ impl<'a> ArenaBasedMptNode<'a> {
     }
 }
 
-// IMPORTANT: This code runs on host so it is not as performance critical as the rest of mpt
+// This code runs on host so it is not as performance critical as the rest of mpt
 #[cfg(feature = "build_mpt")]
 pub mod build_mpt {
     use super::*;
