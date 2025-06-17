@@ -19,8 +19,8 @@ smallvec = "1.13"
 bumpalo = "3.18.1"
 
 # reth
+reth-trie.workspace = true
 reth-primitives.workspace = true
-reth-trie = { workspace = true, optional = true }
 reth-revm.workspace = true
 
 # revm
@@ -34,5 +34,5 @@ alloy-rlp.workspace = true
 hex-literal.workspace = true
 
 [features]
-build_mpt = ["reth-trie"]
+build_mpt = []
 default = []
