@@ -11,8 +11,13 @@ use std::{fs, hint::black_box, sync::Arc};
 
 fn benchmark_mpt_operations(c: &mut Criterion) {
     // Load the benchmark data file (this is not counted in benchmark timing)
-    let buffer = fs::read("client_input_benchmark.bin")
-        .expect("Failed to read benchmark data. Run the integration test first to generate it.");
+    // Check for BLOCK environment variable, default to 21000000
+    let block_number = std::env::var("BLOCK").unwrap_or_else(|_| "21000000".to_string());
+
+    let input_file = format!("{}.bin", block_number);
+
+    let buffer = fs::read(&input_file)
+        .unwrap_or_else(|_| panic!("Failed to read benchmark data from '{}'. Run 'BLOCK={} cargo run --bin generate_benchmark_data' first to generate it.", input_file, block_number));
 
     println!("Loaded benchmark data: {} bytes", buffer.len());
 
