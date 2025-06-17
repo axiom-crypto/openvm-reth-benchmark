@@ -1,8 +1,8 @@
 use eyre::Result;
 use mpt2::ArenaBasedMptNode;
 use reth_revm::db::BundleState;
-use reth_trie::{AccountProof, TrieAccount};
-use revm::primitives::{Address, HashMap, B256};
+use reth_trie::TrieAccount;
+use revm::primitives::{HashMap, B256};
 use revm_primitives::{keccak256, map::DefaultHashBuilder};
 use serde::{Deserialize, Serialize};
 use state::HashedPostState;
@@ -29,8 +29,8 @@ impl EthereumState2 {
     #[cfg(feature = "build_mpt")]
     pub fn from_transition_proofs(
         state_root: B256,
-        parent_proofs: &HashMap<Address, AccountProof>,
-        proofs: &HashMap<Address, AccountProof>,
+        parent_proofs: &HashMap<revm_primitives::Address, reth_trie::AccountProof>,
+        proofs: &HashMap<revm_primitives::Address, reth_trie::AccountProof>,
     ) -> Result<Self> {
         use crate::mpt2::build_mpt::transition_proofs_to_tries_arena;
         transition_proofs_to_tries_arena(state_root, parent_proofs, proofs)
