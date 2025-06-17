@@ -10,7 +10,6 @@ use state::HashedPostState;
 /// Module containing MPT code adapted from `zeth`.
 pub mod mpt2;
 pub mod state;
-pub mod utils;
 pub mod word_bytes;
 
 /// Ethereum state trie and account storage tries using arena-based MPT nodes for better
