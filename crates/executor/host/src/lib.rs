@@ -5,7 +5,7 @@ use alloy_primitives::Bloom;
 use alloy_provider::{network::Ethereum, Provider};
 use eyre::{eyre, Ok};
 use openvm_client_executor::io::ClientExecutorInput;
-use openvm_mpt::{state::HashedPostState, EthereumState2};
+use openvm_mpt::EthereumState2;
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
 use reth_chainspec::MAINNET;
@@ -152,11 +152,9 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
 
         // Verify the state root.
         tracing::info!("verifying the state root");
-        let _state_root = {
+        let state_root = {
             let mut mutated_state = state.clone();
-            let post_state = HashedPostState::from_bundle_state(&executor_outcome.bundle.state);
-            // executor_outcome.hash_state_slow());
-            mutated_state.update(&post_state);
+            mutated_state.update_from_bundle_state(&executor_outcome.bundle);
             mutated_state.state_root()
         };
         if state_root != current_block.state_root {
