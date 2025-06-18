@@ -7,10 +7,7 @@ use openvm_algebra_circuit::{Fp2Extension, ModularExtension};
 use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_bigint_circuit::Int256;
 use openvm_circuit::{
-    arch::{
-        execution_mode::metered::get_widths_and_interactions_from_vkey, instructions::exe::VmExe,
-        SegmentationStrategy, SystemConfig, VmConfig, VmExecutor,
-    },
+    arch::{instructions::exe::VmExe, SegmentationStrategy, SystemConfig, VmConfig, VmExecutor},
     openvm_stark_sdk::{
         bench::run_with_metric_collection, config::baby_bear_poseidon2::BabyBearPoseidon2Config,
         openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear,
@@ -337,28 +334,30 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                     }
                     BenchMode::ExecuteMetered => {
                         let app_pk = sdk.app_keygen(app_config)?;
-                        let (widths, interactions) =
-                            get_widths_and_interactions_from_vkey(app_pk.app_vm_pk.vm_pk.get_vk());
+                        let app_vk = app_pk.app_vm_pk.vm_pk.get_vk();
+                        let widths = app_vk.total_widths();
+                        let interactions = app_vk.num_interactions();
                         let executor = VmExecutor::new(app_pk.app_vm_pk.vm_config.clone());
                         let segments = info_span!("execute_metered", group = program_name)
                             .in_scope(|| {
-                                executor.execute_metered(exe, stdin, widths, interactions)
+                                executor.execute_metered(exe, stdin, &widths, &interactions)
                             })?;
                         println!("Number of segments: {}", segments.len());
                     }
                     BenchMode::Tracegen => {
                         let app_pk = sdk.app_keygen(app_config)?;
-                        let (widths, interactions) =
-                            get_widths_and_interactions_from_vkey(app_pk.app_vm_pk.vm_pk.get_vk());
+                        let app_vk = app_pk.app_vm_pk.vm_pk.get_vk();
+                        let widths = app_vk.total_widths();
+                        let interactions = app_vk.num_interactions();
                         let executor = VmExecutor::new(app_pk.app_vm_pk.vm_config.clone());
                         let segments = executor.execute_metered(
                             exe.clone(),
                             stdin.clone(),
-                            widths,
-                            interactions,
+                            &widths,
+                            &interactions,
                         )?;
                         info_span!("tracegen", group = program_name).in_scope(|| {
-                            executor.execute_with_segments_and_generate::<BabyBearPoseidon2Config>(
+                            executor.execute_and_generate::<BabyBearPoseidon2Config>(
                                 exe, stdin, &segments,
                             )
                         })?;
