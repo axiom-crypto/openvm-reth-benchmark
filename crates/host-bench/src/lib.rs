@@ -335,26 +335,27 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                     BenchMode::ExecuteMetered => {
                         let app_pk = sdk.app_keygen(app_config)?;
                         let app_vk = app_pk.app_vm_pk.vm_pk.get_vk();
-                        let widths = app_vk.total_widths();
-                        let interactions = app_vk.num_interactions();
                         let executor = VmExecutor::new(app_pk.app_vm_pk.vm_config.clone());
                         let segments = info_span!("execute_metered", group = program_name)
                             .in_scope(|| {
-                                executor.execute_metered(exe, stdin, &widths, &interactions)
+                                executor.execute_metered(
+                                    exe,
+                                    stdin,
+                                    &app_vk.total_widths(),
+                                    &app_vk.num_interactions(),
+                                )
                             })?;
                         println!("Number of segments: {}", segments.len());
                     }
                     BenchMode::Tracegen => {
                         let app_pk = sdk.app_keygen(app_config)?;
                         let app_vk = app_pk.app_vm_pk.vm_pk.get_vk();
-                        let widths = app_vk.total_widths();
-                        let interactions = app_vk.num_interactions();
                         let executor = VmExecutor::new(app_pk.app_vm_pk.vm_config.clone());
                         let segments = executor.execute_metered(
                             exe.clone(),
                             stdin.clone(),
-                            &widths,
-                            &interactions,
+                            &app_vk.total_widths(),
+                            &app_vk.num_interactions(),
                         )?;
                         info_span!("tracegen", group = program_name).in_scope(|| {
                             executor.execute_and_generate::<BabyBearPoseidon2Config>(
