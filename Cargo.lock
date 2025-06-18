@@ -4700,7 +4700,6 @@ source = "git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e29
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
- "eyre",
  "hex-literal 0.4.1",
  "lazy_static",
  "num-bigint 0.4.6",
