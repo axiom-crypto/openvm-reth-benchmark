@@ -13,7 +13,7 @@ cd ../..
 
 mkdir -p rpc-cache
 source .env
-MODE=prove-app # can be execute, tracegen, prove-app, prove-stark, or prove-evm
+MODE=execute # can be execute, tracegen, prove-app, prove-stark, or prove-evm
 PROFILE="release"
 FEATURES="bench-metrics,nightly-features,jemalloc,evm-verify"
 BLOCK_NUMBER=21000000
