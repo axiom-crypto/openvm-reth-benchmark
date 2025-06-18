@@ -7,7 +7,7 @@ use openvm_algebra_circuit::{Fp2Extension, ModularExtension};
 use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_bigint_circuit::Int256;
 use openvm_circuit::{
-    arch::{instructions::exe::VmExe, SegmentationStrategy, SystemConfig, VmConfig},
+    arch::{instructions::exe::VmExe, SegmentationStrategy, SystemConfig, VmConfig, VmExecutor},
     openvm_stark_sdk::{
         bench::run_with_metric_collection, openvm_stark_backend::p3_field::PrimeField32,
         p3_baby_bear::BabyBear,
@@ -25,7 +25,9 @@ use openvm_sdk::{
     prover::{AppProver, EvmHalo2Prover, StarkProver},
     DefaultStaticVerifierPvHandler, GenericSdk, StdIn, SC,
 };
-use openvm_stark_sdk::engine::StarkFriEngine;
+use openvm_stark_sdk::{
+    config::baby_bear_poseidon2::BabyBearPoseidon2Config, engine::StarkFriEngine,
+};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 pub use reth_primitives;
 use serde_json::json;
@@ -42,6 +44,8 @@ use cli::ProviderArgs;
 pub enum BenchMode {
     /// Execute the VM without generating a proof.
     Execute,
+    /// Execute the VM with metering to get segments information.
+    ExecuteMetered,
     /// Generate trace data without proving.
     Tracegen,
     /// Generate sequence of app proofs for continuation segments.
@@ -58,6 +62,7 @@ impl std::fmt::Display for BenchMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Execute => write!(f, "execute"),
+            Self::ExecuteMetered => write!(f, "execute_metered"),
             Self::Tracegen => write!(f, "tracegen"),
             Self::ProveApp => write!(f, "prove_app"),
             Self::ProveStark => write!(f, "prove_stark"),
@@ -333,8 +338,36 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                 }
                 match args.mode {
                     BenchMode::Execute => {}
+                    BenchMode::ExecuteMetered => {
+                        let app_pk = sdk.app_keygen(app_config)?;
+                        let app_vk = app_pk.app_vm_pk.vm_pk.get_vk();
+                        let executor = VmExecutor::new(app_pk.app_vm_pk.vm_config.clone());
+                        let segments = info_span!("execute_metered", group = program_name)
+                            .in_scope(|| {
+                                executor.execute_metered(
+                                    exe,
+                                    stdin,
+                                    &app_vk.total_widths(),
+                                    &app_vk.num_interactions(),
+                                )
+                            })?;
+                        println!("Number of segments: {}", segments.len());
+                    }
                     BenchMode::Tracegen => {
-                        todo!()
+                        let app_pk = sdk.app_keygen(app_config)?;
+                        let app_vk = app_pk.app_vm_pk.vm_pk.get_vk();
+                        let executor = VmExecutor::new(app_pk.app_vm_pk.vm_config.clone());
+                        let segments = executor.execute_metered(
+                            exe.clone(),
+                            stdin.clone(),
+                            &app_vk.total_widths(),
+                            &app_vk.num_interactions(),
+                        )?;
+                        info_span!("tracegen", group = program_name).in_scope(|| {
+                            executor.execute_and_generate::<BabyBearPoseidon2Config>(
+                                exe, stdin, &segments,
+                            )
+                        })?;
                     }
                     BenchMode::ProveApp => {
                         let app_pk = sdk.app_keygen(app_config)?;
