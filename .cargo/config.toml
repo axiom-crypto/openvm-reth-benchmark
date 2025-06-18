@@ -7,54 +7,54 @@ git-fetch-with-cli = true
 # openvm-stark-sdk = { git = "ssh://git@github.com/openvm-org/stark-backend.git", tag = "v1.0.1" }
 
 [patch."https://github.com/openvm-org/openvm.git"]
-openvm-benchmarks-prove = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
+openvm-benchmarks-prove = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
 # OpenVM
-openvm-sdk = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-cargo-openvm = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-mod-circuit-builder = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-poseidon2-air = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-circuit-primitives = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-circuit-primitives-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-build = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-instructions = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-instructions-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-macros-common = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-platform = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-circuit-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
+openvm-sdk = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+cargo-openvm = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-mod-circuit-builder = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-poseidon2-air = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-circuit-primitives = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-circuit-primitives-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-build = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-instructions = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-instructions-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-macros-common = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-platform = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-circuit-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
 
 # Extensions
-openvm-algebra-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-algebra-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-algebra-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-algebra-moduli-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-algebra-complex-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-bigint-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-bigint-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-bigint-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-ecc-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-ecc-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-ecc-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-ecc-sw-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-keccak256-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-keccak256-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-keccak256-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-sha256-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-sha256-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-sha256-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-native-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-native-compiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-native-compiler-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-native-recursion = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-pairing-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-pairing-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-pairing-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-rv32-adapters = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-rv32im-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-rv32im-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-openvm-rv32im-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
+openvm-algebra-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-algebra-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-algebra-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-algebra-moduli-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-algebra-complex-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-bigint-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-bigint-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-bigint-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-ecc-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-ecc-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-ecc-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-ecc-sw-macros = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-keccak256-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-keccak256-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-keccak256-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-sha256-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-sha256-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-sha256-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-native-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-native-compiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-native-compiler-derive = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-native-recursion = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-pairing-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-pairing-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-pairing-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-rv32-adapters = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-rv32im-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-rv32im-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
+openvm-rv32im-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "jpw/logging" }
 
 # # Guest Libs
 # k256 = { path = "../openvm-org/openvm/guest-libs/k256" }

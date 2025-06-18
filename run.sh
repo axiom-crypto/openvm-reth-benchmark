@@ -13,10 +13,10 @@ cd ../..
 
 mkdir -p rpc-cache
 source .env
-MODE=execute # can be execute, tracegen, prove-app, prove-stark, or prove-evm
+MODE=prove-app # can be execute, tracegen, prove-app, prove-stark, or prove-evm
 PROFILE="release"
-FEATURES="bench-metrics,nightly-features,jemalloc"
-BLOCK_NUMBER=21882667
+FEATURES="bench-metrics,nightly-features,jemalloc,evm-verify"
+BLOCK_NUMBER=21000000
 
 arch=$(uname -m)
 case $arch in
