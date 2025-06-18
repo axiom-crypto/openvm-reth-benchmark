@@ -283,9 +283,14 @@ jobs:
           ssh-private-key: |
             ${{ secrets.GH_ACTIONS_DEPLOY_PRIVATE_KEY }}
 
+      - name: Get openvm REV
+        id: get-openvm-rev
+        run: |
+          RESULT=$(cargo metadata --format-version=1 | jq -r '.packages[] | select(.name=="openvm-sdk") | .source | split("#") | .[1]')
+          echo "result=${RESULT}" >> "$GITHUB_OUTPUT"
       - name: Install openvm-prof
         run: |
-          cargo install --git https://github.com/openvm-org/openvm.git --profile=dev --force openvm-prof
+          cargo install --git https://github.com/openvm-org/openvm.git --rev ${{ steps.get-openvm-rev.outputs.result }} --profile=dev --force openvm-prof
       - name: Checkout openvm (for scripts)
         run: |
           git clone --depth=1 https://github.com/openvm-org/openvm.git
