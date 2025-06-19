@@ -451,7 +451,7 @@ jobs:
           bencher run \
             --project ${{ env.BENCHER_PROJECT }} \
             --token '${{ secrets.BENCHER_API_TOKEN }}' \
-            --start-point nightly \
+          #  --start-point nightly \
             --branch $BRANCH \
             --testbed ${{ inputs.instance_family || github.event.inputs.instance_family }} \
             --adapter json \
