@@ -201,7 +201,6 @@ jobs:
           cache-on-failure: true
       - name: Add workflow inputs to summary
         run: |
-          echo "## Reth Benchmark" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Workflow Inputs" >> $GITHUB_STEP_SUMMARY
           echo '```json' >> $GITHUB_STEP_SUMMARY
@@ -577,10 +576,9 @@ jobs:
         run: |
           RESULT_URL="https://github.com/axiom-crypto/openvm-reth-benchmark/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_NAME}.md"
           echo "### Results" >> $GITHUB_STEP_SUMMARY
-          echo "[View detailed benchmark results](${RESULT_URL})" >> $GITHUB_STEP_SUMMARY
+          echo "[${METRIC_NAME}](${RESULT_URL})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Metric Name:** \`${METRIC_NAME}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Result Path:** \`${GH_PAGES_PATH}/${METRIC_NAME}.md\`" >> $GITHUB_STEP_SUMMARY
+          cat "${GH_PAGES_PATH}/${METRIC_NAME}.md" >> $GITHUB_STEP_SUMMARY
 
       - name: Path to result
         run: |
