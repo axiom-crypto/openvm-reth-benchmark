@@ -4552,11 +4552,6 @@ dependencies = [
 ]
 
 [[patch.unused]]
-name = "p256"
-version = "0.13.2"
-source = "git+ssh://git@github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#42d4dc785f3df8253a25cb194c16f1de6821e3bf"
-
-[[patch.unused]]
 name = "cargo-openvm"
 version = "1.3.0-rc.0"
 source = "git+ssh://git@github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#42d4dc785f3df8253a25cb194c16f1de6821e3bf"
@@ -4719,6 +4714,11 @@ source = "git+ssh://git@github.com/openvm-org/openvm.git?branch=feat%2Fnew-execu
 [[patch.unused]]
 name = "openvm-transpiler"
 version = "1.3.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#42d4dc785f3df8253a25cb194c16f1de6821e3bf"
+
+[[patch.unused]]
+name = "p256"
+version = "0.13.2"
 source = "git+ssh://git@github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#42d4dc785f3df8253a25cb194c16f1de6821e3bf"
 
 [[patch.unused]]
