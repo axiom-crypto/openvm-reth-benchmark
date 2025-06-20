@@ -576,7 +576,7 @@ jobs:
         run: |
           RESULT_URL="https://github.com/axiom-crypto/openvm-reth-benchmark/blob/gh-pages/${GH_PAGES_PATH}/${METRIC_NAME}.md"
           echo "### Results" >> $GITHUB_STEP_SUMMARY
-          echo "[METRIC_NAME](${RESULT_URL})" >> $GITHUB_STEP_SUMMARY
+          echo "[${METRIC_NAME}](${RESULT_URL})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           cat "${GH_PAGES_PATH}/${METRIC_NAME}.md" >> $GITHUB_STEP_SUMMARY
 
