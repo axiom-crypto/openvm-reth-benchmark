@@ -67,8 +67,8 @@ on:
       segment_max_cells:
         type: string # number might have u32 limit
         required: false
-        description: Total main trace cells (excluding memory)
-        default: "1200000000" # 1.2B
+        description: Total main+perm trace cells
+        default: "2700000000" # 2.7B
       # num_children_leaf:
       #   type: number
       #   required: false
@@ -139,7 +139,7 @@ on:
         type: string
         required: false
         description: Total main trace cells (excluding memory)
-        default: "1200000000" # 1.2B
+        default: "2700000000" # 2.7B
       num_children_leaf:
         type: number
         required: false
