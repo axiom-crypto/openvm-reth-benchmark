@@ -16,14 +16,13 @@ use openvm_circuit::{
 use openvm_client_executor::{io::ClientExecutorInput, CHAIN_ID_ETH_MAINNET};
 use openvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
 use openvm_host_executor::HostExecutor;
-use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_pairing_circuit::{PairingCurve, PairingExtension};
 use openvm_rv32im_circuit::Rv32M;
 use openvm_sdk::{
     config::SdkVmConfig,
     keygen::AggStarkProvingKey,
-    prover::{AppProver, EvmHalo2Prover, StarkProver},
-    DefaultStaticVerifierPvHandler, GenericSdk, StdIn, SC,
+    prover::{AppProver, StarkProver},
+    GenericSdk, StdIn, SC,
 };
 use openvm_stark_sdk::{
     config::baby_bear_poseidon2::BabyBearPoseidon2Config, engine::StarkFriEngine,
@@ -53,6 +52,7 @@ pub enum BenchMode {
     /// Generate a full end-to-end STARK proof with aggregation.
     ProveStark,
     /// Generate a full end-to-end halo2 proof for EVM verifier.
+    #[cfg(feature = "evm-verify")]
     ProveEvm,
     /// Generate input file only.
     MakeInput,
@@ -66,6 +66,7 @@ impl std::fmt::Display for BenchMode {
             Self::Tracegen => write!(f, "tracegen"),
             Self::ProveApp => write!(f, "prove_app"),
             Self::ProveStark => write!(f, "prove_stark"),
+            #[cfg(feature = "evm-verify")]
             Self::ProveEvm => write!(f, "prove_evm"),
             Self::MakeInput => write!(f, "make_input"),
         }
@@ -402,7 +403,11 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                             .collect::<Vec<u8>>();
                         println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
                     }
+                    #[cfg(feature = "evm-verify")]
                     BenchMode::ProveEvm => {
+                        use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
+                        use openvm_sdk::{prover::EvmHalo2Prover, DefaultStaticVerifierPvHandler};
+
                         let halo2_params_reader = CacheHalo2ParamsReader::new(
                             args.benchmark
                                 .kzg_params_dir
