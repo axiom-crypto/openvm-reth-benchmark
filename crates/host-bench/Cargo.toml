@@ -43,7 +43,7 @@ openvm-bigint-circuit = { workspace = true }
 openvm-ecc-circuit = { workspace = true }
 openvm-pairing-circuit = { workspace = true }
 openvm-circuit = { workspace = true }
-openvm-native-recursion = { workspace = true, features = ["static-verifier"] }
+openvm-native-recursion = { workspace = true }
 openvm-benchmarks-prove = { workspace = true, features = ["parallel"] }
 openvm-stark-sdk = { workspace = true }
 openvm-sdk = { workspace = true }
