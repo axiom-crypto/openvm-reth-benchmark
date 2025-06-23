@@ -32,7 +32,7 @@ tracing = { version = "0.1", features = [
 ] }
 
 [features]
-default = ["kzg-intrinsics"]
+default = ["kzg-intrinsics", "heap-embedded-alloc"]
 heap-embedded-alloc = ["openvm/heap-embedded-alloc"]
 kzg-intrinsics = [
     "revm-precompile/openvm-kzg-intrinsics",
