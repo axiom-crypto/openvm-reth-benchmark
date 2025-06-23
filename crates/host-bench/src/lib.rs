@@ -9,23 +9,24 @@ use openvm_bigint_circuit::Int256;
 use openvm_circuit::{
     arch::{instructions::exe::VmExe, SegmentationStrategy, SystemConfig, VmConfig, VmExecutor},
     openvm_stark_sdk::{
-        bench::run_with_metric_collection, config::baby_bear_poseidon2::BabyBearPoseidon2Config,
-        openvm_stark_backend::p3_field::PrimeField32, p3_baby_bear::BabyBear,
+        bench::run_with_metric_collection, openvm_stark_backend::p3_field::PrimeField32,
+        p3_baby_bear::BabyBear,
     },
 };
 use openvm_client_executor::{io::ClientExecutorInput, CHAIN_ID_ETH_MAINNET};
 use openvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
 use openvm_host_executor::HostExecutor;
-use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
 use openvm_pairing_circuit::{PairingCurve, PairingExtension};
 use openvm_rv32im_circuit::Rv32M;
 use openvm_sdk::{
     config::SdkVmConfig,
     keygen::AggStarkProvingKey,
-    prover::{AppProver, EvmHalo2Prover, StarkProver},
-    DefaultStaticVerifierPvHandler, GenericSdk, StdIn, SC,
+    prover::{AppProver, StarkProver},
+    GenericSdk, StdIn, SC,
 };
-use openvm_stark_sdk::engine::StarkFriEngine;
+use openvm_stark_sdk::{
+    config::baby_bear_poseidon2::BabyBearPoseidon2Config, engine::StarkFriEngine,
+};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 pub use reth_primitives;
 use serde_json::json;
@@ -42,6 +43,8 @@ use cli::ProviderArgs;
 pub enum BenchMode {
     /// Execute the VM without generating a proof.
     Execute,
+    /// Execute the VM with metering to get segments information.
+    ExecuteMetered,
     /// Generate trace data without proving.
     Tracegen,
     /// Generate sequence of app proofs for continuation segments.
@@ -49,6 +52,7 @@ pub enum BenchMode {
     /// Generate a full end-to-end STARK proof with aggregation.
     ProveStark,
     /// Generate a full end-to-end halo2 proof for EVM verifier.
+    #[cfg(feature = "evm-verify")]
     ProveEvm,
     /// Generate input file only.
     MakeInput,
@@ -58,9 +62,11 @@ impl std::fmt::Display for BenchMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Execute => write!(f, "execute"),
+            Self::ExecuteMetered => write!(f, "execute_metered"),
             Self::Tracegen => write!(f, "tracegen"),
             Self::ProveApp => write!(f, "prove_app"),
             Self::ProveStark => write!(f, "prove_stark"),
+            #[cfg(feature = "evm-verify")]
             Self::ProveEvm => write!(f, "prove_evm"),
             Self::MakeInput => write!(f, "make_input"),
         }
@@ -118,6 +124,14 @@ impl TraceSizeSegmentationStrategy {
 }
 
 impl SegmentationStrategy for TraceSizeSegmentationStrategy {
+    fn max_cells(&self) -> usize {
+        self.max_cells
+    }
+
+    fn max_trace_height(&self) -> usize {
+        self.max_height
+    }
+
     fn should_segment(
         &self,
         air_names: &[String],
@@ -220,6 +234,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
     let provider_config = args.provider.into_provider().await?;
 
     match provider_config.chain_id {
+        #[allow(non_snake_case)]
         CHAIN_ID_ETH_MAINNET => (),
         _ => {
             eyre::bail!("unknown chain ID: {}", provider_config.chain_id);
@@ -311,20 +326,48 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
     run_with_metric_collection("OUTPUT_PATH", || {
         info_span!("reth-block", block_number = args.block_number).in_scope(
             || -> eyre::Result<()> {
+                // Always execute_e1 for benchmarking:
+                {
+                    let pvs = info_span!("execute_e1", group = program_name).in_scope(|| {
+                        sdk.execute(exe.clone(), app_config.app_vm_config.clone(), stdin.clone())
+                    })?;
+                    let block_hash: Vec<u8> = pvs
+                        .iter()
+                        .map(|x| x.as_canonical_u32().try_into().unwrap())
+                        .collect::<Vec<_>>();
+                    println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+                }
                 match args.mode {
-                    BenchMode::Execute => {
-                        let pvs = info_span!("execute", group = program_name)
-                            .in_scope(|| sdk.execute(exe, app_config.app_vm_config, stdin))?;
-                        let block_hash: Vec<u8> = pvs
-                            .iter()
-                            .map(|x| x.as_canonical_u32().try_into().unwrap())
-                            .collect::<Vec<_>>();
-                        println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+                    BenchMode::Execute => {}
+                    BenchMode::ExecuteMetered => {
+                        let app_pk = sdk.app_keygen(app_config)?;
+                        let app_vk = app_pk.app_vm_pk.vm_pk.get_vk();
+                        let executor = VmExecutor::new(app_pk.app_vm_pk.vm_config.clone());
+                        let segments = info_span!("execute_metered", group = program_name)
+                            .in_scope(|| {
+                                executor.execute_metered(
+                                    exe,
+                                    stdin,
+                                    &app_vk.total_widths(),
+                                    &app_vk.num_interactions(),
+                                )
+                            })?;
+                        println!("Number of segments: {}", segments.len());
                     }
                     BenchMode::Tracegen => {
-                        let executor = VmExecutor::<_, _>::new(app_config.app_vm_config);
+                        let app_pk = sdk.app_keygen(app_config)?;
+                        let app_vk = app_pk.app_vm_pk.vm_pk.get_vk();
+                        let executor = VmExecutor::new(app_pk.app_vm_pk.vm_config.clone());
+                        let segments = executor.execute_metered(
+                            exe.clone(),
+                            stdin.clone(),
+                            &app_vk.total_widths(),
+                            &app_vk.num_interactions(),
+                        )?;
                         info_span!("tracegen", group = program_name).in_scope(|| {
-                            executor.execute_and_generate::<BabyBearPoseidon2Config>(exe, stdin)
+                            executor.execute_and_generate::<BabyBearPoseidon2Config>(
+                                exe, stdin, &segments,
+                            )
                         })?;
                     }
                     BenchMode::ProveApp => {
@@ -360,7 +403,11 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                             .collect::<Vec<u8>>();
                         println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
                     }
+                    #[cfg(feature = "evm-verify")]
                     BenchMode::ProveEvm => {
+                        use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
+                        use openvm_sdk::{prover::EvmHalo2Prover, DefaultStaticVerifierPvHandler};
+
                         let halo2_params_reader = CacheHalo2ParamsReader::new(
                             args.benchmark
                                 .kzg_params_dir
