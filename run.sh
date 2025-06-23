@@ -15,7 +15,7 @@ mkdir -p rpc-cache
 source .env
 MODE=execute # can be execute, tracegen, prove-app, prove-stark, or prove-evm
 PROFILE="release"
-FEATURES="bench-metrics,nightly-features,jemalloc"
+FEATURES="bench-metrics,nightly-features,jemalloc,evm-verify"
 BLOCK_NUMBER=21882667
 
 arch=$(uname -m)
