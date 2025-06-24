@@ -50,6 +50,14 @@ openvm-rv32im-circuit = { git = "ssh://git@github.com/openvm-org/openvm.git", re
 openvm-rv32im-transpiler = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
 openvm-rv32im-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
 
+# Guest Libs
+k256 = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
+p256 = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
+ruint = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
+openvm-keccak256 = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
+openvm-sha2 = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
+openvm-pairing = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
+
 # OpenVM
 # Extensions
 # [patch.crates-io]
