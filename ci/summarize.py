@@ -63,7 +63,7 @@ def main():
     block_number = 0
     z = {}
     for m in metrics:
-        tag = METRIC_TAGS[m]
+        tag = METRIC_TAGS.get(m, m)
         z[tag] = {}
         group_sum = 0
         cycle_sum = 0
@@ -150,8 +150,9 @@ def main():
         ['Execution', z['Execution']['Total'][0], z['Execution']['Total'][1], parallel['Execution'][-1][1], parallel['Execution'][-1][2], exec_cycles],
         ['Tracegen', z['Tracegen']['Total'][0], z['Tracegen']['Total'][1], parallel['Tracegen'][-1][1], parallel['Tracegen'][-1][2], '--'],
         ['STARK Prove', z['STARK Prove']['Total'][0], z['STARK Prove']['Total'][1], parallel['STARK Prove'][-1][1], parallel['STARK Prove'][-1][2], '--'],
-        ['Halo2 Prove', z['Halo2 Prove']['Total'][0], z['Halo2 Prove']['Total'][1], parallel['Halo2 Prove'][-1][1], parallel['Halo2 Prove'][-1][2], '--'],
     ]
+    if 'Halo2 Prove' in z.keys():
+        total_table += ['Halo2 Prove', z['Halo2 Prove']['Total'][0], z['Halo2 Prove']['Total'][1], parallel['Halo2 Prove'][-1][1], parallel['Halo2 Prove'][-1][2], '--']
 
     for tag in ['Tracegen', 'Cycles']:
         for key, value in z[tag].items():
@@ -178,7 +179,8 @@ def main():
 
     exec_table = list(map(lambda a: [a[0], a[1][0], a[1][1]], z['Execution'].items()))
     stark_table = list(map(lambda a: [a[0], a[1][0], a[1][1], a[1][2], a[1][3], a[1][4]], z['STARK Prove'].items()))
-    halo2_table = list(map(lambda a: [a[0], a[1][0], a[1][1]], z['Halo2 Prove'].items()))
+    if 'Halo2 Prove' in z.keys():
+        halo2_table = list(map(lambda a: [a[0], a[1][0], a[1][1]], z['Halo2 Prove'].items()))
 
     if args.out:
         with open(args.out, 'w') as f:
@@ -188,7 +190,8 @@ def main():
             print(file=f)
             print(tabulate(stark_table, headers=['Block ' + str(block_number), 'STARK Prove (s)', 'STARK Prove (m)', 'Tracegen (s)', 'Tracegen (m)', 'Cycles'], tablefmt="pipe", floatfmt=".2f"), file=f)
             print(file=f)
-            print(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"), file=f)
+            if 'Halo2 Prove' in z.keys():
+                print(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"), file=f)
 
     if args.print:
         print(tabulate(total_table, headers=['Block ' + str(block_number), 'time (s)', 'time (m)', 'partime (s)', 'partime (m)', 'cycles'], tablefmt="pipe", floatfmt=".2f"))
@@ -197,7 +200,8 @@ def main():
         print()
         print(tabulate(stark_table, headers=['Block ' + str(block_number), 'STARK Prove (s)', 'STARK Prove (m)', 'Tracegen (s)', 'Tracegen (m)', 'Cycles'], tablefmt="pipe", floatfmt=".2f"))
         print()
-        print(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"))
+        if 'Halo2 Prove' in z.keys():
+            print(tabulate(halo2_table, headers=['Block ' + str(block_number), 'Halo2 Prove (s)', 'Halo2 Prove (m)'], tablefmt="pipe", floatfmt=".2f"))
 
     if args.print_raw:
         for y in x:
