@@ -47,9 +47,9 @@ revm-database = { git = "https://github.com/axiom-crypto/revm", branch = "v75-op
 revm-database-interface = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm-new-exec" }
 revm-state = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm-new-exec" }
 revm-bytecode = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm-new-exec" }
-k256 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-p256 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-ruint = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
+openvm-keccak256 = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "db1fd2f92c7295321616b80f1139e61019ed30b0" }
+openvm-sha2 = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "db1fd2f92c7295321616b80f1139e61019ed30b0" }
+openvm-pairing = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "db1fd2f92c7295321616b80f1139e61019ed30b0" }
 # k256 = { path = "../../../openvm-org/openvm/guest-libs/k256" }
 # p256 = { path = "../../../openvm-org/openvm/guest-libs/p256" }
 # ruint = { path = "../../../openvm-org/openvm/guest-libs/ruint" }
