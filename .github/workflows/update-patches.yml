@@ -120,7 +120,7 @@ jobs:
         env:
           OPENVM_REV: "${{ inputs.OPENVM_REV || github.event.inputs.OPENVM_REV }}"
         run: |
-          echo "result=${OPENVM_REV:-$(git ls-remote https://github.com/openvm-org/openvm.git refs/heads/main | cut -f1)}" >> "$GITHUB_OUTPUT"
+          echo "result=${OPENVM_REV:-$(git ls-remote https://github.com/openvm-org/openvm.git refs/heads/feat/new-execution | cut -f1)}" >> "$GITHUB_OUTPUT"
 
       - name: Check out openvm repository
         uses: actions/checkout@v4

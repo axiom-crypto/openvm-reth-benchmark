@@ -119,7 +119,7 @@ jobs:
 
       - name: Install openvm-prof
         run: |
-          cargo install --git https://github.com/openvm-org/openvm.git --profile=dev --force openvm-prof
+          cargo install --git https://github.com/openvm-org/openvm.git --branch "feat/new-execution" --profile=dev --force openvm-prof
       - name: Compare metrics
         run: |
           ls
