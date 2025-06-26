@@ -17,7 +17,7 @@ on:
         description: Running mode
         options:
           - execute
-          - execute_metered
+          - execute-metered
           - tracegen
           - prove-app
           - prove-stark
