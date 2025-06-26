@@ -1807,7 +1807,7 @@ dependencies = [
 [[package]]
 name = "k256"
 version = "0.13.4"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -2126,8 +2126,8 @@ dependencies = [
 
 [[package]]
 name = "openvm"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "bytemuck",
  "getrandom 0.3.3",
@@ -2140,8 +2140,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-algebra-complex-macros"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2150,8 +2150,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-algebra-guest"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "halo2curves-axiom",
  "num-bigint",
@@ -2166,8 +2166,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-algebra-moduli-macros"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "num-bigint",
  "num-prime",
@@ -2178,8 +2178,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-bigint-guest"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "openvm-platform",
  "strum_macros 0.26.4",
@@ -2231,7 +2231,7 @@ dependencies = [
 [[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2240,8 +2240,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-ecc-guest"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -2259,8 +2259,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-ecc-sw-macros"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2269,8 +2269,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-keccak256-guest"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "openvm-platform",
 ]
@@ -2293,8 +2293,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-macros-common"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "syn 2.0.101",
 ]
@@ -2324,8 +2324,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-pairing"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "group",
  "hex-literal 0.4.1",
@@ -2348,8 +2348,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-pairing-guest"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "hex-literal 0.4.1",
  "itertools 0.14.0",
@@ -2368,8 +2368,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-platform"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "critical-section",
  "embedded-alloc",
@@ -2399,8 +2399,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-rv32im-guest"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "openvm-custom-insn",
  "p3-field",
@@ -2409,8 +2409,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-sha2"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "openvm-sha256-guest",
  "sha2",
@@ -2418,8 +2418,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-sha256-guest"
-version = "1.3.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "openvm-platform",
 ]
@@ -3440,7 +3440,7 @@ dependencies = [
 [[package]]
 name = "ruint"
 version = "1.14.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 dependencies = [
  "alloy-rlp",
  "ark-ff 0.3.0",
@@ -3467,7 +3467,7 @@ dependencies = [
 [[package]]
 name = "ruint-macro"
 version = "1.2.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
 
 [[package]]
 name = "rustc-hash"
@@ -4554,4 +4554,174 @@ dependencies = [
 [[patch.unused]]
 name = "p256"
 version = "0.13.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#29e11c363b8395089037d6ecf06d2a6d9ed6c2a6"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "cargo-openvm"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-algebra-circuit"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-algebra-transpiler"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-benchmarks-prove"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-bigint-circuit"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-bigint-transpiler"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-build"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-circuit"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-circuit-derive"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-circuit-primitives"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-circuit-primitives-derive"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-ecc-circuit"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-ecc-transpiler"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-instructions"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-instructions-derive"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-keccak256"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-keccak256-circuit"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-keccak256-transpiler"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-mod-circuit-builder"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-native-circuit"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-native-compiler"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-native-compiler-derive"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-native-recursion"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-pairing-circuit"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-pairing-transpiler"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-poseidon2-air"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-rv32-adapters"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-rv32im-circuit"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-rv32im-transpiler"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-sdk"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-transpiler"
+version = "1.4.0-rc.0"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "p256"
+version = "0.13.2"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=b3e693f20075a3f1ed9c9c948b136b7480416467#b3e693f20075a3f1ed9c9c948b136b7480416467"
+
+[[patch.unused]]
+name = "openvm-stark-backend"
+version = "1.1.1"
+source = "git+ssh://git@github.com/openvm-org/stark-backend.git?rev=0aa464b8a93c19bb76ae3f46036587735023c2c1#0aa464b8a93c19bb76ae3f46036587735023c2c1"
+
+[[patch.unused]]
+name = "openvm-stark-sdk"
+version = "1.1.1"
+source = "git+ssh://git@github.com/openvm-org/stark-backend.git?rev=0aa464b8a93c19bb76ae3f46036587735023c2c1#0aa464b8a93c19bb76ae3f46036587735023c2c1"
