@@ -61,6 +61,7 @@ reth = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-fe
 reth-exex = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-exex-test-utils = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-node-api = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
+reth-node-core = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-provider = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-tracing = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }

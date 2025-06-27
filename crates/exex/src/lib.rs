@@ -12,6 +12,7 @@ use reth_node_api::{FullNodeComponents, NodeTypes};
 use reth_primitives::{Block, EthPrimitives};
 use reth_tracing::tracing::{info, warn};
 
+mod db;
 /// The witness generation ExEx.
 #[derive(Debug)]
 pub struct WitnessGeneratorExEx<Node: FullNodeComponents> {
