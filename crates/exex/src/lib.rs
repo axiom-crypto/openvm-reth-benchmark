@@ -10,6 +10,7 @@ use reth_execution_types::Chain;
 use reth_exex::{ExExContext, ExExEvent};
 use reth_node_api::{FullNodeComponents, NodeTypes};
 use reth_primitives::{Block, EthPrimitives};
+use reth_provider::{ProviderFactory, StateProviderFactory};
 use reth_tracing::tracing::{info, warn};
 
 mod db;
@@ -65,6 +66,8 @@ where
     /// Generate witness for a block using reth's internal providers
     async fn generate_witness_with_reth_providers(&self, block: &Block) -> eyre::Result<()> {
         info!("Generating witness for block {} using reth providers", block.number);
+
+        let provider = self.ctx.provider();
 
         let rpc_addr = self.ctx.config.rpc.http_addr;
         let rpc_port = self.ctx.config.rpc.http_port;

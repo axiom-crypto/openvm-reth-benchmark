@@ -18,18 +18,23 @@ use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus}
 use reth_evm::execute::{BasicBlockExecutor, Executor};
 use reth_evm_ethereum::EthEvmConfig;
 use reth_execution_types::ExecutionOutcome;
-use reth_primitives::{Account, Block, Header};
+use reth_node_api::{FullNodeComponents, NodeTypes, NodeTypesWithDBAdapter};
+use reth_primitives::{Account, Block, EthPrimitives, Header};
 use reth_primitives_traits::block::Block as _;
 use reth_provider::{
-    providers::StaticFileProvider, ProviderError, ProviderFactory, StateProvider,
-    StateProviderFactory,
+    BlockReader, BlockReaderIdExt, FullProvider, HeaderProvider, ProviderError, ProviderFactory,
+    StateProvider, StateProviderFactory,
 };
-use revm::{primitives::HashMap, state::AccountInfo, DatabaseRef};
+use revm::{
+    primitives::HashMap,
+    state::{AccountInfo, Bytecode},
+    DatabaseRef,
+};
 use revm_primitives::{b256, Address, B256, U256};
 
 use alloy_provider::{network::Ethereum, Provider};
 use alloy_rpc_types::BlockId;
-use reth_revm::{db::CacheDB, state::Bytecode};
+use reth_revm::db::CacheDB;
 use reth_storage_errors::db::DatabaseError;
 
 /// A [DatabaseRef] that reads from a [StateProvider] and records all accesses.
@@ -93,14 +98,19 @@ impl<SP: StateProvider> DatabaseRef for RethDb<SP> {
         }
 
         let acc = self.provider.basic_account(&address)?;
-        let info = acc.map(|acc: Account| AccountInfo {
-            balance: acc.balance,
-            nonce: acc.nonce,
-            code_hash: acc.bytecode_hash.unwrap_or(b256!(
-                "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
-            )),
-            code: self.code_by_hash_ref(acc.bytecode_hash.unwrap()).ok(),
-        });
+        let info = if let Some(acc) = acc {
+            let code = self.code_by_hash_ref(acc.bytecode_hash.unwrap_or_default())?;
+            Some(AccountInfo {
+                balance: acc.balance,
+                nonce: acc.nonce,
+                code_hash: acc.bytecode_hash.unwrap_or(b256!(
+                    "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+                )),
+                code: Some(code),
+            })
+        } else {
+            None
+        };
 
         if let Some(info) = &info {
             self.accounts.borrow_mut().insert(address, info.clone());
@@ -133,25 +143,36 @@ impl<SP: StateProvider> DatabaseRef for RethDb<SP> {
     }
 }
 
-pub struct RethHostExecutor<P: Provider<Ethereum>> {
-    provider: P,
+pub struct RethHostExecutor<Node>
+where
+    Node: FullNodeComponents<Types: NodeTypes<Primitives = EthPrimitives>>,
+{
+    node: Node,
 }
 
-impl<P: Provider<Ethereum>> RethHostExecutor<P> {
-    pub fn new(provider: P) -> eyre::Result<Self> {
-        Ok(Self { provider })
+impl<Node: FullNodeComponents<Types: NodeTypes<Primitives = EthPrimitives>>>
+    RethHostExecutor<Node>
+{
+    pub fn new(node: Node) -> Self {
+        Self { node }
     }
 
     pub fn execute(&self, block_number: u64) -> eyre::Result<ClientExecutorInput> {
-        let provider = self.provider;
+        let provider = self.node.provider();
         let spec = MAINNET.clone();
 
-        let current_block: Block = provider.get_block_by_number(block_number.into());
+        let current_block = provider
+            .block_by_number(block_number)?
+            .ok_or_else(|| eyre::eyre!("could not find block {}", block_number))?;
 
-        let previous_block = provider.get_block_by_number(block_number - 1).seal_slow();
+        let previous_block_header = provider
+            .header_by_number(block_number - 1)?
+            .ok_or_else(|| eyre::eyre!("could not find block {}", block_number - 1))?;
 
-        let parent_provider = self.factory.provider_at_or_latest(block_number - 1)?;
-        let reth_db = RethDb::new(parent_provider, block_number - 1);
+        let parent_state_provider =
+            provider.state_by_block_number_or_tag((block_number - 1).into())?;
+
+        let reth_db = RethDb::new(parent_state_provider, block_number - 1);
         let mut cache_db = CacheDB::new(reth_db);
 
         let block = current_block.clone().try_into_recovered()?;
@@ -171,7 +192,7 @@ impl<P: Provider<Ethereum>> RethHostExecutor<P> {
 
         let (state_requests, bytecodes, oldest_ancestor) = cache_db.db.into_requests();
 
-        let parent_provider = self.provider(block_number - 1)?;
+        let parent_history_provider = provider.history_by_block_number(block_number - 1)?;
         let mut before_storage_proofs = Vec::new();
         for (address, used_keys) in state_requests.iter() {
             let modified_keys = executor_output
@@ -189,12 +210,13 @@ impl<P: Provider<Ethereum>> RethHostExecutor<P> {
                 .chain(modified_keys.into_iter())
                 .collect::<BTreeSet<_>>()
                 .into_iter()
+                .map(B256::from)
                 .collect::<Vec<_>>();
-            let storage_proof = parent_provider.get_proof(*address, keys)?;
+            let storage_proof = parent_history_provider.get_proof(*address, keys)?;
             before_storage_proofs.push(eip1186_proof_to_account_proof(storage_proof));
         }
 
-        let current_provider = self.factory.provider_at_or_latest(block_number)?;
+        let current_history_provider = provider.history_by_block_number(block_number)?;
         let mut after_storage_proofs = Vec::new();
         for (address, _) in state_requests.iter() {
             let modified_keys = executor_output
@@ -205,13 +227,14 @@ impl<P: Provider<Ethereum>> RethHostExecutor<P> {
                 })
                 .unwrap_or_default()
                 .into_iter()
+                .map(B256::from)
                 .collect::<Vec<_>>();
-            let storage_proof = current_provider.get_proof(*address, modified_keys)?;
+            let storage_proof = current_history_provider.get_proof(*address, modified_keys)?;
             after_storage_proofs.push(eip1186_proof_to_account_proof(storage_proof));
         }
 
         let parent_state = EthereumState::from_transition_proofs(
-            previous_block.state_root,
+            previous_block_header.state_root,
             &before_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
             &after_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
         )?;
