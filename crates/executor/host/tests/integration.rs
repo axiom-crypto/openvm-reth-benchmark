@@ -17,7 +17,7 @@ async fn test_e2e_ethereum() {
         .try_init();
 
     let env_var_key = "RPC_1";
-    let block_number = 22795918;
+    let block_number = 22796011;
 
     tracing::info!("Starting test for block {}", block_number);
 
