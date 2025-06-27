@@ -9,6 +9,13 @@ use url::Url;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_e2e_ethereum() {
+    color_eyre::install().unwrap();
+    // Initialize the logger with default configuration
+    let _ = tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(EnvFilter::from_default_env())
+        .try_init();
+
     let env_var_key = "RPC_1";
     let block_number = 21000000;
 

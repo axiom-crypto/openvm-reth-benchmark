@@ -23,6 +23,7 @@ version = "0.1.0"
 [workspace.dependencies]
 bincode_derive = "2.0.0"
 eyre = "0.6"
+color-eyre = "0.6"
 tracing = { version = "0.1.40", default-features = false }
 tokio = { version = "1.44.1", default-features = false, features = [
     "rt",
