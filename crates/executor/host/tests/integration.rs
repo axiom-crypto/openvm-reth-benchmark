@@ -19,14 +19,10 @@ async fn test_e2e_ethereum() {
     let env_var_key = "RPC_1";
     let block_number = 22795918;
 
+    tracing::info!("Starting test for block {}", block_number);
+
     // Initialize the environment variables.
     dotenv::dotenv().ok();
-
-    // Initialize the logger.
-    let _ = tracing_subscriber::registry()
-        .with(fmt::layer())
-        .with(EnvFilter::from_default_env())
-        .try_init();
 
     // Setup the provider.
     let rpc_url =
@@ -35,6 +31,8 @@ async fn test_e2e_ethereum() {
 
     // Setup the host executor.
     let host_executor = HostExecutor::new(provider);
+
+    tracing::info!("Executing block {}", block_number);
 
     // Execute the host.
     let client_input = host_executor.execute(block_number).await.expect("failed to execute host");
@@ -47,6 +45,8 @@ async fn test_e2e_ethereum() {
     let buffer = bincode::serde::encode_to_vec(&client_input, bincode_config).unwrap();
     let (deserialized_input, _): (ClientExecutorInput, _) =
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
+
+    tracing::info!("Going to execute on client now");
 
     // Execute the client with the original input
     client_executor.execute(client_input).expect("failed to execute client");
