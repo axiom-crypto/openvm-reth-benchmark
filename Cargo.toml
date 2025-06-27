@@ -57,6 +57,7 @@ openvm-mpt = { path = "./crates/mpt" }
 openvm-primitives = { path = "./crates/primitives" }
 openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
 # reth
+reth = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-exex = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-exex-test-utils = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-node-api = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
@@ -102,12 +103,14 @@ alloy-primitives = { version = "1.1.0", default-features = false }
 alloy-provider = { version = "1.0.9", default-features = false, features = [
     "reqwest",
     "reqwest-rustls-tls",
+    "debug-api",
 ] }
 alloy-rpc-client = { version = "1.0.9", default-features = false, features = [
     "reqwest",
 ] }
 alloy-rpc-types = { version = "1.0.9", default-features = false, features = [
     "eth",
+    "debug",
 ] }
 alloy-rlp = "0.3.10"
 alloy-transport = { version = "1.0.9" }

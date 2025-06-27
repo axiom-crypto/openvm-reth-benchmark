@@ -1,6 +1,11 @@
 use std::sync::Arc;
 
+use alloy_provider::{ext::DebugApi, network::Ethereum, RootProvider};
+use alloy_rpc_client::RpcClient;
+use alloy_rpc_types::debug::ExecutionWitness;
+use alloy_transport::layers::RetryBackoffLayer;
 use futures::{Future, TryStreamExt};
+use reqwest::Url;
 use reth_execution_types::Chain;
 use reth_exex::{ExExContext, ExExEvent};
 use reth_node_api::{FullNodeComponents, NodeTypes};
@@ -18,12 +23,12 @@ where
     Node: FullNodeComponents<Types: NodeTypes<Primitives = EthPrimitives>>,
 {
     /// Create a new instance of the ExEx.
-    fn new(ctx: ExExContext<Node>) -> Self {
+    pub fn new(ctx: ExExContext<Node>) -> Self {
         Self { ctx }
     }
 
     /// The main loop of the ExEx.
-    async fn start(mut self) -> eyre::Result<()> {
+    pub async fn start(mut self) -> eyre::Result<()> {
         while let Some(notification) = self.ctx.notifications.try_next().await? {
             // For witness generation, we are only interested in new blocks that have been
             // committed to the chain. A reorg is handled as a commit of a new chain.
@@ -60,9 +65,32 @@ where
     async fn generate_witness_with_reth_providers(&self, block: &Block) -> eyre::Result<()> {
         info!("Generating witness for block {} using reth providers", block.number);
 
-        // TODO: Implement the actual witness generation logic using reth's providers
-        // let provider = self.ctx.provider_factory.provider()?;
-        // ...
+        let rpc_addr = self.ctx.config.rpc.http_addr;
+        let rpc_port = self.ctx.config.rpc.http_port;
+
+        // TODO: ipc? Or even better direct access. But good enough for now
+        let rpc_url: Url = format!("http://{}:{}", rpc_addr, rpc_port).parse()?;
+
+        let client = RpcClient::builder().layer(RetryBackoffLayer::new(5, 1000, 100)).http(rpc_url);
+        let provider = RootProvider::<Ethereum>::new(client);
+
+        let start = std::time::Instant::now();
+        let ExecutionWitness { .. } = provider.debug_execution_witness(block.number.into()).await?;
+
+        let duration = start.elapsed();
+        info!("Witness generation took {:?}", duration);
+
+        // let ethereum_state = EthereumState::new(state, keys, codes);
+
+        // let client_input = openvm_client_executor::io::ClientExecutorInput {
+        //     current_block: block.clone(),
+        //     ancestor_headers: headers,
+        //     parent_state: state,
+        //     state_requests: keys,
+        //     bytecodes: codes,
+        // };
+
+        // self.send_to_proving_service(client_input).await?;w
 
         // For now, just log that we would generate a witness
         info!(
@@ -86,7 +114,7 @@ where
 }
 
 /// The initialization logic of the ExEx
-pub async fn exex_init<Node: FullNodeComponents>(
+pub async fn exex_init<Node>(
     ctx: ExExContext<Node>,
 ) -> eyre::Result<impl Future<Output = eyre::Result<()>>>
 where

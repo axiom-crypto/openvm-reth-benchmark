@@ -124,21 +124,6 @@ pub async fn fetch_storage_proofs<P: Provider<Ethereum> + Clone>(
     Ok((before_storage_proofs, after_storage_proofs))
 }
 
-/// Build EthereumState from storage proofs
-pub fn build_ethereum_state(
-    previous_block_state_root: revm_primitives::B256,
-    before_storage_proofs: &[reth_trie::AccountProof],
-    after_storage_proofs: &[reth_trie::AccountProof],
-) -> eyre::Result<EthereumState> {
-    let state = EthereumState::from_transition_proofs(
-        previous_block_state_root,
-        &before_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
-        &after_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
-    )?;
-
-    Ok(state)
-}
-
 /// Verify state root matches expected
 pub fn verify_state_root(
     state: &EthereumState,
@@ -230,10 +215,10 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
                 .await?;
 
         // Build EthereumState
-        let state = build_ethereum_state(
+        let state = EthereumState::from_transition_proofs(
             previous_block.state_root,
-            &before_storage_proofs,
-            &after_storage_proofs,
+            &before_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
+            &after_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
         )?;
 
         // Verify state root
