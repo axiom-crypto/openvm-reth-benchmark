@@ -13,7 +13,9 @@ use reth_primitives::{Block, EthPrimitives};
 use reth_provider::{ProviderFactory, StateProviderFactory};
 use reth_tracing::tracing::{info, warn};
 
-mod db;
+use crate::db::{RethDb, RethHostExecutor};
+
+pub mod db;
 /// The witness generation ExEx.
 #[derive(Debug)]
 pub struct WitnessGeneratorExEx<Node: FullNodeComponents> {
@@ -31,21 +33,27 @@ where
 
     /// The main loop of the ExEx.
     pub async fn start(mut self) -> eyre::Result<()> {
-        while let Some(notification) = self.ctx.notifications.try_next().await? {
-            // For witness generation, we are only interested in new blocks that have been
-            // committed to the chain. A reorg is handled as a commit of a new chain.
-            if let Some(committed_chain) = notification.committed_chain() {
-                info!(
-                    committed_chain = ?committed_chain.range(),
-                    "Processing committed chain for witness generation"
-                );
-                self.handle_chain_committed(committed_chain.clone()).await?;
+        let block_number = 22796066; // 5M gas
+        let provider_factory = self.ctx.provider();
 
-                self.ctx
-                    .events
-                    .send(ExExEvent::FinishedHeight(committed_chain.tip().num_hash()))?;
-            }
-        }
+        let reth_host_executor = RethHostExecutor::new(self.ctx.components);
+        let client_input = reth_host_executor.execute(block_number)?;
+
+        // while let Some(notification) = self.ctx.notifications.try_next().await? {
+        //     // For witness generation, we are only interested in new blocks that have been
+        //     // committed to the chain. A reorg is handled as a commit of a new chain.
+        //     if let Some(committed_chain) = notification.committed_chain() {
+        //         info!(
+        //             committed_chain = ?committed_chain.range(),
+        //             "Processing committed chain for witness generation"
+        //         );
+        //         self.handle_chain_committed(committed_chain.clone()).await?;
+
+        //         self.ctx
+        //             .events
+        //             .send(ExExEvent::FinishedHeight(committed_chain.tip().num_hash()))?;
+        //     }
+        // }
         Ok(())
     }
 

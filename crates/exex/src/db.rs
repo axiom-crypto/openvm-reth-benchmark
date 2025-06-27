@@ -7,15 +7,13 @@ use std::{
 
 use openvm_client_executor::io::ClientExecutorInput;
 use openvm_mpt::EthereumState;
-use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use reth_chainspec::MAINNET;
 use reth_consensus::{Consensus, HeaderValidator};
 use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus};
 use reth_evm::execute::{BasicBlockExecutor, Executor};
 use reth_evm_ethereum::EthEvmConfig;
-use reth_execution_types::ExecutionOutcome;
-use reth_node_api::{FullNodeComponents, NodeTypes, NodeTypesWithDBAdapter};
-use reth_primitives::{Account, Block, EthPrimitives, Header};
+use reth_node_api::{FullNodeComponents, NodeTypes};
+use reth_primitives::EthPrimitives;
 use reth_primitives_traits::block::Block as _;
 use reth_provider::{
     BlockReader, HeaderProvider, ProviderError, StateProvider, StateProviderFactory,
@@ -27,7 +25,6 @@ use revm::{
 };
 use revm_primitives::{b256, Address, B256, U256};
 
-use alloy_provider::Provider;
 use reth_revm::db::CacheDB;
 
 /// A [DatabaseRef] that reads from a [StateProvider] and records all accesses.
