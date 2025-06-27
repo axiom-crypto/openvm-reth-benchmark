@@ -17,7 +17,7 @@ async fn test_e2e_ethereum() {
         .try_init();
 
     let env_var_key = "RPC_1";
-    let block_number = 21000000;
+    let block_number = 22795918;
 
     // Initialize the environment variables.
     dotenv::dotenv().ok();
