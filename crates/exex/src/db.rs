@@ -3,17 +3,13 @@
 use std::{
     cell::RefCell,
     collections::{BTreeMap, BTreeSet},
-    path::Path,
 };
 
-use alloy_consensus::{TxEnvelope, TxReceipt};
-use alloy_primitives::Bloom;
 use openvm_client_executor::io::ClientExecutorInput;
 use openvm_mpt::EthereumState;
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use reth_chainspec::MAINNET;
 use reth_consensus::{Consensus, HeaderValidator};
-use reth_db::test_utils::create_test_rw_db;
 use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus};
 use reth_evm::execute::{BasicBlockExecutor, Executor};
 use reth_evm_ethereum::EthEvmConfig;
@@ -22,8 +18,7 @@ use reth_node_api::{FullNodeComponents, NodeTypes, NodeTypesWithDBAdapter};
 use reth_primitives::{Account, Block, EthPrimitives, Header};
 use reth_primitives_traits::block::Block as _;
 use reth_provider::{
-    BlockReader, BlockReaderIdExt, FullProvider, HeaderProvider, ProviderError, ProviderFactory,
-    StateProvider, StateProviderFactory,
+    BlockReader, HeaderProvider, ProviderError, StateProvider, StateProviderFactory,
 };
 use revm::{
     primitives::HashMap,
@@ -32,10 +27,8 @@ use revm::{
 };
 use revm_primitives::{b256, Address, B256, U256};
 
-use alloy_provider::{network::Ethereum, Provider};
-use alloy_rpc_types::BlockId;
+use alloy_provider::Provider;
 use reth_revm::db::CacheDB;
-use reth_storage_errors::db::DatabaseError;
 
 /// A [DatabaseRef] that reads from a [StateProvider] and records all accesses.
 #[derive(Debug, Clone)]
@@ -197,6 +190,7 @@ impl<Node: FullNodeComponents<Types: NodeTypes<Primitives = EthPrimitives>>>
         for (address, used_keys) in state_requests.iter() {
             let modified_keys = executor_output
                 .state
+                .state
                 .get(address)
                 .map(|account| {
                     account.storage.keys().map(|key| B256::from(*key)).collect::<BTreeSet<_>>()
@@ -212,14 +206,20 @@ impl<Node: FullNodeComponents<Types: NodeTypes<Primitives = EthPrimitives>>>
                 .into_iter()
                 .map(B256::from)
                 .collect::<Vec<_>>();
-            let storage_proof = parent_history_provider.get_proof(*address, keys)?;
-            before_storage_proofs.push(eip1186_proof_to_account_proof(storage_proof));
+
+            // from reth get_proof implementation
+            let storage_keys = keys; // TODO: is this correct? Like is keys only storage keys idk?
+            let proof =
+                parent_history_provider.proof(Default::default(), *address, &storage_keys).unwrap(); // TODO no unwrap
+
+            before_storage_proofs.push(proof);
         }
 
         let current_history_provider = provider.history_by_block_number(block_number)?;
         let mut after_storage_proofs = Vec::new();
         for (address, _) in state_requests.iter() {
             let modified_keys = executor_output
+                .state
                 .state
                 .get(address)
                 .map(|account| {
@@ -229,8 +229,14 @@ impl<Node: FullNodeComponents<Types: NodeTypes<Primitives = EthPrimitives>>>
                 .into_iter()
                 .map(B256::from)
                 .collect::<Vec<_>>();
-            let storage_proof = current_history_provider.get_proof(*address, modified_keys)?;
-            after_storage_proofs.push(eip1186_proof_to_account_proof(storage_proof));
+
+            // from reth get_proof implementation
+            let storage_keys = modified_keys; // TODO: is this correct? Like is keys only storage keys idk?
+            let proof = current_history_provider
+                .proof(Default::default(), *address, &storage_keys)
+                .unwrap(); // TODO no unwrap
+
+            after_storage_proofs.push(proof);
         }
 
         let parent_state = EthereumState::from_transition_proofs(
