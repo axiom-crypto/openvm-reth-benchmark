@@ -8,6 +8,7 @@ members = [
     "crates/storage/rpc-db",
     "crates/storage/witness-db",
     "crates/host-bench",
+    "crates/exex",
 ]
 exclude = []
 resolver = "2"
@@ -56,6 +57,11 @@ openvm-mpt = { path = "./crates/mpt" }
 openvm-primitives = { path = "./crates/primitives" }
 openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
 # reth
+reth-exex = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
+reth-exex-test-utils = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
+reth-node-api = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
+reth-provider = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
+reth-tracing = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-primitives-traits = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-codecs = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }

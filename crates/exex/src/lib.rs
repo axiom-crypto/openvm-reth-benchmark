@@ -1,65 +1,109 @@
-use futures::{Future, TryStreamExt};
-use reth_exex::{ExExContext, ExExEvent, ExExNotification};
-use reth_node_api::FullNodeComponents;
-use reth_node_ethereum::EthereumNode;
-use reth_tracing::tracing::info;
+use std::sync::Arc;
 
-/// The initialization logic of the ExEx is just an async function.
-///
-/// During initialization you can wait for resources you need to be up for the ExEx to function,
-/// like a database connection.
-async fn exex_init<Node: FullNodeComponents>(
+use futures::{Future, TryStreamExt};
+use reth_execution_types::Chain;
+use reth_exex::{ExExContext, ExExEvent};
+use reth_node_api::{FullNodeComponents, NodeTypes};
+use reth_primitives::{Block, EthPrimitives};
+use reth_tracing::tracing::{info, warn};
+
+/// The witness generation ExEx.
+#[derive(Debug)]
+pub struct WitnessGeneratorExEx<Node: FullNodeComponents> {
     ctx: ExExContext<Node>,
-) -> eyre::Result<impl Future<Output = eyre::Result<()>>> {
-    Ok(exex(ctx))
 }
 
-/// An ExEx is just a future, which means you can implement all of it in an async function!
-///
-/// This ExEx just prints out whenever either a new chain of blocks being added, or a chain of
-/// blocks being re-orged. After processing the chain, emits an [ExExEvent::FinishedHeight] event.
-async fn exex<Node: FullNodeComponents>(mut ctx: ExExContext<Node>) -> eyre::Result<()> {
-    while let Some(notification) = ctx.notifications.try_next().await? {
-        match &notification {
-            ExExNotification::ChainCommitted { new } => {
-                info!(committed_chain = ?new.range(), "Received commit");
-            }
-            ExExNotification::ChainReorged { old, new } => {
-                info!(from_chain = ?old.range(), to_chain = ?new.range(), "Received reorg");
-            }
-            ExExNotification::ChainReverted { old } => {
-                info!(reverted_chain = ?old.range(), "Received revert");
-            }
-        };
-
-        if let Some(committed_chain) = notification.committed_chain() {
-            ctx.events.send(ExExEvent::FinishedHeight(committed_chain.tip().num_hash()))?;
-        }
+impl<Node> WitnessGeneratorExEx<Node>
+where
+    Node: FullNodeComponents<Types: NodeTypes<Primitives = EthPrimitives>>,
+{
+    /// Create a new instance of the ExEx.
+    fn new(ctx: ExExContext<Node>) -> Self {
+        Self { ctx }
     }
 
-    Ok(())
+    /// The main loop of the ExEx.
+    async fn start(mut self) -> eyre::Result<()> {
+        while let Some(notification) = self.ctx.notifications.try_next().await? {
+            // For witness generation, we are only interested in new blocks that have been
+            // committed to the chain. A reorg is handled as a commit of a new chain.
+            if let Some(committed_chain) = notification.committed_chain() {
+                info!(
+                    committed_chain = ?committed_chain.range(),
+                    "Processing committed chain for witness generation"
+                );
+                self.handle_chain_committed(committed_chain.clone()).await?;
+
+                self.ctx
+                    .events
+                    .send(ExExEvent::FinishedHeight(committed_chain.tip().num_hash()))?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Handle a new committed chain.
+    async fn handle_chain_committed(&self, chain: Arc<Chain>) -> eyre::Result<()> {
+        // Process each block in the committed chain
+        for (block_number, block) in chain.blocks() {
+            // The block from the chain is a `RecoveredBlock`, we need to convert it to a `Block`
+            let block = block.clone().into_block();
+            if let Err(e) = self.generate_witness_with_reth_providers(&block).await {
+                warn!("Failed to generate witness for block {}: {}", block_number, e);
+                // Continue processing other blocks even if one fails
+            }
+        }
+        Ok(())
+    }
+
+    /// Generate witness for a block using reth's internal providers
+    async fn generate_witness_with_reth_providers(&self, block: &Block) -> eyre::Result<()> {
+        info!("Generating witness for block {} using reth providers", block.number);
+
+        // TODO: Implement the actual witness generation logic using reth's providers
+        // let provider = self.ctx.provider_factory.provider()?;
+        // ...
+
+        // For now, just log that we would generate a witness
+        info!(
+            "Would generate witness for block {} with {} transactions",
+            block.number,
+            block.body.transactions.len()
+        );
+
+        Ok(())
+    }
+
+    /// Send witness to proving service (placeholder)
+    #[allow(dead_code)]
+    async fn send_to_proving_service(
+        &self,
+        _witness: openvm_client_executor::io::ClientExecutorInput,
+    ) -> eyre::Result<()> {
+        info!("Witness sent to proving service (placeholder)");
+        Ok(())
+    }
 }
 
-fn main() -> eyre::Result<()> {
-    reth::cli::Cli::parse_args().run(|builder, _| async move {
-        let handle = builder
-            .node(EthereumNode::default())
-            .install_exex("Minimal", exex_init)
-            .launch()
-            .await?;
-
-        handle.wait_for_node_exit().await
-    })
+/// The initialization logic of the ExEx
+pub async fn exex_init<Node: FullNodeComponents>(
+    ctx: ExExContext<Node>,
+) -> eyre::Result<impl Future<Output = eyre::Result<()>>>
+where
+    Node: FullNodeComponents<Types: NodeTypes<Primitives = EthPrimitives>>,
+{
+    Ok(WitnessGeneratorExEx::new(ctx).start())
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use reth_execution_types::{Chain, ExecutionOutcome};
     use reth_exex_test_utils::{test_exex_context, PollOnce};
     use std::pin::pin;
 
     #[tokio::test]
-    async fn test_exex() -> eyre::Result<()> {
+    async fn test_witness_exex() -> eyre::Result<()> {
         // Initialize a test Execution Extension context with all dependencies
         let (ctx, mut handle) = test_exex_context().await?;
 
@@ -76,7 +120,7 @@ mod tests {
             .await?;
 
         // Initialize the Execution Extension
-        let mut exex = pin!(super::exex_init(ctx).await?);
+        let mut exex = pin!(exex_init(ctx).await?);
 
         // Check that the Execution Extension did not emit any events until we polled it
         handle.assert_events_empty();
