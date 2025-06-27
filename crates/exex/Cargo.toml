@@ -1,0 +1,47 @@
+[package]
+name = "exex"
+edition.workspace = true
+repository.workspace = true
+homepage.workspace = true
+exclude.workspace = true
+version.workspace = true
+
+[dependencies]
+# internal
+executor.workspace = true
+
+# reth
+reth.workspace = true
+reth-exex.workspace = true
+reth-node-api.workspace = true
+reth-node-ethereum.workspace = true
+reth-tracing.workspace = true
+reth-execution-types.workspace = true
+reth-provider.workspace = true
+reth-primitives.workspace = true
+reth-trie.workspace = true
+reth-chainspec.workspace = true
+
+# other
+eyre.workspace = true
+futures.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+async-trait = "0.1"
+
+# workspace dependencies
+openvm-host-executor.workspace = true
+openvm-client-executor.workspace = true
+openvm-primitives.workspace = true
+
+# alloy
+alloy-rpc-types.workspace = true
+alloy-primitives.workspace = true
+
+# revm
+revm.workspace = true
+revm-primitives.workspace = true
+
+[lints]
+workspace = true
