@@ -5,6 +5,7 @@ use alloy_rpc_client::RpcClient;
 use alloy_rpc_types::debug::ExecutionWitness;
 use alloy_transport::layers::RetryBackoffLayer;
 use futures::{Future, TryStreamExt};
+use openvm_client_executor::ClientExecutor;
 use reqwest::Url;
 use reth_execution_types::Chain;
 use reth_exex::{ExExContext, ExExEvent};
@@ -38,6 +39,15 @@ where
 
         let reth_host_executor = RethHostExecutor::new(self.ctx.components);
         let client_input = reth_host_executor.execute(block_number)?;
+
+        info!("Starting client execution");
+        let start = std::time::Instant::now();
+
+        let client_executor = ClientExecutor;
+        client_executor.execute(client_input).expect("failed to execute client");
+
+        let duration = start.elapsed();
+        info!("Finished client execution in {:?}", duration);
 
         // while let Some(notification) = self.ctx.notifications.try_next().await? {
         //     // For witness generation, we are only interested in new blocks that have been
