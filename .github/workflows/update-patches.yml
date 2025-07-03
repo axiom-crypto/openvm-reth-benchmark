@@ -171,7 +171,7 @@ jobs:
       - name: Update workspace Cargo.lock
         run: |
           cargo update -p openvm-sdk
-          cargo update -p openvm-stark-sdk
+          cargo update -p openvm-stark-sdk@1.1.1
           cargo tree
 
       - name: Update guest Cargo.lock
