@@ -1,0 +1,21 @@
+name: "OpenVM Benchmark v2"
+
+on:
+  workflow_dispatch:
+    inputs:
+      openvm_version:
+        description: "OpenVM version (commit sha) to benchmark"
+        required: true
+        type: string
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare benchmark
+        run: |
+          curl -X POST \
+            -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"openvm_commit": "${{ inputs.openvm_version }}"}' \
+            https://api.staging.app.axiom.xyz/v1/internal/benchmark_jobs
