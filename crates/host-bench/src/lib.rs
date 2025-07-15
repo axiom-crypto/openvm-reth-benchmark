@@ -345,12 +345,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                         let executor = VmExecutor::new(app_pk.app_vm_pk.vm_config.clone());
                         let segments = info_span!("execute_metered", group = program_name)
                             .in_scope(|| {
-                                executor.execute_metered(
-                                    exe,
-                                    stdin,
-                                    &app_vk.total_widths(),
-                                    &app_vk.num_interactions(),
-                                )
+                                executor.execute_metered(exe, stdin, &app_vk.num_interactions())
                             })?;
                         println!("Number of segments: {}", segments.len());
                     }
@@ -361,7 +356,6 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                         let segments = executor.execute_metered(
                             exe.clone(),
                             stdin.clone(),
-                            &app_vk.total_widths(),
                             &app_vk.num_interactions(),
                         )?;
                         info_span!("tracegen", group = program_name).in_scope(|| {
