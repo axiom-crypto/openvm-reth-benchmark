@@ -12,44 +12,45 @@ jobs:
   benchmark:
     runs-on: ubuntu-latest
     steps:
-      - name: Prepare benchmark
-        id: prepare
-        run: |
-          response=$(curl -X POST \
-            -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_DEV_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{"openvm_commit": "${{ inputs.openvm_version }}"}' \
-            https://api.staging-dev.app.axiom.xyz/v1/internal/benchmark_jobs)
-          echo "Response: $response"
-          benchmark_id=$(echo "$response" | jq -r '.id')
-          echo "benchmark_id=$benchmark_id" >> $GITHUB_OUTPUT
+      # - name: Prepare benchmark
+      #   id: prepare
+      #   run: |
+      #     response=$(curl -X POST \
+      #       -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_DEV_API_KEY }}" \
+      #       -H "Content-Type: application/json" \
+      #       -d '{"openvm_commit": "${{ inputs.openvm_version }}"}' \
+      #       https://api.staging-dev.app.axiom.xyz/v1/internal/benchmark_jobs)
+      #     echo "Response: $response"
+      #     benchmark_id=$(echo "$response" | jq -r '.id')
+      #     echo "benchmark_id=$benchmark_id" >> $GITHUB_OUTPUT
           
-      - name: Wait for benchmark preparation
-        run: |
-          benchmark_id="${{ steps.prepare.outputs.benchmark_id }}"
-          echo "Waiting for benchmark $benchmark_id to be ready..."
+      # - name: Wait for benchmark preparation
+      #   run: |
+      #     benchmark_id="${{ steps.prepare.outputs.benchmark_id }}"
+      #     echo "Waiting for benchmark $benchmark_id to be ready..."
           
-          while true; do
-            response=$(curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_DEV_API_KEY }}" \
-              https://api.staging-dev.app.axiom.xyz/v1/internal/benchmark_jobs/$benchmark_id)
-            echo "Response: $response"
+      #     while true; do
+      #       response=$(curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_DEV_API_KEY }}" \
+      #         https://api.staging-dev.app.axiom.xyz/v1/internal/benchmark_jobs/$benchmark_id)
+      #       echo "Response: $response"
             
-            status=$(echo "$response" | jq -r '.status')
-            echo "Status: $status"
+      #       status=$(echo "$response" | jq -r '.status')
+      #       echo "Status: $status"
             
-            if [ "$status" = "ready" ]; then
-              echo "Benchmark is ready!"
-              break
-            fi
+      #       if [ "$status" = "ready" ]; then
+      #         echo "Benchmark is ready!"
+      #         break
+      #       fi
             
-            echo "Waiting 30 seconds before next check..."
-            sleep 30
-          done
+      #       echo "Waiting 30 seconds before next check..."
+      #       sleep 30
+      #     done
           
       - name: prove
         id: prove
         run: |
-          benchmark_id="${{ steps.prepare.outputs.benchmark_id }}"
+          benchmark_id="5c125823-5cb3-4a76-b0b4-1b96ae7cbb3d"
+          # benchmark_id="${{ steps.prepare.outputs.benchmark_id }}"
           echo "Getting program_uuid for benchmark $benchmark_id..."
           
           response=$(curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_DEV_API_KEY }}" \
@@ -64,7 +65,7 @@ jobs:
           
           echo "Submitting proof with JSON data..."
           response=$(curl -X POST \
-            -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_API_KEY }}" \
+            -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_DEV_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d @input.json \
             "https://api.staging-dev.app.axiom.xyz/v1/proofs?program_id=$program_uuid")
@@ -78,7 +79,7 @@ jobs:
           echo "Waiting for proof $proof_id to complete..."
           
           while true; do
-            response=$(curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_API_KEY }}" \
+            response=$(curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_DEV_API_KEY }}" \
               https://api.staging-dev.app.axiom.xyz/v1/proofs/$proof_id)
             echo "Response: $response"
             
