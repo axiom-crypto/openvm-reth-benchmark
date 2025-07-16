@@ -16,10 +16,10 @@ jobs:
         id: prepare
         run: |
           response=$(curl -X POST \
-            -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_API_KEY }}" \
+            -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_DEV_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{"openvm_commit": "${{ inputs.openvm_version }}"}' \
-            https://api.staging.app.axiom.xyz/v1/internal/benchmark_jobs)
+            https://api.staging-dev.app.axiom.xyz/v1/internal/benchmark_jobs)
           echo "Response: $response"
           benchmark_id=$(echo "$response" | jq -r '.id')
           echo "benchmark_id=$benchmark_id" >> $GITHUB_OUTPUT
@@ -30,8 +30,8 @@ jobs:
           echo "Waiting for benchmark $benchmark_id to be ready..."
           
           while true; do
-            response=$(curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_API_KEY }}" \
-              https://api.staging.app.axiom.xyz/v1/internal/benchmark_jobs/$benchmark_id)
+            response=$(curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_DEV_API_KEY }}" \
+              https://api.staging-dev.app.axiom.xyz/v1/internal/benchmark_jobs/$benchmark_id)
             echo "Response: $response"
             
             status=$(echo "$response" | jq -r '.status')
@@ -42,17 +42,18 @@ jobs:
               break
             fi
             
-            echo "Waiting 10 seconds before next check..."
-            sleep 10
+            echo "Waiting 30 seconds before next check..."
+            sleep 30
           done
           
       - name: prove
+        id: prove
         run: |
           benchmark_id="${{ steps.prepare.outputs.benchmark_id }}"
           echo "Getting program_uuid for benchmark $benchmark_id..."
           
-          response=$(curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_API_KEY }}" \
-            https://api.staging.app.axiom.xyz/v1/internal/benchmark_jobs/$benchmark_id)
+          response=$(curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_DEV_API_KEY }}" \
+            https://api.staging-dev.app.axiom.xyz/v1/internal/benchmark_jobs/$benchmark_id)
           echo "Response: $response"
           
           program_uuid=$(echo "$response" | jq -r '.program_uuid')
@@ -62,9 +63,35 @@ jobs:
           curl -o input.json "https://axiom-public-data-sandbox-us-east-1.s3.us-east-1.amazonaws.com/reth/input/21000000.json"
           
           echo "Submitting proof with JSON data..."
-          curl -X POST \
+          response=$(curl -X POST \
             -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d @input.json \
-            "https://api.staging.app.axiom.xyz/v1/proofs?program_id=$program_uuid"
+            "https://api.staging-dev.app.axiom.xyz/v1/proofs?program_id=$program_uuid")
+          echo "Response: $response"
+          proof_id=$(echo "$response" | jq -r '.id')
+          echo "proof_id=$proof_id" >> $GITHUB_OUTPUT
+          
+      - name: Wait for proof
+        run: |
+          proof_id="${{ steps.prove.outputs.proof_id }}"
+          echo "Waiting for proof $proof_id to complete..."
+          
+          while true; do
+            response=$(curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_API_KEY }}" \
+              https://api.staging-dev.app.axiom.xyz/v1/proofs/$proof_id)
+            echo "Response: $response"
+            
+            status=$(echo "$response" | jq -r '.status')
+            echo "Status: $status"
+            
+            if [ "$status" = "successful" ] || [ "$status" = "failed" ]; then
+              echo "Proof completed with status: $status"
+              break
+            fi
+            
+            echo "Waiting 30 seconds before next check..."
+            sleep 30
+          done
+      
       
