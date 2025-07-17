@@ -29,22 +29,34 @@ jobs:
           benchmark_id="${{ steps.prepare.outputs.benchmark_id }}"
           echo "Waiting for benchmark $benchmark_id to be ready..."
           
-          while true; do
+          max_iterations=50 # 25min
+          iteration=0
+          
+          while [ $iteration -lt $max_iterations ]; do
             response=$(curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_API_KEY }}" \
               https://api.staging.app.axiom.xyz/v1/internal/benchmark_jobs/$benchmark_id)
             echo "Response: $response"
             
             status=$(echo "$response" | jq -r '.status')
-            echo "Status: $status"
+            echo "Status: $status (iteration $((iteration + 1))/$max_iterations)"
             
             if [ "$status" = "ready" ]; then
               echo "Benchmark is ready!"
               break
             fi
             
-            echo "Waiting 30 seconds before next check..."
-            sleep 30
+            iteration=$((iteration + 1))
+            
+            if [ $iteration -lt $max_iterations ]; then
+              echo "Waiting 30 seconds before next check..."
+              sleep 30
+            fi
           done
+          
+          if [ $iteration -eq $max_iterations ]; then
+            echo "Timeout: Benchmark preparation did not complete within 10 minutes (20 iterations)"
+            exit 1
+          fi
           
       - name: prove
         id: prove
@@ -77,22 +89,34 @@ jobs:
           proof_id="${{ steps.prove.outputs.proof_id }}"
           echo "Waiting for proof $proof_id to complete..."
           
-          while true; do
+          max_iterations=20 # 10min
+          iteration=0
+          
+          while [ $iteration -lt $max_iterations ]; do
             response=$(curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_API_KEY }}" \
               https://api.staging.app.axiom.xyz/v1/proofs/$proof_id)
             echo "Response: $response"
             
             status=$(echo "$response" | jq -r '.state')
-            echo "Status: $status"
+            echo "Status: $status (iteration $((iteration + 1))/$max_iterations)"
             
             if [ "$status" = "Succeeded" ] || [ "$status" = "Failed" ]; then
               echo "Proof completed with status: $status"
               break
             fi
             
-            echo "Waiting 30 seconds before next check..."
-            sleep 30
+            iteration=$((iteration + 1))
+            
+            if [ $iteration -lt $max_iterations ]; then
+              echo "Waiting 30 seconds before next check..."
+              sleep 30
+            fi
           done
+          
+          if [ $iteration -eq $max_iterations ]; then
+            echo "Timeout: Proof did not complete within 25 minutes (50 iterations)"
+            exit 1
+          fi
       
       - name: Cleanup
         run: |
