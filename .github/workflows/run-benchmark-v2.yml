@@ -129,13 +129,28 @@ jobs:
             "https://api.staging.app.axiom.xyz/v1/internal/benchmark_jobs/$benchmark_id")
           echo "Response: $response"
       
-      - name: Command to download the metrics
+      - name: Download and display metrics
         run: |
           if [ "$WORKFLOW_FAILED" = "true" ]; then
             echo "skipping metrics download"
           else
-            echo "todo"
+            proof_id="${{ steps.prove.outputs.proof_id }}"
+            curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_API_KEY }}" \
+              "https://api.staging.app.axiom.xyz/v1/internal/benchmark_metrics/$proof_id" \
+              -o metrics.md
+            echo "Metrics downloaded to metrics.md"
+            echo "=== BENCHMARK METRICS ==="
+            cat metrics.md
+            echo "========================="
           fi
+      
+      - name: Upload metrics as artifact
+        if: env.WORKFLOW_FAILED != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-metrics-${{ inputs.openvm_version }}
+          path: metrics.md
+          retention-days: 30
       
       - name: Check workflow status
         run: |
