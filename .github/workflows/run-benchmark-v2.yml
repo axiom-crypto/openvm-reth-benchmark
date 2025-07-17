@@ -135,17 +135,52 @@ jobs:
             echo "skipping metrics download"
           else
             proof_id="${{ steps.prove.outputs.proof_id }}"
-            curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_API_KEY }}" \
-              "https://api.staging.app.axiom.xyz/v1/internal/benchmark_metrics/$proof_id" \
-              -o metrics.md
-            echo "Metrics downloaded to metrics.md"
-            echo "=== BENCHMARK METRICS ==="
-            cat metrics.md
-            echo "========================="
+            echo "Downloading metrics for proof $proof_id..."
+            
+            max_iterations=10 # 5 minutes total
+            iteration=0
+            
+            while [ $iteration -lt $max_iterations ]; do
+              echo "Attempting to download metrics (attempt $((iteration + 1))/$max_iterations)..."
+              
+              response_code=$(curl -w "%{http_code}" -s -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_API_KEY }}" \
+                "https://api.staging.app.axiom.xyz/v1/internal/benchmark_metrics/$proof_id" \
+                -o metrics.md)
+              
+              echo "HTTP response code: $response_code"
+              
+              if [ "$response_code" = "200" ]; then
+                echo "Metrics downloaded successfully!"
+                break
+              elif [ "$response_code" = "404" ]; then
+                echo "Metrics not ready yet (404), waiting 30 seconds before retry..."
+                rm -f metrics.md  # Clean up partial file
+                iteration=$((iteration + 1))
+                
+                if [ $iteration -lt $max_iterations ]; then
+                  sleep 30
+                fi
+              else
+                echo "Unexpected response code: $response_code"
+                rm -f metrics.md  # Clean up partial file
+                echo "METRICS_FAILED=true" >> $GITHUB_ENV
+                break
+              fi
+            done
+            
+            if [ $iteration -eq $max_iterations ]; then
+              echo "Timeout: Metrics were not available after 5 minutes"
+              echo "METRICS_FAILED=true" >> $GITHUB_ENV
+            elif [ "$response_code" = "200" ]; then
+              echo "Metrics downloaded to metrics.md"
+              echo "=== BENCHMARK METRICS ==="
+              cat metrics.md
+              echo "========================="
+            fi
           fi
       
       - name: Upload metrics as artifact
-        if: env.WORKFLOW_FAILED != 'true'
+        if: env.WORKFLOW_FAILED != 'true' && env.METRICS_FAILED != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-metrics-${{ inputs.openvm_version }}
