@@ -63,6 +63,8 @@ jobs:
         run: |
           benchmark_id="${{ steps.prepare.outputs.benchmark_id }}"
           echo "Getting program_uuid for benchmark $benchmark_id..."
+
+          sleep 180  # wait 3 min to make sure the prove service is ready
           
           response=$(curl -H "Axiom-API-Key: ${{ secrets.PROVING_SERVICE_API_KEY }}" \
             https://api.staging.app.axiom.xyz/v1/internal/benchmark_jobs/$benchmark_id)
@@ -114,8 +116,8 @@ jobs:
           done
           
           if [ $iteration -eq $max_iterations ]; then
-            echo "Timeout: Proof did not complete within 25 minutes (50 iterations)"
-            exit 1
+            echo "Timeout: Proof did not complete within 10 minutes (20 iterations)"
+            echo "WORKFLOW_FAILED=true" >> $GITHUB_ENV
           fi
       
       - name: Cleanup
@@ -129,4 +131,17 @@ jobs:
       
       - name: Command to download the metrics
         run: |
-          echo "todo"
+          if [ "$WORKFLOW_FAILED" = "true" ]; then
+            echo "skipping metrics download"
+          else
+            echo "todo"
+          fi
+      
+      - name: Check workflow status
+        run: |
+          if [ "$WORKFLOW_FAILED" = "true" ]; then
+            echo "Workflow failed due to timeout or proof failure"
+            exit 1
+          else
+            echo "Workflow completed successfully"
+          fi
