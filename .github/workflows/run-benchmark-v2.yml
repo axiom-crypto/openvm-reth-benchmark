@@ -19,6 +19,11 @@ on:
         description: "The git commit or branch of Reth program to compile from"
         required: false
         type: string
+      cleanup:
+        description: "Cleanup after benchmark"
+        required: false
+        type: boolean
+        default: "true"
 
 jobs:
   benchmark:
@@ -148,6 +153,7 @@ jobs:
           fi
 
       - name: Cleanup
+        if: ${{ inputs.cleanup == 'true' }}
         run: |
           benchmark_id="${{ steps.prepare.outputs.benchmark_id }}"
           echo "Deleting benchmark $benchmark_id..."
