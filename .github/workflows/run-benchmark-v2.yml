@@ -61,7 +61,7 @@ jobs:
           benchmark_id="${{ steps.prepare.outputs.benchmark_id }}"
           echo "Waiting for benchmark $benchmark_id to be ready..."
 
-          max_iterations=50 # 25min
+          max_iterations=80 # 40min
           iteration=0
 
           while [ $iteration -lt $max_iterations ]; do
