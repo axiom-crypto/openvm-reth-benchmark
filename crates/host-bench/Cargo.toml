@@ -7,7 +7,6 @@ edition = "2021"
 path = "src/lib.rs"
 
 [dependencies]
-tokio.workspace = true
 eyre.workspace = true
 url.workspace = true
 tracing-subscriber = "0.3.18"
@@ -43,22 +42,24 @@ openvm-bigint-circuit = { workspace = true }
 openvm-ecc-circuit = { workspace = true }
 openvm-pairing-circuit = { workspace = true }
 openvm-circuit = { workspace = true }
+openvm-native-circuit = { workspace = true }
 openvm-native-recursion = { workspace = true }
+openvm-native-compiler = { workspace = true }
 openvm-benchmarks-prove = { workspace = true, features = ["parallel"] }
 openvm-stark-sdk = { workspace = true }
 openvm-sdk = { workspace = true }
-openvm-native-compiler = { workspace = true }
-derive_more = "1.0.0"
+derive_more.workspace = true
+toml.workspace = true
 
 # halo2
 halo2-axiom = { version = "0.5.0", default-features = false }
 
 [features]
-default = ["mimalloc", "bench-metrics", "evm-verify"]
-bench-metrics = ["openvm-benchmarks-prove/bench-metrics"]
+default = ["mimalloc", "metrics", "evm-verify"]
+metrics = ["openvm-benchmarks-prove/metrics"]
 evm-prove = ["openvm-sdk/evm-prove"]
 evm-verify = ["evm-prove", "openvm-sdk/evm-verify"]
-profiling = ["openvm-sdk/profiling", "openvm-benchmarks-prove/profiling"]
+perf-metrics = ["openvm-sdk/perf-metrics", "openvm-benchmarks-prove/perf-metrics"]
 mimalloc = ["openvm-benchmarks-prove/mimalloc"]
 jemalloc = ["openvm-benchmarks-prove/jemalloc"]
 nightly-features = ["openvm-benchmarks-prove/nightly-features"]
