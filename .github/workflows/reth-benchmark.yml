@@ -514,7 +514,7 @@ jobs:
           mkdir -p samply_profile
           SAMPLY_PROFILE_PATH=samply_profile
 
-          samply import perf.data --unstable-presymbolicate --save-only --output $SAMPLY_PROFILE_PATH/profile.json
+          samply import perf.data --presymbolicate --save-only --output $SAMPLY_PROFILE_PATH/profile.json
           echo "SAMPLY_PROFILE_PATH=${SAMPLY_PROFILE_PATH}" >> $GITHUB_ENV
 
           s5cmd cp $SAMPLY_PROFILE_PATH/profile.json ${{ env.S3_SAMPLY_PROFILE_PATH }}/${METRIC_NAME}/profile.json
