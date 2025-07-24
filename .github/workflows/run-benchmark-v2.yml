@@ -77,6 +77,11 @@ jobs:
               break
             fi
 
+            if [ "$status" = "failed" ]; then
+              echo "Benchmark failed!"
+              exit 1
+            fi
+
             iteration=$((iteration + 1))
 
             if [ $iteration -lt $max_iterations ]; then
