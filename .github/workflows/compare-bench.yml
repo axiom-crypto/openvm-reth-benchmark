@@ -1,4 +1,5 @@
 name: "Compare Benchmarks"
+run-name: "Compare Benchmarks (block ${{ inputs.block_number || github.event.inputs.block_number }})"
 
 on:
   workflow_dispatch:
