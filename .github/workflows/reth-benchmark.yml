@@ -486,6 +486,41 @@ jobs:
           echo "</details>" >> $MD_PATH
           echo "" >> $MD_PATH
 
+      - name: Generate samply profile artifacts
+        if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
+        run: |
+          cargo install --git https://github.com/mstange/samply.git samply --force
+
+          mkdir -p samply_profile
+          SAMPLY_PROFILE_PATH=samply_profile
+
+          samply import perf.data --presymbolicate --save-only --output $SAMPLY_PROFILE_PATH/profile.json.gz
+          echo "SAMPLY_PROFILE_PATH=${SAMPLY_PROFILE_PATH}" >> $GITHUB_ENV
+
+          s5cmd cp $SAMPLY_PROFILE_PATH/profile.json.gz ${{ env.S3_SAMPLY_PROFILE_PATH }}/${METRIC_NAME}/profile.json.gz
+
+          MODE=${{ inputs.mode || github.event.inputs.mode }}
+          if [[ "$MODE" == "execute" || "$MODE" == "execute-metered" ]]; then
+            FIREFOX_PROFILER_TOKEN=$(curl 'https://api.profiler.firefox.com/compressed-store' -X POST -H 'Accept: application/vnd.firefox-profiler+json;version=1.0' --data-binary @"$SAMPLY_PROFILE_PATH/profile.json.gz" | python3 -c "import sys,base64,json; t=sys.stdin.read().strip().split('.')[1]; t+='='*(4-len(t)%4)if len(t)%4 else''; print(json.loads(base64.urlsafe_b64decode(t))['profileToken'])")
+
+            if [ -n "$FIREFOX_PROFILER_TOKEN" ]; then
+              FIREFOX_PROFILER_URL="https://profiler.firefox.com/public/$FIREFOX_PROFILER_TOKEN"
+              echo "FIREFOX_PROFILER_URL=$FIREFOX_PROFILER_URL" >> $GITHUB_ENV
+              echo "" >> $MD_PATH
+              echo "**[Firefox Profiler]($FIREFOX_PROFILER_URL)**" >> $MD_PATH
+            fi
+          fi
+          echo "S3_SAMPLY_PROFILE_PATH=${S3_SAMPLY_PROFILE_PATH}" >> $GITHUB_ENV
+
+      - name: Upload samply profile artifacts
+        if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
+        id: upload-samply-profile-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.set-metric-name.outputs.name }}-samply-profile
+          path: ${{ env.SAMPLY_PROFILE_PATH }}
+          retention-days: 1
+
       - name: Add benchmark metadata to markdown
         run: |
           COMMIT_URL=https://github.com/${{ github.repository }}/commit/${current_sha}
@@ -505,30 +540,6 @@ jobs:
           S3_MD_PATH="${{ env.S3_PATH }}/${METRIC_NAME}.md"
           s5cmd cp $MD_PATH $S3_MD_PATH
           echo "S3_MD_PATH=${S3_MD_PATH}" >> $GITHUB_ENV
-
-      - name: Generate samply profile artifacts
-        if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
-        run: |
-          cargo install --git https://github.com/mstange/samply.git samply --force
-
-          mkdir -p samply_profile
-          SAMPLY_PROFILE_PATH=samply_profile
-
-          samply import perf.data --presymbolicate --save-only --output $SAMPLY_PROFILE_PATH/profile.json
-          echo "SAMPLY_PROFILE_PATH=${SAMPLY_PROFILE_PATH}" >> $GITHUB_ENV
-
-          s5cmd cp $SAMPLY_PROFILE_PATH/profile.json ${{ env.S3_SAMPLY_PROFILE_PATH }}/${METRIC_NAME}/profile.json
-          s5cmd cp $SAMPLY_PROFILE_PATH/profile.syms.json ${{ env.S3_SAMPLY_PROFILE_PATH }}/${METRIC_NAME}/profile.syms.json
-          echo "S3_SAMPLY_PROFILE_PATH=${S3_SAMPLY_PROFILE_PATH}" >> $GITHUB_ENV
-
-      - name: Upload samply profile artifacts
-        if: ${{ inputs.profiling == 'host' || github.event.inputs.profiling == 'host' }}
-        id: upload-samply-profile-artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.set-metric-name.outputs.name }}-samply-profile
-          path: ${{ env.SAMPLY_PROFILE_PATH }}
-          retention-days: 1
 
       ### Update gh-pages
       - uses: actions/checkout@v4
