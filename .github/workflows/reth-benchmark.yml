@@ -45,7 +45,6 @@ on:
         options:
           - execute
           - execute-metered
-          - tracegen
           - prove-app
           - prove-stark
           - prove-evm
@@ -123,7 +122,7 @@ on:
       mode:
         type: string
         required: false
-        description: Running mode, one of {execute, execute-metered, tracegen, prove-app, prove-stark, prove-evm}
+        description: Running mode, one of {execute, execute-metered, prove-app, prove-stark, prove-evm}
         default: prove-evm
       profiling:
         type: string
@@ -246,9 +245,9 @@ jobs:
       - name: Set build args
         id: set-build-args
         run: |
-          FEATURES="bench-metrics,evm-verify,nightly-features,${{ inputs.memory_allocator || github.event.inputs.memory_allocator || 'jemalloc' }}"
+          FEATURES="metrics,evm-verify,nightly-features,${{ inputs.memory_allocator || github.event.inputs.memory_allocator || 'jemalloc' }}"
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
-            FEATURES="${FEATURES},profiling"
+            FEATURES="${FEATURES},perf-metrics"
           fi
           arch=$(uname -m)
           case $arch in

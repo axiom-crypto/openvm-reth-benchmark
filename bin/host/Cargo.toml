@@ -11,14 +11,15 @@ clap_builder = "4.5.34"
 eyre.workspace = true
 openvm-reth-benchmark = { workspace = true, default-features = false }
 openvm-stark-sdk.workspace = true
+tokio.workspace = true
 
 [lints]
 workspace = true
 
 [features]
 default = ["openvm-reth-benchmark/default"]
-bench-metrics = ["openvm-reth-benchmark/bench-metrics"]
-profiling = ["openvm-reth-benchmark/profiling"]
+metrics = ["openvm-reth-benchmark/metrics"]
+perf-metrics = ["openvm-reth-benchmark/perf-metrics"]
 mimalloc = ["openvm-reth-benchmark/mimalloc"]
 jemalloc = ["openvm-reth-benchmark/jemalloc"]
 nightly-features = ["openvm-reth-benchmark/nightly-features"]

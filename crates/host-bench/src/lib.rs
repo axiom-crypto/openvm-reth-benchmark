@@ -3,30 +3,23 @@ use alloy_provider::RootProvider;
 use alloy_rpc_client::RpcClient;
 use alloy_transport::layers::RetryBackoffLayer;
 use clap::Parser;
-use openvm_algebra_circuit::{Fp2Extension, ModularExtension};
 use openvm_benchmarks_prove::util::BenchmarkCli;
-use openvm_bigint_circuit::Int256;
 use openvm_circuit::{
-    arch::{instructions::exe::VmExe, SegmentationStrategy, SystemConfig, VmConfig, VmExecutor},
+    arch::{instructions::exe::VmExe, *},
     openvm_stark_sdk::{
         bench::run_with_metric_collection, openvm_stark_backend::p3_field::PrimeField32,
-        p3_baby_bear::BabyBear,
     },
 };
 use openvm_client_executor::{io::ClientExecutorInput, CHAIN_ID_ETH_MAINNET};
-use openvm_ecc_circuit::{WeierstrassExtension, SECP256K1_CONFIG};
 use openvm_host_executor::HostExecutor;
-use openvm_pairing_circuit::{PairingCurve, PairingExtension};
-use openvm_rv32im_circuit::Rv32M;
+pub use openvm_native_circuit::{NativeConfig, NativeCpuBuilder};
+pub use openvm_sdk::config::SdkVmCpuBuilder;
 use openvm_sdk::{
-    config::SdkVmConfig,
-    keygen::AggStarkProvingKey,
+    config::{AppConfig, SdkVmConfig},
     prover::{AppProver, StarkProver},
-    GenericSdk, StdIn, SC,
+    GenericSdk, StdIn, F, SC,
 };
-use openvm_stark_sdk::{
-    config::baby_bear_poseidon2::BabyBearPoseidon2Config, engine::StarkFriEngine,
-};
+use openvm_stark_sdk::engine::StarkFriEngine;
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
 pub use reth_primitives;
 use serde_json::json;
@@ -45,8 +38,6 @@ pub enum BenchMode {
     Execute,
     /// Execute the VM with metering to get segments information.
     ExecuteMetered,
-    /// Generate trace data without proving.
-    Tracegen,
     /// Generate sequence of app proofs for continuation segments.
     ProveApp,
     /// Generate a full end-to-end STARK proof with aggregation.
@@ -63,7 +54,6 @@ impl std::fmt::Display for BenchMode {
         match self {
             Self::Execute => write!(f, "execute"),
             Self::ExecuteMetered => write!(f, "execute_metered"),
-            Self::Tracegen => write!(f, "tracegen"),
             Self::ProveApp => write!(f, "prove_app"),
             Self::ProveStark => write!(f, "prove_stark"),
             #[cfg(feature = "evm-verify")]
@@ -100,9 +90,6 @@ pub struct HostArgs {
     /// Max cells per chip in segment for continuations
     #[arg(long)]
     pub segment_max_cells: Option<usize>,
-
-    #[arg(long)]
-    pub no_kzg_intrinsics: bool,
 
     /// Optional path to write the input to. Only needed for mode=make_input
     #[arg(long)]
@@ -168,60 +155,41 @@ pub fn reth_vm_config(
     app_log_blowup: usize,
     segment_max_height: usize,
     segment_max_cells: usize,
-    use_kzg_intrinsics: bool,
 ) -> SdkVmConfig {
-    let mut system_config = SystemConfig::default()
-        .with_continuations()
+    let mut config = toml::from_str::<AppConfig<SdkVmConfig>>(include_str!(
+        "../../../bin/client-eth/openvm.toml"
+    ))
+    .unwrap()
+    .app_vm_config;
+    config.system.config = config
+        .system
+        .config
         .with_max_constraint_degree((1 << app_log_blowup) + 1)
         .with_public_values(32);
-    system_config.set_segmentation_strategy(Arc::new(TraceSizeSegmentationStrategy::new(
+    config.system.config.set_segmentation_strategy(Arc::new(TraceSizeSegmentationStrategy::new(
         segment_max_height,
         segment_max_cells,
     )));
-    let int256 = Int256::default();
-    let bn_config = PairingCurve::Bn254.curve_config();
-    let bls_config = PairingCurve::Bls12_381.curve_config();
-    // The builder will do this automatically, but we set it just in case.
-    let rv32m = Rv32M { range_tuple_checker_sizes: int256.range_tuple_checker_sizes };
-    let mut supported_moduli = vec![
-        bn_config.modulus.clone(),
-        bn_config.scalar.clone(),
-        SECP256K1_CONFIG.modulus.clone(),
-        SECP256K1_CONFIG.scalar.clone(),
-    ];
-    let mut supported_complex_moduli = vec![("Bn254Fp2".to_string(), bn_config.modulus.clone())];
-    let mut supported_curves = vec![bn_config.clone(), SECP256K1_CONFIG.clone()];
-    let mut supported_pairing_curves = vec![PairingCurve::Bn254];
-    if use_kzg_intrinsics {
-        supported_moduli.push(bls_config.modulus.clone());
-        supported_moduli.push(bls_config.scalar.clone());
-        supported_complex_moduli.push(("Bls12_381Fp2".to_string(), bls_config.modulus.clone()));
-        supported_curves.push(bls_config.clone());
-        supported_pairing_curves.push(PairingCurve::Bls12_381);
-    }
-    SdkVmConfig::builder()
-        .system(system_config.into())
-        .rv32i(Default::default())
-        .rv32m(rv32m)
-        .io(Default::default())
-        .keccak(Default::default())
-        .sha256(Default::default())
-        .bigint(int256)
-        .modular(ModularExtension::new(supported_moduli))
-        .fp2(Fp2Extension::new(supported_complex_moduli))
-        .ecc(WeierstrassExtension::new(supported_curves))
-        .pairing(PairingExtension::new(supported_pairing_curves))
-        .build()
+    config
 }
 
 pub const RETH_DEFAULT_APP_LOG_BLOWUP: usize = 1;
 pub const RETH_DEFAULT_LEAF_LOG_BLOWUP: usize = 1;
 
-#[tokio::main]
-pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
+pub async fn run_reth_benchmark<E, VB, NativeBuilder>(
     args: HostArgs,
     openvm_client_eth_elf: &[u8],
-) -> eyre::Result<()> {
+    vm_builder: VB,
+) -> eyre::Result<()>
+where
+    E: StarkFriEngine<SC = SC>,
+    VB: VmBuilder<E, VmConfig = SdkVmConfig>,
+    <VB::VmConfig as VmExecutionConfig<F>>::Executor:
+        InsExecutorE1<F> + InsExecutorE2<F> + InstructionExecutor<F, VB::RecordArena>,
+    NativeBuilder: VmBuilder<E, VmConfig = NativeConfig> + Clone + Default,
+    <NativeConfig as VmExecutionConfig<F>>::Executor:
+        InstructionExecutor<F, <NativeBuilder as VmBuilder<E>>::RecordArena>,
+{
     // Initialize the environment variables.
     dotenv::dotenv().ok();
 
@@ -308,13 +276,9 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
     let leaf_log_blowup = args.benchmark.leaf_log_blowup.unwrap_or(RETH_DEFAULT_LEAF_LOG_BLOWUP);
     args.benchmark.leaf_log_blowup = Some(leaf_log_blowup);
 
-    let vm_config = reth_vm_config(
-        app_log_blowup,
-        segment_max_height,
-        segment_max_cells,
-        !args.no_kzg_intrinsics,
-    );
-    let sdk = GenericSdk::<E>::default().with_agg_tree_config(args.benchmark.agg_tree_config);
+    let vm_config = reth_vm_config(app_log_blowup, segment_max_height, segment_max_cells);
+    let sdk =
+        GenericSdk::<E, NativeBuilder>::new().with_agg_tree_config(args.benchmark.agg_tree_config);
     let elf = Elf::decode(openvm_client_eth_elf, MEM_SIZE as u32)?;
     let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
@@ -340,58 +304,56 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                 match args.mode {
                     BenchMode::Execute => {}
                     BenchMode::ExecuteMetered => {
-                        let app_pk = sdk.app_keygen(app_config)?;
-                        let app_vk = app_pk.app_vm_pk.vm_pk.get_vk();
-                        let executor = VmExecutor::new(app_pk.app_vm_pk.vm_config.clone());
+                        let engine = E::new(app_config.app_fri_params.fri_params);
+                        let (vm, _) = VirtualMachine::new_with_keygen(
+                            engine,
+                            vm_builder,
+                            app_config.app_vm_config,
+                        )?;
+                        let executor_idx_to_air_idx = vm.executor_idx_to_air_idx();
+                        let metered_ctx = vm.build_metered_ctx();
                         let segments = info_span!("execute_metered", group = program_name)
                             .in_scope(|| {
-                                executor.execute_metered(exe, stdin, &app_vk.num_interactions())
+                                vm.executor().execute_metered(
+                                    exe.clone(),
+                                    stdin,
+                                    &executor_idx_to_air_idx,
+                                    metered_ctx,
+                                )
                             })?;
                         println!("Number of segments: {}", segments.len());
-                    }
-                    BenchMode::Tracegen => {
-                        let app_pk = sdk.app_keygen(app_config)?;
-                        let app_vk = app_pk.app_vm_pk.vm_pk.get_vk();
-                        let executor = VmExecutor::new(app_pk.app_vm_pk.vm_config.clone());
-                        let segments = executor.execute_metered(
-                            exe.clone(),
-                            stdin.clone(),
-                            &app_vk.num_interactions(),
-                        )?;
-                        info_span!("tracegen", group = program_name).in_scope(|| {
-                            executor.execute_and_generate::<BabyBearPoseidon2Config>(
-                                exe, stdin, &segments,
-                            )
-                        })?;
                     }
                     BenchMode::ProveApp => {
                         let app_pk = sdk.app_keygen(app_config)?;
                         let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
 
-                        let app_prover =
-                            AppProver::<_, E>::new(app_pk.app_vm_pk.clone(), app_committed_exe)
-                                .with_program_name(program_name);
-                        let proof = app_prover.generate_app_proof(stdin);
+                        let mut app_prover = AppProver::<E, _>::new(
+                            vm_builder,
+                            app_pk.app_vm_pk.clone(),
+                            app_committed_exe,
+                        )?
+                        .with_program_name(program_name);
+                        let proof = app_prover.generate_app_proof(stdin)?;
                         let app_vk = app_pk.get_app_vk();
                         sdk.verify_app_proof(&app_vk, &proof)?;
                     }
                     BenchMode::ProveStark => {
-                        // TODO: update this to use the new generate_stark_proof API once v1.2.1 is
-                        // released
                         let app_pk = sdk.app_keygen(app_config)?;
                         let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
                         let agg_stark_config = args.benchmark.agg_config().agg_stark_config;
-                        let agg_stark_pk = AggStarkProvingKey::keygen(agg_stark_config);
-                        let mut prover = StarkProver::<_, E>::new(
+                        let agg_stark_pk = sdk.agg_stark_keygen(agg_stark_config)?;
+                        let mut prover = StarkProver::<E, _, _>::new(
+                            vm_builder,
+                            NativeBuilder::default(),
                             Arc::new(app_pk),
                             app_committed_exe,
                             agg_stark_pk,
                             args.benchmark.agg_tree_config,
-                        );
+                        )?;
                         prover.set_program_name(program_name);
-                        let proof = prover.generate_root_verifier_input(stdin);
+                        let proof = prover.generate_e2e_stark_proof(stdin)?;
                         let block_hash = proof
-                            .public_values
+                            .user_public_values
                             .iter()
                             .map(|pv| pv.as_canonical_u32() as u8)
                             .collect::<Vec<u8>>();
@@ -410,7 +372,7 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                         );
                         let mut agg_config = args.benchmark.agg_config();
                         agg_config.agg_stark_config.max_num_user_public_values =
-                            VmConfig::<BabyBear>::system(&vm_config).num_public_values;
+                            vm_config.as_ref().num_public_values;
 
                         let app_pk = sdk.app_keygen(app_config)?;
                         let full_agg_pk = sdk.agg_keygen(
@@ -428,15 +390,17 @@ pub async fn run_reth_benchmark<E: StarkFriEngine<SC>>(
                         );
                         let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
 
-                        let mut prover = EvmHalo2Prover::<_, E>::new(
+                        let mut prover = EvmHalo2Prover::<E, _, _>::new(
                             &halo2_params_reader,
+                            vm_builder,
+                            NativeBuilder::default(),
                             Arc::new(app_pk),
                             app_committed_exe,
                             full_agg_pk,
                             args.benchmark.agg_tree_config,
-                        );
+                        )?;
                         prover.set_program_name(program_name);
-                        let evm_proof = prover.generate_proof_for_evm(stdin);
+                        let evm_proof = prover.generate_proof_for_evm(stdin)?;
                         let block_hash = &evm_proof.user_public_values;
                         println!("block_hash: {}", ToHexExt::encode_hex(block_hash));
                     }
