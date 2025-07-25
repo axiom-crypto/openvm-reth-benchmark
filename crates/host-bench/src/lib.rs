@@ -5,7 +5,7 @@ use alloy_transport::layers::RetryBackoffLayer;
 use clap::Parser;
 use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_circuit::{
-    arch::{instructions::exe::VmExe, *},
+    arch::{execution_mode::metered::segment_ctx::SegmentationLimits, instructions::exe::VmExe, *},
     openvm_stark_sdk::{
         bench::run_with_metric_collection, openvm_stark_backend::p3_field::PrimeField32,
     },
@@ -96,61 +96,6 @@ pub struct HostArgs {
     pub input_path: Option<PathBuf>,
 }
 
-/// Segments based on total trace cells across all chips
-#[derive(Debug, Clone, Copy)]
-pub struct TraceSizeSegmentationStrategy {
-    max_height: usize,
-    max_cells: usize,
-}
-
-impl TraceSizeSegmentationStrategy {
-    pub fn new(max_height: usize, max_cells: usize) -> Self {
-        assert!(max_height < (1 << 27));
-        Self { max_height, max_cells }
-    }
-}
-
-impl SegmentationStrategy for TraceSizeSegmentationStrategy {
-    fn max_cells(&self) -> usize {
-        self.max_cells
-    }
-
-    fn max_trace_height(&self) -> usize {
-        self.max_height
-    }
-
-    fn should_segment(
-        &self,
-        air_names: &[String],
-        trace_heights: &[usize],
-        trace_cells: &[usize],
-    ) -> bool {
-        for (i, &height) in trace_heights.iter().enumerate() {
-            if height > self.max_height {
-                tracing::info!(
-                    "Should segment because chip {i} (name: {}) has height {height} > {}",
-                    air_names[i],
-                    self.max_height
-                );
-                return true;
-            }
-        }
-        let total_cells: usize = trace_cells.iter().sum();
-        if total_cells > self.max_cells {
-            tracing::info!(
-                "Should segment because total trace cells = {total_cells} > {}",
-                self.max_cells
-            );
-            return true;
-        }
-        false
-    }
-
-    fn stricter_strategy(&self) -> Arc<dyn SegmentationStrategy> {
-        Arc::new(Self { max_height: self.max_height / 2, max_cells: self.max_cells / 2 })
-    }
-}
-
 pub fn reth_vm_config(
     app_log_blowup: usize,
     segment_max_height: usize,
@@ -166,10 +111,11 @@ pub fn reth_vm_config(
         .config
         .with_max_constraint_degree((1 << app_log_blowup) + 1)
         .with_public_values(32);
-    config.system.config.set_segmentation_strategy(Arc::new(TraceSizeSegmentationStrategy::new(
-        segment_max_height,
-        segment_max_cells,
-    )));
+    config.system.config.set_segmentation_limits(
+        SegmentationLimits::default()
+            .with_max_trace_height(segment_max_height as u32)
+            .with_max_cells(segment_max_cells),
+    );
     config
 }
 
@@ -283,7 +229,7 @@ where
     let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
 
     let program_name = format!("reth.{}.block_{}", args.mode, args.block_number);
-    // NOTE: args.benchmark.app_config resets SegmentationStrategy if max_segment_length is set
+    // NOTE: args.benchmark.app_config resets SegmentationLimits if max_segment_length is set
     args.benchmark.max_segment_length = None;
     let app_config = args.benchmark.app_config(vm_config.clone());
 
