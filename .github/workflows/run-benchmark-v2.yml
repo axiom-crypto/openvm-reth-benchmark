@@ -128,7 +128,7 @@ jobs:
           proof_id="${{ steps.prove.outputs.proof_id }}"
           echo "Waiting for proof $proof_id to complete..."
 
-          max_iterations=20 # 10min
+          max_iterations=30 # 15min
           iteration=0
 
           while [ $iteration -lt $max_iterations ]; do
