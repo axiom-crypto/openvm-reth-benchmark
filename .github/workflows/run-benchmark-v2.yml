@@ -95,7 +95,7 @@ jobs:
             
             # Build the benchmark binary
             export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
-            RUSTFLAGS=$RUSTFLAGS cargo +1.85 build --bin openvm-reth-benchmark-bin --profile=release --no-default-features --features="bench-metrics,nightly-features,jemalloc,evm-verify"
+            RUSTFLAGS=$RUSTFLAGS cargo +1.86 build --bin openvm-reth-benchmark-bin --profile=release --no-default-features --features="bench-metrics,nightly-features,jemalloc,evm-verify"
             
             # Generate input data
             echo "Generating input for block $block_number..."
