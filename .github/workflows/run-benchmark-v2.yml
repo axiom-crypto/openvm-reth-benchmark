@@ -24,6 +24,7 @@ on:
         description: "The git commit or branch of Reth program to compile from"
         required: false
         type: string
+        default: ""
       cleanup:
         description: "Cleanup after benchmark"
         required: false
@@ -212,7 +213,7 @@ jobs:
           proof_id="${{ steps.prove.outputs.proof_id }}"
           echo "Waiting for proof $proof_id to complete..."
 
-          max_iterations=30 # 15min
+          max_iterations=20 # 10min
           iteration=0
 
           while [ $iteration -lt $max_iterations ]; do
