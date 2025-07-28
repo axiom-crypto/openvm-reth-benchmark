@@ -83,11 +83,12 @@ jobs:
             
             # Generate input data
             echo "Generating input for block $block_number..."
-            RUST_LOG="info,p3_=warn" OUTPUT_PATH="input.json" ./target/release/openvm-reth-benchmark-bin \
+            ./target/release/openvm-reth-benchmark-bin \
               --kzg-params-dir params \
               --mode make-input \
               --block-number $block_number \
               --rpc-url ${{ secrets.RPC_URL_1 }} \
+              --input-path input.json \
               --cache-dir rpc-cache
             
             echo "Input file generated successfully"
