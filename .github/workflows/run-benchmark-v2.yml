@@ -87,7 +87,7 @@ jobs:
               --kzg-params-dir params \
               --mode make-input \
               --block-number $block_number \
-              --rpc-url ${{ secrets.RPC_1 }} \
+              --rpc-url ${{ secrets.RPC_URL_1 }} \
               --cache-dir rpc-cache
             
             echo "Input file generated successfully"
