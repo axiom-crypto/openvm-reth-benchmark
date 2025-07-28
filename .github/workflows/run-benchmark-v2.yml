@@ -7,6 +7,11 @@ on:
         description: "OpenVM version (commit sha) to benchmark"
         required: true
         type: string
+      block_number:
+        description: "Block number to generate input for"
+        required: true
+        type: string
+        default: "21000000"
       rerun_keygen:
         description: "Rerun keygen"
         required: false
@@ -29,6 +34,15 @@ jobs:
   benchmark:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly
+          cache: false
+
       - name: Prepare benchmark
         id: prepare
         run: |
@@ -95,6 +109,79 @@ jobs:
             exit 1
           fi
 
+      - name: Prepare input data
+        run: |
+          block_number="${{ inputs.block_number }}"
+          s3_url="https://axiom-public-data-sandbox-us-east-1.s3.us-east-1.amazonaws.com/reth/input/${block_number}.json"
+          
+          echo "Checking if input file exists for block $block_number..."
+          if curl --output /dev/null --silent --head --fail "$s3_url"; then
+            echo "Input file found in S3, downloading..."
+            curl -o input.json "$s3_url"
+          else
+            echo "Input file not found in S3, generating locally..."
+            
+            # Install OpenVM CLI
+            echo "Installing OpenVM CLI..."
+            cargo install --git https://github.com/openvm-org/openvm.git --locked --force cargo-openvm
+            
+            RPC_1=${{ secrets.RPC_URL_1 }}
+            
+            # Build client binary
+            cd bin/client-eth
+            cargo openvm build
+            mkdir -p ../host/elf
+            SRC="target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth"
+            DEST="../host/elf/openvm-client-eth"
+            
+            if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
+                cp "$SRC" "$DEST"
+            fi
+            cd ../..
+            
+            # Create necessary directories
+            mkdir -p rpc-cache
+            mkdir -p params
+            
+            # Set up build environment
+            arch=$(uname -m)
+            case $arch in
+            arm64|aarch64)
+                RUSTFLAGS="-Ctarget-cpu=native"
+                ;;
+            x86_64|amd64)
+                RUSTFLAGS="-Ctarget-cpu=native -C target-feature=+avx512f"
+                ;;
+            *)
+                echo "Unsupported architecture: $arch"
+                exit 1
+                ;;
+            esac
+            
+            # Build the benchmark binary
+            export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
+            RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark-bin --profile=release --no-default-features --features="bench-metrics,nightly-features,jemalloc,evm-verify"
+            
+            # Generate input data
+            echo "Generating input for block $block_number..."
+            RUST_LOG="info,p3_=warn" OUTPUT_PATH="input.json" ./target/release/openvm-reth-benchmark-bin \
+              --kzg-params-dir params \
+              --mode make-input \
+              --block-number $block_number \
+              --rpc-url ${{ secrets.RPC_1 }} \
+              --cache-dir rpc-cache
+            
+            echo "Input file generated successfully"
+          fi
+          
+          # Verify input file exists
+          if [ ! -f "input.json" ]; then
+            echo "Error: input.json file not found!"
+            exit 1
+          fi
+          
+          echo "Input file ready: $(ls -lh input.json)"
+
       - name: prove
         id: prove
         run: |
@@ -109,9 +196,6 @@ jobs:
 
           program_uuid=$(echo "$response" | jq -r '.program_uuid')
           echo "Program UUID: $program_uuid"
-
-          echo "Downloading JSON data from S3..."
-          curl -o input.json "https://axiom-public-data-sandbox-us-east-1.s3.us-east-1.amazonaws.com/reth/input/21000000.json"
 
           echo "Submitting proof with JSON data..."
           response=$(curl -X POST \
@@ -158,7 +242,7 @@ jobs:
           fi
 
       - name: Cleanup
-        if: ${{ inputs.cleanup == 'true' }}
+        if: ${{ inputs.cleanup == true }}
         run: |
           benchmark_id="${{ steps.prepare.outputs.benchmark_id }}"
           echo "Deleting benchmark $benchmark_id..."
