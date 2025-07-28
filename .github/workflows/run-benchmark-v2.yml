@@ -77,24 +77,9 @@ jobs:
             mkdir -p rpc-cache
             mkdir -p params
             
-            # Set up build environment
-            arch=$(uname -m)
-            case $arch in
-            arm64|aarch64)
-                RUSTFLAGS="-Ctarget-cpu=native"
-                ;;
-            x86_64|amd64)
-                RUSTFLAGS="-Ctarget-cpu=native -C target-feature=+avx512f"
-                ;;
-            *)
-                echo "Unsupported architecture: $arch"
-                exit 1
-                ;;
-            esac
-            
             # Build the benchmark binary
             export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
-            RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark-bin --profile=release --no-default-features --features="bench-metrics,nightly-features,jemalloc,evm-verify"
+            cargo build --bin openvm-reth-benchmark-bin --profile=release --no-default-features --features="bench-metrics,nightly-features,jemalloc,evm-verify"
             
             # Generate input data
             echo "Generating input for block $block_number..."
