@@ -258,7 +258,7 @@ where
                         )?;
                         let executor_idx_to_air_idx = vm.executor_idx_to_air_idx();
                         let metered_ctx = vm.build_metered_ctx();
-                        let segments = info_span!("execute_metered", group = program_name)
+                        let (segments, _) = info_span!("execute_metered", group = program_name)
                             .in_scope(|| {
                                 vm.executor().execute_metered(
                                     exe.clone(),
