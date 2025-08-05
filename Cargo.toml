@@ -58,61 +58,63 @@ openvm-mpt = { path = "./crates/mpt" }
 openvm-primitives = { path = "./crates/primitives" }
 openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
 # reth
-reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-primitives-traits = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-codecs = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-evm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-revm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-storage-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-trie = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-trie-common = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-chainspec = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-execution-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-execution-types = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-db = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-ethereum-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
-reth-ethereum-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false, features = [
+reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-primitives-traits = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-codecs = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-evm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-revm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-storage-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-trie = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-trie-common = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-chainspec = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-execution-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-execution-types = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-db = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-ethereum-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
+reth-ethereum-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false, features = [
     "serde",
     "serde-bincode-compat",
 ] }
 
 # revm
-revm = { version = "24.0.1", features = ["serde"], default-features = false }
-revm-primitives = { version = "19.0.0", features = [
+revm = { version = "27.0.3", features = ["serde"], default-features = false }
+revm-primitives = { version = "20.0.0", features = [
     "serde",
 ], default-features = false }
-revm-inspectors = "0.23.0"
-revm-interpreter = { version = "20.0.0", default-features = false }
-revm-precompile = { version = "21.0.0", default-features = false }
+revm-interpreter = { version = "23.0.1", default-features = false }
+revm-inspectors = "0.27.1"
+revm-precompile = { version = "24.0.1", default-features = false }
 
 # alloy
-alloy-consensus = { version = "1.0.9", default-features = false, features = [
+alloy-primitives = { version = "1.3.0", default-features = false }
+alloy-rlp = { version = "0.3.10", default-features = false }
+alloy-trie = { version = "0.9.0", default-features = false }
+
+alloy-hardforks = "0.2.7"
+
+alloy-consensus = { version = "1.0.23", default-features = false, features = [
     "serde",
     "serde-bincode-compat",
 ] }
-alloy-primitives = { version = "1.1.0", default-features = false }
-alloy-provider = { version = "1.0.9", default-features = false, features = [
+alloy-provider = { version = "1.0.23", default-features = false, features = [
     "reqwest",
     "reqwest-rustls-tls",
 ] }
-alloy-rpc-client = { version = "1.0.9", default-features = false, features = [
+alloy-rpc-client = { version = "1.0.23", default-features = false, features = [
     "reqwest",
 ] }
-alloy-rpc-types = { version = "1.0.9", default-features = false, features = [
+alloy-rpc-types = { version = "1.0.23", default-features = false, features = [
     "eth",
 ] }
-alloy-rlp = "0.3.10"
-alloy-transport = { version = "1.0.9" }
-alloy-transport-http = { version = "1.0.9", features = [
+alloy-transport = { version = "1.0.23" }
+alloy-transport-http = { version = "1.0.23", features = [
     "reqwest-rustls-tls",
 ], default-features = false }
-alloy-eips = { version = "1.0.9", default-features = false }
-alloy-trie = "0.8.1"
-alloy-hardforks = "0.2.7"
+alloy-eips = { version = "1.0.23", default-features = false }
 
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0-rc.1", default-features = false }
 
