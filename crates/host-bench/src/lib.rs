@@ -131,10 +131,10 @@ where
     E: StarkFriEngine<SC = SC>,
     VB: VmBuilder<E, VmConfig = SdkVmConfig>,
     <VB::VmConfig as VmExecutionConfig<F>>::Executor:
-        InsExecutorE1<F> + InsExecutorE2<F> + InstructionExecutor<F, VB::RecordArena>,
+        Executor<F> + MeteredExecutor<F> + PreflightExecutor<F, VB::RecordArena>,
     NativeBuilder: VmBuilder<E, VmConfig = NativeConfig> + Clone + Default,
     <NativeConfig as VmExecutionConfig<F>>::Executor:
-        InstructionExecutor<F, <NativeBuilder as VmBuilder<E>>::RecordArena>,
+        PreflightExecutor<F, <NativeBuilder as VmBuilder<E>>::RecordArena>,
 {
     // Initialize the environment variables.
     dotenv::dotenv().ok();
