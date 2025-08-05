@@ -3,6 +3,10 @@ pub mod io;
 #[macro_use]
 mod utils;
 
+/// OpenVM optimized cryptography implementations.
+#[cfg(target_os = "zkvm")]
+pub mod crypto;
+
 use std::{fmt::Debug, sync::Arc};
 
 use alloy_consensus::TxReceipt;
@@ -49,6 +53,12 @@ pub enum ChainVariant {
 
 impl ClientExecutor {
     pub fn execute(&self, mut input: ClientExecutorInput) -> eyre::Result<Header> {
+        // Initialize OpenVM optimized cryptography on zkVM target
+        #[cfg(target_os = "zkvm")]
+        {
+            crate::crypto::install_openvm_crypto()
+                .expect("failed to install OpenVM crypto provider");
+        }
         // Initialize the witnessed database with verified storage proofs.
         let witness_db = input.witness_db()?;
         let cache_db = CacheDB::new(&witness_db);

@@ -6,9 +6,9 @@ edition = "2021"
 
 [dependencies]
 # workspace
-openvm-client-executor = { path = "../../crates/executor/client" }
-revm-precompile = { version = "21.0.0", default-features = false }
 
+openvm-client-executor = { path = "../../crates/executor/client" }
+revm-precompile = { git = "https://github.com/bluealloy/revm", branch = "main", default-features = false }
 # openvm
 openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution", features = [
     "std",
@@ -35,7 +35,7 @@ tracing = { version = "0.1", features = [
 ] }
 
 [features]
-default = ["kzg-intrinsics"]
+default = []
 heap-embedded-alloc = ["openvm/heap-embedded-alloc"]
 # TODO: remove?
 kzg-intrinsics = []
@@ -54,9 +54,6 @@ revm-bytecode = { git = "https://github.com/bluealloy/revm", branch = "main" }
 # k256 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
 p256 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
 ruint = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-# k256 = { path = "../../../openvm-org/openvm/guest-libs/k256" }
-# p256 = { path = "../../../openvm-org/openvm/guest-libs/p256" }
-# ruint = { path = "../../../openvm-org/openvm/guest-libs/ruint" }
 
 # Local Patching:
 # revm = { path = "../../../revm/crates/revm" }
