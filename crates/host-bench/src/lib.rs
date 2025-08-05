@@ -257,16 +257,11 @@ where
                             app_config.app_vm_config,
                         )?;
                         let executor_idx_to_air_idx = vm.executor_idx_to_air_idx();
+                        let interpreter =
+                            vm.executor().metered_instance(&exe, &executor_idx_to_air_idx)?;
                         let metered_ctx = vm.build_metered_ctx();
                         let (segments, _) = info_span!("execute_metered", group = program_name)
-                            .in_scope(|| {
-                                vm.executor().execute_metered(
-                                    exe.clone(),
-                                    stdin,
-                                    &executor_idx_to_air_idx,
-                                    metered_ctx,
-                                )
-                            })?;
+                            .in_scope(|| interpreter.execute_metered(stdin, metered_ctx))?;
                         println!("Number of segments: {}", segments.len());
                     }
                     BenchMode::ProveApp => {
