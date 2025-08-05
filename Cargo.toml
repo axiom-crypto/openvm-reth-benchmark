@@ -10,10 +10,10 @@ members = [
     "crates/host-bench",
 ]
 exclude = []
-resolver = "2"
+resolver = "3"
 
 [workspace.package]
-edition = "2021"
+edition = "2024"
 repository = "https://github.com/moongate-forks/minimal-reth"
 homepage = "https://github.com/moongate-forks/minimal-reth"
 exclude = ["**/target"]
