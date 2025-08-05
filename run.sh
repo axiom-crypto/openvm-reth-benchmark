@@ -1,5 +1,7 @@
 #!/bin/bash
 set -e
+# This is required as new versions of alloy require rust 1.88 and default version is 1.86
+export OPENVM_RUST_TOOLCHAIN=nightly-2025-08-05
 cd bin/client-eth
 cargo openvm build
 mkdir -p ../host/elf
