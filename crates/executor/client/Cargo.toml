@@ -60,7 +60,3 @@ revm-precompile = { workspace = true }
 
 [target.'cfg(not(target_os = "zkvm"))'.dependencies]
 revm = { workspace = true, features = ["c-kzg"] }
-
-[dev-dependencies]
-
-[features]
