@@ -3,15 +3,16 @@
 //! This module provides OpenVM-optimized implementations of cryptographic operations
 //! for both transaction validation (via Alloy crypto provider) and precompile execution.
 
-use alloy_consensus::crypto::backend::{install_default_provider, CryptoProvider, RecoveryError};
+use alloy_consensus::crypto::backend::{install_default_provider, CryptoProvider};
+use alloy_consensus::crypto::RecoveryError;
 use alloy_primitives::Address;
+use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
 use openvm_ecc_guest::{
     algebra::IntMod,
     weierstrass::{IntrinsicCurve, WeierstrassPoint},
     AffinePoint,
 };
-use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
-use openvm_keccak256_guest::keccak256;
+use openvm_keccak256::keccak256;
 use openvm_kzg::{Bytes32, Bytes48, KzgProof};
 use openvm_pairing::{
     bn254::{Bn254, Fp, Fp2, G1Affine, G2Affine, Scalar},
@@ -42,8 +43,7 @@ impl CryptoProvider for OpenVMK256Provider {
         let recovery_id = sig[64];
 
         // Parse signature using OpenVM k256
-        let mut signature = Signature::from_slice(&sig_bytes)
-            .map_err(|_| RecoveryError::InvalidSignature)?;
+        let mut signature = Signature::from_slice(&sig_bytes).map_err(|_| RecoveryError::new())?;
 
         // Normalize signature if needed
         let mut recid = recovery_id;
@@ -53,16 +53,12 @@ impl CryptoProvider for OpenVMK256Provider {
         }
 
         // Create recovery ID
-        let recovery_id = RecoveryId::from_byte(recid)
-            .ok_or(RecoveryError::InvalidRecoveryId)?;
+        let recovery_id = RecoveryId::from_byte(recid).ok_or(RecoveryError::new())?;
 
         // Recover public key using OpenVM
-        let recovered_key = VerifyingKey::recover_from_prehash_noverify(
-            msg,
-            &signature.to_bytes(),
-            recovery_id,
-        )
-        .map_err(|_| RecoveryError::InvalidSignature)?;
+        let recovered_key =
+            VerifyingKey::recover_from_prehash_noverify(msg, &signature.to_bytes(), recovery_id)
+                .map_err(|_| RecoveryError::new())?;
 
         // Get public key coordinates
         let public_key = recovered_key.as_affine();
@@ -206,7 +202,7 @@ impl Crypto for OpenVMCrypto {
 pub fn install_openvm_crypto() -> Result<bool, Box<dyn std::error::Error>> {
     // Install OpenVM k256 provider for Alloy (transaction validation)
     install_default_provider(Arc::new(OpenVMK256Provider::default()))?;
-    
+
     // Install OpenVM crypto for REVM precompiles
     Ok(revm_precompile::install_crypto(OpenVMCrypto::default()))
 }

@@ -9,9 +9,12 @@ use {
     openvm_pairing::{bls12_381::Bls12_381G1Affine, bn254::Bn254G1Affine},
 };
 
+mod crypto;
+
 openvm::init!();
 
 pub fn main() {
+    crate::crypto::install_openvm_crypto().expect("failed to install OpenVM crypto provider");
     println("client-eth starting");
     // Read the input.
     let input: ClientExecutorInput = read();
