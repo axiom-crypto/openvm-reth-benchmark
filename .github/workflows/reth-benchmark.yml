@@ -327,22 +327,17 @@ jobs:
           path: bin/host/elf/openvm-client-eth
           key: ${{ steps.set-cache-keys.outputs.elf_cache_key }}
 
-      - name: Install required rust toolchain for OpenVM
-        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
-        run: |
-          rustup install nightly-2025-08-05
-          rustup component add rust-src --toolchain nightly-2025-08-05
       - name: Install cargo-openvm
         if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
         run: |
-          cargo install --git https://github.com/openvm-org/openvm.git --locked --force cargo-openvm
+          cargo install --git https://github.com/openvm-org/openvm.git --rev ${{ steps.get-openvm-rev.outputs.result }} --locked --force cargo-openvm
       - name: Build Guest ELF
         if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
         working-directory: bin/client-eth
         run: |
           export OPENVM_RUST_TOOLCHAIN=nightly-2025-08-05
           GUEST_PROFILE=${{ steps.set-build-profiles.outputs.guest_profile }}
-          RUSTFLAGS="" RUSTUP_TOOLCHAIN=nightly-2025-08-05 cargo openvm build --no-transpile --profile=$GUEST_PROFILE
+          RUSTFLAGS="" cargo openvm build --no-transpile --profile=$GUEST_PROFILE
           mkdir -p ../host/elf
           cp target/riscv32im-risc0-zkvm-elf/$GUEST_PROFILE/openvm-client-eth ../host/elf/
 
