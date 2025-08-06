@@ -305,7 +305,7 @@ jobs:
 
       - name: Install architecture specific tools
         run: |
-          rustup install nightly-2024-10-30
+          rustup install nightly-2025-08-05
           source openvm/ci/scripts/utils.sh
           install_s5cmd
           sudo apt update
@@ -327,6 +327,11 @@ jobs:
           path: bin/host/elf/openvm-client-eth
           key: ${{ steps.set-cache-keys.outputs.elf_cache_key }}
 
+      - name: Install required rust toolchain for OpenVM
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
+        run: |
+          rustup install nightly-2025-08-05
+          rustup component add rust-src --toolchain nightly-2025-08-05
       - name: Install cargo-openvm
         if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
         run: |
@@ -335,8 +340,9 @@ jobs:
         if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
         working-directory: bin/client-eth
         run: |
+          export OPENVM_RUST_TOOLCHAIN=nightly-2025-08-05
           GUEST_PROFILE=${{ steps.set-build-profiles.outputs.guest_profile }}
-          RUSTFLAGS="" cargo openvm build --no-transpile --profile=$GUEST_PROFILE
+          RUSTFLAGS="" RUSTUP_TOOLCHAIN=nightly-2025-08-05 cargo openvm build --no-transpile --profile=$GUEST_PROFILE
           mkdir -p ../host/elf
           cp target/riscv32im-risc0-zkvm-elf/$GUEST_PROFILE/openvm-client-eth ../host/elf/
 
