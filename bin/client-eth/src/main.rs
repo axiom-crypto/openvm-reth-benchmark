@@ -7,6 +7,7 @@ use {
     openvm_algebra_guest::IntMod,
     openvm_keccak256_guest, // trigger extern native-keccak256
     openvm_pairing::{bls12_381::Bls12_381G1Affine, bn254::Bn254G1Affine},
+    p256::P256Point, // for crypto.rs
 };
 
 mod crypto;
