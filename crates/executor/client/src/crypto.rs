@@ -3,8 +3,10 @@
 //! This module provides OpenVM-optimized implementations of cryptographic operations
 //! for both transaction validation (via Alloy crypto provider) and precompile execution.
 
-use alloy_consensus::crypto::backend::{install_default_provider, CryptoProvider};
-use alloy_consensus::crypto::RecoveryError;
+use alloy_consensus::crypto::{
+    backend::{install_default_provider, CryptoProvider},
+    RecoveryError,
+};
 use alloy_primitives::Address;
 use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
 use openvm_ecc_guest::{
