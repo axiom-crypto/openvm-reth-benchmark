@@ -6,9 +6,9 @@ edition = "2021"
 
 [dependencies]
 # workspace
-
 openvm-client-executor = { path = "../../crates/executor/client" }
-revm-precompile = { git = "https://github.com/bluealloy/revm", branch = "main", default-features = false }
+
+
 # openvm
 openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution", features = [
     "std",
@@ -39,36 +39,25 @@ alloy-consensus = { version = "1.0.23", default-features = false, features = [
     "crypto-backend",
 ] }
 
+revm-precompile = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13", default-features = false }
+
 [features]
 default = []
 heap-embedded-alloc = ["openvm/heap-embedded-alloc"]
-# TODO: remove?
-kzg-intrinsics = []
 
 [patch.crates-io]
-# TODO: set specific commit
-revm = { git = "https://github.com/bluealloy/revm", branch = "main" }
-revm-primitives = { git = "https://github.com/bluealloy/revm", branch = "main" }
-revm-interpreter = { git = "https://github.com/bluealloy/revm", branch = "main" }
-revm-precompile = { git = "https://github.com/bluealloy/revm", branch = "main" }
-revm-database = { git = "https://github.com/bluealloy/revm", branch = "main" }
-revm-database-interface = { git = "https://github.com/bluealloy/revm", branch = "main" }
-revm-state = { git = "https://github.com/bluealloy/revm", branch = "main" }
-revm-bytecode = { git = "https://github.com/bluealloy/revm", branch = "main" }
+# revm = { version = "28.0.0" }
+# revm-primitives = { version = "20.2.0" }
+# revm-interpreter = { version = "25.0.0" }
+# revm-precompile = { version = "26.0.0" }
+# revm-database = { version = "7.0.3" }
+# revm-database-interface = { version = "7.0.3" }
+# revm-state = { version = "7.0.3" }
+# revm-bytecode = { version = "6.2.0" }
 
-# k256 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
+k256 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
 p256 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
 ruint = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-
-# Local Patching:
-# revm = { path = "../../../revm/crates/revm" }
-# revm-primitives = { path = "../../../revm/crates/primitives" }
-# revm-interpreter = { path = "../../../revm/crates/interpreter" }
-# revm-precompile = { path = "../../../revm/crates/precompile" }
-# revm-database = { path = "../../../revm/crates/database" }
-# revm-database-interface = { path = "../../../revm/crates/database/interface" }
-# revm-state = { path = "../../../revm/crates/state" }
-# revm-bytecode = { path = "../../../revm/crates/bytecode" }
 
 # k256 = { path = "../../../openvm-org/openvm/guest-libs/k256" }
 # p256 = { path = "../../../openvm-org/openvm/guest-libs/p256" }

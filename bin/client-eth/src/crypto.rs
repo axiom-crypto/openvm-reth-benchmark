@@ -81,6 +81,8 @@ pub struct OpenVMCrypto;
 impl Crypto for OpenVMCrypto {
     /// Custom SHA-256 implementation with openvm optimization
     fn sha256(&self, input: &[u8]) -> [u8; 32] {
+        #[cfg(target_os = "zkvm")]
+        openvm::io::println("OPENVM: sha256 precompile called");
         openvm_sha2::sha256(input)
     }
 
@@ -202,9 +204,14 @@ impl Crypto for OpenVMCrypto {
 pub fn install_openvm_crypto() -> Result<bool, Box<dyn std::error::Error>> {
     // Install OpenVM k256 provider for Alloy (transaction validation)
     install_default_provider(Arc::new(OpenVMK256Provider::default()))?;
+    #[cfg(target_os = "zkvm")]
+    openvm::io::println("✓ OpenVM K256 provider installed for Alloy");
 
     // Install OpenVM crypto for REVM precompiles
-    Ok(revm_precompile::install_crypto(OpenVMCrypto::default()))
+    let installed = revm_precompile::install_crypto(OpenVMCrypto::default());
+    #[cfg(target_os = "zkvm")]
+    openvm::io::println(&format!("✓ OpenVM crypto installed for REVM: {installed}"));
+    Ok(installed)
 }
 
 // Helper functions for BN254 operations
