@@ -21,6 +21,7 @@
 
 use alloc::boxed::Box;
 use alloy_primitives::{b256, B256};
+use alloy_primitives::{map::HashMap, Address};
 use alloy_rlp::Encodable;
 use core::{
     cell::RefCell,
@@ -29,10 +30,10 @@ use core::{
     iter, mem,
 };
 use reth_trie::AccountProof;
-use revm::primitives::HashMap;
-use revm_primitives::{map::DefaultHashBuilder, Address};
+use revm_primitives::map::DefaultHashBuilder;
 use serde::{Deserialize, Serialize};
 
+use alloy_primitives::map::foldhash::HashMapExt;
 use rlp::{Decodable, DecoderError, Prototype, Rlp};
 use thiserror::Error as ThisError;
 
@@ -972,11 +973,11 @@ pub fn proofs_to_tries(
         return Ok(EthereumState {
             state_trie: node_from_digest(state_root),
             storage_tries: Default::default(),
+            rlp_by_digest: RefCell::new(None),
         });
     }
 
-    let mut storage: HashMap<B256, MptNode> =
-        HashMap::with_capacity_and_hasher(proofs.len(), DefaultHashBuilder::default());
+    let mut storage = HashMap::<B256, MptNode>::with_capacity(proofs.len());
 
     let mut state_nodes = HashMap::<_, _>::default();
     let mut state_root_node = MptNode::default();
@@ -1026,7 +1027,11 @@ pub fn proofs_to_tries(
     let state_trie = resolve_nodes(&state_root_node, &state_nodes);
     assert_eq!(state_trie.hash(), state_root);
 
-    Ok(EthereumState { state_trie, storage_tries: StorageTries(storage) })
+    Ok(EthereumState {
+        state_trie,
+        storage_tries: StorageTries(RefCell::new(storage)),
+        rlp_by_digest: RefCell::new(None),
+    })
 }
 
 pub fn transition_proofs_to_tries(
@@ -1039,13 +1044,14 @@ pub fn transition_proofs_to_tries(
         return Ok(EthereumState {
             state_trie: node_from_digest(state_root),
             storage_tries: Default::default(),
+            rlp_by_digest: RefCell::new(None),
         });
     }
 
-    let mut storage: HashMap<B256, MptNode, _> =
+    let mut storage: HashMap<B256, MptNode> =
         HashMap::with_capacity_and_hasher(parent_proofs.len(), DefaultHashBuilder::default());
 
-    let mut state_nodes = HashMap::<_, _, DefaultHashBuilder>::default();
+    let mut state_nodes = HashMap::default();
     let mut state_root_node = MptNode::default();
     for (address, proof) in parent_proofs {
         let proof_nodes = parse_proof(&proof.proof).unwrap();
@@ -1102,7 +1108,11 @@ pub fn transition_proofs_to_tries(
     let state_trie = resolve_nodes(&state_root_node, &state_nodes);
     assert_eq!(state_trie.hash(), state_root);
 
-    Ok(EthereumState { state_trie, storage_tries: StorageTries(storage) })
+    Ok(EthereumState {
+        state_trie,
+        storage_tries: StorageTries(RefCell::new(storage)),
+        rlp_by_digest: RefCell::new(None),
+    })
 }
 
 /// Adds all the leaf nodes of non-inclusion proofs to the nodes.
@@ -1126,7 +1136,7 @@ fn add_orphaned_leafs(
 }
 
 /// Creates a new MPT node from a digest.
-fn node_from_digest(digest: B256) -> MptNode {
+pub fn node_from_digest(digest: B256) -> MptNode {
     match digest {
         EMPTY_ROOT | B256::ZERO => MptNode::default(),
         _ => MptNodeData::Digest(digest).into(),

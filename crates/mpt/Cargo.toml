@@ -22,12 +22,16 @@ rustc-hash.workspace = true
 # reth
 reth-primitives.workspace = true
 reth-trie.workspace = true
+reth-trie-common.workspace = true
 reth-execution-types.workspace = true
 reth-revm.workspace = true
+reth-stateless.workspace = true
+reth-errors.workspace = true
 
 # revm
 revm.workspace = true
 revm-primitives.workspace = true
+revm-bytecode = "6.1.0"
 
 # alloy
 alloy-primitives.workspace = true

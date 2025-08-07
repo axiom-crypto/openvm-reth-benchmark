@@ -79,6 +79,7 @@ reth-ethereum-primitives = { git = "https://github.com/paradigmxyz/reth", tag = 
     "serde",
     "serde-bincode-compat",
 ] }
+reth-stateless = { git = "https://github.com/paradigmxyz/reth", tag = "v1.6.0", default-features = false }
 
 # revm
 revm = { version = "27.0.3", features = ["serde"], default-features = false }
@@ -181,11 +182,11 @@ opt-level = 3
 
 [patch.crates-io]
 # Patch ALL revm v27 versions to use v83 commit (has v27.2.0 version but v84 features)
-revm = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
-revm-primitives = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
-revm-interpreter = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
-revm-precompile = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
-revm-database = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
-revm-database-interface = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
-revm-state = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
-revm-bytecode = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
+# revm = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
+# revm-primitives = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
+# revm-interpreter = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
+# revm-precompile = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
+# revm-database = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
+# revm-database-interface = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
+# revm-state = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
+# revm-bytecode = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13" }
