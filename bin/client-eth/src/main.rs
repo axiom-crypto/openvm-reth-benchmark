@@ -7,21 +7,18 @@ use {
     openvm_algebra_guest::IntMod,
     openvm_keccak256_guest, // trigger extern native-keccak256
     openvm_pairing::{bls12_381::Bls12_381G1Affine, bn254::Bn254G1Affine},
-    p256::P256Point, // for crypto.rs
+    p256::P256Point,
 };
-
-mod crypto;
 
 openvm::init!();
 
 pub fn main() {
-    crate::crypto::install_openvm_crypto().expect("failed to install OpenVM crypto provider");
     println("client-eth starting");
     // Read the input.
     let input: ClientExecutorInput = read();
     println("finished reading input");
 
-    // Execute the block.
+    // Execute the block (crypto is installed inside executor).
     let executor = ClientExecutor;
     let header = executor.execute(input).expect("failed to execute client");
     let block_hash = header.hash_slow();

@@ -8,7 +8,6 @@ edition = "2021"
 # workspace
 openvm-client-executor = { path = "../../crates/executor/client" }
 
-
 # openvm
 openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution", features = [
     "std",
@@ -35,17 +34,13 @@ tracing = { version = "0.1", features = [
 ] }
 
 alloy-primitives = { version = "1.3.0", default-features = false }
-alloy-consensus = { version = "1.0.23", default-features = false, features = [
-    "crypto-backend",
-] }
-
-revm-precompile = { git = "https://github.com/bluealloy/revm", rev = "74e7969bc9085e78a2732a6021331970ded86a13", default-features = false }
 
 [features]
 default = []
 heap-embedded-alloc = ["openvm/heap-embedded-alloc"]
 
 [patch.crates-io]
+# TODO: Without patches this doesn't work fast. But reth is not compatible with revm v28.0.0.
 # revm = { version = "28.0.0" }
 # revm-primitives = { version = "20.2.0" }
 # revm-interpreter = { version = "25.0.0" }

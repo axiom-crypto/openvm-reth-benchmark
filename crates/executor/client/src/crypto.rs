@@ -3,8 +3,10 @@
 //! This module provides OpenVM-optimized implementations of cryptographic operations
 //! for both transaction validation (via Alloy crypto provider) and precompile execution.
 
-use alloy_consensus::crypto::backend::{install_default_provider, CryptoProvider};
-use alloy_consensus::crypto::RecoveryError;
+use alloy_consensus::crypto::{
+    backend::{install_default_provider, CryptoProvider},
+    RecoveryError,
+};
 use alloy_primitives::Address;
 use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
 use openvm_ecc_guest::{
@@ -18,7 +20,10 @@ use openvm_pairing::{
     bn254::{Bn254, Fp, Fp2, G1Affine, G2Affine, Scalar},
     PairingCheck,
 };
-use revm_precompile::{Crypto, PrecompileError};
+use revm::{
+    install_crypto,
+    precompile::{Crypto, PrecompileError},
+};
 use std::{sync::Arc, vec::Vec};
 
 // BN254 constants
@@ -28,7 +33,7 @@ const G2_LEN: usize = 128;
 
 /// OpenVM k256 backend for Alloy crypto operations (transaction validation)
 #[derive(Debug, Default)]
-pub struct OpenVMK256Provider;
+struct OpenVMK256Provider;
 
 impl CryptoProvider for OpenVMK256Provider {
     fn recover_signer_unchecked(
@@ -76,7 +81,7 @@ impl CryptoProvider for OpenVMK256Provider {
 
 /// OpenVM custom crypto implementation for faster precompiles
 #[derive(Debug, Default)]
-pub struct OpenVMCrypto;
+struct OpenVMCrypto;
 
 impl Crypto for OpenVMCrypto {
     /// Custom SHA-256 implementation with openvm optimization
@@ -201,16 +206,13 @@ impl Crypto for OpenVMCrypto {
 }
 
 /// Install OpenVM crypto implementations globally
-pub fn install_openvm_crypto() -> Result<bool, Box<dyn std::error::Error>> {
+pub(crate) fn install_openvm_crypto() -> Result<bool, Box<dyn std::error::Error>> {
     // Install OpenVM k256 provider for Alloy (transaction validation)
     install_default_provider(Arc::new(OpenVMK256Provider::default()))?;
-    #[cfg(target_os = "zkvm")]
-    openvm::io::println("✓ OpenVM K256 provider installed for Alloy");
 
     // Install OpenVM crypto for REVM precompiles
-    let installed = revm_precompile::install_crypto(OpenVMCrypto::default());
-    #[cfg(target_os = "zkvm")]
-    openvm::io::println(&format!("✓ OpenVM crypto installed for REVM: {installed}"));
+    let installed = install_crypto(OpenVMCrypto::default());
+
     Ok(installed)
 }
 

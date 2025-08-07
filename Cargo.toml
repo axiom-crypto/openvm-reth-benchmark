@@ -142,6 +142,19 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/
 openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution", default-features = false }
 openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution", default-features = false }
 openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution", default-features = false }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution", default-features = false }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution", default-features = false }
+openvm-keccak256 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution", default-features = false }
+openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", branch = "feat/new-execution", default-features = false }
+openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution", default-features = false, features = [
+    "bn254",
+    "bls12_381",
+] }
+openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution", default-features = false }
+
+k256 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
+p256 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
+ruint = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
 
 [workspace.lints]
 rust.missing_debug_implementations = "warn"

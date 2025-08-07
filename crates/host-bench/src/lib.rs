@@ -364,7 +364,7 @@ fn try_load_input_from_cache(
     block_number: u64,
 ) -> eyre::Result<Option<ClientExecutorInput>> {
     Ok(if let Some(cache_dir) = cache_dir {
-        let cache_path = cache_dir.join(format!("input/{}/{}.bin", chain_id, block_number));
+        let cache_path = cache_dir.join(format!("input/{chain_id}/{block_number}.bin"));
 
         if cache_path.exists() {
             // TODO: prune the cache if invalid instead
