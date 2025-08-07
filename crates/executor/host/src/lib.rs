@@ -26,7 +26,7 @@ pub struct HostExecutor<P: Provider<Ethereum> + Clone> {
     pub provider: P,
 }
 
-impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
+impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
     /// Create a new [`HostExecutor`] with a specific [Provider] and [Transport].
     pub fn new(provider: P) -> Self {
         Self { provider }
