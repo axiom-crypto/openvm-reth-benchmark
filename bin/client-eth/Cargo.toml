@@ -55,8 +55,8 @@ revm-state = { git = "https://github.com/bluealloy/revm", branch = "main" }
 revm-bytecode = { git = "https://github.com/bluealloy/revm", branch = "main" }
 
 # k256 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-p256 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
-ruint = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
+p256 = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf" }
+ruint = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf" }
 
 # Local Patching:
 # revm = { path = "../../../revm/crates/revm" }
