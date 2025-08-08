@@ -21,6 +21,8 @@ exclude = ["**/target"]
 version = "0.1.0"
 
 [workspace.dependencies]
+# Not directly used, just to have rayon feature always
+hashbrown = { version = "0.15.4", features = ["rayon"] }
 bincode_derive = "2.0.0"
 eyre = "0.6"
 tracing = { version = "0.1.40", default-features = false }
