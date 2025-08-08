@@ -26,6 +26,12 @@ use smallvec::SmallVec;
 use thiserror::Error as ThisError;
 
 pub type NodeId = u32;
+/// Compact vector for nibble sequences used in key traversal.
+type Nibbles = SmallVec<[u8; 64]>;
+
+// Hex-prefix (HP) encoding flags for MPT paths
+const HP_FLAG_ODD: u8 = 0x10; // path has odd number of nibbles; low nibble of first byte is data
+const HP_FLAG_LEAF: u8 = 0x20; // node is a leaf (vs extension)
 
 /// Sentinel index representing the null node when decoding and in internal references.
 /// In a default arena, `nodes[0]` starts as `Null`, but the root may later be changed to a
@@ -87,7 +93,7 @@ pub fn lcp(a: &[u8], b: &[u8]) -> usize {
 /// input slice, splits it into two nibbles, and appends them to the resulting vector.
 /// Uses `SmallVec` to avoid heap allocation for typical key sizes (≤32 bytes = 64 nibbles).
 #[inline]
-pub fn to_nibs(slice: &[u8]) -> SmallVec<[u8; 64]> {
+pub fn to_nibs(slice: &[u8]) -> Nibbles {
     let mut result = SmallVec::with_capacity(2 * slice.len());
     for byte in slice {
         result.push(byte >> 4);
@@ -99,13 +105,13 @@ pub fn to_nibs(slice: &[u8]) -> SmallVec<[u8; 64]> {
 /// Decodes a compact hex-prefix-encoded path (as used in MPT leaf/extension nodes)
 /// into its nibble sequence. This allocates a `SmallVec` with the exact nibble capacity.
 #[inline]
-fn prefix_to_small_nibs(encoded_path: &[u8]) -> SmallVec<[u8; 64]> {
+fn prefix_to_small_nibs(encoded_path: &[u8]) -> Nibbles {
     if encoded_path.is_empty() {
         return SmallVec::new();
     }
 
     let first_byte = encoded_path[0];
-    let is_odd = (first_byte & 0x10) != 0;
+    let is_odd = (first_byte & HP_FLAG_ODD) != 0;
     // Nibble count: if odd, first byte contains 1 nibble of data; otherwise, first byte
     // contains only flags. Remaining bytes always contain two nibbles each.
     let nib_count = 2 * (encoded_path.len() - 1) + if is_odd { 1 } else { 0 };
@@ -123,6 +129,106 @@ fn prefix_to_small_nibs(encoded_path: &[u8]) -> SmallVec<[u8; 64]> {
     }
 
     nibs
+}
+
+/// Returns the number of nibbles encoded in a compact hex-prefix path.
+#[inline]
+fn encoded_path_nibble_count(encoded_path: &[u8]) -> usize {
+    if encoded_path.is_empty() {
+        return 0;
+    }
+    let is_odd = (encoded_path[0] & HP_FLAG_ODD) != 0;
+    2 * (encoded_path.len() - 1) + if is_odd { 1 } else { 0 }
+}
+
+/// Compares a compact hex-prefix path with a nibble slice for equality without allocating.
+#[inline]
+fn encoded_path_eq_nibs(encoded_path: &[u8], nibs: &[u8]) -> bool {
+    let nib_count = encoded_path_nibble_count(encoded_path);
+    if nib_count != nibs.len() {
+        return false;
+    }
+    if nib_count == 0 {
+        return true;
+    }
+
+    let first = encoded_path[0];
+    let is_odd = (first & HP_FLAG_ODD) != 0;
+    let mut i = 0usize; // index in nibs
+    let mut j = 1usize; // index in encoded_path bytes
+
+    if is_odd {
+        if nibs[i] != (first & 0x0f) {
+            return false;
+        }
+        i += 1;
+    }
+
+    while i + 1 < nibs.len() {
+        let b = encoded_path[j];
+        if nibs[i] != (b >> 4) {
+            return false;
+        }
+        if nibs[i + 1] != (b & 0x0f) {
+            return false;
+        }
+        i += 2;
+        j += 1;
+    }
+
+    if i < nibs.len() {
+        // one last high nibble remains
+        let b = encoded_path[j];
+        if nibs[i] != (b >> 4) {
+            return false;
+        }
+    }
+    true
+}
+
+/// If `encoded_path` is a prefix of `nibs`, returns the tail `&nibs[matched_len..]`.
+#[inline]
+fn encoded_path_strip_prefix<'a>(encoded_path: &[u8], nibs: &'a [u8]) -> Option<&'a [u8]> {
+    let nib_count = encoded_path_nibble_count(encoded_path);
+    if nib_count > nibs.len() {
+        return None;
+    }
+    if nib_count == 0 {
+        return Some(nibs);
+    }
+
+    let first = encoded_path[0];
+    let is_odd = (first & HP_FLAG_ODD) != 0;
+    let mut i = 0usize; // index in nibs
+    let mut j = 1usize; // index in encoded_path bytes
+
+    if is_odd {
+        if nibs[i] != (first & 0x0f) {
+            return None;
+        }
+        i += 1;
+    }
+
+    while i + 1 < nib_count {
+        let b = encoded_path[j];
+        if nibs[i] != (b >> 4) {
+            return None;
+        }
+        if nibs[i + 1] != (b & 0x0f) {
+            return None;
+        }
+        i += 2;
+        j += 1;
+    }
+
+    if i < nib_count {
+        let b = encoded_path[j];
+        if nibs[i] != (b >> 4) {
+            return None;
+        }
+        i += 1;
+    }
+    Some(&nibs[i..])
 }
 
 /// Arena-based implementation that stores all nodes in a flat vector
@@ -342,18 +448,16 @@ impl<'a> ArenaBasedMptNode<'a> {
                 }
             }
             ArenaNodeData::Leaf(path_bytes, value) => {
-                // Convert compact path to nibbles on-demand
-                let path_nibs = prefix_to_small_nibs(path_bytes);
-                if path_nibs.as_slice() == key_nibs {
+                // Compare compact path to key nibbles without allocating
+                if encoded_path_eq_nibs(path_bytes, key_nibs) {
                     Ok(Some(value))
                 } else {
                     Ok(None)
                 }
             }
             ArenaNodeData::Extension(path_bytes, child_id) => {
-                // Convert compact path to nibbles on-demand
-                let path_nibs = prefix_to_small_nibs(path_bytes);
-                if let Some(tail) = key_nibs.strip_prefix(path_nibs.as_slice()) {
+                // Strip compact path prefix without allocating
+                if let Some(tail) = encoded_path_strip_prefix(path_bytes, key_nibs) {
                     self.get_recursive(*child_id, tail)
                 } else {
                     Ok(None)
