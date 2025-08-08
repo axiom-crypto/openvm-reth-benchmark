@@ -4,8 +4,8 @@
 //! - Nodes are stored in a flat arena (`Vec`) and referenced by `NodeId` indices for cache locality
 //!   and compact serialization.
 //! - Hex-prefix paths are stored compactly and decoded to nibbles on-demand for traversal.
-//! - Hash/reference caching avoids repeated re-encoding and hashing. Cache is invalidated
-//!   upwards during `insert`/`delete` recursion.
+//! - Hash/reference caching avoids repeated re-encoding and hashing. Cache is invalidated upwards
+//!   during `insert`/`delete` recursion.
 //! - RLP is used for (de)serialization; decoding is near zero-copy by borrowing from an input
 //!   buffer and allocating subsequent mutations into a bump arena.
 //!
@@ -44,21 +44,6 @@ pub const NULL_NODE_ID: NodeId = 0;
 pub const EMPTY_ROOT: B256 =
     b256!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
 
-/// Represents the ways in which one node can reference another node inside the sparse Merkle
-/// Patricia Trie (MPT).
-///
-/// Nodes in the MPT can reference other nodes either directly through their byte representation or
-/// indirectly through a hash of their encoding.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
-pub enum MptNodeReference {
-    /// Represents a direct reference to another node using its byte encoding. Typically
-    /// used for short encodings that are less than 32 bytes in length.
-    Bytes(Vec<u8>),
-    /// Represents an indirect reference to another node using the Keccak hash of its long
-    /// encoding. Used for encodings that are not less than 32 bytes in length.
-    Digest(B256),
-}
-
 /// Custom error types for the sparse Merkle Patricia Trie (MPT).
 #[derive(Debug, ThisError)]
 pub enum Error {
@@ -74,28 +59,23 @@ pub enum Error {
     Rlp(#[from] alloy_rlp::Error),
 }
 
-// lcp and to_nibs are provided by crate::hp
-
-// prefix_to_small_nibs is provided by crate::hp
-
-// encoded-path comparison and strip-prefix helpers are provided by crate::hp
-
 /// Arena-based implementation that stores all nodes in a flat vector
 /// and uses indices for better memory layout and performance.
 /// The lifetime parameter 'a allows zero-copy deserialization by borrowing from the input buffer.
 #[derive(Clone, Debug)]
-pub struct ArenaBasedMptNode<'a> {
-    nodes: Vec<ArenaNodeData<'a>>,
-    cached_references: Vec<RefCell<Option<MptNodeReference>>>,
+pub struct MptTrie<'a> {
     root_id: NodeId,
+    nodes: Vec<NodeData<'a>>,
     /// One monotonically‑growing arena that owns every mutated byte slice.
     bump: Rc<Bump>,
+    // Cache. Hashing/encoding often needs “what would this node look like in its parent"
+    cached_references: Vec<RefCell<Option<NodeRef>>>,
     /// Scratch buffer used only for RLP encoding when a node's full RLP exceeds 32 bytes and we
     /// need to compute its keccak hash. Keeping it here avoids repeated allocations.
     rlp_scratch: RefCell<Vec<u8>>,
 }
 
-impl ser::Serialize for ArenaBasedMptNode<'_> {
+impl ser::Serialize for MptTrie<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
@@ -105,7 +85,7 @@ impl ser::Serialize for ArenaBasedMptNode<'_> {
     }
 }
 
-impl<'de> de::Deserialize<'de> for ArenaBasedMptNode<'de> {
+impl<'de> de::Deserialize<'de> for MptTrie<'de> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: de::Deserializer<'de>,
@@ -114,14 +94,14 @@ impl<'de> de::Deserialize<'de> for ArenaBasedMptNode<'de> {
             <(usize, OptimizedBytes)>::deserialize(deserializer)?;
         // We need to leak the memory to get a 'de lifetime - this is a limitation of serde
         let leaked_bytes: &'de [u8] = Box::leak(rlp_blob.into_boxed_slice());
-        ArenaBasedMptNode::decode_from_rlp(leaked_bytes, num_nodes).map_err(de::Error::custom)
+        MptTrie::decode_from_rlp(leaked_bytes, num_nodes).map_err(de::Error::custom)
     }
 }
 
-impl Default for ArenaBasedMptNode<'_> {
+impl Default for MptTrie<'_> {
     fn default() -> Self {
         Self {
-            nodes: vec![ArenaNodeData::Null],
+            nodes: vec![NodeData::Null],
             cached_references: vec![RefCell::new(None)],
             root_id: 0,
             bump: Rc::new(Bump::new()),
@@ -130,9 +110,24 @@ impl Default for ArenaBasedMptNode<'_> {
     }
 }
 
+/// Represents the ways in which one node can reference another node inside the sparse Merkle
+/// Patricia Trie (MPT).
+///
+/// Nodes in the MPT can reference other nodes either directly through their byte representation or
+/// indirectly through a hash of their encoding.
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+pub enum NodeRef {
+    /// Represents a direct reference to another node using its byte encoding. Typically
+    /// used for short encodings that are less than 32 bytes in length.
+    Bytes(Vec<u8>),
+    /// Represents an indirect reference to another node using the Keccak hash of its long
+    /// encoding. Used for encodings that are not less than 32 bytes in length.
+    Digest(B256),
+}
+
 /// Node data for arena-based trie with zero-copy optimization
 #[derive(Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd)]
-pub enum ArenaNodeData<'a> {
+pub enum NodeData<'a> {
     #[default]
     /// Absence of a node. Encoded as empty string in RLP.
     Null,
@@ -151,12 +146,12 @@ pub enum ArenaNodeData<'a> {
 }
 
 // Constructors & Capacity Management
-impl<'a> ArenaBasedMptNode<'a> {
+impl<'a> MptTrie<'a> {
     /// Creates a new arena with pre-allocated capacity
     pub fn with_capacity(cap: usize) -> Self {
         let mut nodes = Vec::with_capacity(cap.max(1));
         let mut cached_references = Vec::with_capacity(cap.max(1));
-        nodes.push(ArenaNodeData::Null);
+        nodes.push(NodeData::Null);
         cached_references.push(RefCell::new(None));
 
         Self {
@@ -191,7 +186,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         //       or allocate a separate arena specifically for updates.
         const VEC_CAPACITY_GROWTH_FACTOR: f64 = 1.11;
         let capacity = (num_nodes as f64 * VEC_CAPACITY_GROWTH_FACTOR) as usize + 1;
-        let mut arena = ArenaBasedMptNode::with_capacity(capacity);
+        let mut arena = MptTrie::with_capacity(capacity);
 
         let mut buf = bytes;
         let root_id = arena.decode_node_recursive(&mut buf)?;
@@ -204,7 +199,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 }
 
 // Public API
-impl<'a> ArenaBasedMptNode<'a> {
+impl<'a> MptTrie<'a> {
     /// Computes and returns the 256-bit hash of the node.
     #[inline]
     pub fn hash(&self) -> B256 {
@@ -277,7 +272,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 }
 
 // Internal Implementation
-impl<'a> ArenaBasedMptNode<'a> {
+impl<'a> MptTrie<'a> {
     #[inline]
     fn get_recursive<'s>(
         &'s self,
@@ -285,8 +280,8 @@ impl<'a> ArenaBasedMptNode<'a> {
         key_nibs: &[u8],
     ) -> Result<Option<&'a [u8]>, Error> {
         match &self.nodes[node_id as usize] {
-            ArenaNodeData::Null => Ok(None),
-            ArenaNodeData::Branch(nodes) => {
+            NodeData::Null => Ok(None),
+            NodeData::Branch(nodes) => {
                 if let Some((i, tail)) = key_nibs.split_first() {
                     match nodes[*i as usize] {
                         Some(id) => self.get_recursive(id, tail),
@@ -296,7 +291,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                     Ok(None)
                 }
             }
-            ArenaNodeData::Leaf(path_bytes, value) => {
+            NodeData::Leaf(path_bytes, value) => {
                 // Compare compact path to key nibbles without allocating
                 if encoded_path_eq_nibs(path_bytes, key_nibs) {
                     Ok(Some(value))
@@ -304,7 +299,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                     Ok(None)
                 }
             }
-            ArenaNodeData::Extension(path_bytes, child_id) => {
+            NodeData::Extension(path_bytes, child_id) => {
                 // Strip compact path prefix without allocating
                 if let Some(tail) = encoded_path_strip_prefix(path_bytes, key_nibs) {
                     self.get_recursive(*child_id, tail)
@@ -312,7 +307,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                     Ok(None)
                 }
             }
-            ArenaNodeData::Digest(digest) => Err(Error::NodeNotResolved(*digest)),
+            NodeData::Digest(digest) => Err(Error::NodeNotResolved(*digest)),
         }
     }
 
@@ -324,13 +319,13 @@ impl<'a> ArenaBasedMptNode<'a> {
         value: &[u8],
     ) -> Result<bool, Error> {
         let updated = match self.nodes[node_id as usize] {
-            ArenaNodeData::Null => {
+            NodeData::Null => {
                 let path_slice = self.add_encoded_path_slice(key_nibs, true);
                 let value_slice = self.alloc_in_bump(value);
-                self.nodes[node_id as usize] = ArenaNodeData::Leaf(path_slice, value_slice);
+                self.nodes[node_id as usize] = NodeData::Leaf(path_slice, value_slice);
                 Ok(true)
             }
-            ArenaNodeData::Branch(mut children) => {
+            NodeData::Branch(mut children) => {
                 if let Some((i, tail)) = key_nibs.split_first() {
                     let updated = match children[*i as usize] {
                         Some(id) => self.insert_recursive(id, tail, value)?,
@@ -338,9 +333,9 @@ impl<'a> ArenaBasedMptNode<'a> {
                             let path_slice = self.add_encoded_path_slice(tail, true);
                             let value_slice = self.alloc_in_bump(value);
                             let new_leaf_id =
-                                self.add_node(ArenaNodeData::Leaf(path_slice, value_slice));
+                                self.add_node(NodeData::Leaf(path_slice, value_slice));
                             children[*i as usize] = Some(new_leaf_id);
-                            self.nodes[node_id as usize] = ArenaNodeData::Branch(children);
+                            self.nodes[node_id as usize] = NodeData::Branch(children);
                             true
                         }
                     };
@@ -349,7 +344,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                     Err(Error::ValueInBranch)
                 }
             }
-            ArenaNodeData::Leaf(path_bytes, old_value) => {
+            NodeData::Leaf(path_bytes, old_value) => {
                 let path_nibs = prefix_to_small_nibs(path_bytes);
                 let common_len = lcp(&path_nibs, key_nibs);
 
@@ -358,7 +353,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                         return Ok(false);
                     }
                     let value_slice = self.alloc_in_bump(value);
-                    self.nodes[node_id as usize] = ArenaNodeData::Leaf(path_bytes, value_slice);
+                    self.nodes[node_id as usize] = NodeData::Leaf(path_bytes, value_slice);
                     Ok(true)
                 } else if common_len == path_nibs.len() || common_len == key_nibs.len() {
                     Err(Error::ValueInBranch)
@@ -370,30 +365,30 @@ impl<'a> ArenaBasedMptNode<'a> {
                         self.add_encoded_path_slice(&path_nibs[split_point..], true);
                     let leaf1_value_slice = self.alloc_in_bump(old_value);
                     let leaf1_id =
-                        self.add_node(ArenaNodeData::Leaf(leaf1_path_slice, leaf1_value_slice));
+                        self.add_node(NodeData::Leaf(leaf1_path_slice, leaf1_value_slice));
 
                     let leaf2_path_slice =
                         self.add_encoded_path_slice(&key_nibs[split_point..], true);
                     let leaf2_value_slice = self.alloc_in_bump(value);
                     let leaf2_id =
-                        self.add_node(ArenaNodeData::Leaf(leaf2_path_slice, leaf2_value_slice));
+                        self.add_node(NodeData::Leaf(leaf2_path_slice, leaf2_value_slice));
 
                     children[path_nibs[common_len] as usize] = Some(leaf1_id);
                     children[key_nibs[common_len] as usize] = Some(leaf2_id);
 
                     let new_node_data = if common_len > 0 {
-                        let branch_id = self.add_node(ArenaNodeData::Branch(children));
+                        let branch_id = self.add_node(NodeData::Branch(children));
                         let ext_path_slice =
                             self.add_encoded_path_slice(&path_nibs[..common_len], false);
-                        ArenaNodeData::Extension(ext_path_slice, branch_id)
+                        NodeData::Extension(ext_path_slice, branch_id)
                     } else {
-                        ArenaNodeData::Branch(children)
+                        NodeData::Branch(children)
                     };
                     self.nodes[node_id as usize] = new_node_data;
                     Ok(true)
                 }
             }
-            ArenaNodeData::Extension(path_bytes, child_id) => {
+            NodeData::Extension(path_bytes, child_id) => {
                 let path_nibs = prefix_to_small_nibs(path_bytes);
                 let common_len = lcp(&path_nibs, key_nibs);
 
@@ -408,8 +403,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                     if split_point < path_nibs.len() {
                         let ext_path_slice =
                             self.add_encoded_path_slice(&path_nibs[split_point..], false);
-                        let ext_id =
-                            self.add_node(ArenaNodeData::Extension(ext_path_slice, child_id));
+                        let ext_id = self.add_node(NodeData::Extension(ext_path_slice, child_id));
                         children[path_nibs[common_len] as usize] = Some(ext_id);
                     } else {
                         children[path_nibs[common_len] as usize] = Some(child_id);
@@ -418,23 +412,22 @@ impl<'a> ArenaBasedMptNode<'a> {
                     let leaf_path_slice =
                         self.add_encoded_path_slice(&key_nibs[split_point..], true);
                     let leaf_value_slice = self.alloc_in_bump(value);
-                    let leaf_id =
-                        self.add_node(ArenaNodeData::Leaf(leaf_path_slice, leaf_value_slice));
+                    let leaf_id = self.add_node(NodeData::Leaf(leaf_path_slice, leaf_value_slice));
                     children[key_nibs[common_len] as usize] = Some(leaf_id);
 
                     let new_node_data = if common_len > 0 {
-                        let branch_id = self.add_node(ArenaNodeData::Branch(children));
+                        let branch_id = self.add_node(NodeData::Branch(children));
                         let parent_ext_path_slice =
                             self.add_encoded_path_slice(&path_nibs[..common_len], false);
-                        ArenaNodeData::Extension(parent_ext_path_slice, branch_id)
+                        NodeData::Extension(parent_ext_path_slice, branch_id)
                     } else {
-                        ArenaNodeData::Branch(children)
+                        NodeData::Branch(children)
                     };
                     self.nodes[node_id as usize] = new_node_data;
                     Ok(true)
                 }
             }
-            ArenaNodeData::Digest(digest) => Err(Error::NodeNotResolved(digest)),
+            NodeData::Digest(digest) => Err(Error::NodeNotResolved(digest)),
         }?;
 
         if updated {
@@ -447,8 +440,8 @@ impl<'a> ArenaBasedMptNode<'a> {
     #[inline]
     fn delete_recursive(&mut self, node_id: NodeId, key_nibs: &[u8]) -> Result<bool, Error> {
         let updated = match self.nodes[node_id as usize] {
-            ArenaNodeData::Null => Ok(false),
-            ArenaNodeData::Branch(mut children) => {
+            NodeData::Null => Ok(false),
+            NodeData::Branch(mut children) => {
                 if let Some((i, tail)) = key_nibs.split_first() {
                     let child_id = children[*i as usize];
                     match child_id {
@@ -457,7 +450,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                                 return Ok(false);
                             }
 
-                            if matches!(self.nodes[id as usize], ArenaNodeData::Null) {
+                            if matches!(self.nodes[id as usize], NodeData::Null) {
                                 children[*i as usize] = None;
                             }
                         }
@@ -478,7 +471,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                         let child_node_data = self.nodes[child_id as usize].clone();
 
                         let new_node_data = match child_node_data {
-                            ArenaNodeData::Leaf(path_bytes, value) => {
+                            NodeData::Leaf(path_bytes, value) => {
                                 let path_nibs = prefix_to_small_nibs(path_bytes);
                                 let mut new_nibs: SmallVec<[u8; 64]> =
                                     SmallVec::with_capacity(1 + path_nibs.len());
@@ -486,46 +479,46 @@ impl<'a> ArenaBasedMptNode<'a> {
                                 new_nibs.extend_from_slice(&path_nibs);
                                 let new_path_slice = self.add_encoded_path_slice(&new_nibs, true);
                                 let new_value_slice = self.alloc_in_bump(value);
-                                ArenaNodeData::Leaf(new_path_slice, new_value_slice)
+                                NodeData::Leaf(new_path_slice, new_value_slice)
                             }
-                            ArenaNodeData::Extension(path_bytes, child_child_id) => {
+                            NodeData::Extension(path_bytes, child_child_id) => {
                                 let path_nibs = prefix_to_small_nibs(path_bytes);
                                 let mut new_nibs: SmallVec<[u8; 64]> =
                                     SmallVec::with_capacity(1 + path_nibs.len());
                                 new_nibs.push(index as u8);
                                 new_nibs.extend_from_slice(&path_nibs);
                                 let new_path_slice = self.add_encoded_path_slice(&new_nibs, false);
-                                ArenaNodeData::Extension(new_path_slice, child_child_id)
+                                NodeData::Extension(new_path_slice, child_child_id)
                             }
-                            ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
+                            NodeData::Branch(_) | NodeData::Digest(_) => {
                                 let ext_nibs: SmallVec<[u8; 1]> =
                                     SmallVec::from_slice(&[index as u8]);
                                 let new_path_slice = self.add_encoded_path_slice(&ext_nibs, false);
-                                ArenaNodeData::Extension(new_path_slice, child_id)
+                                NodeData::Extension(new_path_slice, child_id)
                             }
-                            ArenaNodeData::Null => unreachable!(),
+                            NodeData::Null => unreachable!(),
                         };
                         self.nodes[node_id as usize] = new_node_data;
                     } else {
                         // More than one child remains, just update the branch node.
-                        self.nodes[node_id as usize] = ArenaNodeData::Branch(children);
+                        self.nodes[node_id as usize] = NodeData::Branch(children);
                     }
                 } else {
                     // No children left, update to an empty branch node.
-                    self.nodes[node_id as usize] = ArenaNodeData::Branch(children);
+                    self.nodes[node_id as usize] = NodeData::Branch(children);
                 }
 
                 Ok(true)
             }
-            ArenaNodeData::Leaf(path_bytes, _) => {
+            NodeData::Leaf(path_bytes, _) => {
                 let path_nibs = prefix_to_small_nibs(path_bytes);
                 if path_nibs.as_slice() != key_nibs {
                     return Ok(false);
                 }
-                self.nodes[node_id as usize] = ArenaNodeData::Null;
+                self.nodes[node_id as usize] = NodeData::Null;
                 Ok(true)
             }
-            ArenaNodeData::Extension(path_bytes, child_id) => {
+            NodeData::Extension(path_bytes, child_id) => {
                 let path_nibs = prefix_to_small_nibs(path_bytes);
                 if let Some(tail) = key_nibs.strip_prefix(path_nibs.as_slice()) {
                     if !self.delete_recursive(child_id, tail)? {
@@ -537,8 +530,8 @@ impl<'a> ArenaBasedMptNode<'a> {
 
                 let child_node_data = self.nodes[child_id as usize].clone();
                 let new_node_data = match child_node_data {
-                    ArenaNodeData::Null => ArenaNodeData::Null,
-                    ArenaNodeData::Leaf(child_path_bytes, value) => {
+                    NodeData::Null => NodeData::Null,
+                    NodeData::Leaf(child_path_bytes, value) => {
                         let child_path_nibs = prefix_to_small_nibs(child_path_bytes);
                         let mut combined_nibs: SmallVec<[u8; 64]> =
                             SmallVec::with_capacity(path_nibs.len() + child_path_nibs.len());
@@ -546,25 +539,25 @@ impl<'a> ArenaBasedMptNode<'a> {
                         combined_nibs.extend_from_slice(&child_path_nibs);
                         let new_path_slice = self.add_encoded_path_slice(&combined_nibs, true);
                         let new_value_slice = self.alloc_in_bump(value);
-                        ArenaNodeData::Leaf(new_path_slice, new_value_slice)
+                        NodeData::Leaf(new_path_slice, new_value_slice)
                     }
-                    ArenaNodeData::Extension(child_path_bytes, grandchild_id) => {
+                    NodeData::Extension(child_path_bytes, grandchild_id) => {
                         let child_path_nibs = prefix_to_small_nibs(child_path_bytes);
                         let mut combined_nibs: SmallVec<[u8; 64]> =
                             SmallVec::with_capacity(path_nibs.len() + child_path_nibs.len());
                         combined_nibs.extend_from_slice(&path_nibs);
                         combined_nibs.extend_from_slice(&child_path_nibs);
                         let new_path_slice = self.add_encoded_path_slice(&combined_nibs, false);
-                        ArenaNodeData::Extension(new_path_slice, grandchild_id)
+                        NodeData::Extension(new_path_slice, grandchild_id)
                     }
-                    ArenaNodeData::Branch(_) | ArenaNodeData::Digest(_) => {
-                        ArenaNodeData::Extension(path_bytes, child_id)
+                    NodeData::Branch(_) | NodeData::Digest(_) => {
+                        NodeData::Extension(path_bytes, child_id)
                     }
                 };
                 self.nodes[node_id as usize] = new_node_data;
                 Ok(true)
             }
-            ArenaNodeData::Digest(digest) => Err(Error::NodeNotResolved(digest)),
+            NodeData::Digest(digest) => Err(Error::NodeNotResolved(digest)),
         }?;
 
         if updated {
@@ -591,7 +584,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                 }
                 let digest = B256::from_slice(&buf[..32]);
                 buf.advance(32);
-                return Ok(self.add_node(ArenaNodeData::Digest(digest)));
+                return Ok(self.add_node(NodeData::Digest(digest)));
             }
             return Err(Error::Rlp(alloy_rlp::Error::Custom("invalid string node")));
         }
@@ -651,7 +644,7 @@ impl<'a> ArenaBasedMptNode<'a> {
             }
             payload_buf.advance(value_header.payload_length);
 
-            Ok(self.add_node(ArenaNodeData::Branch(children)))
+            Ok(self.add_node(NodeData::Branch(children)))
         } else {
             // Leaf or Extension node (2 items)
             // Reuse headers from the probe to avoid re-parsing.
@@ -688,19 +681,19 @@ impl<'a> ArenaBasedMptNode<'a> {
                 let value_slice = &payload_buf[..value_header.payload_length];
                 payload_buf.advance(value_header.payload_length);
 
-                Ok(self.add_node(ArenaNodeData::Leaf(path_slice, value_slice)))
+                Ok(self.add_node(NodeData::Leaf(path_slice, value_slice)))
             } else {
                 // Extension node (prefix 0x00 or 0x01)
                 // The second item is a child node, which we must parse recursively.
                 // We cannot reuse h2 because decode_node_recursive needs to see the full RLP.
                 let child_id = self.decode_node_recursive(&mut payload_buf)?;
-                Ok(self.add_node(ArenaNodeData::Extension(path_slice, child_id)))
+                Ok(self.add_node(NodeData::Extension(path_slice, child_id)))
             }
         }
     }
 
     #[inline]
-    fn add_node(&mut self, data: ArenaNodeData<'a>) -> NodeId {
+    fn add_node(&mut self, data: NodeData<'a>) -> NodeId {
         let id = self.nodes.len() as NodeId;
         self.nodes.push(data);
         self.cached_references.push(RefCell::new(None));
@@ -745,24 +738,24 @@ impl<'a> ArenaBasedMptNode<'a> {
 
     fn hash_id(&self, node_id: NodeId) -> B256 {
         match self.nodes[node_id as usize] {
-            ArenaNodeData::Null => EMPTY_ROOT,
+            NodeData::Null => EMPTY_ROOT,
             _ => {
                 match self.cached_references[node_id as usize]
                     .borrow_mut()
                     .get_or_insert_with(|| self.calc_reference(node_id))
                 {
-                    MptNodeReference::Digest(digest) => *digest,
-                    MptNodeReference::Bytes(bytes) => keccak256(bytes),
+                    NodeRef::Digest(digest) => *digest,
+                    NodeRef::Bytes(bytes) => keccak256(bytes),
                 }
             }
         }
     }
 
     #[inline]
-    fn calc_reference(&self, node_id: NodeId) -> MptNodeReference {
+    fn calc_reference(&self, node_id: NodeId) -> NodeRef {
         match &self.nodes[node_id as usize] {
-            ArenaNodeData::Null => MptNodeReference::Bytes(vec![alloy_rlp::EMPTY_STRING_CODE]),
-            ArenaNodeData::Digest(digest) => MptNodeReference::Digest(*digest),
+            NodeData::Null => NodeRef::Bytes(vec![alloy_rlp::EMPTY_STRING_CODE]),
+            NodeData::Digest(digest) => NodeRef::Digest(*digest),
             _ => {
                 let payload_length = self.payload_length_id(node_id);
                 let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
@@ -771,14 +764,14 @@ impl<'a> ArenaBasedMptNode<'a> {
                     let mut encoded = Vec::with_capacity(rlp_length);
                     self.encode_id_with_payload_len(node_id, payload_length, &mut encoded);
                     debug_assert_eq!(encoded.len(), rlp_length);
-                    MptNodeReference::Bytes(encoded)
+                    NodeRef::Bytes(encoded)
                 } else {
                     let mut scratch = self.rlp_scratch.borrow_mut();
                     scratch.clear();
                     scratch.reserve(rlp_length);
                     self.encode_id_with_payload_len(node_id, payload_length, &mut *scratch);
                     debug_assert_eq!(scratch.len(), rlp_length);
-                    MptNodeReference::Digest(keccak256(&*scratch))
+                    NodeRef::Digest(keccak256(&*scratch))
                 }
             }
         }
@@ -791,10 +784,10 @@ impl<'a> ArenaBasedMptNode<'a> {
         out: &mut dyn alloy_rlp::BufMut,
     ) {
         match &self.nodes[node_id as usize] {
-            ArenaNodeData::Null => {
+            NodeData::Null => {
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
-            ArenaNodeData::Branch(nodes) => {
+            NodeData::Branch(nodes) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
                 for child_id in nodes.iter() {
                     match child_id {
@@ -805,17 +798,17 @@ impl<'a> ArenaBasedMptNode<'a> {
                 // in the MPT reference, branches have values so always add empty value
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
-            ArenaNodeData::Leaf(encoded_path, value) => {
+            NodeData::Leaf(encoded_path, value) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
                 encoded_path.encode(out);
                 value.encode(out);
             }
-            ArenaNodeData::Extension(encoded_path, child_id) => {
+            NodeData::Extension(encoded_path, child_id) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
                 encoded_path.encode(out);
                 self.reference_encode_id(*child_id, out);
             }
-            ArenaNodeData::Digest(digest) => {
+            NodeData::Digest(digest) => {
                 digest.encode(out);
             }
         }
@@ -828,9 +821,9 @@ impl<'a> ArenaBasedMptNode<'a> {
             .get_or_insert_with(|| self.calc_reference(node_id))
         {
             // if the reference is an RLP-encoded byte slice, copy it directly
-            MptNodeReference::Bytes(bytes) => out.put_slice(bytes),
+            NodeRef::Bytes(bytes) => out.put_slice(bytes),
             // if the reference is a digest, RLP-encode it with its fixed known length
-            MptNodeReference::Digest(digest) => {
+            NodeRef::Digest(digest) => {
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE + 32);
                 out.put_slice(digest.as_slice());
             }
@@ -839,18 +832,18 @@ impl<'a> ArenaBasedMptNode<'a> {
 
     fn payload_length_id(&self, node_id: NodeId) -> usize {
         match &self.nodes[node_id as usize] {
-            ArenaNodeData::Null => 0,
-            ArenaNodeData::Branch(nodes) => {
+            NodeData::Null => 0,
+            NodeData::Branch(nodes) => {
                 1 + nodes
                     .iter()
                     .map(|child| child.map_or(1, |id| self.reference_length(id)))
                     .sum::<usize>()
             }
-            ArenaNodeData::Leaf(encoded_path, value) => encoded_path.length() + value.length(),
-            ArenaNodeData::Extension(encoded_path, node_id) => {
+            NodeData::Leaf(encoded_path, value) => encoded_path.length() + value.length(),
+            NodeData::Extension(encoded_path, node_id) => {
                 encoded_path.length() + self.reference_length(*node_id)
             }
-            ArenaNodeData::Digest(_) => 32,
+            NodeData::Digest(_) => 32,
         }
     }
 
@@ -860,14 +853,14 @@ impl<'a> ArenaBasedMptNode<'a> {
             .borrow_mut()
             .get_or_insert_with(|| self.calc_reference(node_id))
         {
-            MptNodeReference::Bytes(bytes) => bytes.len(),
-            MptNodeReference::Digest(_) => 1 + 32,
+            NodeRef::Bytes(bytes) => bytes.len(),
+            NodeRef::Digest(_) => 1 + 32,
         }
     }
 }
 
 // Serialization. Not performance critical.
-impl ArenaBasedMptNode<'_> {
+impl MptTrie<'_> {
     /// Returns the RLP-encoded bytes with ALL children inlined (never replaced by digest).
     /// This produces a compact, fully-expanded representation perfect for serialization.
     #[inline]
@@ -888,21 +881,21 @@ impl ArenaBasedMptNode<'_> {
     /// Calculates payload length for full inline encoding (never using digest references)
     fn payload_length_full(&self, node_id: NodeId) -> usize {
         match &self.nodes[node_id as usize] {
-            ArenaNodeData::Null => 0,
-            ArenaNodeData::Branch(nodes) => {
+            NodeData::Null => 0,
+            NodeData::Branch(nodes) => {
                 1 + nodes
                     .iter()
                     .map(|child| child.map_or(1, |id| self.full_length(id)))
                     .sum::<usize>()
             }
-            ArenaNodeData::Leaf(encoded_path, value) => encoded_path.length() + value.length(),
-            ArenaNodeData::Extension(encoded_path, node_id) => {
+            NodeData::Leaf(encoded_path, value) => encoded_path.length() + value.length(),
+            NodeData::Extension(encoded_path, node_id) => {
                 encoded_path.length() + self.full_length(*node_id)
             }
             // For digests we keep the string-encoding as-is. The payload length here refers to the
             // raw 32 bytes; callers computing the full RLP length will add the single-byte prefix
             // for strings < 56 bytes, yielding 33 total bytes when inlined into a parent list.
-            ArenaNodeData::Digest(_) => 32,
+            NodeData::Digest(_) => 32,
         }
     }
 
@@ -920,10 +913,10 @@ impl ArenaBasedMptNode<'_> {
         out: &mut dyn alloy_rlp::BufMut,
     ) {
         match &self.nodes[node_id as usize] {
-            ArenaNodeData::Null => {
+            NodeData::Null => {
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
-            ArenaNodeData::Branch(nodes) => {
+            NodeData::Branch(nodes) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
                 nodes.iter().for_each(|child_id| match child_id {
                     Some(id) => self.encode_full(*id, out), // INLINE children, never use digest!
@@ -932,17 +925,17 @@ impl ArenaBasedMptNode<'_> {
                 // in the MPT reference, branches have values so always add empty value
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
-            ArenaNodeData::Leaf(encoded_path, value) => {
+            NodeData::Leaf(encoded_path, value) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
                 encoded_path.encode(out);
                 value.encode(out);
             }
-            ArenaNodeData::Extension(encoded_path, child_id) => {
+            NodeData::Extension(encoded_path, child_id) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
                 encoded_path.encode(out);
                 self.encode_full(*child_id, out); // INLINE child, never use digest!
             }
-            ArenaNodeData::Digest(digest) => {
+            NodeData::Digest(digest) => {
                 // Keep digest nodes as-is (they represent external/unresolved nodes)
                 digest.encode(out);
             }
@@ -959,15 +952,15 @@ mod tests {
     use super::*;
     use hex_literal::hex;
 
-    impl ArenaBasedMptNode<'_> {
+    impl MptTrie<'_> {
         pub fn is_empty(&self) -> bool {
-            matches!(&self.nodes[self.root_id as usize], ArenaNodeData::Null)
+            matches!(&self.nodes[self.root_id as usize], NodeData::Null)
         }
     }
 
     #[test]
     fn test_empty() {
-        let trie = ArenaBasedMptNode::default();
+        let trie = MptTrie::default();
 
         assert!(trie.is_empty());
         let expected = hex!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
@@ -976,7 +969,7 @@ mod tests {
 
     #[test]
     fn test_clear() {
-        let mut trie = ArenaBasedMptNode::default();
+        let mut trie = MptTrie::default();
         trie.insert(b"dog", b"puppy").unwrap();
         assert!(!trie.is_empty());
         assert_ne!(trie.hash(), EMPTY_ROOT);
@@ -988,7 +981,7 @@ mod tests {
 
     #[test]
     fn test_insert() {
-        let mut trie = ArenaBasedMptNode::default();
+        let mut trie = MptTrie::default();
         let vals = vec![
             ("painting", "place"),
             ("guest", "ship"),

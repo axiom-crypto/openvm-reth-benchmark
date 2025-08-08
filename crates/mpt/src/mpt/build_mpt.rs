@@ -1,6 +1,8 @@
 // This code runs on host so it is not as performance critical as the rest of mpt
-use crate::mpt::{ArenaBasedMptNode, ArenaNodeData, Error, MptNodeReference, NodeId};
-use crate::{EthereumState, StorageTries};
+use crate::{
+    mpt::{Error, MptTrie, NodeData, NodeId, NodeRef},
+    EthereumState, StorageTries,
+};
 use bumpalo::Bump;
 use reth_trie::AccountProof;
 use revm::primitives::{HashMap, B256};
@@ -8,24 +10,24 @@ use revm_primitives::{keccak256, Address};
 use std::{cell::RefCell, rc::Rc};
 
 /// Parses proof bytes into a vector of ArenaBasedMptNodes.
-pub fn parse_proof(proof: &[impl AsRef<[u8]>]) -> Result<Vec<ArenaBasedMptNode<'_>>, Error> {
+pub fn parse_proof(proof: &[impl AsRef<[u8]>]) -> Result<Vec<MptTrie<'_>>, Error> {
     proof
         .iter()
-        .map(|bytes| ArenaBasedMptNode::decode_from_rlp(bytes.as_ref(), 0))
+        .map(|bytes| MptTrie::decode_from_rlp(bytes.as_ref(), 0))
         .collect::<Result<Vec<_>, _>>()
 }
 
 /// Helper to process proof nodes, convert them to static lifetime, and add to a node map.
 fn process_proof(
     proof_data: &[impl AsRef<[u8]>],
-    nodes: &mut HashMap<MptNodeReference, ArenaBasedMptNode<'static>>,
-) -> Result<Option<ArenaBasedMptNode<'static>>, Error> {
+    nodes: &mut HashMap<NodeRef, MptTrie<'static>>,
+) -> Result<Option<MptTrie<'static>>, Error> {
     let proof_nodes = parse_proof(proof_data)?;
     let root_node = proof_nodes.first().map(|node| convert_to_static_lifetime(node));
 
     for node in proof_nodes {
         let static_node = convert_to_static_lifetime(&node);
-        nodes.insert(MptNodeReference::Digest(static_node.hash()), static_node);
+        nodes.insert(NodeRef::Digest(static_node.hash()), static_node);
     }
     Ok(root_node)
 }
@@ -34,13 +36,13 @@ fn process_proof(
 fn build_storage_trie(
     proof: &AccountProof,
     fini_proofs: &AccountProof,
-) -> Result<ArenaBasedMptNode<'static>, Error> {
+) -> Result<MptTrie<'static>, Error> {
     if proof.storage_proofs.is_empty() {
         return Ok(node_from_digest(proof.storage_root));
     }
 
     let mut storage_nodes = HashMap::default();
-    let mut storage_root_node = ArenaBasedMptNode::default();
+    let mut storage_root_node = MptTrie::default();
 
     for storage_proof in &proof.storage_proofs {
         if let Some(root) = process_proof(&storage_proof.proof, &mut storage_nodes)? {
@@ -73,7 +75,7 @@ pub fn transition_proofs_to_tries_arena(
 
     let mut storage_tries = HashMap::default();
     let mut state_nodes = HashMap::default();
-    let mut state_root_node = ArenaBasedMptNode::default();
+    let mut state_root_node = MptTrie::default();
 
     for (address, proof) in parent_proofs {
         if let Some(root) = process_proof(&proof.proof, &mut state_nodes)? {
@@ -93,12 +95,12 @@ pub fn transition_proofs_to_tries_arena(
 }
 
 /// Creates a new arena-based MPT node from a digest.
-fn node_from_digest(digest: B256) -> ArenaBasedMptNode<'static> {
+fn node_from_digest(digest: B256) -> MptTrie<'static> {
     match digest {
-        crate::mpt::EMPTY_ROOT | B256::ZERO => ArenaBasedMptNode::default(),
+        crate::mpt::EMPTY_ROOT | B256::ZERO => MptTrie::default(),
         _ => {
-            let mut trie = ArenaBasedMptNode::default();
-            trie.nodes[0] = ArenaNodeData::Digest(digest);
+            let mut trie = MptTrie::default();
+            trie.nodes[0] = NodeData::Digest(digest);
             trie
         }
     }
@@ -108,7 +110,7 @@ fn node_from_digest(digest: B256) -> ArenaBasedMptNode<'static> {
 fn add_orphaned_leafs(
     key: impl AsRef<[u8]>,
     proof: &[impl AsRef<[u8]>],
-    nodes_by_reference: &mut HashMap<MptNodeReference, ArenaBasedMptNode<'static>>,
+    nodes_by_reference: &mut HashMap<NodeRef, MptTrie<'static>>,
 ) -> Result<(), Error> {
     if !proof.is_empty() {
         let proof_nodes = parse_proof(proof)?;
@@ -117,8 +119,7 @@ fn add_orphaned_leafs(
             if let Some(leaf) = proof_nodes.last() {
                 for node in shorten_node_path_arena(leaf) {
                     let static_node = convert_to_static_lifetime(&node);
-                    nodes_by_reference
-                        .insert(MptNodeReference::Digest(static_node.hash()), static_node);
+                    nodes_by_reference.insert(NodeRef::Digest(static_node.hash()), static_node);
                 }
             }
         }
@@ -129,25 +130,25 @@ fn add_orphaned_leafs(
 
 /// Helper function to convert a node with any lifetime to static lifetime
 /// by copying all borrowed data into owned storage
-fn convert_to_static_lifetime(node: &ArenaBasedMptNode<'_>) -> ArenaBasedMptNode<'static> {
-    let mut static_node = ArenaBasedMptNode::with_capacity(node.nodes.len());
+fn convert_to_static_lifetime(node: &MptTrie<'_>) -> MptTrie<'static> {
+    let mut static_node = MptTrie::with_capacity(node.nodes.len());
     static_node.nodes.clear();
     static_node.cached_references.clear();
 
     for node_data in &node.nodes {
         let static_data = match *node_data {
-            ArenaNodeData::Null => ArenaNodeData::Null,
-            ArenaNodeData::Branch(children) => ArenaNodeData::Branch(children),
-            ArenaNodeData::Leaf(path, value) => {
+            NodeData::Null => NodeData::Null,
+            NodeData::Branch(children) => NodeData::Branch(children),
+            NodeData::Leaf(path, value) => {
                 let owned_path = static_node.alloc_in_bump(path);
                 let owned_value = static_node.alloc_in_bump(value);
-                ArenaNodeData::Leaf(owned_path, owned_value)
+                NodeData::Leaf(owned_path, owned_value)
             }
-            ArenaNodeData::Extension(path, child_id) => {
+            NodeData::Extension(path, child_id) => {
                 let owned_path = static_node.alloc_in_bump(path);
-                ArenaNodeData::Extension(owned_path, child_id)
+                NodeData::Extension(owned_path, child_id)
             }
-            ArenaNodeData::Digest(digest) => ArenaNodeData::Digest(digest),
+            NodeData::Digest(digest) => NodeData::Digest(digest),
         };
         static_node.add_node(static_data);
     }
@@ -157,10 +158,7 @@ fn convert_to_static_lifetime(node: &ArenaBasedMptNode<'_>) -> ArenaBasedMptNode
 }
 
 /// Verifies that the given proof is a valid proof of exclusion for the given key.
-pub fn is_not_included<'a>(
-    key: &[u8],
-    proof_nodes: &'a [ArenaBasedMptNode<'a>],
-) -> Result<bool, Error> {
+pub fn is_not_included<'a>(key: &[u8], proof_nodes: &'a [MptTrie<'a>]) -> Result<bool, Error> {
     let proof_trie = mpt_from_proof(proof_nodes)?;
     // For valid proofs, the get must not fail
     let value = proof_trie.get(key)?;
@@ -170,11 +168,11 @@ pub fn is_not_included<'a>(
 
 /// Returns a list of all possible nodes that can be created by shortening the path of the given
 /// node.
-pub fn shorten_node_path_arena<'a>(node: &ArenaBasedMptNode<'a>) -> Vec<ArenaBasedMptNode<'a>> {
+pub fn shorten_node_path_arena<'a>(node: &MptTrie<'a>) -> Vec<MptTrie<'a>> {
     let mut res = Vec::new();
     let (path_bytes, is_leaf, value, child_id) = match &node.nodes[node.root_id as usize] {
-        ArenaNodeData::Leaf(path_bytes, value) => (Some(*path_bytes), true, Some(*value), None),
-        ArenaNodeData::Extension(path_bytes, child_id) => {
+        NodeData::Leaf(path_bytes, value) => (Some(*path_bytes), true, Some(*value), None),
+        NodeData::Extension(path_bytes, child_id) => {
             (Some(*path_bytes), false, None, Some(*child_id))
         }
         _ => return res,
@@ -184,14 +182,14 @@ pub fn shorten_node_path_arena<'a>(node: &ArenaBasedMptNode<'a>) -> Vec<ArenaBas
     let nibs = crate::hp::prefix_to_small_nibs(path_bytes);
 
     for i in 0..=nibs.len() {
-        let mut new_node = ArenaBasedMptNode::default();
+        let mut new_node = MptTrie::default();
         let shortened_nibs = &nibs[i..];
         let path_slice = new_node.add_encoded_path_slice(shortened_nibs, is_leaf);
         let new_node_data = if is_leaf {
             let value_slice = new_node.alloc_in_bump(value.unwrap());
-            ArenaNodeData::Leaf(path_slice, value_slice)
+            NodeData::Leaf(path_slice, value_slice)
         } else {
-            ArenaNodeData::Extension(path_slice, child_id.unwrap())
+            NodeData::Extension(path_slice, child_id.unwrap())
         };
         new_node.nodes[0] = new_node_data;
         res.push(new_node);
@@ -200,17 +198,13 @@ pub fn shorten_node_path_arena<'a>(node: &ArenaBasedMptNode<'a>) -> Vec<ArenaBas
 }
 
 /// Creates an arena-based Merkle Patricia trie from an EIP-1186 proof.
-pub fn mpt_from_proof<'a>(
-    proof_nodes: &'a [ArenaBasedMptNode<'a>],
-) -> Result<ArenaBasedMptNode<'a>, Error> {
+pub fn mpt_from_proof<'a>(proof_nodes: &'a [MptTrie<'a>]) -> Result<MptTrie<'a>, Error> {
     if proof_nodes.is_empty() {
-        return Ok(ArenaBasedMptNode::default());
+        return Ok(MptTrie::default());
     }
 
-    let node_store: HashMap<MptNodeReference, ArenaBasedMptNode<'a>> = proof_nodes
-        .iter()
-        .map(|node| (MptNodeReference::Digest(node.hash()), node.clone()))
-        .collect();
+    let node_store: HashMap<NodeRef, MptTrie<'a>> =
+        proof_nodes.iter().map(|node| (NodeRef::Digest(node.hash()), node.clone())).collect();
 
     let root_node = proof_nodes.first().unwrap();
 
@@ -220,10 +214,10 @@ pub fn mpt_from_proof<'a>(
 /// Resolves digest nodes in an arena-based trie using the provided node store.
 /// This rebuilds the arena, replacing any digest nodes with their resolved content.
 pub fn resolve_nodes_arena<'a>(
-    root: &ArenaBasedMptNode<'a>,
-    node_store: &HashMap<MptNodeReference, ArenaBasedMptNode<'a>>,
-) -> ArenaBasedMptNode<'a> {
-    let mut new_arena = ArenaBasedMptNode {
+    root: &MptTrie<'a>,
+    node_store: &HashMap<NodeRef, MptTrie<'a>>,
+) -> MptTrie<'a> {
+    let mut new_arena = MptTrie {
         nodes: Vec::new(),
         cached_references: Vec::new(),
         root_id: 0,
@@ -242,22 +236,22 @@ pub fn resolve_nodes_arena<'a>(
 
 /// Recursively resolves a single node and its children, adding them to the new arena.
 fn resolve_node_recursive<'a>(
-    original_arena: &ArenaBasedMptNode<'a>,
+    original_arena: &MptTrie<'a>,
     node_id: NodeId,
-    node_store: &HashMap<MptNodeReference, ArenaBasedMptNode<'a>>,
-    new_arena: &mut ArenaBasedMptNode<'a>,
+    node_store: &HashMap<NodeRef, MptTrie<'a>>,
+    new_arena: &mut MptTrie<'a>,
 ) -> NodeId {
     let node_data = &original_arena.nodes[node_id as usize];
 
     let resolved_data = match node_data {
-        ArenaNodeData::Null => ArenaNodeData::Null,
-        ArenaNodeData::Leaf(prefix, value) => {
+        NodeData::Null => NodeData::Null,
+        NodeData::Leaf(prefix, value) => {
             // Copy the data into the new arena's owned storage
             let new_prefix = new_arena.alloc_in_bump(prefix);
             let new_value = new_arena.alloc_in_bump(value);
-            ArenaNodeData::Leaf(new_prefix, new_value)
+            NodeData::Leaf(new_prefix, new_value)
         }
-        ArenaNodeData::Branch(children) => {
+        NodeData::Branch(children) => {
             let mut resolved_children: [Option<NodeId>; 16] = Default::default();
             for (i, child_id) in children.iter().enumerate() {
                 if let Some(child_id) = child_id {
@@ -266,17 +260,17 @@ fn resolve_node_recursive<'a>(
                     resolved_children[i] = Some(resolved_child_id);
                 }
             }
-            ArenaNodeData::Branch(resolved_children)
+            NodeData::Branch(resolved_children)
         }
-        ArenaNodeData::Extension(prefix, child_id) => {
+        NodeData::Extension(prefix, child_id) => {
             let resolved_child_id =
                 resolve_node_recursive(original_arena, *child_id, node_store, new_arena);
             let new_prefix = new_arena.alloc_in_bump(prefix);
-            ArenaNodeData::Extension(new_prefix, resolved_child_id)
+            NodeData::Extension(new_prefix, resolved_child_id)
         }
-        ArenaNodeData::Digest(digest) => {
+        NodeData::Digest(digest) => {
             // Try to resolve the digest from the node store
-            if let Some(resolved_node) = node_store.get(&MptNodeReference::Digest(*digest)) {
+            if let Some(resolved_node) = node_store.get(&NodeRef::Digest(*digest)) {
                 // Convert the resolved node to arena format and add it
                 return resolve_node_recursive(
                     resolved_node,
@@ -286,7 +280,7 @@ fn resolve_node_recursive<'a>(
                 );
             } else {
                 // If not found in store, keep it as a digest
-                ArenaNodeData::Digest(*digest)
+                NodeData::Digest(*digest)
             }
         }
     };

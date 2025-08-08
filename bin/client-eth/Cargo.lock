@@ -2316,6 +2316,7 @@ dependencies = [
  "bincode",
  "bumpalo",
  "eyre",
+ "hashbrown 0.15.4",
  "reth-primitives",
  "reth-revm",
  "reth-trie",
