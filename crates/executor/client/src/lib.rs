@@ -10,7 +10,6 @@ use alloy_primitives::Bloom;
 use io::ClientExecutorInput;
 #[allow(unused_imports)]
 pub use openvm_mpt;
-use openvm_mpt::state::HashedPostState;
 use openvm_primitives::chain_spec::mainnet;
 use reth_consensus::{Consensus, HeaderValidator};
 use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus};
@@ -102,10 +101,7 @@ impl ClientExecutor {
 
         // Verify the state root.
         let state_root = profile!("compute state root", {
-            let post_state = HashedPostState::from_bundle_state(&executor_outcome.bundle.state);
-            // executor_outcome.hash_state_slow());
-            println!("post state from bundle state: done");
-            input.parent_state.update(&post_state);
+            input.parent_state.update_from_bundle_state(&executor_outcome.bundle);
             input.parent_state.state_root()
         });
 

@@ -16,7 +16,6 @@ dotenv = "0.15.0"
 clap = { version = "4.5.7", features = ["derive", "env"] }
 serde.workspace = true
 bincode = { workspace = true, features = ["std"] }
-metrics = "0.23.0"
 hex = "0.4.3"
 serde_json.workspace = true
 
@@ -48,7 +47,6 @@ openvm-benchmarks-prove = { workspace = true, features = ["parallel"] }
 openvm-stark-sdk = { workspace = true }
 openvm-sdk = { workspace = true }
 openvm-native-compiler = { workspace = true }
-derive_more = "1.0.0"
 
 # halo2
 halo2-axiom = { version = "0.5.0", default-features = false }

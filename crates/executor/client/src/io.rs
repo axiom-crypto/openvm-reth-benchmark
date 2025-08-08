@@ -1,13 +1,13 @@
 use std::iter::once;
 
-use eyre::Result;
+use eyre::{OptionExt, Result};
 use itertools::Itertools;
 use openvm_mpt::EthereumState;
 use openvm_witness_db::WitnessDb;
 use reth_primitives::{Block, Header, TransactionSigned};
 use reth_trie::TrieAccount;
 use revm::state::{AccountInfo, Bytecode};
-use revm_primitives::{keccak256, Address, HashMap, B256, U256};
+use revm_primitives::{keccak256, map::DefaultHashBuilder, Address, HashMap, B256, U256};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
@@ -17,7 +17,7 @@ use serde_with::serde_as;
 /// Instead of passing in the entire state, we only pass in the state roots along with merkle proofs
 /// for the storage slots that were modified and accessed.
 #[serde_as]
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClientExecutorInput {
     /// The current block (which will be executed inside the client).
     #[serde_as(
@@ -115,13 +115,16 @@ pub trait WitnessInput {
         let bytecodes_by_hash =
             self.bytecodes().map(|code| (code.hash_slow(), code)).collect::<HashMap<_, _>>();
 
-        let mut accounts = HashMap::default();
-        let mut storage = HashMap::default();
-        for (&address, slots) in self.state_requests() {
-            let hashed_address = keccak256(address);
-            let hashed_address = hashed_address.as_slice();
+        let state_requests_iter = self.state_requests();
+        let (lower, _) = state_requests_iter.size_hint();
+        let mut accounts = HashMap::with_capacity_and_hasher(lower, DefaultHashBuilder::default());
+        let mut storage = HashMap::with_capacity_and_hasher(lower, DefaultHashBuilder::default());
 
-            let account_in_trie = state.state_trie.get_rlp::<TrieAccount>(hashed_address)?;
+        for (&address, slots) in state_requests_iter {
+            let hashed_address = keccak256(address);
+
+            let account_in_trie =
+                state.state_trie.get_rlp::<TrieAccount>(hashed_address.as_slice())?;
 
             accounts.insert(
                 address,
@@ -133,7 +136,7 @@ pub trait WitnessInput {
                         code: Some(
                             (*bytecodes_by_hash
                                 .get(&account_in_trie.code_hash)
-                                .ok_or_else(|| eyre::eyre!("missing bytecode"))?)
+                                .ok_or_eyre("missing bytecode")?)
                             // Cloning here is fine as `Bytes` is cheap to clone.
                             .to_owned(),
                         ),
@@ -143,13 +146,14 @@ pub trait WitnessInput {
             );
 
             if !slots.is_empty() {
-                let mut address_storage = HashMap::default();
+                let mut address_storage =
+                    HashMap::with_capacity_and_hasher(slots.len(), DefaultHashBuilder::default());
 
                 let storage_trie = state
                     .storage_tries
                     .0
-                    .get(hashed_address)
-                    .ok_or_else(|| eyre::eyre!("parent state does not contain storage trie"))?;
+                    .get(&hashed_address)
+                    .ok_or_eyre("parent state does not contain storage trie")?;
 
                 for &slot in slots {
                     let slot_value = storage_trie
@@ -163,8 +167,11 @@ pub trait WitnessInput {
         }
 
         // Verify and build block hashes
-        let mut block_hashes: HashMap<u64, B256, _> = HashMap::default();
-        for (child_header, parent_header) in self.headers().tuple_windows() {
+        let headers_iter = self.headers();
+        let (lower, _) = headers_iter.size_hint();
+        let mut block_hashes: HashMap<u64, B256, _> =
+            HashMap::with_capacity_and_hasher(lower, DefaultHashBuilder::default());
+        for (child_header, parent_header) in headers_iter.tuple_windows() {
             if parent_header.number != child_header.number - 1 {
                 eyre::bail!("non-consecutive blocks");
             }

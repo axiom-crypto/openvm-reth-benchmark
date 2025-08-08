@@ -10,19 +10,17 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-anyhow = { workspace = true, features = ["std"] }
 eyre.workspace = true
 rlp.workspace = true
 serde.workspace = true
 thiserror.workspace = true
-itertools = "0.13.0"
 bincode.workspace = true
-rustc-hash.workspace = true
+smallvec = "1.13"
+bumpalo = "3.18.1"
 
 # reth
-reth-primitives.workspace = true
 reth-trie.workspace = true
-reth-execution-types.workspace = true
+reth-primitives.workspace = true
 reth-revm.workspace = true
 
 # revm
@@ -30,17 +28,14 @@ revm.workspace = true
 revm-primitives.workspace = true
 
 # alloy
-alloy-primitives.workspace = true
 alloy-rlp.workspace = true
-alloy-rpc-types.workspace = true
+
+# not directly used, for rayon feature
+hashbrown.workspace = true
 
 [dev-dependencies]
-alloy-trie.workspace = true
 hex-literal.workspace = true
-tracing-subscriber = "0.3.18"
-
-openvm-mpt = { path = ".", features = ["preimage_context"] }
 
 [features]
+build_mpt = []
 default = []
-preimage_context = []
