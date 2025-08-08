@@ -1,5 +1,5 @@
 use eyre::Result;
-use mpt::ArenaBasedMptNode;
+use mpt::MptTrie;
 use reth_revm::db::BundleState;
 use reth_trie::TrieAccount;
 use revm::primitives::{HashMap, B256};
@@ -14,12 +14,12 @@ pub mod word_bytes;
 /// performance.
 #[derive(Debug, Clone, Serialize)]
 pub struct EthereumState {
-    pub state_trie: ArenaBasedMptNode<'static>,
+    pub state_trie: MptTrie<'static>,
     pub storage_tries: StorageTries,
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct StorageTries(pub HashMap<B256, ArenaBasedMptNode<'static>>);
+pub struct StorageTries(pub HashMap<B256, MptTrie<'static>>);
 
 impl EthereumState {
     /// Builds Ethereum state tries from relevant proofs before and after a state transition
@@ -108,7 +108,7 @@ impl Serialize for StorageTries {
         S: serde::Serializer,
     {
         // Serialize as Vec<(B256, ArenaBasedMptNode)> for deterministic serialization
-        let mut storage_vec: Vec<(&B256, &ArenaBasedMptNode<'static>)> = self.0.iter().collect();
+        let mut storage_vec: Vec<(&B256, &MptTrie<'static>)> = self.0.iter().collect();
         storage_vec.sort_by_key(|(k, _)| *k);
         storage_vec.serialize(serializer)
     }
@@ -119,16 +119,15 @@ impl<'de> Deserialize<'de> for StorageTries {
     where
         D: serde::Deserializer<'de>,
     {
-        let storage_vec: Vec<(B256, ArenaBasedMptNode<'de>)> = Vec::deserialize(deserializer)?;
+        let storage_vec: Vec<(B256, MptTrie<'de>)> = Vec::deserialize(deserializer)?;
         let mut storage_tries =
             HashMap::with_capacity_and_hasher(storage_vec.len(), DefaultHashBuilder::default());
         for (addr, trie) in storage_vec {
             // The deserialized node has lifetime 'de, but we need 'static.
             // This is safe because ArenaBasedMptNode::deserialize already leaks the
             // underlying buffer, giving it a static lifetime effectively.
-            let static_trie = unsafe {
-                std::mem::transmute::<ArenaBasedMptNode<'de>, ArenaBasedMptNode<'static>>(trie)
-            };
+            let static_trie =
+                unsafe { std::mem::transmute::<MptTrie<'de>, MptTrie<'static>>(trie) };
             storage_tries.insert(addr, static_trie);
         }
         Ok(StorageTries(storage_tries))
@@ -144,18 +143,15 @@ impl<'de> Deserialize<'de> for EthereumState {
         #[serde(bound(deserialize = "'a: 'de"))]
         struct Helper<'a> {
             #[serde(borrow)]
-            state_trie: ArenaBasedMptNode<'a>,
+            state_trie: MptTrie<'a>,
             storage_tries: StorageTries,
         }
 
         let helper = Helper::deserialize(deserializer)?;
         // This is safe because ArenaBasedMptNode::deserialize already leaks the
         // underlying buffer, giving it a static lifetime effectively.
-        let state_trie = unsafe {
-            std::mem::transmute::<ArenaBasedMptNode<'de>, ArenaBasedMptNode<'static>>(
-                helper.state_trie,
-            )
-        };
+        let state_trie =
+            unsafe { std::mem::transmute::<MptTrie<'de>, MptTrie<'static>>(helper.state_trie) };
 
         Ok(EthereumState { state_trie, storage_tries: helper.storage_tries })
     }
