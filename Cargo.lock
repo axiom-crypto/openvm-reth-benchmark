@@ -4904,6 +4904,7 @@ dependencies = [
  "bincode 2.0.1",
  "bumpalo",
  "eyre",
+ "hashbrown 0.15.4",
  "hex-literal 1.0.0",
  "reth-primitives",
  "reth-revm",

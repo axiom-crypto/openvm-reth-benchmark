@@ -30,6 +30,9 @@ revm-primitives.workspace = true
 # alloy
 alloy-rlp.workspace = true
 
+# not directly used, for rayon feature
+hashbrown.workspace = true
+
 [dev-dependencies]
 hex-literal.workspace = true
 
