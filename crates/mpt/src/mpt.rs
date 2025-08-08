@@ -1,3 +1,16 @@
+//! Arena-based Merkle Patricia Trie (MPT) optimized for zkVM execution.
+//!
+//! Key ideas:
+//! - Nodes are stored in a flat arena (`Vec`) and referenced by `NodeId` indices for cache locality
+//!   and compact serialization.
+//! - Hex-prefix paths are stored compactly and decoded to nibbles on-demand for traversal.
+//! - Hash/reference caching avoids repeated re-encoding and hashing. Cache is invalidated
+//!   upwards during `insert`/`delete` recursion.
+//! - RLP is used for (de)serialization; decoding is near zero-copy by borrowing from an input
+//!   buffer and allocating subsequent mutations into a bump arena.
+//!
+//! This module is performance sensitive on hot paths (hashing, traversal, encode/decode), but
+//! remains readable with small helpers and targeted documentation.
 use alloy_rlp::{Buf, Encodable};
 use bumpalo::Bump;
 use core::fmt::Debug;
@@ -14,7 +27,16 @@ use thiserror::Error as ThisError;
 
 pub type NodeId = u32;
 
+/// Sentinel index representing the null node when decoding and in internal references.
+/// In a default arena, `nodes[0]` starts as `Null`, but the root may later be changed to a
+/// non-null node (e.g. `Digest`) for convenience. `NULL_NODE_ID` is still used by the decoder
+/// as the canonical "no node" identifier.
+pub const NULL_NODE_ID: NodeId = 0;
+
 /// Root hash of an empty trie.
+///
+/// This is the Keccak-256 of the RLP-encoding of the empty string (""),
+/// which is the canonical encoding of an empty node in Ethereum's MPT.
 pub const EMPTY_ROOT: B256 =
     b256!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
 
@@ -48,7 +70,8 @@ pub enum Error {
     Rlp(#[from] alloy_rlp::Error),
 }
 
-/// Returns the length of the common prefix
+/// Returns the length of the common prefix (in nibbles) between two nibble slices.
+#[inline]
 pub fn lcp(a: &[u8], b: &[u8]) -> usize {
     for (i, (a, b)) in iter::zip(a, b).enumerate() {
         if a != b {
@@ -62,7 +85,8 @@ pub fn lcp(a: &[u8], b: &[u8]) -> usize {
 ///
 /// A nibble is 4 bits or half of an 8-bit byte. This function takes each byte from the
 /// input slice, splits it into two nibbles, and appends them to the resulting vector.
-/// Uses SmallVec to avoid heap allocation for typical key sizes (≤32 bytes = 64 nibbles).
+/// Uses `SmallVec` to avoid heap allocation for typical key sizes (≤32 bytes = 64 nibbles).
+#[inline]
 pub fn to_nibs(slice: &[u8]) -> SmallVec<[u8; 64]> {
     let mut result = SmallVec::with_capacity(2 * slice.len());
     for byte in slice {
@@ -72,15 +96,20 @@ pub fn to_nibs(slice: &[u8]) -> SmallVec<[u8; 64]> {
     result
 }
 
-/// Optimized conversion from hex-encoded path directly to nibbles SmallVec
+/// Decodes a compact hex-prefix-encoded path (as used in MPT leaf/extension nodes)
+/// into its nibble sequence. This allocates a `SmallVec` with the exact nibble capacity.
+#[inline]
 fn prefix_to_small_nibs(encoded_path: &[u8]) -> SmallVec<[u8; 64]> {
     if encoded_path.is_empty() {
         return SmallVec::new();
     }
 
-    let mut nibs = SmallVec::with_capacity(encoded_path.len() * 2);
     let first_byte = encoded_path[0];
     let is_odd = (first_byte & 0x10) != 0;
+    // Nibble count: if odd, first byte contains 1 nibble of data; otherwise, first byte
+    // contains only flags. Remaining bytes always contain two nibbles each.
+    let nib_count = 2 * (encoded_path.len() - 1) + if is_odd { 1 } else { 0 };
+    let mut nibs = SmallVec::with_capacity(nib_count);
 
     // Handle the first nibble if odd length
     if is_odd {
@@ -106,7 +135,9 @@ pub struct ArenaBasedMptNode<'a> {
     root_id: NodeId,
     /// One monotonically‑growing arena that owns every mutated byte slice.
     bump: Rc<Bump>,
-    encoding_scratch: RefCell<Vec<u8>>,
+    /// Scratch buffer used only for RLP encoding when a node's full RLP exceeds 32 bytes and we
+    /// need to compute its keccak hash. Keeping it here avoids repeated allocations.
+    rlp_scratch: RefCell<Vec<u8>>,
 }
 
 impl ser::Serialize for ArenaBasedMptNode<'_> {
@@ -139,7 +170,7 @@ impl Default for ArenaBasedMptNode<'_> {
             cached_references: vec![RefCell::new(None)],
             root_id: 0,
             bump: Rc::new(Bump::new()),
-            encoding_scratch: RefCell::new(Vec::with_capacity(128)),
+            rlp_scratch: RefCell::new(Vec::with_capacity(128)),
         }
     }
 }
@@ -148,10 +179,19 @@ impl Default for ArenaBasedMptNode<'_> {
 #[derive(Clone, Debug, Default, PartialEq, Eq, Ord, PartialOrd)]
 pub enum ArenaNodeData<'a> {
     #[default]
+    /// Absence of a node. Encoded as empty string in RLP.
     Null,
+    /// 16-way branch. Each child is optional; the branch's value slot is unused in our state trie
+    /// and must be empty, enforced during decoding.
     Branch([Option<NodeId>; 16]),
-    Leaf(&'a [u8], &'a [u8]), // (compact_path, value) - borrowed from input
-    Extension(&'a [u8], NodeId), // (compact_path, child_id) - borrowed from input
+    /// Leaf node containing a compact hex-prefix path and a value. Both slices borrow from the
+    /// input buffer or bump arena. The path encodes the remainder of the key.
+    Leaf(&'a [u8], &'a [u8]),
+    /// Extension node containing a compact hex-prefix path and a single child. Path encodes a
+    /// shared prefix to skip before continuing at `child`.
+    Extension(&'a [u8], NodeId),
+    /// Unresolved reference to a node by its Keccak-256 digest (32 bytes). Encountering this in
+    /// `get`/`insert`/`delete` is an error; resolution happens in `build_mpt` helpers.
     Digest(B256),
 }
 
@@ -169,7 +209,7 @@ impl<'a> ArenaBasedMptNode<'a> {
             cached_references,
             root_id: 0,
             bump: Rc::new(Bump::new()),
-            encoding_scratch: RefCell::new(Vec::with_capacity(128)),
+            rlp_scratch: RefCell::new(Vec::with_capacity(128)),
         }
     }
 
@@ -180,6 +220,9 @@ impl<'a> ArenaBasedMptNode<'a> {
     }
 
     /// Decodes an RLP-encoded node directly into an ArenaBasedMptNode with zero-copy optimization
+    /// Decodes an RLP-encoded MPT into an arena-backed structure.
+    /// `num_nodes` is a hint used to pre-allocate the arena capacity to avoid early re-allocations
+    /// during later updates.
     pub fn decode_from_rlp(bytes: &'a [u8], num_nodes: usize) -> Result<Self, Error> {
         // A growth factor applied to the node vector's capacity during deserialization.
         // This is a pragmatic optimization to pre-allocate a buffer for nodes that will be
@@ -280,6 +323,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 
 // Internal Implementation
 impl<'a> ArenaBasedMptNode<'a> {
+    #[inline]
     fn get_recursive<'s>(
         &'s self,
         node_id: NodeId,
@@ -319,6 +363,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         }
     }
 
+    #[inline]
     fn insert_recursive(
         &mut self,
         node_id: NodeId,
@@ -446,6 +491,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         Ok(updated)
     }
 
+    #[inline]
     fn delete_recursive(&mut self, node_id: NodeId, key_nibs: &[u8]) -> Result<bool, Error> {
         let updated = match self.nodes[node_id as usize] {
             ArenaNodeData::Null => Ok(false),
@@ -576,7 +622,7 @@ impl<'a> ArenaBasedMptNode<'a> {
 
     fn decode_node_recursive(&mut self, buf: &mut &'a [u8]) -> Result<NodeId, Error> {
         if buf.is_empty() {
-            return Ok(0); // Return the null node index
+            return Ok(NULL_NODE_ID); // Return the null node index
         }
 
         let header = alloy_rlp::Header::decode(buf).map_err(Error::Rlp)?;
@@ -584,7 +630,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         if !header.list {
             // Single data item
             if header.payload_length == 0 {
-                return Ok(0); // Null node
+                return Ok(NULL_NODE_ID); // Null node
             }
             if header.payload_length == 32 {
                 if buf.len() < 32 {
@@ -637,7 +683,7 @@ impl<'a> ArenaBasedMptNode<'a> {
             let mut children = [None; 16];
             for child in children.iter_mut() {
                 let child_id = self.decode_node_recursive(&mut payload_buf)?;
-                if child_id != 0 {
+                if child_id != NULL_NODE_ID {
                     *child = Some(child_id);
                 }
             }
@@ -700,6 +746,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         }
     }
 
+    #[inline]
     fn add_node(&mut self, data: ArenaNodeData<'a>) -> NodeId {
         let id = self.nodes.len() as NodeId;
         self.nodes.push(data);
@@ -758,6 +805,7 @@ impl<'a> ArenaBasedMptNode<'a> {
         }
     }
 
+    #[inline]
     fn calc_reference(&self, node_id: NodeId) -> MptNodeReference {
         match &self.nodes[node_id as usize] {
             ArenaNodeData::Null => MptNodeReference::Bytes(vec![alloy_rlp::EMPTY_STRING_CODE]),
@@ -772,7 +820,7 @@ impl<'a> ArenaBasedMptNode<'a> {
                     debug_assert_eq!(encoded.len(), rlp_length);
                     MptNodeReference::Bytes(encoded)
                 } else {
-                    let mut scratch = self.encoding_scratch.borrow_mut();
+                    let mut scratch = self.rlp_scratch.borrow_mut();
                     scratch.clear();
                     scratch.reserve(rlp_length);
                     self.encode_id_with_payload_len(node_id, payload_length, &mut *scratch);
@@ -795,10 +843,12 @@ impl<'a> ArenaBasedMptNode<'a> {
             }
             ArenaNodeData::Branch(nodes) => {
                 alloy_rlp::Header { list: true, payload_length }.encode(out);
-                nodes.iter().for_each(|child_id| match child_id {
-                    Some(id) => self.reference_encode_id(*id, out),
-                    None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
-                });
+                for child_id in nodes.iter() {
+                    match child_id {
+                        Some(id) => self.reference_encode_id(*id, out),
+                        None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
+                    }
+                }
                 // in the MPT reference, branches have values so always add empty value
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE);
             }
@@ -896,7 +946,10 @@ impl ArenaBasedMptNode<'_> {
             ArenaNodeData::Extension(encoded_path, node_id) => {
                 encoded_path.length() + self.full_length(*node_id)
             }
-            ArenaNodeData::Digest(_) => 32, // Keep digests as-is
+            // For digests we keep the string-encoding as-is. The payload length here refers to the
+            // raw 32 bytes; callers computing the full RLP length will add the single-byte prefix
+            // for strings < 56 bytes, yielding 33 total bytes when inlined into a parent list.
+            ArenaNodeData::Digest(_) => 32,
         }
     }
 
@@ -1174,7 +1227,7 @@ pub mod build_mpt {
             cached_references: Vec::new(),
             root_id: 0,
             bump: Rc::new(Bump::new()),
-            encoding_scratch: RefCell::new(Vec::with_capacity(128)),
+            rlp_scratch: RefCell::new(Vec::with_capacity(128)),
         };
 
         let root_id = resolve_node_recursive(root, root.root_id, node_store, &mut new_arena);
