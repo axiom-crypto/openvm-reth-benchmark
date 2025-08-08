@@ -6,6 +6,7 @@ use revm::primitives::{HashMap, B256};
 use revm_primitives::{keccak256, map::DefaultHashBuilder};
 use serde::{Deserialize, Serialize};
 
+pub mod hp;
 pub mod mpt;
 pub mod word_bytes;
 

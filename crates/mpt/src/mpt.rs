@@ -17,7 +17,7 @@ use core::fmt::Debug;
 use revm::primitives::B256;
 use revm_primitives::{b256, keccak256};
 use serde::{de, ser, Deserialize, Serialize};
-use std::{cell::RefCell, iter, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use eyre::Result;
 
@@ -25,13 +25,11 @@ use crate::word_bytes::OptimizedBytes;
 use smallvec::SmallVec;
 use thiserror::Error as ThisError;
 
-pub type NodeId = u32;
-/// Compact vector for nibble sequences used in key traversal.
-type Nibbles = SmallVec<[u8; 64]>;
+use crate::hp::{
+    encoded_path_eq_nibs, encoded_path_strip_prefix, lcp, prefix_to_small_nibs, to_nibs,
+};
 
-// Hex-prefix (HP) encoding flags for MPT paths
-const HP_FLAG_ODD: u8 = 0x10; // path has odd number of nibbles; low nibble of first byte is data
-const HP_FLAG_LEAF: u8 = 0x20; // node is a leaf (vs extension)
+pub type NodeId = u32;
 
 /// Sentinel index representing the null node when decoding and in internal references.
 /// In a default arena, `nodes[0]` starts as `Null`, but the root may later be changed to a
@@ -76,160 +74,11 @@ pub enum Error {
     Rlp(#[from] alloy_rlp::Error),
 }
 
-/// Returns the length of the common prefix (in nibbles) between two nibble slices.
-#[inline]
-pub fn lcp(a: &[u8], b: &[u8]) -> usize {
-    for (i, (a, b)) in iter::zip(a, b).enumerate() {
-        if a != b {
-            return i;
-        }
-    }
-    std::cmp::min(a.len(), b.len())
-}
+// lcp and to_nibs are provided by crate::hp
 
-/// Converts a byte slice into a vector of nibbles.
-///
-/// A nibble is 4 bits or half of an 8-bit byte. This function takes each byte from the
-/// input slice, splits it into two nibbles, and appends them to the resulting vector.
-/// Uses `SmallVec` to avoid heap allocation for typical key sizes (≤32 bytes = 64 nibbles).
-#[inline]
-pub fn to_nibs(slice: &[u8]) -> Nibbles {
-    let mut result = SmallVec::with_capacity(2 * slice.len());
-    for byte in slice {
-        result.push(byte >> 4);
-        result.push(byte & 0xf);
-    }
-    result
-}
+// prefix_to_small_nibs is provided by crate::hp
 
-/// Decodes a compact hex-prefix-encoded path (as used in MPT leaf/extension nodes)
-/// into its nibble sequence. This allocates a `SmallVec` with the exact nibble capacity.
-#[inline]
-fn prefix_to_small_nibs(encoded_path: &[u8]) -> Nibbles {
-    if encoded_path.is_empty() {
-        return SmallVec::new();
-    }
-
-    let first_byte = encoded_path[0];
-    let is_odd = (first_byte & HP_FLAG_ODD) != 0;
-    // Nibble count: if odd, first byte contains 1 nibble of data; otherwise, first byte
-    // contains only flags. Remaining bytes always contain two nibbles each.
-    let nib_count = 2 * (encoded_path.len() - 1) + if is_odd { 1 } else { 0 };
-    let mut nibs = SmallVec::with_capacity(nib_count);
-
-    // Handle the first nibble if odd length
-    if is_odd {
-        nibs.push(first_byte & 0x0f);
-    }
-
-    // Process remaining bytes, starting from index 1
-    for &byte in &encoded_path[1..] {
-        nibs.push(byte >> 4); // High nibble
-        nibs.push(byte & 0x0f); // Low nibble
-    }
-
-    nibs
-}
-
-/// Returns the number of nibbles encoded in a compact hex-prefix path.
-#[inline]
-fn encoded_path_nibble_count(encoded_path: &[u8]) -> usize {
-    if encoded_path.is_empty() {
-        return 0;
-    }
-    let is_odd = (encoded_path[0] & HP_FLAG_ODD) != 0;
-    2 * (encoded_path.len() - 1) + if is_odd { 1 } else { 0 }
-}
-
-/// Compares a compact hex-prefix path with a nibble slice for equality without allocating.
-#[inline]
-fn encoded_path_eq_nibs(encoded_path: &[u8], nibs: &[u8]) -> bool {
-    let nib_count = encoded_path_nibble_count(encoded_path);
-    if nib_count != nibs.len() {
-        return false;
-    }
-    if nib_count == 0 {
-        return true;
-    }
-
-    let first = encoded_path[0];
-    let is_odd = (first & HP_FLAG_ODD) != 0;
-    let mut i = 0usize; // index in nibs
-    let mut j = 1usize; // index in encoded_path bytes
-
-    if is_odd {
-        if nibs[i] != (first & 0x0f) {
-            return false;
-        }
-        i += 1;
-    }
-
-    while i + 1 < nibs.len() {
-        let b = encoded_path[j];
-        if nibs[i] != (b >> 4) {
-            return false;
-        }
-        if nibs[i + 1] != (b & 0x0f) {
-            return false;
-        }
-        i += 2;
-        j += 1;
-    }
-
-    if i < nibs.len() {
-        // one last high nibble remains
-        let b = encoded_path[j];
-        if nibs[i] != (b >> 4) {
-            return false;
-        }
-    }
-    true
-}
-
-/// If `encoded_path` is a prefix of `nibs`, returns the tail `&nibs[matched_len..]`.
-#[inline]
-fn encoded_path_strip_prefix<'a>(encoded_path: &[u8], nibs: &'a [u8]) -> Option<&'a [u8]> {
-    let nib_count = encoded_path_nibble_count(encoded_path);
-    if nib_count > nibs.len() {
-        return None;
-    }
-    if nib_count == 0 {
-        return Some(nibs);
-    }
-
-    let first = encoded_path[0];
-    let is_odd = (first & HP_FLAG_ODD) != 0;
-    let mut i = 0usize; // index in nibs
-    let mut j = 1usize; // index in encoded_path bytes
-
-    if is_odd {
-        if nibs[i] != (first & 0x0f) {
-            return None;
-        }
-        i += 1;
-    }
-
-    while i + 1 < nib_count {
-        let b = encoded_path[j];
-        if nibs[i] != (b >> 4) {
-            return None;
-        }
-        if nibs[i + 1] != (b & 0x0f) {
-            return None;
-        }
-        i += 2;
-        j += 1;
-    }
-
-    if i < nib_count {
-        let b = encoded_path[j];
-        if nibs[i] != (b >> 4) {
-            return None;
-        }
-        i += 1;
-    }
-    Some(&nibs[i..])
-}
+// encoded-path comparison and strip-prefix helpers are provided by crate::hp
 
 /// Arena-based implementation that stores all nodes in a flat vector
 /// and uses indices for better memory layout and performance.
