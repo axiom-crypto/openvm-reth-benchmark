@@ -1,8 +1,8 @@
 #[macro_use]
 mod utils;
 
-#[cfg(target_os = "zkvm")]
-mod crypto;
+// #[cfg(target_os = "zkvm")]
+// mod crypto;
 
 use std::{fmt::Debug, sync::Arc};
 
