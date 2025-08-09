@@ -250,6 +250,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "alloy-rpc-types-debug"
+version = "1.0.24"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9b6f0482c82310366ec3dcf4e5212242f256a69fcf1a26e5017e6704091ee95"
+dependencies = [
+ "alloy-primitives",
+ "derive_more",
+ "serde",
+]
+
+[[package]]
 name = "alloy-rpc-types-engine"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1824,7 +1835,7 @@ dependencies = [
 [[package]]
 name = "k256"
 version = "0.13.4"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -2085,6 +2096,7 @@ version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77e878c846a8abae00dd069496dbe8751b16ac1c3d6bd2a7283a938e8228f90d"
 dependencies = [
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn 2.0.104",
@@ -2145,8 +2157,8 @@ dependencies = [
 
 [[package]]
 name = "openvm"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "bytemuck",
  "getrandom 0.2.16",
@@ -2160,8 +2172,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-algebra-complex-macros"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2170,8 +2182,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-algebra-guest"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "halo2curves-axiom",
  "num-bigint",
@@ -2186,8 +2198,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-algebra-moduli-macros"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "num-bigint",
  "num-prime",
@@ -2245,6 +2257,7 @@ dependencies = [
  "reth-primitives",
  "reth-primitives-traits",
  "reth-revm",
+ "reth-stateless",
  "reth-trie",
  "revm",
  "revm-precompile 24.0.1",
@@ -2256,7 +2269,7 @@ dependencies = [
 [[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2265,8 +2278,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-ecc-guest"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -2284,8 +2297,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-ecc-sw-macros"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2294,8 +2307,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-keccak256"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "openvm-keccak256-guest",
  "tiny-keccak",
@@ -2303,8 +2316,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-keccak256-guest"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "openvm-platform",
 ]
@@ -2327,8 +2340,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-macros-common"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "syn 2.0.104",
 ]
@@ -2344,11 +2357,15 @@ dependencies = [
  "bincode",
  "eyre",
  "itertools 0.13.0",
+ "reth-errors",
  "reth-execution-types",
  "reth-primitives",
  "reth-revm",
+ "reth-stateless",
  "reth-trie",
+ "reth-trie-common",
  "revm",
+ "revm-bytecode",
  "revm-primitives",
  "rlp",
  "rustc-hash",
@@ -2358,8 +2375,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-pairing"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "group",
  "hex-literal 0.4.1",
@@ -2382,8 +2399,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-pairing-guest"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "hex-literal 0.4.1",
  "itertools 0.14.0",
@@ -2402,8 +2419,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-platform"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "critical-section",
  "embedded-alloc",
@@ -2433,8 +2450,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-rv32im-guest"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "openvm-custom-insn",
  "p3-field",
@@ -2443,8 +2460,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-sha2"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "openvm-sha256-guest",
  "sha2",
@@ -2452,8 +2469,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-sha256-guest"
-version = "1.4.0-rc.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+version = "1.4.0-rc.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "openvm-platform",
 ]
@@ -2471,7 +2488,7 @@ dependencies = [
 [[package]]
 name = "p256"
 version = "0.13.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#8a71af1b2eb97d8fc15a88d5847cc07b2eb1d3bf"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fnew-execution#b371303a2e9af20e0824cf64297f4695a5f99304"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -2992,6 +3009,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "reth-errors"
+version = "1.6.0"
+source = "git+https://github.com/paradigmxyz/reth?tag=v1.6.0#d8451e54e7267f9f1634118d6d279b2216f7e2bb"
+dependencies = [
+ "reth-consensus",
+ "reth-execution-errors",
+ "reth-storage-errors",
+ "thiserror 2.0.12",
+]
+
+[[package]]
 name = "reth-ethereum-consensus"
 version = "1.6.0"
 source = "git+https://github.com/paradigmxyz/reth?tag=v1.6.0#d8451e54e7267f9f1634118d6d279b2216f7e2bb"
@@ -3186,6 +3214,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "reth-stateless"
+version = "1.6.0"
+source = "git+https://github.com/paradigmxyz/reth?tag=v1.6.0#d8451e54e7267f9f1634118d6d279b2216f7e2bb"
+dependencies = [
+ "alloy-consensus",
+ "alloy-primitives",
+ "alloy-rlp",
+ "alloy-rpc-types-debug",
+ "alloy-trie",
+ "itertools 0.14.0",
+ "reth-chainspec",
+ "reth-consensus",
+ "reth-errors",
+ "reth-ethereum-consensus",
+ "reth-ethereum-primitives",
+ "reth-evm",
+ "reth-primitives-traits",
+ "reth-revm",
+ "reth-trie-common",
+ "reth-trie-sparse",
+ "serde",
+ "serde_with",
+ "thiserror 2.0.12",
+]
+
+[[package]]
 name = "reth-static-file-types"
 version = "1.6.0"
 source = "git+https://github.com/paradigmxyz/reth?tag=v1.6.0#d8451e54e7267f9f1634118d6d279b2216f7e2bb"
@@ -3323,6 +3377,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "70db41f111d3a17362b8bb4ca4c3a77469f9742162add3152838ef6aff523019"
 dependencies = [
  "bitvec",
+ "paste",
  "phf",
  "revm-primitives",
  "serde",

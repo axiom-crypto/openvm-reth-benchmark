@@ -38,6 +38,7 @@ reth-evm-ethereum.workspace = true
 reth-ethereum-consensus.workspace = true
 reth-consensus.workspace = true
 reth-stateless.workspace = true
+reth-revm.workspace = true
 
 # revm
 revm.workspace = true
@@ -47,9 +48,10 @@ revm-primitives.workspace = true
 alloy-consensus.workspace = true
 alloy-primitives.workspace = true
 alloy-rlp.workspace = true
-alloy-provider.workspace = true
+alloy-provider = { workspace = true, features = ["debug-api"] }
 alloy-transport.workspace = true
 alloy-rpc-types.workspace = true
+alloy-rpc-types-debug.workspace = true
 itertools = "0.13.0"
 futures.workspace = true
 

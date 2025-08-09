@@ -31,6 +31,7 @@ alloy-transport.workspace = true
 
 # reth
 reth-primitives.workspace = true
+reth-stateless.workspace = true
 
 # openvm
 openvm = { workspace = true }
@@ -59,7 +60,10 @@ default = ["mimalloc", "metrics", "evm-verify"]
 metrics = ["openvm-benchmarks-prove/metrics"]
 evm-prove = ["openvm-sdk/evm-prove"]
 evm-verify = ["evm-prove", "openvm-sdk/evm-verify"]
-perf-metrics = ["openvm-sdk/perf-metrics", "openvm-benchmarks-prove/perf-metrics"]
+perf-metrics = [
+    "openvm-sdk/perf-metrics",
+    "openvm-benchmarks-prove/perf-metrics",
+]
 mimalloc = ["openvm-benchmarks-prove/mimalloc"]
 jemalloc = ["openvm-benchmarks-prove/jemalloc"]
 nightly-features = ["openvm-benchmarks-prove/nightly-features"]

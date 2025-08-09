@@ -55,8 +55,7 @@ impl EthereumState {
                     // Ensure a storage trie exists for this account
                     let storage_root = {
                         let mut storage_tries = self.storage_tries.0.borrow_mut();
-                        let storage_trie =
-                            storage_tries.entry(*hashed_address).or_insert_with(MptNode::default);
+                        let storage_trie = storage_tries.entry(*hashed_address).or_default();
 
                         if let Some(state_storage) = post_state.storages.get(hashed_address) {
                             if state_storage.wiped {
@@ -167,7 +166,7 @@ impl StatelessTrie for EthereumState {
         let hashed_address = keccak256(address);
 
         // Get account from state trie using the hashed address
-        match self.state_trie.get_rlp::<TrieAccount>(&hashed_address.as_slice()) {
+        match self.state_trie.get_rlp::<TrieAccount>(hashed_address.as_slice()) {
             Ok(account_opt) => {
                 if let Some(account) = &account_opt {
                     // Lazily create storage trie for this account if needed
@@ -175,7 +174,7 @@ impl StatelessTrie for EthereumState {
                     if let Some(ref rlp_by_digest) = *self.rlp_by_digest.borrow() {
                         let mut storage_tries = self.storage_tries.0.borrow_mut();
 
-                        if !storage_tries.contains_key(&hashed_address) {
+                        storage_tries.entry(hashed_address).or_insert_with(|| {
                             // Create storage trie from witness data using account's storage_root
                             let storage_root = account.storage_root;
 
@@ -188,16 +187,13 @@ impl StatelessTrie for EthereumState {
                             }
 
                             // Build storage trie from the storage root
-                            let storage_trie =
-                                if storage_root == mpt::EMPTY_ROOT || storage_root == B256::ZERO {
-                                    MptNode::default()
-                                } else {
-                                    let root_node = mpt::node_from_digest(storage_root);
-                                    mpt::resolve_nodes(&root_node, &node_store)
-                                };
-
-                            storage_tries.insert(hashed_address, storage_trie);
-                        }
+                            if storage_root == mpt::EMPTY_ROOT || storage_root == B256::ZERO {
+                                MptNode::default()
+                            } else {
+                                let root_node = mpt::node_from_digest(storage_root);
+                                mpt::resolve_nodes(&root_node, &node_store)
+                            }
+                        });
                     }
                 }
                 Ok(account_opt)
@@ -219,7 +215,7 @@ impl StatelessTrie for EthereumState {
         // to ensure the storage trie exists
         let storage_tries = self.storage_tries.0.borrow();
         if let Some(storage_trie) = storage_tries.get(&hashed_address) {
-            match storage_trie.get_rlp::<U256>(&hashed_slot.as_slice()) {
+            match storage_trie.get_rlp::<U256>(hashed_slot.as_slice()) {
                 Ok(Some(value)) => Ok(value),
                 Ok(None) => Ok(U256::ZERO),
                 Err(e) => Err(ProviderError::other(e)),

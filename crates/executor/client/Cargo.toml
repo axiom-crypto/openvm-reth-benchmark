@@ -32,6 +32,7 @@ reth-trie.workspace = true
 reth-evm.workspace = true
 reth-evm-ethereum.workspace = true
 reth-revm.workspace = true
+reth-stateless.workspace = true
 
 # revm
 revm.workspace = true

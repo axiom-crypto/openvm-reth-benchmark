@@ -116,6 +116,7 @@ alloy-transport-http = { version = "1.0.23", features = [
     "reqwest-rustls-tls",
 ], default-features = false }
 alloy-eips = { version = "1.0.23", default-features = false }
+alloy-rpc-types-debug = { version = "1.0.23", default-features = false }
 
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0-rc.1", default-features = false }
 
