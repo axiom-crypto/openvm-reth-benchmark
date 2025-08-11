@@ -11,8 +11,6 @@ tokio.workspace = true
 futures.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
-rayon.workspace = true
-rustc-hash.workspace = true
 
 # reth
 reth-primitives.workspace = true
