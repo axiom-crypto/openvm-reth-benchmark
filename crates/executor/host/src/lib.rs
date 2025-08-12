@@ -150,18 +150,18 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
             &after_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
         )?;
 
-        // Verify the state root.
-        tracing::info!("verifying the state root");
-        let state_root = {
-            let mut mutated_state = state.clone();
-            let post_state = HashedPostState::from_bundle_state(&executor_outcome.bundle.state);
-            // executor_outcome.hash_state_slow());
-            mutated_state.update(&post_state);
-            mutated_state.state_root()
-        };
-        if state_root != current_block.state_root {
-            eyre::bail!("mismatched state root");
-        }
+        // Skip state root verification for now.
+        // It works with Alchemy but for some reason not with Quicknode.
+        // It is checked on the client (guest) side  and works with all providers.
+        // tracing::info!("verifying the state root");
+        // let state_root = {
+        //     let mut mutated_state = state.clone();
+        //     mutated_state.update_from_bundle_state(&executor_outcome.bundle);
+        //     mutated_state.state_root()
+        // };
+        // if state_root != current_block.state_root {
+        //     eyre::bail!("mismatched state root");
+        // }
 
         // Derive the block header.
         //
@@ -181,10 +181,10 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
 
         // Log the result.
         tracing::info!(
-            "successfully executed block: block_number={}, block_hash={}, state_root={}",
+            "successfully executed block: block_number={}, block_hash={}",
             current_block.header.number,
             header.hash_slow(),
-            state_root
+            // state_root
         );
 
         // Fetch the parent headers needed to constrain the BLOCKHASH opcode.
