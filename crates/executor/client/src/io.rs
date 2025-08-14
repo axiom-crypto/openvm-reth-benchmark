@@ -2,7 +2,7 @@ use std::iter::once;
 
 use eyre::Result;
 use itertools::Itertools;
-use openvm_mpt::EthereumState;
+use openvm_mpt::{mpt::EMPTY_ROOT, EthereumState};
 use openvm_witness_db::WitnessDb;
 use reth_primitives::{Block, Header, TransactionSigned};
 use reth_trie::TrieAccount;
@@ -110,6 +110,15 @@ pub trait WitnessInput {
 
         if self.state_anchor() != state.state_root() {
             eyre::bail!("parent state root mismatch");
+        }
+
+        for (hashed_address, storage_trie) in &state.storage_tries.0 {
+            let account_in_trie =
+                state.state_trie.get_rlp::<TrieAccount>(hashed_address.as_slice())?;
+            let expected_storage_root = account_in_trie.map_or(EMPTY_ROOT, |a| a.storage_root);
+            if storage_trie.hash() != expected_storage_root {
+                eyre::bail!("storage root hash mismatch")
+            }
         }
 
         let bytecodes_by_hash =
