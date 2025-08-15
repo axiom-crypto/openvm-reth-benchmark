@@ -284,13 +284,14 @@ where
                             vm_config.as_ref().num_public_values;
 
                         let mut prover = sdk.evm_prover(elf)?.with_program_name(program_name);
+                        let halo2_pk = sdk.halo2_pk();
                         tracing::info!(
                             "halo2_outer_k: {}",
-                            sdk.halo2_pk().verifier.pinning.metadata.config_params.k
+                            halo2_pk.verifier.pinning.metadata.config_params.k
                         );
                         tracing::info!(
                             "halo2_wrapper_k: {}",
-                            sdk.halo2_pk().wrapper.pinning.metadata.config_params.k
+                            halo2_pk.wrapper.pinning.metadata.config_params.k
                         );
                         let proof = prover.prove_evm(stdin)?;
                         let block_hash = &proof.user_public_values;
