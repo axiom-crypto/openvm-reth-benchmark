@@ -23,7 +23,13 @@ impl DatabaseRef for WitnessDb {
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
         // Even absent accounts are loaded as `None`, so if an entry is missing from `HashMap` we
         // need to panic. Otherwise it would be interpreted by `revm` as an uninitialized account.
-        Ok(Some(self.accounts.get(&address).cloned().unwrap()))
+        let account = self.accounts.get(&address).cloned().unwrap();
+
+        if account.eq(&AccountInfo::default()) {
+            return Ok(None);
+        }
+
+        Ok(Some(account))
     }
 
     fn code_by_hash_ref(&self, _code_hash: B256) -> Result<Bytecode, Self::Error> {
