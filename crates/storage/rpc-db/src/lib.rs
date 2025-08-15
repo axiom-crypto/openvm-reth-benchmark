@@ -75,7 +75,7 @@ impl<P: Provider<Ethereum> + Clone> RpcDb<P> {
         let account_info = AccountInfo {
             nonce: proof.nonce,
             balance: proof.balance,
-            code_hash: proof.code_hash,
+            code_hash: bytecode.hash_slow(),
             code: Some(bytecode.clone()),
         };
 
@@ -174,6 +174,11 @@ impl<P: Provider<Ethereum> + Clone> DatabaseRef for RpcDb<P> {
             tokio::task::block_in_place(|| handle.block_on(self.fetch_account_info(address)));
         let account_info =
             result.map_err(|e| ProviderError::Database(DatabaseError::Other(e.to_string())))?;
+
+        if account_info.eq(&AccountInfo::default()) {
+            return Ok(None);
+        }
+
         Ok(Some(account_info))
     }
 
