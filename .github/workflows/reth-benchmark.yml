@@ -315,7 +315,7 @@ jobs:
         if: ${{ (github.event.inputs.mode == 'prove-evm') || (inputs.mode == 'prove-evm') }}
         run: |
           bash openvm/extensions/native/recursion/trusted_setup_s3.sh
-          PARAMS_DIR=$(pwd)/params
+          PARAMS_DIR="$HOME/.openvm/params/"
           echo "PARAMS_DIR=$PARAMS_DIR" >> $GITHUB_ENV
           OPTIONAL_ARGS="--kzg-params-dir $PARAMS_DIR --halo2-outer-k 22"
           echo "OPTIONAL_ARGS=${OPTIONAL_ARGS}" >> $GITHUB_ENV

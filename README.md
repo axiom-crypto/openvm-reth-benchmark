@@ -117,7 +117,7 @@ do
 done
 
 mv *.srs params/
-export PARAMS_DIR=$(pwd)/params
+export PARAMS_DIR="$HOME/.openvm/params/"
 ```
 
 To run the full end-to-end benchmark for EVM verification, run:
