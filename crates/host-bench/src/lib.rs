@@ -225,7 +225,7 @@ where
     let vm_config = reth_vm_config(app_log_blowup, segment_max_height, segment_max_cells);
     let app_config = args.benchmark.app_config(vm_config.clone());
 
-    let mut sdk = GenericSdk::<E, VB, NativeBuilder>::new(app_config.clone())?
+    let sdk = GenericSdk::<E, VB, NativeBuilder>::new(app_config.clone())?
         .with_agg_config(args.benchmark.agg_config())
         .with_agg_tree_config(args.benchmark.agg_tree_config);
     let elf = Elf::decode(openvm_client_eth_elf, MEM_SIZE as u32)?;
@@ -280,9 +280,6 @@ where
                     }
                     #[cfg(feature = "evm-verify")]
                     BenchMode::ProveEvm => {
-                        sdk.agg_config_mut().max_num_user_public_values =
-                            vm_config.as_ref().num_public_values;
-
                         let mut prover = sdk.evm_prover(elf)?.with_program_name(program_name);
                         let halo2_pk = sdk.halo2_pk();
                         tracing::info!(
