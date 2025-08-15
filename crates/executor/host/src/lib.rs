@@ -152,16 +152,7 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
 
         // Skip state root verification for now.
         // It works with Alchemy but for some reason not with Quicknode.
-        // It is checked on the client (guest) side  and works with all providers.
-        // tracing::info!("verifying the state root");
-        // let state_root = {
-        //     let mut mutated_state = state.clone();
-        //     mutated_state.update_from_bundle_state(&executor_outcome.bundle);
-        //     mutated_state.state_root()
-        // };
-        // if state_root != current_block.state_root {
-        //     eyre::bail!("mismatched state root");
-        // }
+        // It is checked on the client (guest) side and works with all providers.
 
         // Derive the block header.
         //
@@ -181,10 +172,10 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
 
         // Log the result.
         tracing::info!(
-            "successfully executed block: block_number={}, block_hash={}",
+            "successfully executed block: block_number={}, block_hash={}, state_root={}",
             current_block.header.number,
             header.hash_slow(),
-            // state_root
+            current_block.state_root
         );
 
         // Fetch the parent headers needed to constrain the BLOCKHASH opcode.
