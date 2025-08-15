@@ -5,7 +5,7 @@ use alloy_transport::layers::RetryBackoffLayer;
 use clap::Parser;
 use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_circuit::{
-    arch::{execution_mode::metered::segment_ctx::SegmentationLimits, *},
+    arch::*,
     openvm_stark_sdk::{
         bench::run_with_metric_collection, openvm_stark_backend::p3_field::PrimeField32,
     },
@@ -87,20 +87,12 @@ pub struct HostArgs {
     #[clap(flatten)]
     benchmark: BenchmarkCli,
 
-    /// Max cells per chip in segment for continuations
-    #[arg(long)]
-    pub segment_max_cells: Option<usize>,
-
     /// Optional path to write the input to. Only needed for mode=make_input
     #[arg(long)]
     pub input_path: Option<PathBuf>,
 }
 
-pub fn reth_vm_config(
-    app_log_blowup: usize,
-    segment_max_height: usize,
-    segment_max_cells: usize,
-) -> SdkVmConfig {
+pub fn reth_vm_config(app_log_blowup: usize) -> SdkVmConfig {
     let mut config = toml::from_str::<AppConfig<SdkVmConfig>>(include_str!(
         "../../../bin/client-eth/openvm.toml"
     ))
@@ -111,11 +103,6 @@ pub fn reth_vm_config(
         .config
         .with_max_constraint_degree((1 << app_log_blowup) + 1)
         .with_public_values(32);
-    config.system.config.set_segmentation_limits(
-        SegmentationLimits::default()
-            .with_max_trace_height(segment_max_height as u32)
-            .with_max_cells(segment_max_cells),
-    );
     config
 }
 
@@ -217,13 +204,11 @@ where
 
     let app_log_blowup = args.benchmark.app_log_blowup.unwrap_or(RETH_DEFAULT_APP_LOG_BLOWUP);
     args.benchmark.app_log_blowup = Some(app_log_blowup);
-    let segment_max_height = args.benchmark.max_segment_length.unwrap_or((1 << 23) - 100);
-    let segment_max_cells = args.segment_max_cells.unwrap_or(u32::MAX as usize); // 2^32 u32's = 16gb
     let leaf_log_blowup = args.benchmark.leaf_log_blowup.unwrap_or(RETH_DEFAULT_LEAF_LOG_BLOWUP);
     args.benchmark.leaf_log_blowup = Some(leaf_log_blowup);
 
-    let vm_config = reth_vm_config(app_log_blowup, segment_max_height, segment_max_cells);
-    let app_config = args.benchmark.app_config(vm_config.clone());
+    let vm_config = reth_vm_config(app_log_blowup);
+    let app_config = args.benchmark.app_config(vm_config);
 
     let sdk = GenericSdk::<E, VB, NativeBuilder>::new(app_config.clone())?
         .with_agg_config(args.benchmark.agg_config())
