@@ -198,6 +198,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
+
       - name: Add workflow inputs to summary
         run: |
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -206,6 +207,7 @@ jobs:
           echo '${{ toJSON(inputs || github.event.inputs) }}' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+
       - name: Display workflow inputs
         run: |
           if [[ "${{ inputs.manual_call }}" == "true" ]]; then
@@ -213,8 +215,10 @@ jobs:
           else
             echo "${{ toJSON(github.event.inputs) }}"
           fi
+
       - name: Get current commit hash
         run: echo "current_sha=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
       - name: Set metric name
         id: set-metric-name
         run: |
@@ -296,12 +300,14 @@ jobs:
         run: |
           RESULT=$(cargo metadata --format-version=1 | jq -r '.packages[] | select(.name=="openvm-sdk") | .source | split("#") | .[1]')
           echo "result=${RESULT}" >> "$GITHUB_OUTPUT"
+
       - name: Install openvm-prof
         run: |
           cargo install --git https://github.com/openvm-org/openvm.git --rev ${{ steps.get-openvm-rev.outputs.result }} --profile=dev --force openvm-prof
+
       - name: Checkout openvm (for scripts)
         run: |
-          git clone --depth=1 https://github.com/openvm-org/openvm.git
+          git clone --rev ${{ steps.get-openvm-rev.outputs.result }} --depth=1 https://github.com/openvm-org/openvm.git
 
       - name: Install architecture specific tools
         run: |
@@ -315,7 +321,7 @@ jobs:
         if: ${{ (github.event.inputs.mode == 'prove-evm') || (inputs.mode == 'prove-evm') }}
         run: |
           bash openvm/extensions/native/recursion/trusted_setup_s3.sh
-          PARAMS_DIR=$(pwd)/params
+          PARAMS_DIR="$HOME/.openvm/params/"
           echo "PARAMS_DIR=$PARAMS_DIR" >> $GITHUB_ENV
           OPTIONAL_ARGS="--kzg-params-dir $PARAMS_DIR --halo2-outer-k 22"
           echo "OPTIONAL_ARGS=${OPTIONAL_ARGS}" >> $GITHUB_ENV
@@ -421,6 +427,7 @@ jobs:
           name: ${{ steps.set-metric-name.outputs.name }}
           path: ${{ env.METRIC_PATH }}
           retention-days: 1
+
       - name: Upload memory usage graph
         if: ${{ (inputs.profiling || github.event.inputs.profiling) == 'none' }}
         uses: actions/upload-artifact@v4
