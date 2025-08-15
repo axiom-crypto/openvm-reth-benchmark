@@ -5,7 +5,7 @@ use alloy_transport::layers::RetryBackoffLayer;
 use clap::Parser;
 use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_circuit::{
-    arch::{execution_mode::metered::segment_ctx::SegmentationLimits, instructions::exe::VmExe, *},
+    arch::{execution_mode::metered::segment_ctx::SegmentationLimits, *},
     openvm_stark_sdk::{
         bench::run_with_metric_collection, openvm_stark_backend::p3_field::PrimeField32,
     },
@@ -16,14 +16,14 @@ pub use openvm_native_circuit::{NativeConfig, NativeCpuBuilder};
 pub use openvm_sdk::config::SdkVmCpuBuilder;
 use openvm_sdk::{
     config::{AppConfig, SdkVmConfig},
-    prover::{AppProver, StarkProver},
+    prover::verify_app_proof,
     GenericSdk, StdIn, F, SC,
 };
 use openvm_stark_sdk::engine::StarkFriEngine;
-use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE, FromElf};
+use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 pub use reth_primitives;
 use serde_json::json;
-use std::{fs, path::PathBuf, sync::Arc};
+use std::{fs, path::PathBuf};
 use tracing::info_span;
 
 mod execute;
@@ -129,7 +129,7 @@ pub async fn run_reth_benchmark<E, VB, NativeBuilder>(
 ) -> eyre::Result<()>
 where
     E: StarkFriEngine<SC = SC>,
-    VB: VmBuilder<E, VmConfig = SdkVmConfig>,
+    VB: VmBuilder<E, VmConfig = SdkVmConfig> + Clone + Default,
     <VB::VmConfig as VmExecutionConfig<F>>::Executor:
         Executor<F> + MeteredExecutor<F> + PreflightExecutor<F, VB::RecordArena>,
     NativeBuilder: VmBuilder<E, VmConfig = NativeConfig> + Clone + Default,
@@ -223,28 +223,26 @@ where
     args.benchmark.leaf_log_blowup = Some(leaf_log_blowup);
 
     let vm_config = reth_vm_config(app_log_blowup, segment_max_height, segment_max_cells);
-    let sdk =
-        GenericSdk::<E, NativeBuilder>::new().with_agg_tree_config(args.benchmark.agg_tree_config);
+    let app_config = args.benchmark.app_config(vm_config.clone());
+
+    let mut sdk = GenericSdk::<E, VB, NativeBuilder>::new(app_config.clone())?
+        .with_agg_config(args.benchmark.agg_config())
+        .with_agg_tree_config(args.benchmark.agg_tree_config);
     let elf = Elf::decode(openvm_client_eth_elf, MEM_SIZE as u32)?;
-    let exe = VmExe::from_elf(elf, vm_config.transpiler()).unwrap();
+    let exe = sdk.convert_to_exe(elf.clone())?;
 
     let program_name = format!("reth.{}.block_{}", args.mode, args.block_number);
     // NOTE: args.benchmark.app_config resets SegmentationLimits if max_segment_length is set
     args.benchmark.max_segment_length = None;
-    let app_config = args.benchmark.app_config(vm_config.clone());
 
     run_with_metric_collection("OUTPUT_PATH", || {
         info_span!("reth-block", block_number = args.block_number).in_scope(
             || -> eyre::Result<()> {
                 // Always execute_e1 for benchmarking:
                 {
-                    let pvs = info_span!("execute_e1", group = program_name).in_scope(|| {
-                        sdk.execute(exe.clone(), app_config.app_vm_config.clone(), stdin.clone())
-                    })?;
-                    let block_hash: Vec<u8> = pvs
-                        .iter()
-                        .map(|x| x.as_canonical_u32().try_into().unwrap())
-                        .collect::<Vec<_>>();
+                    let pvs = info_span!("execute_e1", group = program_name)
+                        .in_scope(|| sdk.execute(elf.clone(), stdin.clone()))?;
+                    let block_hash = pvs;
                     println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
                 }
                 match args.mode {
@@ -265,34 +263,14 @@ where
                         println!("Number of segments: {}", segments.len());
                     }
                     BenchMode::ProveApp => {
-                        let app_pk = sdk.app_keygen(app_config)?;
-                        let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
-
-                        let mut app_prover = AppProver::<E, _>::new(
-                            vm_builder,
-                            app_pk.app_vm_pk.clone(),
-                            app_committed_exe,
-                        )?
-                        .with_program_name(program_name);
-                        let proof = app_prover.generate_app_proof(stdin)?;
-                        let app_vk = app_pk.get_app_vk();
-                        sdk.verify_app_proof(&app_vk, &proof)?;
+                        let mut prover = sdk.app_prover(elf)?.with_program_name(program_name);
+                        let (_, app_vk) = sdk.app_keygen();
+                        let proof = prover.prove(stdin)?;
+                        verify_app_proof(&app_vk, &proof)?;
                     }
                     BenchMode::ProveStark => {
-                        let app_pk = sdk.app_keygen(app_config)?;
-                        let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
-                        let agg_stark_config = args.benchmark.agg_config().agg_stark_config;
-                        let agg_stark_pk = sdk.agg_stark_keygen(agg_stark_config)?;
-                        let mut prover = StarkProver::<E, _, _>::new(
-                            vm_builder,
-                            NativeBuilder::default(),
-                            Arc::new(app_pk),
-                            app_committed_exe,
-                            agg_stark_pk,
-                            args.benchmark.agg_tree_config,
-                        )?;
-                        prover.set_program_name(program_name);
-                        let proof = prover.generate_e2e_stark_proof(stdin)?;
+                        let mut prover = sdk.prover(elf)?.with_program_name(program_name);
+                        let proof = prover.prove(stdin)?;
                         let block_hash = proof
                             .user_public_values
                             .iter()
@@ -302,47 +280,20 @@ where
                     }
                     #[cfg(feature = "evm-verify")]
                     BenchMode::ProveEvm => {
-                        use openvm_native_recursion::halo2::utils::CacheHalo2ParamsReader;
-                        use openvm_sdk::{prover::EvmHalo2Prover, DefaultStaticVerifierPvHandler};
-
-                        let halo2_params_reader = CacheHalo2ParamsReader::new(
-                            args.benchmark
-                                .kzg_params_dir
-                                .as_ref()
-                                .expect("must set --kzg-params-dir"),
-                        );
-                        let mut agg_config = args.benchmark.agg_config();
-                        agg_config.agg_stark_config.max_num_user_public_values =
+                        sdk.agg_config_mut().max_num_user_public_values =
                             vm_config.as_ref().num_public_values;
 
-                        let app_pk = sdk.app_keygen(app_config)?;
-                        let full_agg_pk = sdk.agg_keygen(
-                            agg_config,
-                            &halo2_params_reader,
-                            &DefaultStaticVerifierPvHandler,
-                        )?;
+                        let mut prover = sdk.evm_prover(elf)?.with_program_name(program_name);
                         tracing::info!(
                             "halo2_outer_k: {}",
-                            full_agg_pk.halo2_pk.verifier.pinning.metadata.config_params.k
+                            sdk.halo2_pk().verifier.pinning.metadata.config_params.k
                         );
                         tracing::info!(
                             "halo2_wrapper_k: {}",
-                            full_agg_pk.halo2_pk.wrapper.pinning.metadata.config_params.k
+                            sdk.halo2_pk().wrapper.pinning.metadata.config_params.k
                         );
-                        let app_committed_exe = sdk.commit_app_exe(app_pk.app_fri_params(), exe)?;
-
-                        let mut prover = EvmHalo2Prover::<E, _, _>::new(
-                            &halo2_params_reader,
-                            vm_builder,
-                            NativeBuilder::default(),
-                            Arc::new(app_pk),
-                            app_committed_exe,
-                            full_agg_pk,
-                            args.benchmark.agg_tree_config,
-                        )?;
-                        prover.set_program_name(program_name);
-                        let evm_proof = prover.generate_proof_for_evm(stdin)?;
-                        let block_hash = &evm_proof.user_public_values;
+                        let proof = prover.prove_evm(stdin)?;
+                        let block_hash = &proof.user_public_values;
                         println!("block_hash: {}", ToHexExt::encode_hex(block_hash));
                     }
                     BenchMode::MakeInput => {
