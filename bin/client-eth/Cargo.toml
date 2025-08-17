@@ -23,6 +23,7 @@ openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", rev = "9ef8
     "bls12_381",
 ] }
 k256 = { git = "https://github.com/openvm-org/openvm.git", rev = "9ef822c947f14eb436e293971c969cfcb688dbe7" }
+p256 = { git = "https://github.com/openvm-org/openvm.git", rev = "9ef822c947f14eb436e293971c969cfcb688dbe7" }
 
 # Statically turns off logging
 log = { version = "0.4", features = ["max_level_off", "release_max_level_off"] }
