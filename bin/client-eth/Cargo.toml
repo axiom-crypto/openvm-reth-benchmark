@@ -39,14 +39,14 @@ kzg-intrinsics = [
 ] # uses OpenVM BLS12-381 intrinsic functions
 
 [patch.crates-io]
-revm = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm-new-exec" }
-revm-primitives = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm-new-exec" }
-revm-interpreter = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm-new-exec" }
-revm-precompile = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm-new-exec" }
-revm-database = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm-new-exec" }
-revm-database-interface = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm-new-exec" }
-revm-state = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm-new-exec" }
-revm-bytecode = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm-new-exec" }
+revm = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
+revm-primitives = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
+revm-interpreter = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
+revm-precompile = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
+revm-database = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
+revm-database-interface = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
+revm-state = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
+revm-bytecode = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
 k256 = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
 p256 = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
 ruint = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
