@@ -315,7 +315,7 @@ dependencies = [
  "cfg-if",
  "const-hex",
  "derive_more 0.99.20",
- "hex-literal",
+ "hex-literal 0.4.1",
  "itoa",
  "ruint",
  "tiny-keccak",
@@ -332,7 +332,7 @@ dependencies = [
  "cfg-if",
  "const-hex",
  "derive_more 0.99.20",
- "hex-literal",
+ "hex-literal 0.4.1",
  "itoa",
  "ruint",
  "tiny-keccak",
@@ -839,12 +839,6 @@ dependencies = [
  "once_cell_polyfill",
  "windows-sys 0.59.0",
 ]
-
-[[package]]
-name = "anyhow"
-version = "1.0.98"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 
 [[package]]
 name = "ariadne"
@@ -1865,25 +1859,22 @@ dependencies = [
 
 [[package]]
 name = "criterion"
-version = "0.5.1"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2b12d017a929603d80db1831cd3a24082f8137ce19c69e6447f54f5fc8d692f"
+checksum = "3bf7af66b0989381bd0be551bd7cc91912a655a58c6918420c9527b1fd8b4679"
 dependencies = [
  "anes",
  "cast",
  "ciborium",
  "clap",
  "criterion-plot",
- "is-terminal",
- "itertools 0.10.5",
+ "itertools 0.13.0",
  "num-traits",
- "once_cell",
  "oorandom",
  "plotters",
  "rayon",
  "regex",
  "serde",
- "serde_derive",
  "serde_json",
  "tinytemplate",
  "walkdir",
@@ -3204,6 +3195,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
 
 [[package]]
+name = "hex-literal"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bcaaec4551594c969335c98c903c1397853d4198408ea609190f420500f6be71"
+
+[[package]]
 name = "hmac"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3620,17 +3617,6 @@ checksum = "dbc5ebe9c3a1a7a5127f920a418f7585e9e758e911d0466ed004f393b0e380b2"
 dependencies = [
  "memchr",
  "serde",
-]
-
-[[package]]
-name = "is-terminal"
-version = "0.4.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e04d7f318608d35d4b61ddd75cbdaee86b023ebe2bd5a66ee0915f0bf93095a9"
-dependencies = [
- "hermit-abi",
- "libc",
- "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4648,7 +4634,7 @@ dependencies = [
  "alloy-consensus",
  "alloy-primitives 1.2.0",
  "eyre",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "openvm-mpt",
  "openvm-primitives",
  "openvm-witness-db",
@@ -4701,7 +4687,7 @@ dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
  "halo2curves-axiom",
- "hex-literal",
+ "hex-literal 0.4.1",
  "lazy_static",
  "num-bigint 0.4.6",
  "num-traits",
@@ -4771,38 +4757,24 @@ dependencies = [
  "alloy-consensus",
  "alloy-primitives 1.2.0",
  "alloy-provider",
- "alloy-rlp",
  "alloy-rpc-types",
- "alloy-transport",
  "bincode 2.0.1",
- "criterion",
- "dhat",
  "dotenv",
  "eyre",
- "futures",
- "itertools 0.13.0",
  "openvm-client-executor",
  "openvm-mpt",
  "openvm-primitives",
  "openvm-rpc-db",
- "openvm-witness-db",
  "reth-chainspec",
- "reth-codecs",
  "reth-consensus",
- "reth-errors",
  "reth-ethereum-consensus",
  "reth-evm",
  "reth-evm-ethereum",
  "reth-execution-types",
  "reth-primitives",
  "reth-primitives-traits",
- "reth-revm",
- "reth-storage-errors",
- "reth-trie",
  "revm",
  "revm-primitives 19.2.0",
- "serde",
- "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber 0.3.19",
@@ -4910,32 +4882,51 @@ dependencies = [
 name = "openvm-mpt"
 version = "0.1.0"
 dependencies = [
- "alloy-primitives 1.2.0",
  "alloy-rlp",
- "alloy-rpc-types",
- "alloy-trie",
- "anyhow",
  "bincode 2.0.1",
  "bumpalo",
- "criterion",
  "eyre",
- "hex-literal",
- "itertools 0.13.0",
- "openvm-mpt",
- "rand 0.8.5",
- "reth-execution-types",
+ "hashbrown 0.15.4",
+ "hex-literal 1.0.0",
  "reth-primitives",
  "reth-revm",
  "reth-trie",
  "revm",
  "revm-primitives 19.2.0",
  "rlp 0.6.1",
- "rustc-hash 2.1.1",
  "serde",
- "serde_bytes",
  "smallvec",
- "thiserror 1.0.69",
+ "thiserror 2.0.12",
+]
+
+[[package]]
+name = "openvm-mpt-tools"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives 1.2.0",
+ "alloy-provider",
+ "alloy-transport",
+ "bincode 2.0.1",
+ "criterion",
+ "dhat",
+ "dotenv",
+ "eyre",
+ "openvm-client-executor",
+ "openvm-host-executor",
+ "openvm-mpt",
+ "openvm-primitives",
+ "reth-chainspec",
+ "reth-evm",
+ "reth-evm-ethereum",
+ "reth-execution-types",
+ "reth-primitives-traits",
+ "reth-revm",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
  "tracing-subscriber 0.3.19",
+ "url",
 ]
 
 [[package]]
@@ -5069,7 +5060,7 @@ version = "1.4.0-rc.4"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#3fd48e285abd161b68bc995bbdb1227d92a22c62"
 dependencies = [
  "halo2curves-axiom",
- "hex-literal",
+ "hex-literal 0.4.1",
  "itertools 0.14.0",
  "lazy_static",
  "num-bigint 0.4.6",
@@ -5204,13 +5195,11 @@ dependencies = [
  "alloy-rlp",
  "alloy-rpc-types",
  "futures",
- "rayon",
  "reth-primitives",
  "reth-revm",
  "reth-storage-errors",
  "reth-trie",
- "rustc-hash 2.1.1",
- "thiserror 1.0.69",
+ "thiserror 2.0.12",
  "tokio",
  "tracing",
 ]
@@ -6780,17 +6769,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "reth-errors"
-version = "1.4.8"
-source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.8#127595e23079de2c494048d0821ea1f1107eb624"
-dependencies = [
- "reth-consensus",
- "reth-execution-errors",
- "reth-storage-errors",
- "thiserror 2.0.12",
-]
-
-[[package]]
 name = "reth-ethereum-consensus"
 version = "1.4.8"
 source = "git+https://github.com/paradigmxyz/reth?tag=v1.4.8#127595e23079de2c494048d0821ea1f1107eb624"
@@ -7696,15 +7674,6 @@ name = "serde_arrays"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "38636132857f68ec3d5f3eb121166d2af33cb55174c4d5ff645db6165cbef0fd"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "serde_bytes"
-version = "0.11.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8437fd221bde2d4ca316d61b90e337e9e702b3820b87d63caa9ba6c02bd06d96"
 dependencies = [
  "serde",
 ]
