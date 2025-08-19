@@ -120,7 +120,7 @@ jobs:
         env:
           OPENVM_REV: "${{ inputs.OPENVM_REV || github.event.inputs.OPENVM_REV }}"
         run: |
-          echo "result=${OPENVM_REV:-$(git ls-remote https://github.com/openvm-org/openvm.git refs/heads/feat/new-execution | cut -f1)}" >> "$GITHUB_OUTPUT"
+          echo "result=${OPENVM_REV:-$(git ls-remote https://github.com/openvm-org/openvm.git HEAD | cut -f1)}" >> "$GITHUB_OUTPUT"
 
       - name: Check out openvm repository
         uses: actions/checkout@v4
@@ -156,9 +156,9 @@ jobs:
           cd bin/client-eth
           # Create a temporary file with the replacements
           sed -e "/^\[patch\.crates-io\]/,/^\[/ {
-            s|^k256 = { git = \"https://github.com/openvm-org/openvm.git\", branch = \"feat/new-execution\" }$|k256 = { git = \"ssh://git@github.com/openvm-org/openvm.git\", rev = \"${OPENVM_REV}\" }|
-            s|^p256 = { git = \"https://github.com/openvm-org/openvm.git\", branch = \"feat/new-execution\" }$|p256 = { git = \"ssh://git@github.com/openvm-org/openvm.git\", rev = \"${OPENVM_REV}\" }|
-            s|^ruint = { git = \"https://github.com/openvm-org/openvm.git\", branch = \"feat/new-execution\" }$|ruint = { git = \"ssh://git@github.com/openvm-org/openvm.git\", rev = \"${OPENVM_REV}\" }|
+            s|^k256 = { git = \"https://github.com/openvm-org/openvm.git\", branch = \"main\" }$|k256 = { git = \"ssh://git@github.com/openvm-org/openvm.git\", rev = \"${OPENVM_REV}\" }|
+            s|^p256 = { git = \"https://github.com/openvm-org/openvm.git\", branch = \"main\" }$|p256 = { git = \"ssh://git@github.com/openvm-org/openvm.git\", rev = \"${OPENVM_REV}\" }|
+            s|^ruint = { git = \"https://github.com/openvm-org/openvm.git\", branch = \"main\" }$|ruint = { git = \"ssh://git@github.com/openvm-org/openvm.git\", rev = \"${OPENVM_REV}\" }|
           }" Cargo.toml > Cargo.toml.tmp
           mv Cargo.toml.tmp Cargo.toml
           cd ../..
