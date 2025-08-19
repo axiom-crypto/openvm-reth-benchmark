@@ -42,16 +42,25 @@ revm-primitives.workspace = true
 
 # alloy
 alloy-primitives = { workspace = true, features = ["rayon", "map-foldhash"] }
-alloy-consensus.workspace = true
+alloy-consensus = { workspace = true, features = ["crypto-backend"] }
 
 [target.'cfg(target_os = "zkvm")'.dependencies]
-# revm-primitives = { workspace = true, features = ["hashbrown"] }
+revm-primitives = { workspace = true, features = ["hashbrown"] }
 alloy-primitives = { workspace = true, features = ["native-keccak"] }
 # revm must have feature `kzg-rs` or `openvm-kzg` enabled. Due to patching we cannot enable `openvm-kzg` here.
 
+# OpenVM dependencies for optimized crypto (only needed when running in zkvm)
+openvm-ecc-guest = { workspace = true }
+openvm-sha2 = { workspace = true }
+openvm-pairing = { workspace = true, features = ["bn254"] }
+k256 = { workspace = true }
+p256 = { workspace = true }
+openvm-kzg = { workspace = true }
+openvm = { workspace = true, features = ["std"] }
+openvm-algebra-guest = { workspace = true }
+openvm-keccak256 = { workspace = true }
+
+revm-precompile = { workspace = true }
+
 [target.'cfg(not(target_os = "zkvm"))'.dependencies]
 revm = { workspace = true, features = ["c-kzg"] }
-
-[dev-dependencies]
-
-[features]

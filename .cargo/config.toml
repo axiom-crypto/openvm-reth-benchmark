@@ -2,6 +2,8 @@
 # [net]
 # git-fetch-with-cli = true
 
+# Patches moved to Cargo.toml
+
 # # [patch."https://github.com/openvm-org/stark-backend.git"]
 # # openvm-stark-backend = { git = "ssh://git@github.com/openvm-org/stark-backend.git", tag = "v1.1.2" }
 # # openvm-stark-sdk = { git = "ssh://git@github.com/openvm-org/stark-backend.git", tag = "v1.1.2" }

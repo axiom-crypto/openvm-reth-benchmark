@@ -320,7 +320,7 @@ jobs:
 
       - name: Install architecture specific tools
         run: |
-          rustup install nightly-2024-10-30
+          rustup install nightly-2025-08-05
           source openvm/ci/scripts/utils.sh
           install_s5cmd
           sudo apt update
@@ -350,6 +350,7 @@ jobs:
         if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
         working-directory: bin/client-eth
         run: |
+          export OPENVM_RUST_TOOLCHAIN=nightly-2025-08-05
           GUEST_PROFILE=${{ steps.set-build-profiles.outputs.guest_profile }}
           RUSTFLAGS="" cargo openvm build --no-transpile --profile=$GUEST_PROFILE
           mkdir -p ../host/elf
