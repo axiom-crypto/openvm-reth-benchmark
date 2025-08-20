@@ -55,8 +55,9 @@ toml.workspace = true
 halo2-axiom = { version = "0.5.0", default-features = false }
 
 [features]
-default = ["mimalloc", "metrics", "evm-verify"]
+default = ["mimalloc", "metrics", "evm-verify", "tco"]
 metrics = ["openvm-benchmarks-prove/metrics"]
+tco = ["openvm-sdk/tco"]
 evm-prove = ["openvm-sdk/evm-prove"]
 evm-verify = ["evm-prove", "openvm-sdk/evm-verify"]
 perf-metrics = ["openvm-sdk/perf-metrics", "openvm-benchmarks-prove/perf-metrics"]
