@@ -1,0 +1,27 @@
+[package]
+name = "mptnew"
+edition.workspace = true
+repository.workspace = true
+homepage.workspace = true
+exclude.workspace = true
+version.workspace = true
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+smallvec.workspace = true
+bumpalo = { workspace = true, features = ["collections"] }
+bytes.workspace = true
+
+# revm
+revm.workspace = true
+revm-primitives.workspace = true
+
+# alloy
+alloy-rlp.workspace = true
+
+[dev-dependencies]
+hex-literal.workspace = true
+
+[lints]
+workspace = true

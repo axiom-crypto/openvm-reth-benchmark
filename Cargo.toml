@@ -9,6 +9,7 @@ members = [
     "crates/storage/rpc-db",
     "crates/storage/witness-db",
     "crates/host-bench",
+    "crates/mptnew",
 ]
 exclude = []
 resolver = "2"
@@ -47,6 +48,9 @@ bincode = { version = "2.0.1", default-features = false, features = [
 rustc-hash = "2.1.0"
 toml = "0.9.2"
 derive_more = "1.0.0"
+smallvec = "1.13"
+bumpalo = "3.19.0"
+bytes = "1"
 
 # workspace
 openvm-rpc-db = { path = "./crates/storage/rpc-db" }
