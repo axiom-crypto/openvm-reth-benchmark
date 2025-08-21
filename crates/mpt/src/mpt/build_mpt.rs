@@ -189,7 +189,9 @@ pub fn shorten_node_path_arena<'a>(node: &MptTrie<'a>) -> Vec<MptTrie<'a>> {
             let value_slice = new_node.alloc_in_bump(value.unwrap());
             NodeData::Leaf(path_slice, value_slice)
         } else {
-            NodeData::Extension(path_slice, child_id.unwrap())
+            // Copy the original child subtree into the new arena to avoid dangling NodeIds
+            let copied_child_id = duplicate_node_recursive(node, child_id.unwrap(), &mut new_node);
+            NodeData::Extension(path_slice, copied_child_id)
         };
         new_node.nodes[0] = new_node_data;
         res.push(new_node);
@@ -286,4 +288,45 @@ fn resolve_node_recursive<'a>(
     };
 
     new_arena.add_node(resolved_data)
+}
+
+/// Recursively duplicates a subtree from `original_arena` into `new_arena`,
+/// returning the root `NodeId` in `new_arena`.
+fn duplicate_node_recursive<'a>(
+    original_arena: &MptTrie<'a>,
+    node_id: NodeId,
+    new_arena: &mut MptTrie<'a>,
+) -> NodeId {
+    let node_data = &original_arena.nodes[node_id as usize];
+
+    let copied = match node_data {
+        NodeData::Null => NodeData::Null,
+        NodeData::Leaf(prefix, value) => {
+            let new_prefix = new_arena.alloc_in_bump(prefix);
+            let new_value = new_arena.alloc_in_bump(value);
+            NodeData::Leaf(new_prefix, new_value)
+        }
+        NodeData::Branch(children) => {
+            let mut copied_children: [Option<NodeId>; 16] = Default::default();
+            for (i, child) in children.iter().enumerate() {
+                if let Some(child_id) = child {
+                    let new_child_id =
+                        duplicate_node_recursive(original_arena, *child_id, new_arena);
+                    copied_children[i] = Some(new_child_id);
+                }
+            }
+            NodeData::Branch(copied_children)
+        }
+        NodeData::Extension(prefix, child_id) => {
+            let new_child_id = duplicate_node_recursive(original_arena, *child_id, new_arena);
+            let new_prefix = new_arena.alloc_in_bump(prefix);
+            NodeData::Extension(new_prefix, new_child_id)
+        }
+        NodeData::Digest(digest) => {
+            // Keep digest nodes as digests; resolution happens elsewhere if needed
+            NodeData::Digest(*digest)
+        }
+    };
+
+    new_arena.add_node(copied)
 }
