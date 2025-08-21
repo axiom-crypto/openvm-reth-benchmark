@@ -13,10 +13,12 @@ cd ../..
 
 mkdir -p rpc-cache
 source .env
-MODE=execute # can be execute, execute-metered, prove-app, prove-stark, or prove-evm
+MODE=execute # can be execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
 PROFILE="release"
-FEATURES="metrics,nightly-features,jemalloc,evm-verify"
+FEATURES="metrics,nightly-features,jemalloc,tco" #,evm-verify"
 BLOCK_NUMBER=21000000
+# switch to +nightly-2025-08-19 if using tco
+TOOLCHAIN="+nightly-2025-08-19" # "+stable"
 
 arch=$(uname -m)
 case $arch in
@@ -32,7 +34,7 @@ exit 1
 ;;
 esac
 export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
-RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark-bin --profile=$PROFILE --no-default-features --features=$FEATURES
+RUSTFLAGS=$RUSTFLAGS cargo $TOOLCHAIN build --bin openvm-reth-benchmark-bin --profile=$PROFILE --no-default-features --features=$FEATURES
 PARAMS_DIR="$HOME/.openvm/params/"
 
 # Use target/debug if profile is dev

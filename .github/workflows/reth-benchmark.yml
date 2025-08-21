@@ -249,7 +249,7 @@ jobs:
       - name: Set build args
         id: set-build-args
         run: |
-          FEATURES="metrics,evm-verify,nightly-features,${{ inputs.memory_allocator || github.event.inputs.memory_allocator || 'jemalloc' }}"
+          FEATURES="metrics,evm-verify,nightly-features,tco,${{ inputs.memory_allocator || github.event.inputs.memory_allocator || 'jemalloc' }}"
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
             FEATURES="${FEATURES},perf-metrics"
           fi
@@ -365,7 +365,8 @@ jobs:
         run: |
           export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
           HOST_PROFILE=${{ steps.set-build-profiles.outputs.host_profile }}
-          RUSTFLAGS=$RUSTFLAGS cargo build --bin openvm-reth-benchmark-bin --profile=$HOST_PROFILE --no-default-features --features=$FEATURES
+          TOOLCHAIN="+nightly-2025-08-19"
+          RUSTFLAGS=$RUSTFLAGS cargo $TOOLCHAIN build --bin openvm-reth-benchmark-bin --profile=$HOST_PROFILE --no-default-features --features=$FEATURES
 
       - name: Save Host Binary to cache
         if: steps.cache-host-binary-restore.outputs.cache-hit != 'true'

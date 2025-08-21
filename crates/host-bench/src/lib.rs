@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "tco", allow(incomplete_features))]
+#![cfg_attr(feature = "tco", feature(explicit_tail_calls))]
 use alloy_primitives::hex::ToHexExt;
 use alloy_provider::RootProvider;
 use alloy_rpc_client::RpcClient;
@@ -225,7 +227,7 @@ where
             || -> eyre::Result<()> {
                 // Always execute_e1 for benchmarking:
                 {
-                    let pvs = info_span!("execute_e1", group = program_name)
+                    let pvs = info_span!("sdk.execute", group = program_name)
                         .in_scope(|| sdk.execute(elf.clone(), stdin.clone()))?;
                     let block_hash = pvs;
                     println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
@@ -243,8 +245,9 @@ where
                         let interpreter =
                             vm.executor().metered_instance(&exe, &executor_idx_to_air_idx)?;
                         let metered_ctx = vm.build_metered_ctx();
-                        let (segments, _) = info_span!("execute_metered", group = program_name)
-                            .in_scope(|| interpreter.execute_metered(stdin, metered_ctx))?;
+                        let (segments, _) =
+                            info_span!("interpreter.execute_metered", group = program_name)
+                                .in_scope(|| interpreter.execute_metered(stdin, metered_ctx))?;
                         println!("Number of segments: {}", segments.len());
                     }
                     BenchMode::ProveApp => {
