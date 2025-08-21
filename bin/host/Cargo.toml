@@ -11,6 +11,7 @@ clap_builder = "4.5.34"
 eyre.workspace = true
 openvm-reth-benchmark = { workspace = true, default-features = false }
 openvm-stark-sdk.workspace = true
+openvm-cuda-backend = { workspace = true, optional = true }
 tokio.workspace = true
 
 [lints]
@@ -25,3 +26,7 @@ mimalloc = ["openvm-reth-benchmark/mimalloc"]
 jemalloc = ["openvm-reth-benchmark/jemalloc"]
 nightly-features = ["openvm-reth-benchmark/nightly-features"]
 halo2-asm = ["openvm-reth-benchmark/halo2-asm"]
+cuda = [
+    "openvm-reth-benchmark/cuda",
+    "dep:openvm-cuda-backend",
+]

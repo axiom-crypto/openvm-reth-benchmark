@@ -14,8 +14,18 @@ use openvm_circuit::{
 };
 use openvm_client_executor::{io::ClientExecutorInput, CHAIN_ID_ETH_MAINNET};
 use openvm_host_executor::HostExecutor;
-pub use openvm_native_circuit::{NativeConfig, NativeCpuBuilder};
-pub use openvm_sdk::config::SdkVmCpuBuilder;
+pub use openvm_native_circuit::NativeConfig;
+#[cfg(not(feature = "cuda"))]
+pub use {
+    openvm_native_circuit::NativeCpuBuilder as NativeDeviceBuilder,
+    openvm_sdk::config::SdkVmCpuBuilder as SdkDeviceVmBuilder,
+};
+#[cfg(feature = "cuda")]
+pub use {
+    openvm_native_circuit::NativeGpuBuilder as NativeDeviceBuilder,
+    openvm_sdk::config::SdkVmGpuBuilder as SdkDeviceVmBuilder,
+};
+
 use openvm_sdk::{
     config::{AppConfig, SdkVmConfig},
     prover::verify_app_proof,

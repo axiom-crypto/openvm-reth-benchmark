@@ -66,3 +66,7 @@ jemalloc = ["openvm-benchmarks-prove/jemalloc"]
 nightly-features = ["openvm-benchmarks-prove/nightly-features"]
 # x86 only:
 halo2-asm = ["halo2-axiom/asm"]
+cuda = [
+    "openvm-native-circuit/cuda",
+    "openvm-sdk/cuda",
+]
