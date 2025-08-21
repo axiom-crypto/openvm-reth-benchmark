@@ -114,7 +114,7 @@ alloy-trie = "0.8.1"
 alloy-hardforks = "0.2.7"
 
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0-rc.2", default-features = false }
-openvm-cuda-backend = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-cuda-backend = { git = "https://github.com/openvm-org/stark-backend.git", branch = "main", default-features = false }
 
 # openvm
 # Note: the openvm-sdk commit does not need to be exactly the same as the `openvm` commit used in the guest program: as long as
