@@ -26,7 +26,7 @@ arm64|aarch64)
     RUSTFLAGS="-Ctarget-cpu=native"
     ;;
 x86_64|amd64)
-    RUSTFLAGS="-Ctarget-cpu=native -C target-feature=+avx512f"
+    RUSTFLAGS="-Ctarget-cpu=native"
     ;;
 *)
 echo "Unsupported architecture: $arch"
