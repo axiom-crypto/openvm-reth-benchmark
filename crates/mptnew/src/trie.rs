@@ -22,8 +22,8 @@ const NODE_RLP_MAX_LENGTH: usize = 600;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("cannot resolve node reference: {0:?}")]
-    NodeRefNotResolved(NodeRef),
+    #[error("cannot resolve node reference")]
+    NodeRefNotResolved,
     /// Triggered when an operation reaches an unresolved node. The associated `B256`
     /// value provides details about the unresolved node.
     #[error("reached an unresolved node: {0:#}")]
@@ -36,7 +36,7 @@ pub enum Error {
     NodeRefError(#[from] NodeRefError),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MptTrie<'a> {
     root_id: NodeId,
 
@@ -55,6 +55,12 @@ pub struct MptTrie<'a> {
 impl<'a> MptTrie<'a> {
     pub fn new(bump: &'a Bump) -> Self {
         Self::with_capacity(bump, 1)
+    }
+
+    pub fn with_root_hash(bump: &'a Bump, root_hash: B256) -> Self {
+        let mut trie = Self::with_capacity(bump, 1);
+        trie.nodes[0] = NodeData::Digest(root_hash);
+        trie
     }
 
     /// Creates a new arena with pre-allocated capacity
@@ -95,6 +101,8 @@ impl<'a> MptTrie<'a> {
         root_id: NodeId,
         rlp_nodes: &'a [Vec<u8>],
     ) -> Result<MptTrie<'a>, Error> {
+        println!("root_hash = {root_hash}");
+
         let nodes_len = rlp_nodes.len();
 
         let mut node_ref_mapping =
@@ -102,19 +110,28 @@ impl<'a> MptTrie<'a> {
 
         for rlp_node in rlp_nodes {
             if rlp_node.len() < 32 {
-                continue;
+                let node_ref = NodeRef::Bytes(rlp_node.to_vec());
+                node_ref_mapping.insert(node_ref, rlp_node.as_slice());
+            } else if rlp_node.len() == 33 {
+                let mut tmp_ptr = rlp_node.as_slice();
+                let header = alloy_rlp::Header::decode(&mut tmp_ptr)?;
+                if header.list {
+                    let digest = keccak256(rlp_node);
+                    node_ref_mapping.insert(NodeRef::Digest(digest), rlp_node.as_slice());
+                } else {
+                    let node_ref = NodeRef::Digest(B256::from_slice(tmp_ptr));
+                    node_ref_mapping.insert(node_ref, rlp_node.as_slice());
+                }
+            } else {
+                let digest = keccak256(rlp_node);
+                node_ref_mapping.insert(NodeRef::Digest(digest), rlp_node.as_slice());
             }
-
-            let digest = keccak256(rlp_node);
-            node_ref_mapping.insert(digest, rlp_node.as_slice());
         }
 
         if !rlp_nodes.is_empty() && rlp_nodes[root_id as usize].len() < 32 {
             let root_hash = keccak256(&rlp_nodes[root_id as usize]);
-            node_ref_mapping.insert(root_hash, &rlp_nodes[root_id as usize]);
+            node_ref_mapping.insert(NodeRef::Digest(root_hash), &rlp_nodes[root_id as usize]);
         }
-
-        // dbg!(node_ref_mapping.len());
 
         let mut mpt_trie = MptTrie::with_capacity(bump, nodes_len);
 
@@ -130,7 +147,7 @@ impl<'a> MptTrie<'a> {
 }
 
 struct MptResolver<'a, 'm> {
-    node_ref_mapping: HashMap<B256, &'a [u8]>,
+    node_ref_mapping: HashMap<NodeRef, &'a [u8]>,
     mpt: &'m mut MptTrie<'a>,
 }
 
@@ -144,17 +161,13 @@ impl<'a, 'm> MptResolver<'a, 'm> {
     }
 
     fn resolve(&mut self, node_ref_slice: &'a [u8]) -> Result<NodeId, Error> {
-        let (node_ref, mut rlp_bytes) = {
-            if node_ref_slice.len() == 32 {
-                let fixed_bytes = B256::from_slice(node_ref_slice);
-                let rlp_bytes = self.node_ref_mapping.get(&fixed_bytes).unwrap();
-                let node_ref = NodeRef::Digest(fixed_bytes);
-                (node_ref, *rlp_bytes)
-            } else {
-                let node_ref = NodeRef::Bytes(node_ref_slice.to_vec());
-                (node_ref, node_ref_slice)
-            }
+        let node_ref = if node_ref_slice.len() == 32 {
+            NodeRef::Digest(B256::from_slice(node_ref_slice))
+        } else {
+            NodeRef::Bytes(node_ref_slice.to_vec())
         };
+        let mut rlp_bytes =
+            *self.node_ref_mapping.get(&node_ref).ok_or(Error::NodeRefNotResolved)?;
         let decoded_node = NodeRlpDecoded::decode_rlp(&mut rlp_bytes)?;
 
         let node_id = match decoded_node {
