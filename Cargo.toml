@@ -60,6 +60,8 @@ openvm-host-executor = { path = "./crates/executor/host" }
 openvm-mpt = { path = "./crates/mpt" }
 openvm-primitives = { path = "./crates/primitives" }
 openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
+mptnew = { path = "./crates/mptnew" }
+
 # reth
 reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
 reth-primitives-traits = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
