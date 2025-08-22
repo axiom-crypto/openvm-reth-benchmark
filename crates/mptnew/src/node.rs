@@ -31,7 +31,7 @@ pub(crate) enum NodeData<'a> {
 /// Nodes in the MPT can reference other nodes either directly through their byte representation or
 /// indirectly through a hash of their encoding.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
-pub enum NodeRef {
+pub(crate) enum NodeRef {
     /// Represents a direct reference to another node using its byte encoding. Typically
     /// used for short encodings that are less than 32 bytes in length.
     Bytes(Vec<u8>),
