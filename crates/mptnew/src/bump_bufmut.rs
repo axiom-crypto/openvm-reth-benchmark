@@ -22,7 +22,7 @@ impl<'a> BumpBytesMut<'a> {
     }
 }
 
-unsafe impl<'a> BufMut for BumpBytesMut<'a> {
+unsafe impl BufMut for BumpBytesMut<'_> {
     fn remaining_mut(&self) -> usize {
         isize::MAX as usize - self.inner.len()
     }

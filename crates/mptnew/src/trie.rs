@@ -101,8 +101,6 @@ impl<'a> MptTrie<'a> {
         root_id: NodeId,
         rlp_nodes: &'a [Vec<u8>],
     ) -> Result<MptTrie<'a>, Error> {
-        println!("root_hash = {root_hash}");
-
         let nodes_len = rlp_nodes.len();
 
         let mut node_ref_mapping =
@@ -133,7 +131,7 @@ impl<'a> MptTrie<'a> {
             node_ref_mapping.insert(NodeRef::Digest(root_hash), &rlp_nodes[root_id as usize]);
         }
 
-        let mut mpt_trie = MptTrie::with_capacity(bump, nodes_len);
+        let mut mpt_trie = MptTrie::with_capacity(bump, 2 * nodes_len);
 
         let root_id = {
             let mut mpt_resolver = MptResolver { node_ref_mapping, mpt: &mut mpt_trie };
@@ -151,7 +149,7 @@ struct MptResolver<'a, 'm> {
     mpt: &'m mut MptTrie<'a>,
 }
 
-impl<'a, 'm> MptResolver<'a, 'm> {
+impl<'a> MptResolver<'a, '_> {
     fn to_node_ref_slice(rlp_bytes: &[u8]) -> &[u8] {
         if rlp_bytes.len() == 33 {
             &rlp_bytes[1..]
@@ -208,7 +206,7 @@ impl<'a, 'm> MptResolver<'a, 'm> {
     }
 }
 
-impl<'a> MptTrie<'a> {
+impl MptTrie<'_> {
     #[inline]
     fn calc_reference(&self, node_id: NodeId) -> NodeRef {
         match &self.nodes[node_id as usize] {
@@ -390,6 +388,12 @@ impl<'a> MptTrie<'a> {
     #[inline]
     pub fn is_empty(&self) -> bool {
         matches!(&self.nodes[self.root_id as usize], NodeData::Null)
+    }
+
+    #[inline]
+    pub fn reserve(&mut self, additional: usize) {
+        self.nodes.reserve(additional);
+        self.cached_references.reserve(additional);
     }
 }
 
