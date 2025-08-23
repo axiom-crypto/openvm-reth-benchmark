@@ -27,7 +27,7 @@ on:
         type: number
         required: false
         description: Block number to run the benchmark on
-        default: 21000000
+        default: 23100006
       host_flamegraph:
         description: "Run target profiling benchmark for host flamegraph"
         type: boolean
@@ -52,7 +52,7 @@ jobs:
       OPENVM_REV: ${{ github.event.inputs.base_rev }}
       run_benchmark: true
       benchmark_mode: ${{ github.event.inputs.benchmark_mode }}
-      benchmark_block_number: ${{ fromJSON(inputs.block_number || github.event.inputs.block_number || '21000000') }}
+      benchmark_block_number: ${{ fromJSON(inputs.block_number || github.event.inputs.block_number || '23100006') }}
       instance_family: ${{ github.event.inputs.instance_family }}
     secrets: inherit
 
@@ -71,7 +71,7 @@ jobs:
     needs: patch-target
     with:
       mode: ${{ github.event.inputs.benchmark_mode }}
-      block_number: ${{ fromJSON(inputs.block_number || github.event.inputs.block_number || '21000000') }}
+      block_number: ${{ fromJSON(inputs.block_number || github.event.inputs.block_number || '23100006') }}
       instance_family: ${{ github.event.inputs.instance_family }}
       ref: ${{ needs.patch-target.outputs.branch_name }}
       tag: ${{ needs.patch-target.outputs.tag }}
@@ -85,7 +85,7 @@ jobs:
     needs: patch-target
     with:
       mode: ${{ github.event.inputs.benchmark_mode }}
-      block_number: ${{ fromJSON(inputs.block_number || github.event.inputs.block_number || '21000000') }}
+      block_number: ${{ fromJSON(inputs.block_number || github.event.inputs.block_number || '23100006') }}
       instance_family: ${{ github.event.inputs.instance_family }}
       ref: ${{ needs.patch-target.outputs.branch_name }}
       tag: ${{ needs.patch-target.outputs.tag }}
@@ -99,7 +99,7 @@ jobs:
     needs: patch-target
     with:
       mode: ${{ github.event.inputs.benchmark_mode }}
-      block_number: ${{ fromJSON(inputs.block_number || github.event.inputs.block_number || '21000000') }}
+      block_number: ${{ fromJSON(inputs.block_number || github.event.inputs.block_number || '23100006') }}
       instance_family: ${{ github.event.inputs.instance_family }}
       ref: ${{ needs.patch-target.outputs.branch_name }}
       tag: ${{ needs.patch-target.outputs.tag }}

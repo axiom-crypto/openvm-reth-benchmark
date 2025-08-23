@@ -11,7 +11,7 @@ on:
         description: "Block number to generate input for"
         required: true
         type: string
-        default: "21000000"
+        default: "23100006"
       rerun_keygen:
         description: "Rerun keygen"
         required: false
@@ -47,40 +47,40 @@ jobs:
         run: |
           block_number="${{ inputs.block_number }}"
           s3_url="https://axiom-public-data-sandbox-us-east-1.s3.us-east-1.amazonaws.com/reth/input/${block_number}.json"
-          
+
           echo "Checking if input file exists for block $block_number..."
           if curl --output /dev/null --silent --head --fail "$s3_url"; then
             echo "Input file found in S3, downloading..."
             curl -o input.json "$s3_url"
           else
             echo "Input file not found in S3, generating locally..."
-            
+
             # Install OpenVM CLI
             echo "Installing OpenVM CLI..."
             cargo +1.85 install --git https://github.com/openvm-org/openvm.git --locked --force cargo-openvm
-            
+
             RPC_1=${{ secrets.RPC_URL_1 }}
-            
+
             # Build client binary
             cd bin/client-eth
             cargo openvm build
             mkdir -p ../host/elf
             SRC="target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth"
             DEST="../host/elf/openvm-client-eth"
-            
+
             if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
                 cp "$SRC" "$DEST"
             fi
             cd ../..
-            
+
             # Create necessary directories
             mkdir -p rpc-cache
             mkdir -p params
-            
+
             # Build the benchmark binary
             export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
             cargo build --bin openvm-reth-benchmark-bin --profile=release --no-default-features --features="bench-metrics,nightly-features,jemalloc,evm-verify"
-            
+
             # Generate input data
             echo "Generating input for block $block_number..."
             ./target/release/openvm-reth-benchmark-bin \
@@ -90,16 +90,16 @@ jobs:
               --rpc-url ${{ secrets.RPC_URL_1 }} \
               --input-path input.json \
               --cache-dir rpc-cache
-            
+
             echo "Input file generated successfully"
           fi
-          
+
           # Verify input file exists
           if [ ! -f "input.json" ]; then
             echo "Error: input.json file not found!"
             exit 1
           fi
-          
+
           echo "Input file ready: $(ls -lh input.json)"
 
       - name: Prepare benchmark

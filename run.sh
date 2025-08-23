@@ -16,7 +16,7 @@ source .env
 MODE=execute # can be execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
 PROFILE="release"
 FEATURES="metrics,nightly-features,jemalloc,tco" #,evm-verify"
-BLOCK_NUMBER=21000000
+BLOCK_NUMBER=23100006
 # switch to +nightly-2025-08-19 if using tco
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
 
