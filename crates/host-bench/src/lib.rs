@@ -199,6 +199,8 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     let vm_config = reth_vm_config(app_log_blowup);
     let app_config = args.benchmark.app_config(vm_config);
 
+    #[cfg(feature = "cuda")]
+    println!("CUDA Backend Enabled");
     let sdk = Sdk::new(app_config.clone())?
         .with_agg_config(args.benchmark.agg_config())
         .with_agg_tree_config(args.benchmark.agg_tree_config);
