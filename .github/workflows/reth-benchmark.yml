@@ -48,7 +48,7 @@ on:
           - prove-app
           - prove-stark
           - prove-evm
-        default: prove-evm
+        default: prove-stark
       profiling:
         type: choice
         required: false
@@ -123,7 +123,7 @@ on:
         type: string
         required: false
         description: Running mode, one of {execute, execute-metered, prove-app, prove-stark, prove-evm}
-        default: prove-evm
+        default: prove-stark
       profiling:
         type: string
         required: false
