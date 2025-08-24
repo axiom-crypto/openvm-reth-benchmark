@@ -186,7 +186,7 @@ jobs:
       - disk=large
       - tag=bench-reth-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
       - extras=s3-cache
-      - image=${{ startsWith(github.event.inputs.instance_type || inputs.instance_type, 'g') && 'ubuntu24-gpu-x64' || contains(github.event.inputs.instance_type || inputs.instance_type, 'g.') && 'ubuntu24-full-arm64' || 'ubuntu24-full-x64' }}
+      - image=${{ startsWith(github.event.inputs.instance_family || inputs.instance_family, 'g') && 'ubuntu24-gpu-x64' || contains(github.event.inputs.instance_family || inputs.instance_family, 'g.') && 'ubuntu24-full-arm64' || 'ubuntu24-full-x64' }}
     outputs:
       metric_name: ${{ steps.set-metric-name.outputs.name }}
     steps:
@@ -253,7 +253,7 @@ jobs:
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
             FEATURES="${FEATURES},perf-metrics"
           fi
-          if [[ ! "${{ inputs.instance_type || github.event.inputs.instance_type }}" =~ ^g ]]; then
+          if [[ ! "${{ inputs.instance_family || github.event.inputs.instance_family }}" =~ ^g ]]; then
             FEATURES="${FEATURES},nightly-features"
           else
             FEATURES="${FEATURES},cuda"
@@ -267,7 +267,7 @@ jobs:
               RUSTFLAGS="-Ctarget-cpu=native"
               ;;
             x86_64|amd64)
-              if [[ ! "${{ inputs.instance_type || github.event.inputs.instance_type }}" =~ ^g ]]; then
+              if [[ ! "${{ inputs.instance_family || github.event.inputs.instance_family }}" =~ ^g ]]; then
                 # Cuda impl currently does not work with plonky3 avx
                 RUSTFLAGS="-Ctarget-cpu=native"
               fi
