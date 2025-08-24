@@ -49,6 +49,8 @@ pub enum BenchMode {
     ProveEvm,
     /// Generate input file only.
     MakeInput,
+    /// Generate fixtures file for futher benchmarking.
+    GenerateFixtures,
 }
 
 impl std::fmt::Display for BenchMode {
@@ -61,6 +63,7 @@ impl std::fmt::Display for BenchMode {
             #[cfg(feature = "evm-verify")]
             Self::ProveEvm => write!(f, "prove_evm"),
             Self::MakeInput => write!(f, "make_input"),
+            Self::GenerateFixtures => write!(f, "generate_fixtures"),
         }
     }
 }
@@ -92,6 +95,10 @@ pub struct HostArgs {
     /// Optional path to write the input to. Only needed for mode=make_input
     #[arg(long)]
     pub input_path: Option<PathBuf>,
+
+    /// Path to write the fixtures to. Only needed for mode=make_input
+    #[arg(long)]
+    pub fixtures_path: Option<PathBuf>,
 }
 
 pub fn reth_vm_config(app_log_blowup: usize) -> SdkVmConfig {
@@ -274,6 +281,28 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                     BenchMode::MakeInput => {
                         // This case is handled earlier and should not reach here
                         unreachable!();
+                    }
+                    BenchMode::GenerateFixtures => {
+                        let mut prover = sdk.prover(elf)?.with_program_name(program_name);
+                        let app_proof = prover.app_prover.prove(stdin)?;
+                        let leaf_proofs = prover.agg_prover.generate_leaf_proofs(&app_proof)?;
+                        let fixture_path = args.fixtures_path.unwrap();
+
+                        let mut app_proof_path = fixture_path.clone();
+                        app_proof_path.push("app_proof.bitcode");
+                        fs::write(app_proof_path, bitcode::serialize(&app_proof)?)?;
+
+                        let mut leaf_proofs_path = fixture_path.clone();
+                        leaf_proofs_path.push("leaf_proofs.bitcode");
+                        fs::write(leaf_proofs_path, bitcode::serialize(&leaf_proofs)?)?;
+
+                        let mut app_pk_path = fixture_path.clone();
+                        app_pk_path.push("app_pk.bitcode");
+                        fs::write(app_pk_path, bitcode::serialize(sdk.app_pk())?)?;
+
+                        let mut agg_pk_path = fixture_path.clone();
+                        agg_pk_path.push("agg_pk.bitcode");
+                        fs::write(agg_pk_path, bitcode::serialize(sdk.agg_pk())?)?;
                     }
                 }
 
