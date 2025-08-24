@@ -12,7 +12,7 @@ on:
         type: string
         required: false
         description: The family of the instance, can be multiple ones concat with "+" e.g. r8g+r7g
-        default: m8g.24xlarge
+        default: g6e.8xlarge
       block_number:
         type: number
         required: false
@@ -61,13 +61,13 @@ on:
       max_segment_length:
         type: number
         required: false
-        description: Max segment length for continuations, must be larger than 524288
-        default: 8388508 # 2**23 - 100
+        description: Max segment length for continuations
+        default: 4194204 # 2**22 - 100, but the main criteria should be segment_max_cells
       segment_max_cells:
-        type: string # number might have u32 limit
+        type: string
         required: false
-        description: Total main+perm trace cells
-        default: "2700000000" # 2.7B
+        description: Total main trace cells (excluding memory)
+        default: "700000000"
       # num_children_leaf:
       #   type: number
       #   required: false
@@ -132,13 +132,13 @@ on:
       max_segment_length:
         type: number
         required: false
-        description: Max segment length for continuations, must be larger than 524288
-        default: 8388508
+        description: Max segment length for continuations
+        default: 4194204 # 2**22 - 100, but the main criteria should be segment_max_cells
       segment_max_cells:
         type: string
         required: false
         description: Total main trace cells (excluding memory)
-        default: "2700000000" # 2.7B
+        default: "700000000"
       num_children_leaf:
         type: number
         required: false
@@ -186,12 +186,12 @@ jobs:
       - disk=large
       - tag=bench-reth-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
       - extras=s3-cache
-      - image=${{ contains(inputs.instance_family || github.event.inputs.instance_family, 'g.') && 'ubuntu22-full-arm64' || 'ubuntu22-full-x64' }}
+      - image=${{ startsWith(github.event.inputs.instance_type || inputs.instance_type, 'g') && 'ubuntu24-gpu-x64' || contains(github.event.inputs.instance_type || inputs.instance_type, 'g.') && 'ubuntu24-full-arm64' || 'ubuntu24-full-x64' }}
     outputs:
       metric_name: ${{ steps.set-metric-name.outputs.name }}
     steps:
-      - uses: runs-on/action@v1
-      - uses: actions/checkout@v4
+      - uses: runs-on/action@v2
+      - uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref || github.head_ref || github.ref }}
       - uses: dtolnay/rust-toolchain@nightly
