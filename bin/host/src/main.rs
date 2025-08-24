@@ -1,9 +1,7 @@
 #![cfg_attr(feature = "tco", allow(incomplete_features))]
 #![cfg_attr(feature = "tco", feature(explicit_tail_calls))]
 use clap_builder::Parser;
-use openvm_reth_benchmark::{
-    run_reth_benchmark, HostArgs, NativeDeviceBuilder, SdkVmDeviceBuilder,
-};
+use openvm_reth_benchmark::{run_reth_benchmark, HostArgs};
 
 const OPENVM_CLIENT_ETH_ELF: &[u8] = include_bytes!("../elf/openvm-client-eth");
 

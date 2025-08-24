@@ -20,6 +20,7 @@ workspace = true
 [features]
 default = ["openvm-reth-benchmark/default"]
 metrics = ["openvm-reth-benchmark/metrics"]
+evm-verify = ["openvm-reth-benchmark/evm-verify"]
 perf-metrics = ["openvm-reth-benchmark/perf-metrics"]
 tco = ["openvm-reth-benchmark/tco"]
 mimalloc = ["openvm-reth-benchmark/mimalloc"]

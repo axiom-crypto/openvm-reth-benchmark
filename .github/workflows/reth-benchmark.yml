@@ -88,7 +88,7 @@ on:
         type: string
         required: false
         description: The family of the instance, can be multiple ones concat with "+" e.g. r8g+r7g
-        default: m8g.24xlarge
+        default: g6e.8xlarge
       memory_allocator:
         type: string
         required: false
@@ -249,9 +249,15 @@ jobs:
       - name: Set build args
         id: set-build-args
         run: |
-          FEATURES="metrics,evm-verify,nightly-features,tco,${{ inputs.memory_allocator || github.event.inputs.memory_allocator || 'jemalloc' }}"
+          FEATURES="metrics,tco,${{ inputs.memory_allocator || github.event.inputs.memory_allocator || 'jemalloc' }}"
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
             FEATURES="${FEATURES},perf-metrics"
+          fi
+          if [[ ! "${{ inputs.instance_type || github.event.inputs.instance_type }}" =~ ^g ]]; then
+            FEATURES="${FEATURES},nightly-features"
+          fi
+          if [[ "${{ inputs.mode || github.event.inputs.mode }}" == "prove-evm" ]]; then
+            FEATURES="${FEATURES},evm-verify"
           fi
           arch=$(uname -m)
           case $arch in
@@ -259,7 +265,10 @@ jobs:
               RUSTFLAGS="-Ctarget-cpu=native"
               ;;
             x86_64|amd64)
-              RUSTFLAGS="-Ctarget-cpu=native -C target-feature=+avx512f"
+              if [[ ! "${{ inputs.instance_type || github.event.inputs.instance_type }}" =~ ^g ]]; then
+                # Cuda impl currently does not work with plonky3 avx
+                RUSTFLAGS="-Ctarget-cpu=native"
+              fi
               FEATURES="${FEATURES},halo2-asm"
               ;;
             *)
@@ -539,7 +548,7 @@ jobs:
           add_metadata $MD_PATH \
             ${{ inputs.max_segment_length || github.event.inputs.max_segment_length }} \
             ${{ inputs.instance_family || github.event.inputs.instance_family }} \
-            ${{ inputs.memory_allocator || github.event.inputs.memory_allocator }} \
+            ${{ inputs.memory_allocator || github.event.inputs.memory_allocator || 'jemalloc' }} \
             $COMMIT_URL \
             $BENCHMARK_WORKFLOW_URL
 

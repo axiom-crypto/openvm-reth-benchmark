@@ -52,20 +52,20 @@ derive_more.workspace = true
 toml.workspace = true
 
 # halo2
-halo2-axiom = { version = "0.5.0", default-features = false }
+halo2-axiom = { version = "0.5.0", default-features = false, optional = true }
 
 [features]
-default = ["mimalloc", "metrics", "evm-verify"]
+default = ["mimalloc", "metrics"]
 metrics = ["openvm-benchmarks-prove/metrics"]
 tco = ["openvm-sdk/tco"]
-evm-prove = ["openvm-sdk/evm-prove"]
-evm-verify = ["evm-prove", "openvm-sdk/evm-verify"]
+evm-prove = ["openvm-sdk/evm-prove", "halo2-axiom"]
+evm-verify = ["evm-prove", "openvm-sdk/evm-verify", "halo2-axiom"]
 perf-metrics = ["openvm-sdk/perf-metrics", "openvm-benchmarks-prove/perf-metrics"]
 mimalloc = ["openvm-benchmarks-prove/mimalloc"]
 jemalloc = ["openvm-benchmarks-prove/jemalloc"]
 nightly-features = ["openvm-benchmarks-prove/nightly-features"]
 # x86 only:
-halo2-asm = ["halo2-axiom/asm"]
+halo2-asm = ["halo2-axiom?/asm"]
 cuda = [
     "openvm-native-circuit/cuda",
     "openvm-sdk/cuda",
