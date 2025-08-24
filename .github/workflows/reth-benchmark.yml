@@ -255,6 +255,8 @@ jobs:
           fi
           if [[ ! "${{ inputs.instance_type || github.event.inputs.instance_type }}" =~ ^g ]]; then
             FEATURES="${FEATURES},nightly-features"
+          else
+            FEATURES="${FEATURES},cuda"
           fi
           if [[ "${{ inputs.mode || github.event.inputs.mode }}" == "prove-evm" ]]; then
             FEATURES="${FEATURES},evm-verify"
