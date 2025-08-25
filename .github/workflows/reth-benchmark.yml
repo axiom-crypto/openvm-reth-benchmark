@@ -255,8 +255,10 @@ jobs:
           fi
           if [[ ! "${{ inputs.instance_family || github.event.inputs.instance_family }}" =~ ^g ]]; then
             FEATURES="${FEATURES},nightly-features"
+            JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
           else
             FEATURES="${FEATURES},cuda"
+            JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:10000,muzzy_decay_ms:10000,abort_conf:true"
           fi
           if [[ "${{ inputs.mode || github.event.inputs.mode }}" == "prove-evm" ]]; then
             FEATURES="${FEATURES},evm-verify"
@@ -281,7 +283,6 @@ jobs:
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
             RUSTFLAGS="${RUSTFLAGS} -C force-frame-pointers=yes"
           fi
-          JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
           echo "RUSTFLAGS=${RUSTFLAGS}" >> $GITHUB_ENV
           echo "JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}" >> $GITHUB_ENV
           echo "FEATURES=${FEATURES}" >> $GITHUB_ENV
