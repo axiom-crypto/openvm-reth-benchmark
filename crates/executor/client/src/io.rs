@@ -1,5 +1,6 @@
 use std::iter::once;
 
+use bumpalo::Bump;
 use eyre::{OptionExt, Result};
 use itertools::Itertools;
 use openvm_mpt::{mpt::EMPTY_ROOT, EthereumState};
@@ -36,11 +37,91 @@ pub struct ClientExecutorInput {
     pub bytecodes: Vec<Bytecode>,
 }
 
-impl ClientExecutorInput {
+#[serde_as]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NewClientExecutorInput {
+    /// The current block (which will be executed inside the client).
+    #[serde_as(
+        as = "reth_primitives_traits::serde_bincode_compat::Block<'_, TransactionSigned, Header>"
+    )]
+    pub current_block: Block<TransactionSigned, Header>,
+    /// The previous block headers starting from the most recent. There must be at least one header
+    /// to provide the parent state root.
+    #[serde_as(as = "Vec<alloy_consensus::serde_bincode_compat::Header>")]
+    pub ancestor_headers: Vec<Header>,
+    /// Network state as of the parent block.
+    pub parent_state_bytes: mptnew::EthereumStateBytes,
+    /// Requests to account state and storage slots.
+    pub state_requests: HashMap<Address, Vec<U256>>,
+    /// Account bytecodes.
+    pub bytecodes: Vec<Bytecode>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewClientExecutorInputWithState {
+    pub input: &'static NewClientExecutorInput,
+    pub state: mptnew::EthereumState,
+}
+
+impl NewClientExecutorInputWithState {
+    pub fn build(input: NewClientExecutorInput) -> Self {
+        let input = Box::leak(Box::new(input));
+        let bump = Box::leak(Box::new(Bump::with_capacity(100 * 1000)));
+
+        let state = {
+            let (state_num_nodes, state_bytes) = &input.parent_state_bytes.state_trie;
+
+            let state_trie =
+                mptnew::MptTrie::decode_trie(bump, &mut state_bytes.0.as_slice(), *state_num_nodes)
+                    .unwrap();
+            assert_eq!(state_trie.hash(), input.ancestor_headers[0].state_root);
+
+            let mut storage_tries = HashMap::with_capacity_and_hasher(
+                input.parent_state_bytes.storage_tries.len(),
+                DefaultHashBuilder::default(),
+            );
+            for (hashed_address, num_nodes, storage_trie_bytes) in
+                &input.parent_state_bytes.storage_tries
+            {
+                let account_in_trie =
+                    state_trie.get_rlp::<TrieAccount>(hashed_address.as_slice()).unwrap();
+                let expected_storage_root = account_in_trie.map_or(EMPTY_ROOT, |a| a.storage_root);
+
+                let storage_trie = mptnew::MptTrie::decode_trie(
+                    bump,
+                    &mut storage_trie_bytes.0.as_slice(),
+                    *num_nodes,
+                )
+                .unwrap();
+                assert_eq!(storage_trie.hash(), expected_storage_root);
+
+                storage_tries.insert(*hashed_address, storage_trie);
+            }
+            mptnew::EthereumState { state_trie, storage_tries, bump }
+        };
+
+        Self { input, state }
+    }
+}
+
+// impl ClientExecutorInput {
+//     /// Gets the immediate parent block's header.
+//     #[inline(always)]
+//     pub fn parent_header(&self) -> &Header {
+//         &self.ancestor_headers[0]
+//     }
+
+//     /// Creates a [`WitnessDb`].
+//     pub fn witness_db(&self) -> Result<WitnessDb> {
+//         <Self as WitnessInput>::witness_db(self)
+//     }
+// }
+
+impl NewClientExecutorInputWithState {
     /// Gets the immediate parent block's header.
     #[inline(always)]
     pub fn parent_header(&self) -> &Header {
-        &self.ancestor_headers[0]
+        &self.input.ancestor_headers[0]
     }
 
     /// Creates a [`WitnessDb`].
@@ -49,10 +130,37 @@ impl ClientExecutorInput {
     }
 }
 
-impl WitnessInput for ClientExecutorInput {
+// impl WitnessInput for ClientExecutorInput {
+//     #[inline(always)]
+//     fn state(&self) -> &EthereumState {
+//         &self.parent_state
+//     }
+
+//     #[inline(always)]
+//     fn state_anchor(&self) -> B256 {
+//         self.parent_header().state_root
+//     }
+
+//     #[inline(always)]
+//     fn state_requests(&self) -> impl Iterator<Item = (&Address, &Vec<U256>)> {
+//         self.state_requests.iter()
+//     }
+
+//     #[inline(always)]
+//     fn bytecodes(&self) -> impl Iterator<Item = &Bytecode> {
+//         self.bytecodes.iter()
+//     }
+
+//     #[inline(always)]
+//     fn headers(&self) -> impl Iterator<Item = &Header> {
+//         once(&self.current_block.header).chain(self.ancestor_headers.iter())
+//     }
+// }
+
+impl WitnessInput for NewClientExecutorInputWithState {
     #[inline(always)]
-    fn state(&self) -> &EthereumState {
-        &self.parent_state
+    fn state(&self) -> &mptnew::EthereumState {
+        &self.state
     }
 
     #[inline(always)]
@@ -62,24 +170,24 @@ impl WitnessInput for ClientExecutorInput {
 
     #[inline(always)]
     fn state_requests(&self) -> impl Iterator<Item = (&Address, &Vec<U256>)> {
-        self.state_requests.iter()
+        self.input.state_requests.iter()
     }
 
     #[inline(always)]
     fn bytecodes(&self) -> impl Iterator<Item = &Bytecode> {
-        self.bytecodes.iter()
+        self.input.bytecodes.iter()
     }
 
     #[inline(always)]
     fn headers(&self) -> impl Iterator<Item = &Header> {
-        once(&self.current_block.header).chain(self.ancestor_headers.iter())
+        once(&self.input.current_block.header).chain(self.input.ancestor_headers.iter())
     }
 }
 
 /// A trait for constructing [`WitnessDb`].
 pub trait WitnessInput {
     /// Gets a reference to the state from which account info and storage slots are loaded.
-    fn state(&self) -> &EthereumState;
+    fn state(&self) -> &mptnew::EthereumState;
 
     /// Gets the state trie root hash that the state referenced by
     /// [state()](trait.WitnessInput#tymethod.state) must conform to.
@@ -108,18 +216,18 @@ pub trait WitnessInput {
     fn witness_db(&self) -> Result<WitnessDb> {
         let state = self.state();
 
-        if self.state_anchor() != state.state_root() {
-            eyre::bail!("parent state root mismatch");
-        }
+        // if self.state_anchor() != state.state_trie.hash() {
+        //     eyre::bail!("parent state root mismatch");
+        // }
 
-        for (hashed_address, storage_trie) in &state.storage_tries.0 {
-            let account_in_trie =
-                state.state_trie.get_rlp::<TrieAccount>(hashed_address.as_slice())?;
-            let expected_storage_root = account_in_trie.map_or(EMPTY_ROOT, |a| a.storage_root);
-            if storage_trie.hash() != expected_storage_root {
-                eyre::bail!("storage root hash mismatch")
-            }
-        }
+        // for (hashed_address, storage_trie) in &state.storage_tries {
+        //     let account_in_trie =
+        //         state.state_trie.get_rlp::<TrieAccount>(hashed_address.as_slice())?;
+        //     let expected_storage_root = account_in_trie.map_or(EMPTY_ROOT, |a| a.storage_root);
+        //     if storage_trie.hash() != expected_storage_root {
+        //         eyre::bail!("storage root hash mismatch")
+        //     }
+        // }
 
         let bytecodes_by_hash =
             self.bytecodes().map(|code| (code.hash_slow(), code)).collect::<HashMap<_, _>>();
@@ -160,7 +268,6 @@ pub trait WitnessInput {
 
                 let storage_trie = state
                     .storage_tries
-                    .0
                     .get(&hashed_address)
                     .ok_or_eyre("parent state does not contain storage trie")?;
 

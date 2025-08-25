@@ -2,7 +2,8 @@ use std::cell::RefCell;
 
 use alloy_rlp::Encodable;
 use bumpalo::Bump;
-use revm_primitives::{b256, keccak256, map::DefaultHashBuilder, FixedBytes, HashMap, B256};
+use bytes::Buf;
+use revm_primitives::{b256, keccak256, B256};
 use smallvec::SmallVec;
 
 use crate::{
@@ -11,7 +12,7 @@ use crate::{
         encoded_path_eq_nibs, encoded_path_strip_prefix, lcp, prefix_to_small_nibs,
         to_encoded_path, to_nibs,
     },
-    node::{NodeData, NodeId, NodeRef, NodeRefError, NodeRlpDecoded},
+    node::{NodeData, NodeId, NodeRef, NodeRefError},
 };
 
 /// Root hash of an empty trie.
@@ -22,8 +23,8 @@ const NODE_RLP_MAX_LENGTH: usize = 600;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("cannot resolve node reference")]
-    NodeRefNotResolved,
+    #[error("node reference mismatch")]
+    NodeRefMismatch,
     /// Triggered when an operation reaches an unresolved node. The associated `B256`
     /// value provides details about the unresolved node.
     #[error("reached an unresolved node: {0:#}")]
@@ -43,7 +44,7 @@ pub struct MptTrie<'a> {
     nodes: Vec<NodeData<'a>>,
 
     /// Cache. Hashing/encoding often needs "what would this node look like in its parent"
-    cached_references: Vec<RefCell<Option<NodeRef>>>,
+    cached_references: Vec<RefCell<Option<NodeRef<'a>>>>,
 
     /// Scratch buffer used only for RLP encoding when a node's full RLP exceeds 32 bytes and we
     /// need to compute its keccak hash. Keeping it here avoids repeated allocations.
@@ -57,10 +58,8 @@ impl<'a> MptTrie<'a> {
         Self::with_capacity(bump, 1)
     }
 
-    pub fn with_root_hash(bump: &'a Bump, root_hash: B256) -> Self {
-        let mut trie = Self::with_capacity(bump, 1);
-        trie.nodes[0] = NodeData::Digest(root_hash);
-        trie
+    pub fn num_nodes(&self) -> usize {
+        self.nodes.len()
     }
 
     /// Creates a new arena with pre-allocated capacity
@@ -80,148 +79,220 @@ impl<'a> MptTrie<'a> {
     }
 }
 
-impl<'a> MptTrie<'a> {
-    pub fn rlp_nodes(&self) -> Vec<Vec<u8>> {
-        let mut rlp_nodes = Vec::with_capacity(self.nodes.len());
-        for node_id in 0..self.nodes.len() {
-            let node_id = node_id as NodeId;
-            let payload_length = self.payload_length(node_id);
-            let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
+/// Same as `let (bytes, rest) = buf.split_at(cnt); *buf = rest; bytes`.
+#[inline(always)]
+unsafe fn advance_unchecked<'a>(buf: &mut &'a [u8], cnt: usize) -> &'a [u8] {
+    // if buf.remaining() < cnt {
+    //     unreachable_unchecked()
+    // }
+    let bytes = &buf[..cnt];
+    buf.advance(cnt);
+    bytes
+}
 
-            let mut encoded = Vec::with_capacity(rlp_length);
-            self.encode_with_payload_len(node_id, payload_length, &mut encoded);
-            rlp_nodes.push(encoded);
-        }
-        rlp_nodes
+impl<'a> MptTrie<'a> {
+    pub fn encode_trie(&self) -> Vec<u8> {
+        let mut payload = Vec::new();
+        self.encode_trie_internal(self.root_id, &mut payload);
+
+        let mut encoded = Vec::new();
+        alloy_rlp::Header { list: true, payload_length: payload.len() }.encode(&mut encoded);
+        encoded.append(&mut payload);
+        encoded
     }
 
-    pub fn resolve_nodes(
+    fn encode_trie_internal(&self, node_id: NodeId, out: &mut dyn alloy_rlp::BufMut) {
+        let payload_length = self.payload_length(node_id);
+        self.encode_with_payload_len(node_id, payload_length, out);
+
+        match self.nodes[node_id as usize] {
+            NodeData::Branch(childs) => {
+                childs.iter().for_each(|c| match c {
+                    Some(child_id) => self.encode_trie_internal(*child_id, out),
+                    None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
+                });
+            }
+            NodeData::Extension(_, ext_id) => {
+                self.encode_trie_internal(ext_id, out);
+            }
+            _ => {}
+        }
+    }
+
+    pub fn decode_trie(
         bump: &'a Bump,
-        root_hash: B256,
-        root_id: NodeId,
-        rlp_nodes: &'a [Vec<u8>],
-    ) -> Result<MptTrie<'a>, Error> {
-        let nodes_len = rlp_nodes.len();
+        bytes: &mut &'a [u8],
+        num_nodes: usize,
+    ) -> Result<Self, Error> {
+        let mut trie = Self {
+            root_id: 0,
+            nodes: Vec::with_capacity(num_nodes),
+            cached_references: Vec::with_capacity(num_nodes),
+            rlp_scratch: RefCell::new(Vec::with_capacity(NODE_RLP_MAX_LENGTH)),
+            bump,
+        };
 
-        let mut node_ref_mapping =
-            HashMap::with_capacity_and_hasher(nodes_len, DefaultHashBuilder::default());
+        let header = alloy_rlp::Header::decode(bytes).unwrap();
+        assert!(header.list);
 
-        for rlp_node in rlp_nodes {
+        let root_ref = {
+            let mut buf = *bytes;
+            let rlp_node_header_start = buf;
+            let alloy_rlp::Header { list, payload_length } = alloy_rlp::Header::decode(&mut buf)?;
+            let payload = unsafe { advance_unchecked(&mut buf, payload_length) };
+            let rlp_node_length = rlp_node_header_start.len() - buf.len();
+
+            let rlp_node = &rlp_node_header_start[..rlp_node_length];
             if rlp_node.len() < 32 {
-                let node_ref = NodeRef::Bytes(rlp_node.to_vec());
-                node_ref_mapping.insert(node_ref, rlp_node.as_slice());
-            } else if rlp_node.len() == 33 {
-                let mut tmp_ptr = rlp_node.as_slice();
-                let header = alloy_rlp::Header::decode(&mut tmp_ptr)?;
-                if header.list {
-                    let digest = keccak256(rlp_node);
-                    node_ref_mapping.insert(NodeRef::Digest(digest), rlp_node.as_slice());
-                } else {
-                    let node_ref = NodeRef::Digest(B256::from_slice(tmp_ptr));
-                    node_ref_mapping.insert(node_ref, rlp_node.as_slice());
-                }
+                NodeRef::Bytes(rlp_node)
+            } else if !list {
+                NodeRef::Digest(payload)
             } else {
                 let digest = keccak256(rlp_node);
-                node_ref_mapping.insert(NodeRef::Digest(digest), rlp_node.as_slice());
+                let digest_slice = bump.alloc_slice_copy(digest.as_slice());
+                NodeRef::Digest(digest_slice)
             }
-        }
-
-        if !rlp_nodes.is_empty() && rlp_nodes[root_id as usize].len() < 32 {
-            let root_hash = keccak256(&rlp_nodes[root_id as usize]);
-            node_ref_mapping.insert(NodeRef::Digest(root_hash), &rlp_nodes[root_id as usize]);
-        }
-
-        let mut mpt_trie = MptTrie::with_capacity(bump, 2 * nodes_len);
-
-        let root_id = {
-            let mut mpt_resolver = MptResolver { node_ref_mapping, mpt: &mut mpt_trie };
-            let slice = bump.alloc_slice_copy(root_hash.as_slice());
-            mpt_resolver.resolve(slice)?
         };
-        mpt_trie.root_id = root_id;
 
-        Ok(mpt_trie)
-    }
-}
+        let root_id = trie.decode_trie_internal(bytes, root_ref)?;
+        trie.root_id = root_id;
 
-struct MptResolver<'a, 'm> {
-    node_ref_mapping: HashMap<NodeRef, &'a [u8]>,
-    mpt: &'m mut MptTrie<'a>,
-}
-
-impl<'a> MptResolver<'a, '_> {
-    fn to_node_ref_slice(rlp_bytes: &[u8]) -> &[u8] {
-        if rlp_bytes.len() == 33 {
-            &rlp_bytes[1..]
-        } else {
-            rlp_bytes
-        }
+        Ok(trie)
     }
 
-    fn resolve(&mut self, node_ref_slice: &'a [u8]) -> Result<NodeId, Error> {
-        let node_ref = if node_ref_slice.len() == 32 {
-            NodeRef::Digest(B256::from_slice(node_ref_slice))
-        } else {
-            NodeRef::Bytes(node_ref_slice.to_vec())
-        };
-        let mut rlp_bytes =
-            *self.node_ref_mapping.get(&node_ref).ok_or(Error::NodeRefNotResolved)?;
-        let decoded_node = NodeRlpDecoded::decode_rlp(&mut rlp_bytes)?;
+    fn decode_trie_internal(
+        &mut self,
+        bytes: &mut &'a [u8],
+        expected_node_ref: NodeRef<'a>,
+    ) -> Result<NodeId, Error> {
+        let rlp_node_header_start = *bytes;
+        let alloy_rlp::Header { list, payload_length } = alloy_rlp::Header::decode(bytes)?;
 
-        let node_id = match decoded_node {
-            NodeRlpDecoded::Null => self.mpt.add_node(NodeData::Null, Some(node_ref)),
-            NodeRlpDecoded::Branch(children) => {
-                let mut children_ids: [Option<NodeId>; 16] = Default::default();
-                for (i, child_rlp) in children.into_iter().enumerate() {
-                    let child_ref_slice = Self::to_node_ref_slice(child_rlp);
-                    if child_ref_slice == [alloy_rlp::EMPTY_STRING_CODE] {
-                        children_ids[i] = None;
-                    } else {
-                        let child_id = self.resolve(child_ref_slice)?;
-                        children_ids[i] = Some(child_id);
-                    }
+        let mut payload = unsafe { advance_unchecked(bytes, payload_length) };
+        let rlp_node_length = rlp_node_header_start.len() - bytes.len();
+
+        let rlp_node = &rlp_node_header_start[..rlp_node_length];
+        let node_ref = {
+            if rlp_node.len() < 32 {
+                if rlp_node != expected_node_ref.as_slice() {
+                    return Err(Error::NodeRefMismatch);
                 }
-                let data = NodeData::Branch(children_ids);
-                self.mpt.add_node(data, Some(node_ref))
-            }
-            NodeRlpDecoded::Leaf(prefix, value) => {
-                let data = NodeData::Leaf(prefix, value);
-                self.mpt.add_node(data, Some(node_ref))
-            }
-            NodeRlpDecoded::Extension(prefix, ext_node_rlp) => {
-                let ext_node_ref_slice = Self::to_node_ref_slice(ext_node_rlp);
-                let ext_node_id = self.resolve(ext_node_ref_slice)?;
-                let data = NodeData::Extension(prefix, ext_node_id);
-                self.mpt.add_node(data, Some(node_ref))
-            }
-            NodeRlpDecoded::Digest(digest) => {
-                let data = NodeData::Digest(
-                    FixedBytes::try_from(digest).map_err(NodeRefError::DigestLengthMismatch)?,
-                );
-                self.mpt.add_node(data, Some(node_ref))
+                debug_assert_eq!(rlp_node, expected_node_ref.as_slice());
+                NodeRef::Bytes(rlp_node)
+            } else if payload_length == 32 && !list {
+                if payload != expected_node_ref.as_slice() {
+                    return Err(Error::NodeRefMismatch);
+                }
+                debug_assert_eq!(payload, expected_node_ref.as_slice());
+                expected_node_ref
+            } else {
+                let digest = keccak256(rlp_node);
+                if digest != expected_node_ref.as_slice() {
+                    return Err(Error::NodeRefMismatch);
+                }
+                debug_assert_eq!(digest, expected_node_ref.as_slice());
+                expected_node_ref
             }
         };
 
+        if !list {
+            let node_id = match payload_length {
+                0 => self.add_node(NodeData::Null, Some(NodeRef::Bytes(NULL_NODE_REF_SLICE))),
+                32 => self.add_node(NodeData::Digest(payload), Some(NodeRef::Digest(payload))),
+                _ => {
+                    return Err(Error::RlpError(alloy_rlp::Error::UnexpectedLength));
+                }
+            };
+            return Ok(node_id);
+        }
+
+        let item0_header_start = payload;
+        let alloy_rlp::Header { payload_length: item0_payload_length, .. } =
+            alloy_rlp::Header::decode(&mut payload)?;
+        let item0_payload_start = unsafe { advance_unchecked(&mut payload, item0_payload_length) };
+        let item0_length = item0_header_start.len() - payload.len();
+
+        let item1_header_start = payload;
+        let alloy_rlp::Header { payload_length: item1_payload_length, .. } =
+            alloy_rlp::Header::decode(&mut payload)?;
+        let item1_payload_start = unsafe { advance_unchecked(&mut payload, item1_payload_length) };
+        let item1_length = item1_header_start.len() - payload.len();
+
+        if payload.is_empty() {
+            let path = &item0_payload_start[..item0_payload_length];
+            // TODO: check path is not list
+            let prefix = path[0];
+            if (prefix & (2 << 4)) == 0 {
+                // extension node
+                let ext_node_expected_ref =
+                    NodeRef::from_rlp_slice(&item1_header_start[..item1_length]);
+                let ext_node_id = self.decode_trie_internal(bytes, ext_node_expected_ref)?;
+                let node_data = NodeData::Extension(path, ext_node_id);
+                return Ok(self.add_node(node_data, Some(node_ref)));
+            } else {
+                // leaf node
+                let value = &item1_payload_start[..item1_payload_length];
+                let node_data = NodeData::Leaf(path, value);
+                return Ok(self.add_node(node_data, Some(node_ref)));
+            }
+        }
+
+        let child0_expected_node_ref = NodeRef::from_rlp_slice(&item0_header_start[..item0_length]);
+        let child0_id = self.decode_trie_internal(bytes, child0_expected_node_ref)?;
+
+        let child1_expected_node_ref = NodeRef::from_rlp_slice(&item1_header_start[..item1_length]);
+        let child1_id = self.decode_trie_internal(bytes, child1_expected_node_ref)?;
+
+        let mut childs: [Option<NodeId>; 16] = Default::default();
+        childs[0] = Some(child0_id);
+        childs[1] = Some(child1_id);
+        for i in 2..16 {
+            let item_header_start = payload;
+            let alloy_rlp::Header { payload_length: item_payload_length, .. } =
+                alloy_rlp::Header::decode(&mut payload)?;
+            unsafe { advance_unchecked(&mut payload, item_payload_length) };
+            let item_length = item_header_start.len() - payload.len();
+
+            let child_expected_node_ref =
+                NodeRef::from_rlp_slice(&item_header_start[..item_length]);
+
+            // if child_expected_node_ref.as_slice() == hex!("0xf90211") {
+            //     println!("parent node ref: {node_ref}");
+            // }
+
+            let child_id = self.decode_trie_internal(bytes, child_expected_node_ref)?;
+            childs[i] = Some(child_id);
+        }
+
+        // value
+        debug_assert_eq!(payload.len(), 1);
+        debug_assert_eq!(payload[0], alloy_rlp::EMPTY_STRING_CODE);
+
+        let node_data = NodeData::Branch(childs);
+        let node_id = self.add_node(node_data, Some(node_ref));
         Ok(node_id)
     }
 }
 
-impl MptTrie<'_> {
+const NULL_NODE_REF_SLICE: &[u8] = &[alloy_rlp::EMPTY_STRING_CODE];
+
+impl<'a> MptTrie<'a> {
     #[inline]
-    fn calc_reference(&self, node_id: NodeId) -> NodeRef {
+    fn calc_reference(&self, node_id: NodeId) -> NodeRef<'a> {
         match &self.nodes[node_id as usize] {
-            NodeData::Null => NodeRef::Bytes(vec![alloy_rlp::EMPTY_STRING_CODE]),
-            NodeData::Digest(digest) => NodeRef::Digest(*digest),
+            NodeData::Null => NodeRef::Bytes(NULL_NODE_REF_SLICE),
+            NodeData::Digest(digest) => NodeRef::Digest(digest),
             _ => {
                 let payload_length = self.payload_length(node_id);
                 let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
 
                 if rlp_length < 32 {
-                    let mut encoded = Vec::with_capacity(rlp_length);
+                    // let mut encoded = Vec::with_capacity(rlp_length);
+                    let mut encoded = BumpBytesMut::with_capacity_in(rlp_length, self.bump);
                     self.encode_with_payload_len(node_id, payload_length, &mut encoded);
                     debug_assert_eq!(encoded.len(), rlp_length);
 
-                    NodeRef::Bytes(encoded)
+                    NodeRef::Bytes(encoded.into_inner().into_bump_slice())
                 } else {
                     let mut scratch = self.rlp_scratch.borrow_mut();
                     scratch.clear();
@@ -230,7 +301,8 @@ impl MptTrie<'_> {
                     debug_assert_eq!(scratch.len(), rlp_length);
 
                     let digest = keccak256(&*scratch);
-                    NodeRef::Digest(digest)
+                    let digest_slice = self.bump.alloc_slice_copy(digest.as_slice());
+                    NodeRef::Digest(digest_slice)
                 }
             }
         }
@@ -284,7 +356,7 @@ impl MptTrie<'_> {
             // if the reference is a digest, RLP-encode it with its fixed known length
             NodeRef::Digest(digest) => {
                 out.put_u8(alloy_rlp::EMPTY_STRING_CODE + 32);
-                out.put_slice(digest.as_slice());
+                out.put_slice(digest);
             }
         }
     }
@@ -329,7 +401,7 @@ impl<'a> MptTrie<'a> {
                 .borrow_mut()
                 .get_or_insert_with(|| self.calc_reference(self.root_id))
             {
-                NodeRef::Digest(digest) => *digest,
+                NodeRef::Digest(digest) => B256::from_slice(digest),
                 NodeRef::Bytes(bytes) => keccak256(bytes),
             },
         }
@@ -365,7 +437,7 @@ impl<'a> MptTrie<'a> {
         key: &[u8],
         value: impl alloy_rlp::Encodable,
     ) -> Result<bool, Error> {
-        let mut rlp_bytes = BumpBytesMut::new_in(self.bump);
+        let mut rlp_bytes = BumpBytesMut::with_capacity_in(NODE_RLP_MAX_LENGTH, self.bump);
         value.encode(&mut rlp_bytes);
         self.insert(key, rlp_bytes.into_inner().into_bump_slice())
     }
@@ -399,7 +471,7 @@ impl<'a> MptTrie<'a> {
 
 // Internal Implementation
 impl<'a> MptTrie<'a> {
-    fn add_node(&mut self, data: NodeData<'a>, node_ref: Option<NodeRef>) -> NodeId {
+    fn add_node(&mut self, data: NodeData<'a>, node_ref: Option<NodeRef<'a>>) -> NodeId {
         let id = self.nodes.len() as NodeId;
         self.nodes.push(data);
         self.cached_references.push(RefCell::new(node_ref));
@@ -443,7 +515,7 @@ impl<'a> MptTrie<'a> {
                     Ok(None)
                 }
             }
-            NodeData::Digest(digest) => Err(Error::NodeNotResolved(*digest)),
+            NodeData::Digest(digest) => Err(Error::NodeNotResolved(B256::from_slice(digest))),
         }
     }
 
@@ -552,7 +624,7 @@ impl<'a> MptTrie<'a> {
                 }
             }
             NodeData::Digest(digest) => {
-                return Err(Error::NodeNotResolved(digest));
+                return Err(Error::NodeNotResolved(B256::from_slice(digest)));
             }
         };
 
@@ -683,7 +755,7 @@ impl<'a> MptTrie<'a> {
                 true
             }
             NodeData::Digest(digest) => {
-                return Err(Error::NodeNotResolved(digest));
+                return Err(Error::NodeNotResolved(B256::from_slice(digest)));
             }
         };
 

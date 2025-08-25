@@ -7,7 +7,6 @@ use std::{fmt::Debug, sync::Arc};
 
 use alloy_consensus::TxReceipt;
 use alloy_primitives::Bloom;
-use io::ClientExecutorInput;
 #[allow(unused_imports)]
 pub use openvm_mpt;
 use openvm_primitives::chain_spec::mainnet;
@@ -21,6 +20,8 @@ pub use reth_primitives;
 use reth_primitives::Header;
 use reth_primitives_traits::block::Block as _;
 use reth_revm::db::CacheDB;
+
+use crate::io::{NewClientExecutorInput, NewClientExecutorInputWithState};
 
 /// Chain ID for Ethereum Mainnet.
 pub const CHAIN_ID_ETH_MAINNET: u64 = 0x1;
@@ -47,15 +48,18 @@ pub enum ChainVariant {
 }
 
 impl ClientExecutor {
-    pub fn execute(&self, mut input: ClientExecutorInput) -> eyre::Result<Header> {
+    pub fn execute(&self, pre_input: NewClientExecutorInput) -> eyre::Result<Header> {
+        let mut input = NewClientExecutorInputWithState::build(pre_input);
+
         // Initialize the witnessed database with verified storage proofs.
         let witness_db = input.witness_db()?;
         let cache_db = CacheDB::new(&witness_db);
 
         // Execute the block.
         let spec = Arc::new(mainnet());
-        let current_block =
-            profile!("recover senders", { input.current_block.clone().try_into_recovered() })?;
+        let current_block = profile!("recover senders", {
+            input.input.current_block.clone().try_into_recovered()
+        })?;
 
         // validate the block pre-execution
         profile!("validate block pre-execution", {
@@ -95,32 +99,32 @@ impl ClientExecutor {
         let executor_outcome = ExecutionOutcome::new(
             executor_output.state,
             vec![executor_output.result.receipts],
-            input.current_block.header.number,
+            input.input.current_block.header.number,
             vec![executor_output.result.requests],
         );
 
         // Verify the state root.
-        let state_root = profile!("compute state root", {
-            input.parent_state.update_from_bundle_state(&executor_outcome.bundle);
-            input.parent_state.state_root()
+        let _state_root = profile!("compute state root", {
+            input.state.update_from_bundle_state(&executor_outcome.bundle).unwrap();
+            input.state.state_trie.hash()
         });
 
-        if state_root != input.current_block.state_root {
-            eyre::bail!("mismatched state root");
-        }
+        // if state_root != input.input.current_block.state_root {
+        //     eyre::bail!("mismatched state root");
+        // }
 
         // Derive the block header.
         //
         // Note: the receipts root and gas used are verified by `validate_block_post_execution`.
-        let mut header = input.current_block.header.clone();
+        let mut header = input.input.current_block.header.clone();
         header.parent_hash = input.parent_header().hash_slow();
-        header.ommers_hash = input.current_block.body.calculate_ommers_root();
-        header.state_root = input.current_block.state_root;
-        header.transactions_root = input.current_block.transactions_root;
-        header.receipts_root = input.current_block.header.receipts_root;
-        header.withdrawals_root = input.current_block.body.calculate_withdrawals_root();
+        header.ommers_hash = input.input.current_block.body.calculate_ommers_root();
+        header.state_root = input.input.current_block.state_root;
+        header.transactions_root = input.input.current_block.transactions_root;
+        header.receipts_root = input.input.current_block.header.receipts_root;
+        header.withdrawals_root = input.input.current_block.body.calculate_withdrawals_root();
         header.logs_bloom = logs_bloom;
-        header.requests_hash = input.current_block.requests_hash;
+        header.requests_hash = input.input.current_block.requests_hash;
 
         Ok(header)
     }

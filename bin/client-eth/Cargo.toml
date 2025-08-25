@@ -15,7 +15,7 @@ revm-precompile = { version = "21.0.0", default-features = false, features = [
 openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "main", features = [
     "std",
 ] }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0-rc.4" }
 openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
 openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
 openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", branch = "main", features = [

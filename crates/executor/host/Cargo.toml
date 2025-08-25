@@ -20,6 +20,7 @@ openvm-rpc-db.workspace = true
 openvm-client-executor.workspace = true
 openvm-mpt = { workspace = true, features = ["build_mpt"] }
 openvm-primitives.workspace = true
+mptnew.workspace = true
 
 # reth
 reth-primitives = { workspace = true, features = ["secp256k1"] }

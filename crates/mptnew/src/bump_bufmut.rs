@@ -13,12 +13,16 @@ pub(crate) struct BumpBytesMut<'a> {
 }
 
 impl<'a> BumpBytesMut<'a> {
-    pub(crate) fn new_in(bump: &'a Bump) -> Self {
-        Self { inner: bumpalo::collections::Vec::new_in(bump) }
+    pub(crate) fn with_capacity_in(capacity: usize, bump: &'a Bump) -> Self {
+        Self { inner: bumpalo::collections::Vec::with_capacity_in(capacity, bump) }
     }
 
     pub(crate) fn into_inner(self) -> bumpalo::collections::Vec<'a, u8> {
         self.inner
+    }
+
+    pub(crate) fn len(&self) -> usize {
+        self.inner.len()
     }
 }
 

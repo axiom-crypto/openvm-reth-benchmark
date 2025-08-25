@@ -2968,6 +2968,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "guest-bench"
+version = "0.1.0"
+dependencies = [
+ "bincode 2.0.1",
+ "openvm-client-executor",
+ "openvm-host-executor",
+]
+
+[[package]]
 name = "h2"
 version = "0.3.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4109,12 +4118,13 @@ dependencies = [
  "alloy-rlp",
  "bumpalo",
  "bytes",
- "hex-literal",
+ "hex-literal 1.0.0",
+ "reth-trie",
  "revm",
  "revm-primitives 19.2.0",
  "serde",
  "smallvec",
- "thiserror 1.0.69",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -4688,8 +4698,10 @@ version = "0.1.0"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives 1.2.0",
+ "bumpalo",
  "eyre",
  "itertools 0.14.0",
+ "mptnew",
  "openvm-mpt",
  "openvm-primitives",
  "openvm-witness-db",
@@ -4874,6 +4886,7 @@ dependencies = [
  "bincode 2.0.1",
  "dotenv",
  "eyre",
+ "mptnew",
  "openvm-client-executor",
  "openvm-mpt",
  "openvm-primitives",
@@ -5032,6 +5045,7 @@ dependencies = [
  "dhat",
  "dotenv",
  "eyre",
+ "mptnew",
  "openvm-client-executor",
  "openvm-host-executor",
  "openvm-mpt",

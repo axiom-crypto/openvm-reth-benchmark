@@ -1,5 +1,5 @@
 use openvm::io::{println, read, reveal_bytes32};
-use openvm_client_executor::{io::ClientExecutorInput, ClientExecutor};
+use openvm_client_executor::{io::NewClientExecutorInput, ClientExecutor};
 // Imports needed by the linker, but clippy can't tell:
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use {
@@ -14,7 +14,7 @@ openvm::init!();
 pub fn main() {
     println("client-eth starting");
     // Read the input.
-    let input: ClientExecutorInput = read();
+    let input: NewClientExecutorInput = read();
     println("finished reading input");
 
     // Execute the block.
