@@ -4,7 +4,7 @@ use alloy_consensus::{TxEnvelope, TxReceipt};
 use alloy_primitives::Bloom;
 use alloy_provider::{network::Ethereum, Provider};
 use eyre::{eyre, Ok};
-use openvm_client_executor::io::ClientExecutorInput;
+use openvm_client_executor::io::NewClientExecutorInput;
 use openvm_mpt::EthereumState;
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
@@ -33,7 +33,7 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
     }
 
     /// Executes the block with the given block number.
-    pub async fn execute(&self, block_number: u64) -> eyre::Result<ClientExecutorInput> {
+    pub async fn execute(&self, block_number: u64) -> eyre::Result<NewClientExecutorInput> {
         // Fetch the current block and the previous block from the provider.
         tracing::info!("fetching the current block and the previous block");
         let current_block = self
@@ -187,11 +187,30 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
             ancestor_headers.push(block.header.into());
         }
 
+        let state_bytes = {
+            let state_num_nodes = state.state_trie.num_nodes();
+            let state_bytes = state.state_trie.rlp_nodes();
+            let mut storage_bytes: Vec<_> = state
+                .storage_tries
+                .0
+                .iter()
+                .map(|(addr, trie)| {
+                    (*addr, trie.num_nodes(), mptnew::OptimizedBytes(trie.rlp_nodes()))
+                })
+                .collect();
+            storage_bytes.sort_by_key(|(addr, _, _)| *addr);
+
+            mptnew::EthereumStateBytes {
+                state_trie: (state_num_nodes, mptnew::OptimizedBytes(state_bytes)),
+                storage_tries: storage_bytes,
+            }
+        };
+
         // Create the client input.
-        let client_input = ClientExecutorInput {
+        let client_input = NewClientExecutorInput {
             current_block,
             ancestor_headers,
-            parent_state: state,
+            parent_state_bytes: state_bytes,
             state_requests,
             bytecodes: rpc_db.get_bytecodes(),
         };

@@ -12,7 +12,7 @@ use openvm_circuit::{
         bench::run_with_metric_collection, openvm_stark_backend::p3_field::PrimeField32,
     },
 };
-use openvm_client_executor::{io::ClientExecutorInput, CHAIN_ID_ETH_MAINNET};
+use openvm_client_executor::{io::NewClientExecutorInput, CHAIN_ID_ETH_MAINNET};
 use openvm_host_executor::HostExecutor;
 pub use openvm_native_circuit::NativeConfig;
 
@@ -288,14 +288,14 @@ fn try_load_input_from_cache(
     cache_dir: Option<&PathBuf>,
     chain_id: u64,
     block_number: u64,
-) -> eyre::Result<Option<ClientExecutorInput>> {
+) -> eyre::Result<Option<NewClientExecutorInput>> {
     Ok(if let Some(cache_dir) = cache_dir {
         let cache_path = cache_dir.join(format!("input/{}/{}.bin", chain_id, block_number));
 
         if cache_path.exists() {
             // TODO: prune the cache if invalid instead
             let mut cache_file = std::fs::File::open(cache_path)?;
-            let client_input: ClientExecutorInput =
+            let client_input: NewClientExecutorInput =
                 bincode::serde::decode_from_std_read(&mut cache_file, bincode::config::standard())?;
 
             Some(client_input)
