@@ -5324,6 +5324,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm-reth-verifier-bench"
+version = "0.1.0"
+dependencies = [
+ "bitcode",
+ "openvm-circuit",
+ "openvm-continuations",
+ "openvm-native-circuit",
+ "openvm-native-recursion",
+ "openvm-sdk",
+ "openvm-stark-sdk",
+]
+
+[[package]]
 name = "openvm-rpc-db"
 version = "0.1.0"
 dependencies = [
