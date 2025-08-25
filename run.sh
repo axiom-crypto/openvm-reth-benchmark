@@ -1,4 +1,10 @@
 #!/bin/bash
+
+USE_CUDA=false
+if [ "$1" == "cuda" ]; then
+    USE_CUDA=true
+fi
+
 set -e
 cd bin/client-eth
 cargo openvm build
@@ -15,10 +21,19 @@ mkdir -p rpc-cache
 source .env
 MODE=execute # can be execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
 PROFILE="release"
-FEATURES="metrics,nightly-features,jemalloc,tco" #,evm-verify"
+FEATURES="metrics,jemalloc,tco"
 BLOCK_NUMBER=23100006
 # switch to +nightly-2025-08-19 if using tco
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
+
+if [ "$USE_CUDA" = "true" ]; then
+    FEATURES="$FEATURES,cuda"
+else
+    FEATURES="$FEATURES,nightly-features"
+fi
+if [ "$MODE" = "prove-evm" ]; then
+    FEATURES="$FEATURES,evm-verify"
+fi
 
 arch=$(uname -m)
 case $arch in
@@ -26,7 +41,10 @@ arm64|aarch64)
     RUSTFLAGS="-Ctarget-cpu=native"
     ;;
 x86_64|amd64)
-    RUSTFLAGS="-Ctarget-cpu=native"
+    # cuda currently doesn't work with plonky3 avx
+    if [ "$USE_CUDA" != "true" ]; then
+        RUSTFLAGS="-Ctarget-cpu=native"
+    fi
     ;;
 *)
 echo "Unsupported architecture: $arch"
