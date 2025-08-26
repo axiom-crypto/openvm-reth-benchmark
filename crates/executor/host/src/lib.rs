@@ -195,13 +195,17 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
                 .0
                 .iter()
                 .map(|(addr, trie)| {
-                    (*addr, trie.num_nodes(), mptnew::OptimizedBytes(trie.rlp_nodes()))
+                    (
+                        *addr,
+                        trie.num_nodes(),
+                        alloy_primitives::bytes::Bytes::from(trie.rlp_nodes()),
+                    )
                 })
                 .collect();
             storage_bytes.sort_by_key(|(addr, _, _)| *addr);
 
             mptnew::EthereumStateBytes {
-                state_trie: (state_num_nodes, mptnew::OptimizedBytes(state_bytes)),
+                state_trie: (state_num_nodes, alloy_primitives::bytes::Bytes::from(state_bytes)),
                 storage_tries: storage_bytes,
             }
         };

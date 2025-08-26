@@ -9,8 +9,8 @@ use smallvec::SmallVec;
 use crate::{
     bump_bufmut::BumpBytesMut,
     hp::{
-        encoded_path_eq_nibs, encoded_path_strip_prefix, lcp, prefix_to_small_nibs,
-        to_encoded_path, to_nibs,
+        encoded_path_eq_nibs, encoded_path_strip_prefix, lcp, prefix_to_nibs, to_encoded_path,
+        to_nibs,
     },
     node::{NodeData, NodeId, NodeRef, NodeRefError},
 };
@@ -20,9 +20,13 @@ pub const EMPTY_ROOT: B256 =
     b256!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
 
 const NODE_RLP_MAX_LENGTH: usize = 600;
+const VALUE_RLP_SIZE: usize = 200;
+
+const NULL_NODE_ID: NodeId = 0;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    /// Node reference does not match the expected node reference.
     #[error("node reference mismatch")]
     NodeRefMismatch,
     /// Triggered when an operation reaches an unresolved node. The associated `B256`
@@ -62,7 +66,6 @@ impl<'a> MptTrie<'a> {
         self.nodes.len()
     }
 
-    /// Creates a new arena with pre-allocated capacity
     pub fn with_capacity(bump: &'a Bump, cap: usize) -> Self {
         let mut nodes = Vec::with_capacity(cap);
         let mut cached_references = Vec::with_capacity(cap);
@@ -82,9 +85,6 @@ impl<'a> MptTrie<'a> {
 /// Same as `let (bytes, rest) = buf.split_at(cnt); *buf = rest; bytes`.
 #[inline(always)]
 unsafe fn advance_unchecked<'a>(buf: &mut &'a [u8], cnt: usize) -> &'a [u8] {
-    // if buf.remaining() < cnt {
-    //     unreachable_unchecked()
-    // }
     let bytes = &buf[..cnt];
     buf.advance(cnt);
     bytes
@@ -124,16 +124,12 @@ impl<'a> MptTrie<'a> {
         bytes: &mut &'a [u8],
         num_nodes: usize,
     ) -> Result<Self, Error> {
-        let mut trie = Self {
-            root_id: 0,
-            nodes: Vec::with_capacity(num_nodes),
-            cached_references: Vec::with_capacity(num_nodes),
-            rlp_scratch: RefCell::new(Vec::with_capacity(NODE_RLP_MAX_LENGTH)),
-            bump,
-        };
+        let mut trie = Self::with_capacity(bump, num_nodes + num_nodes / 10);
 
         let header = alloy_rlp::Header::decode(bytes).unwrap();
-        assert!(header.list);
+        if !header.list {
+            return Err(Error::RlpError(alloy_rlp::Error::UnexpectedString));
+        }
 
         let root_ref = {
             let mut buf = *bytes;
@@ -177,27 +173,24 @@ impl<'a> MptTrie<'a> {
                 if rlp_node != expected_node_ref.as_slice() {
                     return Err(Error::NodeRefMismatch);
                 }
-                debug_assert_eq!(rlp_node, expected_node_ref.as_slice());
                 NodeRef::Bytes(rlp_node)
             } else if payload_length == 32 && !list {
                 if payload != expected_node_ref.as_slice() {
                     return Err(Error::NodeRefMismatch);
                 }
-                debug_assert_eq!(payload, expected_node_ref.as_slice());
                 expected_node_ref
             } else {
                 let digest = keccak256(rlp_node);
                 if digest != expected_node_ref.as_slice() {
                     return Err(Error::NodeRefMismatch);
                 }
-                debug_assert_eq!(digest, expected_node_ref.as_slice());
                 expected_node_ref
             }
         };
 
         if !list {
             let node_id = match payload_length {
-                0 => self.add_node(NodeData::Null, Some(NodeRef::Bytes(NULL_NODE_REF_SLICE))),
+                0 => NULL_NODE_ID,
                 32 => self.add_node(NodeData::Digest(payload), Some(NodeRef::Digest(payload))),
                 _ => {
                     return Err(Error::RlpError(alloy_rlp::Error::UnexpectedLength));
@@ -220,7 +213,6 @@ impl<'a> MptTrie<'a> {
 
         if payload.is_empty() {
             let path = &item0_payload_start[..item0_payload_length];
-            // TODO: check path is not list
             let prefix = path[0];
             if (prefix & (2 << 4)) == 0 {
                 // extension node
@@ -244,9 +236,9 @@ impl<'a> MptTrie<'a> {
         let child1_id = self.decode_trie_internal(bytes, child1_expected_node_ref)?;
 
         let mut childs: [Option<NodeId>; 16] = Default::default();
-        childs[0] = Some(child0_id);
-        childs[1] = Some(child1_id);
-        for i in 2..16 {
+        childs[0] = if child0_id == NULL_NODE_ID { None } else { Some(child0_id) };
+        childs[1] = if child1_id == NULL_NODE_ID { None } else { Some(child1_id) };
+        for child in &mut childs[2..16] {
             let item_header_start = payload;
             let alloy_rlp::Header { payload_length: item_payload_length, .. } =
                 alloy_rlp::Header::decode(&mut payload)?;
@@ -256,17 +248,13 @@ impl<'a> MptTrie<'a> {
             let child_expected_node_ref =
                 NodeRef::from_rlp_slice(&item_header_start[..item_length]);
 
-            // if child_expected_node_ref.as_slice() == hex!("0xf90211") {
-            //     println!("parent node ref: {node_ref}");
-            // }
-
             let child_id = self.decode_trie_internal(bytes, child_expected_node_ref)?;
-            childs[i] = Some(child_id);
+            *child = if child_id == NULL_NODE_ID { None } else { Some(child_id) };
         }
 
-        // value
-        debug_assert_eq!(payload.len(), 1);
-        debug_assert_eq!(payload[0], alloy_rlp::EMPTY_STRING_CODE);
+        if payload.len() != 1 || payload[0] != alloy_rlp::EMPTY_STRING_CODE {
+            return Err(Error::ValueInBranch);
+        }
 
         let node_data = NodeData::Branch(childs);
         let node_id = self.add_node(node_data, Some(node_ref));
@@ -432,12 +420,13 @@ impl<'a> MptTrie<'a> {
         self.insert_internal(self.root_id, key_nibs, value)
     }
 
+    #[inline]
     pub fn insert_rlp(
         &mut self,
         key: &[u8],
         value: impl alloy_rlp::Encodable,
     ) -> Result<bool, Error> {
-        let mut rlp_bytes = BumpBytesMut::with_capacity_in(NODE_RLP_MAX_LENGTH, self.bump);
+        let mut rlp_bytes = BumpBytesMut::with_capacity_in(VALUE_RLP_SIZE, self.bump);
         value.encode(&mut rlp_bytes);
         self.insert(key, rlp_bytes.into_inner().into_bump_slice())
     }
@@ -471,6 +460,7 @@ impl<'a> MptTrie<'a> {
 
 // Internal Implementation
 impl<'a> MptTrie<'a> {
+    #[inline]
     fn add_node(&mut self, data: NodeData<'a>, node_ref: Option<NodeRef<'a>>) -> NodeId {
         let id = self.nodes.len() as NodeId;
         self.nodes.push(data);
@@ -485,8 +475,6 @@ impl<'a> MptTrie<'a> {
 
     #[inline]
     fn get_internal(&self, node_id: NodeId, key_nibs: &[u8]) -> Result<Option<&'a [u8]>, Error> {
-        // dbg!(&node_id, &key_nibs);
-
         match &self.nodes[node_id as usize] {
             NodeData::Null => Ok(None),
             NodeData::Branch(nodes) => {
@@ -549,7 +537,7 @@ impl<'a> MptTrie<'a> {
                 }
             }
             NodeData::Leaf(prefix, old_value) => {
-                let self_nibs = prefix_to_small_nibs(prefix);
+                let self_nibs = prefix_to_nibs(prefix);
                 let common_len = lcp(&self_nibs, key_nibs);
 
                 if common_len == self_nibs.len() && common_len == key_nibs.len() {
@@ -588,7 +576,7 @@ impl<'a> MptTrie<'a> {
                 }
             }
             NodeData::Extension(prefix, child_id) => {
-                let self_nibs = prefix_to_small_nibs(prefix);
+                let self_nibs = prefix_to_nibs(prefix);
                 let common_len = lcp(&self_nibs, key_nibs);
 
                 if common_len == self_nibs.len() {
@@ -671,7 +659,7 @@ impl<'a> MptTrie<'a> {
 
                     let new_node_data = match child_node_data {
                         NodeData::Leaf(prefix, value) => {
-                            let leaf_nibs = prefix_to_small_nibs(prefix);
+                            let leaf_nibs = prefix_to_nibs(prefix);
                             let mut new_nibs: SmallVec<[u8; 64]> =
                                 SmallVec::with_capacity(1 + leaf_nibs.len());
                             new_nibs.push(index as u8);
@@ -680,7 +668,7 @@ impl<'a> MptTrie<'a> {
                             NodeData::Leaf(new_path, value)
                         }
                         NodeData::Extension(prefix, child_child_id) => {
-                            let ext_nibs = prefix_to_small_nibs(prefix);
+                            let ext_nibs = prefix_to_nibs(prefix);
                             let mut new_nibs: SmallVec<[u8; 64]> =
                                 SmallVec::with_capacity(1 + ext_nibs.len());
                             new_nibs.push(index as u8);
@@ -703,7 +691,7 @@ impl<'a> MptTrie<'a> {
                 true
             }
             NodeData::Leaf(prefix, _) => {
-                let leaf_nibs = prefix_to_small_nibs(prefix);
+                let leaf_nibs = prefix_to_nibs(prefix);
                 if leaf_nibs.as_slice() != key_nibs {
                     return Ok(false);
                 }
@@ -711,7 +699,7 @@ impl<'a> MptTrie<'a> {
                 true
             }
             NodeData::Extension(prefix, child_id) => {
-                let self_nibs = prefix_to_small_nibs(prefix);
+                let self_nibs = prefix_to_nibs(prefix);
                 if let Some(tail) = key_nibs.strip_prefix(self_nibs.as_slice()) {
                     if !self.delete_internal(child_id, tail)? {
                         return Ok(false);
@@ -728,7 +716,7 @@ impl<'a> MptTrie<'a> {
                     NodeData::Null => NodeData::Null,
                     // for a leaf, replace the extension with the extended leaf
                     NodeData::Leaf(child_path_bytes, value) => {
-                        let child_path_nibs = prefix_to_small_nibs(child_path_bytes);
+                        let child_path_nibs = prefix_to_nibs(child_path_bytes);
                         let mut combined_nibs: SmallVec<[u8; 64]> =
                             SmallVec::with_capacity(self_nibs.len() + child_path_nibs.len());
                         combined_nibs.extend_from_slice(&self_nibs);
@@ -738,7 +726,7 @@ impl<'a> MptTrie<'a> {
                     }
                     // for an extension, replace the extension with the extended extension
                     NodeData::Extension(child_path_bytes, grandchild_id) => {
-                        let child_path_nibs = prefix_to_small_nibs(child_path_bytes);
+                        let child_path_nibs = prefix_to_nibs(child_path_bytes);
                         let mut combined_nibs: SmallVec<[u8; 64]> =
                             SmallVec::with_capacity(self_nibs.len() + child_path_nibs.len());
                         combined_nibs.extend_from_slice(&self_nibs);
@@ -764,6 +752,55 @@ impl<'a> MptTrie<'a> {
         }
         Ok(updated)
     }
+
+    // pub fn verify_tree(&self) {
+    //     self.verify_tree_internal(self.root_id);
+    // }
+
+    // fn verify_tree_internal(&self, node_id: NodeId) {
+    //     if let NodeData::Digest(digest) = &self.nodes[node_id as usize] {
+    //         let actual_node_ref = self.calc_reference(node_id);
+    //         assert_eq!(actual_node_ref.as_slice(), *digest);
+    //         return;
+    //     }
+
+    //     let actual_node_ref = self.calc_reference(node_id);
+    //     {
+    //         let payload_length = self.payload_length(node_id);
+    //         let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
+    //         if rlp_length < 32 {
+    //             // let mut encoded = Vec::with_capacity(rlp_length);
+    //             let mut encoded = Vec::with_capacity(rlp_length);
+    //             self.encode_with_payload_len(node_id, payload_length, &mut encoded);
+    //             debug_assert_eq!(encoded.len(), rlp_length);
+
+    //             assert_eq!(actual_node_ref.as_slice(), encoded);
+    //         } else {
+    //             let mut scratch = self.rlp_scratch.borrow_mut();
+    //             scratch.clear();
+
+    //             self.encode_with_payload_len(node_id, payload_length, &mut *scratch);
+    //             debug_assert_eq!(scratch.len(), rlp_length);
+
+    //             let digest = keccak256(&*scratch);
+    //             assert_eq!(actual_node_ref.as_slice(), digest);
+    //         }
+    //     }
+
+    //     match &self.nodes[node_id as usize] {
+    //         NodeData::Branch(childs) => {
+    //             for child in childs {
+    //                 if let Some(child) = child {
+    //                     self.verify_tree_internal(*child);
+    //                 }
+    //             }
+    //         }
+    //         NodeData::Extension(_, ext_node) => {
+    //             self.verify_tree_internal(*ext_node);
+    //         }
+    //         _ => {}
+    //     }
+    // }
 
     #[allow(unused)]
     pub(crate) fn print_tree(&self) {

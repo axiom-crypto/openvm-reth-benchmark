@@ -52,7 +52,7 @@ fn main() {
     // Pre-compute the post-state once
     let (pre_input, _): (NewClientExecutorInput, _) =
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
-    let client_input = NewClientExecutorInputWithState::build(pre_input.clone());
+    let client_input = NewClientExecutorInputWithState::build(pre_input.clone()).unwrap();
     let witness_db = client_input.witness_db().unwrap();
     let cache_db = CacheDB::new(&witness_db);
     let spec = Arc::new(mainnet());
@@ -107,7 +107,7 @@ fn profile_end_to_end(buffer: &[u8], executor_outcome: &ExecutionOutcome) {
     let (pre_input, _): (NewClientExecutorInput, _) =
         bincode::serde::decode_from_slice(buffer, bincode_config).unwrap();
 
-    let mut client_input = NewClientExecutorInputWithState::build(pre_input);
+    let mut client_input = NewClientExecutorInputWithState::build(pre_input).unwrap();
 
     // Create witness DB
     let _witness_db = client_input.witness_db().unwrap();
@@ -128,7 +128,7 @@ fn profile_deserialize(buffer: &[u8]) {
 fn profile_witness_db(client_input: NewClientExecutorInput) {
     let _profiler = Profiler::new_heap();
 
-    let input = NewClientExecutorInputWithState::build(client_input);
+    let input = NewClientExecutorInputWithState::build(client_input).unwrap();
 
     let _witness_db = input.witness_db().unwrap();
 }

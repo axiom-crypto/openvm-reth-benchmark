@@ -4,7 +4,7 @@ use bincode::config::standard;
 use openvm_client_executor::{io::NewClientExecutorInput, ClientExecutor};
 
 fn main() {
-    let block_number = 21000000;
+    let block_number = 23100006;
     let input_file = format!(
         "/Users/shayan/src/github.com/axiom-crypto/openvm-reth-benchmark/rpc-cache/input/1/{}.bin",
         block_number

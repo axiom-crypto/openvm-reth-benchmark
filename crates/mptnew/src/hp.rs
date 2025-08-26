@@ -36,7 +36,7 @@ pub(crate) fn to_nibs(slice: &[u8]) -> Nibbles {
 /// Decodes a compact hex-prefix-encoded path (as used in MPT leaf/extension nodes)
 /// into its nibble sequence. This allocates a `SmallVec` with the exact nibble capacity.
 #[inline]
-pub(crate) fn prefix_to_small_nibs(encoded_path: &[u8]) -> Nibbles {
+pub(crate) fn prefix_to_nibs(encoded_path: &[u8]) -> Nibbles {
     if encoded_path.is_empty() {
         return SmallVec::new();
     }
@@ -166,11 +166,12 @@ pub(crate) fn encoded_path_strip_prefix<'a>(
 }
 
 /// Encodes nibbles into the standard hex-prefix format directly into the bump arena.
+#[inline]
 pub(crate) fn to_encoded_path<'a>(bump: &'a bumpalo::Bump, nibs: &[u8], is_leaf: bool) -> &'a [u8] {
     let is_odd = nibs.len() % 2 != 0;
     // Max path is 64 nibs (32 bytes) + 1 prefix byte = 33 bytes.
     // let mut encoded = bumpalo::collections::Vec::with_capacity_in(33, &self.bump);
-    let mut encoded = bumpalo::collections::Vec::new_in(bump);
+    let mut encoded = bumpalo::collections::Vec::with_capacity_in(33, bump);
     // let mut encoded = Vec::with_capacity(33);
 
     let mut prefix = if is_leaf { 0x20 } else { 0x00 };

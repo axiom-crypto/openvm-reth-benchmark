@@ -1,7 +1,7 @@
 use std::iter::once;
 
 use bumpalo::Bump;
-use eyre::{OptionExt, Result};
+use eyre::{bail, OptionExt, Result};
 use itertools::Itertools;
 use openvm_mpt::{mpt::EMPTY_ROOT, EthereumState};
 use openvm_witness_db::WitnessDb;
@@ -64,17 +64,18 @@ pub struct NewClientExecutorInputWithState {
 }
 
 impl NewClientExecutorInputWithState {
-    pub fn build(input: NewClientExecutorInput) -> Self {
+    pub fn build(input: NewClientExecutorInput) -> Result<Self> {
         let input = Box::leak(Box::new(input));
-        let bump = Box::leak(Box::new(Bump::with_capacity(100 * 1000)));
+        let bump = Box::leak(Box::new(Bump::with_capacity(1000 * 1000)));
 
         let state = {
             let (state_num_nodes, state_bytes) = &input.parent_state_bytes.state_trie;
 
             let state_trie =
-                mptnew::MptTrie::decode_trie(bump, &mut state_bytes.0.as_slice(), *state_num_nodes)
-                    .unwrap();
-            assert_eq!(state_trie.hash(), input.ancestor_headers[0].state_root);
+                mptnew::MptTrie::decode_trie(bump, &mut state_bytes.as_ref(), *state_num_nodes)?;
+            if state_trie.hash() != input.ancestor_headers[0].state_root {
+                bail!("state root mismatch");
+            }
 
             let mut storage_tries = HashMap::with_capacity_and_hasher(
                 input.parent_state_bytes.storage_tries.len(),
@@ -89,18 +90,19 @@ impl NewClientExecutorInputWithState {
 
                 let storage_trie = mptnew::MptTrie::decode_trie(
                     bump,
-                    &mut storage_trie_bytes.0.as_slice(),
+                    &mut storage_trie_bytes.as_ref(),
                     *num_nodes,
-                )
-                .unwrap();
-                assert_eq!(storage_trie.hash(), expected_storage_root);
+                )?;
+                if storage_trie.hash() != expected_storage_root {
+                    bail!("storage root mismatch");
+                }
 
                 storage_tries.insert(*hashed_address, storage_trie);
             }
             mptnew::EthereumState { state_trie, storage_tries, bump }
         };
 
-        Self { input, state }
+        Ok(Self { input, state })
     }
 }
 
