@@ -185,15 +185,12 @@ fn test_serde_index_trie() -> Result<(), Error> {
     for i in 0..N {
         assert!(trie.insert_rlp(&i.to_rlp(), i)?);
     }
-    // trie.print_tree();
 
     let root_hash = trie.hash();
 
     let encoded = trie.encode_trie();
-    // println!("{encoded:?}");
 
     let recovered_trie = MptTrie::decode_trie(&bump, &mut encoded.as_slice(), trie.num_nodes())?;
-    // recovered_trie.print_tree();
     assert_eq!(recovered_trie.hash(), root_hash);
 
     for i in 0..N {
@@ -214,7 +211,6 @@ fn test_serde_keccak_trie() -> Result<(), Error> {
     for i in 0..N {
         assert!(trie.insert_rlp(keccak256(i.to_be_bytes()).as_slice(), i)?);
     }
-    // trie.print_tree();
 
     let root_hash = trie.hash();
 
