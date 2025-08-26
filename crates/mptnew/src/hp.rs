@@ -170,9 +170,7 @@ pub(crate) fn encoded_path_strip_prefix<'a>(
 pub(crate) fn to_encoded_path<'a>(bump: &'a bumpalo::Bump, nibs: &[u8], is_leaf: bool) -> &'a [u8] {
     let is_odd = nibs.len() % 2 != 0;
     // Max path is 64 nibs (32 bytes) + 1 prefix byte = 33 bytes.
-    // let mut encoded = bumpalo::collections::Vec::with_capacity_in(33, &self.bump);
     let mut encoded = bumpalo::collections::Vec::with_capacity_in(33, bump);
-    // let mut encoded = Vec::with_capacity(33);
 
     let mut prefix = if is_leaf { 0x20 } else { 0x00 };
     if is_odd {
@@ -188,11 +186,6 @@ pub(crate) fn to_encoded_path<'a>(bump: &'a bumpalo::Bump, nibs: &[u8], is_leaf:
         }
     }
 
-    // unsafe { std::mem::transmute::<&[u8], &'a [u8]>(&encoded) }
-
-    // let slice = self.bump.alloc_slice_copy(&encoded);
-    // Sound because `slice` lives as long as `self.bump`.
-    // unsafe { std::mem::transmute::<&[u8], &'a [u8]>(encoded.as_slice()) }
     encoded.into_bump_slice()
 }
 
