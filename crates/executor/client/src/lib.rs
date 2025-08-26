@@ -49,7 +49,7 @@ pub enum ChainVariant {
 
 impl ClientExecutor {
     pub fn execute(&self, pre_input: NewClientExecutorInput) -> eyre::Result<Header> {
-        let mut input = NewClientExecutorInputWithState::build(pre_input);
+        let mut input = NewClientExecutorInputWithState::build(pre_input)?;
 
         // Initialize the witnessed database with verified storage proofs.
         let witness_db = input.witness_db()?;
@@ -104,14 +104,18 @@ impl ClientExecutor {
         );
 
         // Verify the state root.
-        let _state_root = profile!("compute state root", {
+        let state_root = profile!("compute state root", {
             input.state.update_from_bundle_state(&executor_outcome.bundle).unwrap();
             input.state.state_trie.hash()
         });
 
-        // if state_root != input.input.current_block.state_root {
-        //     eyre::bail!("mismatched state root");
-        // }
+        if state_root != input.input.current_block.state_root {
+            println!(
+                "state root = {state_root}, expected = {expected}",
+                expected = input.input.current_block.state_root,
+            );
+            eyre::bail!("mismatched state root");
+        }
 
         // Derive the block header.
         //

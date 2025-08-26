@@ -13,24 +13,29 @@ pub(crate) struct BumpBytesMut<'a> {
 }
 
 impl<'a> BumpBytesMut<'a> {
+    #[inline(always)]
     pub(crate) fn with_capacity_in(capacity: usize, bump: &'a Bump) -> Self {
         Self { inner: bumpalo::collections::Vec::with_capacity_in(capacity, bump) }
     }
 
+    #[inline(always)]
     pub(crate) fn into_inner(self) -> bumpalo::collections::Vec<'a, u8> {
         self.inner
     }
 
+    #[inline(always)]
     pub(crate) fn len(&self) -> usize {
         self.inner.len()
     }
 }
 
 unsafe impl BufMut for BumpBytesMut<'_> {
+    #[inline(always)]
     fn remaining_mut(&self) -> usize {
         isize::MAX as usize - self.inner.len()
     }
 
+    #[inline(always)]
     unsafe fn advance_mut(&mut self, cnt: usize) {
         let len = self.inner.len();
         let remaining = self.inner.capacity() - len;
@@ -43,6 +48,7 @@ unsafe impl BufMut for BumpBytesMut<'_> {
         self.inner.set_len(len + cnt);
     }
 
+    #[inline(always)]
     fn chunk_mut(&mut self) -> &mut bytes::buf::UninitSlice {
         if self.inner.capacity() == self.inner.len() {
             self.inner.reserve(64); // Grow the vec

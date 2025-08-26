@@ -3,12 +3,12 @@ use reth_trie::TrieAccount;
 use revm::database::BundleState;
 use revm_primitives::{keccak256, map::DefaultHashBuilder, HashMap, B256};
 
-use crate::{word_bytes::OptimizedBytes, Error, MptTrie};
+use crate::{Error, MptTrie};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct EthereumStateBytes {
-    pub state_trie: (usize, OptimizedBytes),
-    pub storage_tries: Vec<(B256, usize, OptimizedBytes)>,
+    pub state_trie: (usize, bytes::Bytes),
+    pub storage_tries: Vec<(B256, usize, bytes::Bytes)>,
 }
 
 #[derive(Debug, Clone)]

@@ -29,7 +29,7 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
     // Pre-compute the post-state once for the MPT benchmarks (not timed)
     let (pre_input, _): (NewClientExecutorInput, _) =
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
-    let client_input = NewClientExecutorInputWithState::build(pre_input.clone());
+    let client_input = NewClientExecutorInputWithState::build(pre_input.clone()).unwrap();
     let witness_db = client_input.witness_db().unwrap();
     let cache_db = CacheDB::new(&witness_db);
     let spec = Arc::new(mainnet());
@@ -51,7 +51,8 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
             let (pre_input, _): (NewClientExecutorInput, _) =
                 bincode::serde::decode_from_slice(black_box(&buffer), bincode_config).unwrap();
 
-            let mut client_input = NewClientExecutorInputWithState::build(pre_input.clone());
+            let mut client_input =
+                NewClientExecutorInputWithState::build(pre_input.clone()).unwrap();
 
             // Create witness DB (this happens in production)
             let _witness_db = client_input.witness_db().unwrap();
