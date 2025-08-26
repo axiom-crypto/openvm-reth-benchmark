@@ -189,7 +189,7 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
 
         let state_bytes = {
             let state_num_nodes = state.state_trie.num_nodes();
-            let state_bytes = state.state_trie.rlp_nodes();
+            let state_bytes = state.state_trie.encode_trie();
             let mut storage_bytes: Vec<_> = state
                 .storage_tries
                 .0
@@ -198,7 +198,7 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
                     (
                         *addr,
                         trie.num_nodes(),
-                        alloy_primitives::bytes::Bytes::from(trie.rlp_nodes()),
+                        alloy_primitives::bytes::Bytes::from(trie.encode_trie()),
                     )
                 })
                 .collect();

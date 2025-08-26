@@ -864,9 +864,9 @@ impl MptTrie<'_> {
         self.nodes.len()
     }
 
-    pub fn rlp_nodes(&self) -> Vec<u8> {
+    pub fn encode_trie(&self) -> Vec<u8> {
         let mut payload = Vec::new();
-        self.rlp_nodes_internal(self.root_id, &mut payload);
+        self.encode_trie_internal(self.root_id, &mut payload);
 
         let mut encoded = Vec::new();
         alloy_rlp::Header { list: true, payload_length: payload.len() }.encode(&mut encoded);
@@ -874,28 +874,20 @@ impl MptTrie<'_> {
         encoded
     }
 
-    fn rlp_nodes_internal(&self, id: NodeId, out: &mut dyn alloy_rlp::BufMut) {
+    fn encode_trie_internal(&self, id: NodeId, out: &mut dyn alloy_rlp::BufMut) {
         let payload_length = self.payload_length_id(id);
         self.encode_id_with_payload_len(id, payload_length, out);
-
-        if self.calc_reference(id) ==
-            NodeRef::Digest(b256!(
-                "0x9ebc3533a6f93bc08e31c63766f94d6b03273d37906b43f604ad9549582f36cb"
-            ))
-        {
-            dbg!(&self.nodes[id as usize]);
-        }
 
         match self.nodes[id as usize] {
             NodeData::Branch(childs) => childs.iter().for_each(|c| {
                 if let Some(node) = c {
-                    self.rlp_nodes_internal(*node, out);
+                    self.encode_trie_internal(*node, out);
                 } else {
                     out.put_u8(alloy_rlp::EMPTY_STRING_CODE)
                 }
             }),
             NodeData::Extension(_, node) => {
-                self.rlp_nodes_internal(node, out);
+                self.encode_trie_internal(node, out);
             }
             _ => {}
         }
