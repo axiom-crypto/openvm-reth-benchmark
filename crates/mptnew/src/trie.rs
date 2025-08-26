@@ -230,14 +230,28 @@ impl<'a> MptTrie<'a> {
         }
 
         let child0_expected_node_ref = NodeRef::from_rlp_slice(&item0_header_start[..item0_length]);
-        let child0_id = self.decode_trie_internal(bytes, child0_expected_node_ref)?;
+        let child0 = {
+            if child0_expected_node_ref.as_slice() == NULL_NODE_REF_SLICE {
+                bytes.advance(1);
+                None
+            } else {
+                Some(self.decode_trie_internal(bytes, child0_expected_node_ref)?)
+            }
+        };
 
         let child1_expected_node_ref = NodeRef::from_rlp_slice(&item1_header_start[..item1_length]);
-        let child1_id = self.decode_trie_internal(bytes, child1_expected_node_ref)?;
+        let child1 = {
+            if child1_expected_node_ref.as_slice() == NULL_NODE_REF_SLICE {
+                bytes.advance(1);
+                None
+            } else {
+                Some(self.decode_trie_internal(bytes, child1_expected_node_ref)?)
+            }
+        };
 
         let mut childs: [Option<NodeId>; 16] = Default::default();
-        childs[0] = if child0_id == NULL_NODE_ID { None } else { Some(child0_id) };
-        childs[1] = if child1_id == NULL_NODE_ID { None } else { Some(child1_id) };
+        childs[0] = child0;
+        childs[1] = child1;
         for child in &mut childs[2..16] {
             let item_header_start = payload;
             let alloy_rlp::Header { payload_length: item_payload_length, .. } =
@@ -248,11 +262,17 @@ impl<'a> MptTrie<'a> {
             let child_expected_node_ref =
                 NodeRef::from_rlp_slice(&item_header_start[..item_length]);
 
-            let child_id = self.decode_trie_internal(bytes, child_expected_node_ref)?;
-            *child = if child_id == NULL_NODE_ID { None } else { Some(child_id) };
+            *child = {
+                if child_expected_node_ref.as_slice() == NULL_NODE_REF_SLICE {
+                    bytes.advance(1);
+                    None
+                } else {
+                    Some(self.decode_trie_internal(bytes, child_expected_node_ref)?)
+                }
+            }
         }
 
-        if payload.len() != 1 || payload[0] != alloy_rlp::EMPTY_STRING_CODE {
+        if payload != NULL_NODE_REF_SLICE {
             return Err(Error::ValueInBranch);
         }
 
@@ -296,6 +316,7 @@ impl<'a> MptTrie<'a> {
         }
     }
 
+    #[inline]
     fn encode_with_payload_len(
         &self,
         node_id: NodeId,
@@ -350,6 +371,7 @@ impl<'a> MptTrie<'a> {
     }
 
     /// Returns the length of the RLP payload of the node.
+    #[inline]
     fn payload_length(&self, node_id: NodeId) -> usize {
         match &self.nodes[node_id as usize] {
             NodeData::Null => 0,
@@ -382,6 +404,7 @@ impl<'a> MptTrie<'a> {
 
 // Public API
 impl<'a> MptTrie<'a> {
+    #[inline]
     pub fn hash(&self) -> B256 {
         match self.nodes[self.root_id as usize] {
             NodeData::Null => EMPTY_ROOT,
