@@ -10,6 +10,3 @@ mod node;
 
 #[cfg(test)]
 mod tests;
-
-#[cfg(feature = "build_mpt")]
-pub mod build_mpt;
