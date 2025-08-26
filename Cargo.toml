@@ -9,7 +9,7 @@ members = [
     "crates/storage/rpc-db",
     "crates/storage/witness-db",
     "crates/host-bench",
-    "crates/mptnew", "bin/guest-bench",
+    "crates/mptnew",
 ]
 exclude = []
 resolver = "2"

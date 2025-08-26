@@ -2968,15 +2968,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "guest-bench"
-version = "0.1.0"
-dependencies = [
- "bincode 2.0.1",
- "openvm-client-executor",
- "openvm-host-executor",
-]
-
-[[package]]
 name = "h2"
 version = "0.3.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
