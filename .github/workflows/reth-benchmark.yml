@@ -48,6 +48,7 @@ on:
           - prove-app
           - prove-stark
           - prove-evm
+          - generate-fixtures
         default: prove-stark
       profiling:
         type: choice
@@ -167,6 +168,7 @@ on:
 
 env:
   S3_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/results
+  S3_FIXTURE_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/fixtures
   S3_METRICS_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/metrics
   S3_FLAMEGRAPHS_PATH: s3://axiom-public-data-sandbox-us-east-1/benchmark/github/flamegraphs
   S3_FLAMEGRAPHS_URL: https://axiom-public-data-sandbox-us-east-1.s3.us-east-1.amazonaws.com/benchmark/github/flamegraphs
@@ -388,12 +390,21 @@ jobs:
         run: |
           mkdir -p rpc-cache
           mkdir -p .bench_metrics
+          mkdir -p fixtures
           RPC_1=${{ secrets.RPC_URL_1 }}
           MODE=${{ inputs.mode || github.event.inputs.mode }}
           BLOCK_NUMBER=${{ inputs.block_number || github.event.inputs.block_number }}
+          echo "BLOCK_NUMBER=${BLOCK_NUMBER}" >> $GITHUB_ENV
+          APP_LOG_BLOWUP=${{ inputs.app_log_blowup || github.event.inputs.app_log_blowup }}
+          LEAF_LOG_BLOWUP=${{ inputs.leaf_log_blowup || github.event.inputs.leaf_log_blowup }}
+          echo "APP_LOG_BLOWUP=${APP_LOG_BLOWUP}" >> $GITHUB_ENV
+          echo "LEAF_LOG_BLOWUP=${LEAF_LOG_BLOWUP}" >> $GITHUB_ENV
           HOST_PROFILE=${{ steps.set-build-profiles.outputs.host_profile }}
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
             OPTIONAL_ARGS="${OPTIONAL_ARGS} --profiling"
+          fi          
+          if [[ "${{ inputs.mode || github.event.inputs.mode }}" == "generate-fixtures" ]]; then
+            FIXTURES_PATH="--fixtures-path ./fixtures/"
           fi
           cat > run_benchmark.sh <<EOF
           ./target/$HOST_PROFILE/openvm-reth-benchmark-bin \
@@ -406,7 +417,7 @@ jobs:
             --segment-max-cells ${{ inputs.segment_max_cells || github.event.inputs.segment_max_cells }} \
             --num-children-leaf ${{ inputs.num_children_leaf || github.event.inputs.num_children_leaf || 1 }} \
             --num-children-internal ${{ inputs.num_children_internal || github.event.inputs.num_children_internal }} \
-            $OPTIONAL_ARGS
+            $OPTIONAL_ARGS $FIXTURES_PATH
           EOF
           chmod +x run_benchmark.sh
 
@@ -557,6 +568,11 @@ jobs:
           S3_MD_PATH="${{ env.S3_PATH }}/${METRIC_NAME}.md"
           s5cmd cp $MD_PATH $S3_MD_PATH
           echo "S3_MD_PATH=${S3_MD_PATH}" >> $GITHUB_ENV
+
+      - name: Upload fixtures
+        if: ${{ inputs.mode == 'generate-fixtures' || github.event.inputs.mode == 'generate-fixtures' }}
+        run: |
+          s5cmd cp "./fixtures/*" "${S3_FIXTURE_PATH}/reth-app${APP_LOG_BLOWUP}-leaf${LEAF_LOG_BLOWUP}-${BLOCK_NUMBER}/"
 
       ### Update gh-pages
       - uses: actions/checkout@v4
