@@ -8,6 +8,7 @@ fn panic_advance(error_info: &TryGetError) -> ! {
     );
 }
 
+/// A helper type to implement bytes::BufMut for bumpalo::collections::Vec<'a, u8>.
 pub(crate) struct BumpBytesMut<'a> {
     inner: bumpalo::collections::Vec<'a, u8>,
 }
@@ -29,6 +30,8 @@ impl<'a> BumpBytesMut<'a> {
     }
 }
 
+/// This implementation is taken from:
+/// https://github.com/tokio-rs/bytes/blob/4b53a29eb26716592ef2f00f925ef58ccb182e61/src/buf/buf_mut.rs#L1599
 unsafe impl BufMut for BumpBytesMut<'_> {
     #[inline(always)]
     fn remaining_mut(&self) -> usize {
@@ -62,5 +65,35 @@ unsafe impl BufMut for BumpBytesMut<'_> {
         // valid for `cap - len` bytes. The subtraction will not underflow since
         // `len <= cap`.
         unsafe { UninitSlice::from_raw_parts_mut(ptr.add(len), cap - len) }
+    }
+
+    // Specialize these methods so they can skip checking `remaining_mut`
+    // and `advance_mut`.
+    #[inline]
+    fn put<T: bytes::Buf>(&mut self, mut src: T)
+    where
+        Self: Sized,
+    {
+        // In case the src isn't contiguous, reserve upfront.
+        self.inner.reserve(src.remaining());
+
+        while src.has_remaining() {
+            let s = src.chunk();
+            let l = s.len();
+            self.inner.extend_from_slice(s);
+            src.advance(l);
+        }
+    }
+
+    #[inline]
+    fn put_slice(&mut self, src: &[u8]) {
+        self.inner.extend_from_slice(src);
+    }
+
+    #[inline]
+    fn put_bytes(&mut self, val: u8, cnt: usize) {
+        // If the addition overflows, then the `resize` will fail.
+        let new_len = self.len().saturating_add(cnt);
+        self.inner.resize(new_len, val);
     }
 }

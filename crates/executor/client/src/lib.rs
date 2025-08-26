@@ -21,7 +21,7 @@ use reth_primitives::Header;
 use reth_primitives_traits::block::Block as _;
 use reth_revm::db::CacheDB;
 
-use crate::io::{NewClientExecutorInput, NewClientExecutorInputWithState};
+use crate::io::{ClientExecutorInput, ClientExecutorInputWithState};
 
 /// Chain ID for Ethereum Mainnet.
 pub const CHAIN_ID_ETH_MAINNET: u64 = 0x1;
@@ -48,8 +48,8 @@ pub enum ChainVariant {
 }
 
 impl ClientExecutor {
-    pub fn execute(&self, pre_input: NewClientExecutorInput) -> eyre::Result<Header> {
-        let mut input = NewClientExecutorInputWithState::build(pre_input)?;
+    pub fn execute(&self, pre_input: ClientExecutorInput) -> eyre::Result<Header> {
+        let mut input = ClientExecutorInputWithState::build(pre_input)?;
 
         // Initialize the witnessed database with verified storage proofs.
         let witness_db = input.witness_db()?;

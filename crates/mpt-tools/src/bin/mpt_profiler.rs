@@ -3,7 +3,7 @@ static ALLOC: dhat::Alloc = dhat::Alloc;
 
 use bincode::config::standard;
 use dhat::Profiler;
-use openvm_client_executor::io::{NewClientExecutorInput, NewClientExecutorInputWithState};
+use openvm_client_executor::io::{ClientExecutorInput, ClientExecutorInputWithState};
 use openvm_primitives::chain_spec::mainnet;
 use reth_evm::execute::{BasicBlockExecutor, Executor};
 use reth_evm_ethereum::EthEvmConfig;
@@ -50,9 +50,9 @@ fn main() {
     let bincode_config = standard();
 
     // Pre-compute the post-state once
-    let (pre_input, _): (NewClientExecutorInput, _) =
+    let (pre_input, _): (ClientExecutorInput, _) =
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
-    let client_input = NewClientExecutorInputWithState::build(pre_input.clone()).unwrap();
+    let client_input = ClientExecutorInputWithState::build(pre_input.clone()).unwrap();
     let witness_db = client_input.witness_db().unwrap();
     let cache_db = CacheDB::new(&witness_db);
     let spec = Arc::new(mainnet());
@@ -104,10 +104,10 @@ fn profile_end_to_end(buffer: &[u8], executor_outcome: &ExecutionOutcome) {
     let bincode_config = standard();
 
     // Deserialize
-    let (pre_input, _): (NewClientExecutorInput, _) =
+    let (pre_input, _): (ClientExecutorInput, _) =
         bincode::serde::decode_from_slice(buffer, bincode_config).unwrap();
 
-    let mut client_input = NewClientExecutorInputWithState::build(pre_input).unwrap();
+    let mut client_input = ClientExecutorInputWithState::build(pre_input).unwrap();
 
     // Create witness DB
     let _witness_db = client_input.witness_db().unwrap();
@@ -121,14 +121,14 @@ fn profile_deserialize(buffer: &[u8]) {
     let _profiler = Profiler::new_heap();
     let bincode_config = standard();
 
-    let (_client_input, _): (NewClientExecutorInput, _) =
+    let (_client_input, _): (ClientExecutorInput, _) =
         bincode::serde::decode_from_slice(buffer, bincode_config).unwrap();
 }
 
-fn profile_witness_db(client_input: NewClientExecutorInput) {
+fn profile_witness_db(client_input: ClientExecutorInput) {
     let _profiler = Profiler::new_heap();
 
-    let input = NewClientExecutorInputWithState::build(client_input).unwrap();
+    let input = ClientExecutorInputWithState::build(client_input).unwrap();
 
     let _witness_db = input.witness_db().unwrap();
 }

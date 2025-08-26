@@ -1,6 +1,6 @@
 use alloy_provider::RootProvider;
 use bincode::config::standard;
-use openvm_client_executor::{io::NewClientExecutorInput, ClientExecutor};
+use openvm_client_executor::{io::ClientExecutorInput, ClientExecutor};
 use openvm_host_executor::HostExecutor;
 use tracing_subscriber::{
     filter::EnvFilter, fmt, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
@@ -38,7 +38,7 @@ async fn test_e2e_ethereum() {
     // Test serialization/deserialization round-trip
     let bincode_config = standard();
     let buffer = bincode::serde::encode_to_vec(&client_input, bincode_config).unwrap();
-    let (deserialized_input, _): (NewClientExecutorInput, _) =
+    let (deserialized_input, _): (ClientExecutorInput, _) =
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
 
     // Execute the client with the original input

@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use alloy_rlp::Encodable;
 use bumpalo::Bump;
 use bytes::Buf;
-use revm_primitives::{b256, keccak256, B256};
+use revm_primitives::{keccak256, B256};
 use smallvec::SmallVec;
 
 use crate::{
@@ -12,39 +12,45 @@ use crate::{
         encoded_path_eq_nibs, encoded_path_strip_prefix, lcp, prefix_to_nibs, to_encoded_path,
         to_nibs,
     },
-    node::{NodeData, NodeId, NodeRef, NodeRefError},
+    node::{NodeData, NodeId, NodeRef},
 };
 
-/// Root hash of an empty trie.
-pub const EMPTY_ROOT: B256 =
-    b256!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
+/// Initial capacity of [`MptTrie`]'s `rlp_scratch`.
+const RLP_SCRATCH_INIT_CAPACITY: usize = 600;
 
-const NODE_RLP_MAX_LENGTH: usize = 600;
-const VALUE_RLP_SIZE: usize = 200;
+const VALUE_RLP_BUFFER_CAPACITY: usize = 200;
 
+/// Sentinel index representing the null node when decoding and in internal references.
+/// In a default MPT, `nodes[0]` starts as `Null`, but the root may later be changed to a
+/// non-null node (e.g. `Digest`) for convenience. `NULL_NODE_ID` is still used by the decoder
+/// as the canonical "no node" identifier.
 const NULL_NODE_ID: NodeId = 0;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    /// Node reference does not match the expected node reference.
+    /// Node reference does not match the expected node reference in the parent.
     #[error("node reference mismatch")]
     NodeRefMismatch,
     /// Triggered when an operation reaches an unresolved node. The associated `B256`
     /// value provides details about the unresolved node.
     #[error("reached an unresolved node: {0:#}")]
     NodeNotResolved(B256),
+    /// Represents errors related to the RLP encoding and decoding.
     #[error("rlp decode error: {0}")]
     RlpError(#[from] alloy_rlp::Error),
+    /// Occurs when a value is unexpectedly found in a branch node.
     #[error("branch node with value")]
     ValueInBranch,
-    #[error("node reference error: {0}")]
-    NodeRefError(#[from] NodeRefError),
 }
 
+/// Arena-based implementation that stores all nodes in a flat vector and uses indices for better
+/// memory layout and performance. The lifetime parameter `'a` allows zero-copy deserialization by
+/// borrowing from the input buffer.
 #[derive(Debug, Clone)]
 pub struct MptTrie<'a> {
     root_id: NodeId,
 
+    /// List of MPT nodes.
     nodes: Vec<NodeData<'a>>,
 
     /// Cache. Hashing/encoding often needs "what would this node look like in its parent"
@@ -54,6 +60,7 @@ pub struct MptTrie<'a> {
     /// need to compute its keccak hash. Keeping it here avoids repeated allocations.
     rlp_scratch: RefCell<Vec<u8>>,
 
+    /// Bump allocation area.
     bump: &'a Bump,
 }
 
@@ -66,15 +73,15 @@ impl<'a> MptTrie<'a> {
         self.nodes.len()
     }
 
-    pub fn with_capacity(bump: &'a Bump, cap: usize) -> Self {
-        let mut nodes = Vec::with_capacity(cap);
-        let mut cached_references = Vec::with_capacity(cap);
+    pub fn with_capacity(bump: &'a Bump, capacity: usize) -> Self {
+        let mut nodes = Vec::with_capacity(capacity);
+        let mut cached_references = Vec::with_capacity(capacity);
         nodes.push(NodeData::Null);
         cached_references.push(RefCell::new(None));
 
         Self {
             nodes,
-            rlp_scratch: RefCell::new(Vec::with_capacity(NODE_RLP_MAX_LENGTH)),
+            rlp_scratch: RefCell::new(Vec::with_capacity(RLP_SCRATCH_INIT_CAPACITY)),
             cached_references,
             bump,
             root_id: 0,
@@ -91,6 +98,8 @@ unsafe fn advance_unchecked<'a>(buf: &mut &'a [u8], cnt: usize) -> &'a [u8] {
 }
 
 impl<'a> MptTrie<'a> {
+    /// Encodes the MPT into an array of bytes. This is only used in the host, as a result it's not
+    /// performance-critical.
     pub fn encode_trie(&self) -> Vec<u8> {
         let mut payload = Vec::new();
         self.encode_trie_internal(self.root_id, &mut payload);
@@ -119,18 +128,34 @@ impl<'a> MptTrie<'a> {
         }
     }
 
+    /// Decodes the given `bytes` into and creates an `MptTrie`.
     pub fn decode_trie(
         bump: &'a Bump,
         bytes: &mut &'a [u8],
         num_nodes: usize,
     ) -> Result<Self, Error> {
-        let mut trie = Self::with_capacity(bump, num_nodes + num_nodes / 10);
+        // A growth factor applied to the node vector's capacity during deserialization.
+        // This is a pragmatic optimization to pre-allocate a buffer for nodes that will be
+        // added during the `update` phase. It prevents a "reallocation storm" where the
+        // main trie and dozens of storage tries all try to reallocate their full node
+        // vectors on the first update.
+        // TODO: this is imperfect solution and the constant is somewhat arbitrary (although
+        // reasonable)
+        //
+        // Simple improvement: run benchmark on a set of blocks (e.g. 100
+        // blocks) and select the best constant.
+        //
+        // More advanced improvement: either pre-execute block at guest to know exact allocations in
+        // advance, or allocate a separate arena specifically for updates.
+        let capacity = num_nodes + num_nodes / 10;
+        let mut trie = Self::with_capacity(bump, capacity);
 
         let header = alloy_rlp::Header::decode(bytes).unwrap();
         if !header.list {
             return Err(Error::RlpError(alloy_rlp::Error::UnexpectedString));
         }
 
+        // construct the expected root reference
         let root_ref = {
             let mut buf = *bytes;
             let rlp_node_header_start = buf;
@@ -168,6 +193,7 @@ impl<'a> MptTrie<'a> {
         let rlp_node_length = rlp_node_header_start.len() - bytes.len();
 
         let rlp_node = &rlp_node_header_start[..rlp_node_length];
+        // calculate node's reference and ensure it matches the `expected_node_ref` from parent.
         let node_ref = {
             if rlp_node.len() < 32 {
                 if rlp_node != expected_node_ref.as_slice() {
@@ -199,12 +225,14 @@ impl<'a> MptTrie<'a> {
             return Ok(node_id);
         }
 
+        // first payload item
         let item0_header_start = payload;
         let alloy_rlp::Header { payload_length: item0_payload_length, .. } =
             alloy_rlp::Header::decode(&mut payload)?;
         let item0_payload_start = unsafe { advance_unchecked(&mut payload, item0_payload_length) };
         let item0_length = item0_header_start.len() - payload.len();
 
+        // second payload item
         let item1_header_start = payload;
         let alloy_rlp::Header { payload_length: item1_payload_length, .. } =
             alloy_rlp::Header::decode(&mut payload)?;
@@ -212,6 +240,7 @@ impl<'a> MptTrie<'a> {
         let item1_length = item1_header_start.len() - payload.len();
 
         if payload.is_empty() {
+            // either an extension or leaf
             let path = &item0_payload_start[..item0_payload_length];
             let prefix = path[0];
             if (prefix & (2 << 4)) == 0 {
@@ -229,6 +258,7 @@ impl<'a> MptTrie<'a> {
             }
         }
 
+        // branch
         let child0_expected_node_ref = NodeRef::from_rlp_slice(&item0_header_start[..item0_length]);
         let child0 = {
             if child0_expected_node_ref.as_slice() == NULL_NODE_REF_SLICE {
@@ -295,7 +325,6 @@ impl<'a> MptTrie<'a> {
                 let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
 
                 if rlp_length < 32 {
-                    // let mut encoded = Vec::with_capacity(rlp_length);
                     let mut encoded = BumpBytesMut::with_capacity_in(rlp_length, self.bump);
                     self.encode_with_payload_len(node_id, payload_length, &mut encoded);
                     debug_assert_eq!(encoded.len(), rlp_length);
@@ -309,6 +338,10 @@ impl<'a> MptTrie<'a> {
                     debug_assert_eq!(scratch.len(), rlp_length);
 
                     let digest = keccak256(&*scratch);
+                    // [shayanh]: This copy could have been avoided if we had allocated keccak's output
+                    // in the bump area from the beginning. This needs to have a
+                    // separate keccak implementation. Since I wanted to stick
+                    // to alloy's keccak, I didn't create a new one.
                     let digest_slice = self.bump.alloc_slice_copy(digest.as_slice());
                     NodeRef::Digest(digest_slice)
                 }
@@ -404,10 +437,11 @@ impl<'a> MptTrie<'a> {
 
 // Public API
 impl<'a> MptTrie<'a> {
+    /// Root hash of the MPT.
     #[inline]
     pub fn hash(&self) -> B256 {
         match self.nodes[self.root_id as usize] {
-            NodeData::Null => EMPTY_ROOT,
+            NodeData::Null => reth_trie::EMPTY_ROOT_HASH,
             _ => match self.cached_references[self.root_id as usize]
                 .borrow_mut()
                 .get_or_insert_with(|| self.calc_reference(self.root_id))
@@ -443,13 +477,14 @@ impl<'a> MptTrie<'a> {
         self.insert_internal(self.root_id, key_nibs, value)
     }
 
+    /// Inserts an RLP-encoded value into the trie.
     #[inline]
     pub fn insert_rlp(
         &mut self,
         key: &[u8],
         value: impl alloy_rlp::Encodable,
     ) -> Result<bool, Error> {
-        let mut rlp_bytes = BumpBytesMut::with_capacity_in(VALUE_RLP_SIZE, self.bump);
+        let mut rlp_bytes = BumpBytesMut::with_capacity_in(VALUE_RLP_BUFFER_CAPACITY, self.bump);
         value.encode(&mut rlp_bytes);
         self.insert(key, rlp_bytes.into_inner().into_bump_slice())
     }
@@ -465,15 +500,11 @@ impl<'a> MptTrie<'a> {
     }
 
     #[inline]
-    pub fn root_id(&self) -> NodeId {
-        self.root_id
-    }
-
-    #[inline]
     pub fn is_empty(&self) -> bool {
         matches!(&self.nodes[self.root_id as usize], NodeData::Null)
     }
 
+    /// Reserves additional capacity for the trie.
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
         self.nodes.reserve(additional);
@@ -774,61 +805,5 @@ impl<'a> MptTrie<'a> {
             self.invalidate_ref_cache(node_id);
         }
         Ok(updated)
-    }
-
-    // pub fn verify_tree(&self) {
-    //     self.verify_tree_internal(self.root_id);
-    // }
-
-    // fn verify_tree_internal(&self, node_id: NodeId) {
-    //     if let NodeData::Digest(digest) = &self.nodes[node_id as usize] {
-    //         let actual_node_ref = self.calc_reference(node_id);
-    //         assert_eq!(actual_node_ref.as_slice(), *digest);
-    //         return;
-    //     }
-
-    //     let actual_node_ref = self.calc_reference(node_id);
-    //     {
-    //         let payload_length = self.payload_length(node_id);
-    //         let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
-    //         if rlp_length < 32 {
-    //             // let mut encoded = Vec::with_capacity(rlp_length);
-    //             let mut encoded = Vec::with_capacity(rlp_length);
-    //             self.encode_with_payload_len(node_id, payload_length, &mut encoded);
-    //             debug_assert_eq!(encoded.len(), rlp_length);
-
-    //             assert_eq!(actual_node_ref.as_slice(), encoded);
-    //         } else {
-    //             let mut scratch = self.rlp_scratch.borrow_mut();
-    //             scratch.clear();
-
-    //             self.encode_with_payload_len(node_id, payload_length, &mut *scratch);
-    //             debug_assert_eq!(scratch.len(), rlp_length);
-
-    //             let digest = keccak256(&*scratch);
-    //             assert_eq!(actual_node_ref.as_slice(), digest);
-    //         }
-    //     }
-
-    //     match &self.nodes[node_id as usize] {
-    //         NodeData::Branch(childs) => {
-    //             for child in childs {
-    //                 if let Some(child) = child {
-    //                     self.verify_tree_internal(*child);
-    //                 }
-    //             }
-    //         }
-    //         NodeData::Extension(_, ext_node) => {
-    //             self.verify_tree_internal(*ext_node);
-    //         }
-    //         _ => {}
-    //     }
-    // }
-
-    #[allow(unused)]
-    pub(crate) fn print_tree(&self) {
-        for (i, node) in self.nodes.iter().enumerate() {
-            println!("{i} {node:?}");
-        }
     }
 }
