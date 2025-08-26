@@ -4,21 +4,32 @@ use openvm_continuations::verifier::{
 };
 use openvm_native_circuit::{NativeCpuBuilder, NATIVE_MAX_TRACE_HEIGHTS};
 use openvm_native_recursion::hints::Hintable;
-use openvm_sdk::config::{DEFAULT_NUM_CHILDREN_INTERNAL, DEFAULT_NUM_CHILDREN_LEAF};
 use openvm_sdk::{
-    config::SdkVmConfig,
+    config::{SdkVmConfig, DEFAULT_NUM_CHILDREN_INTERNAL, DEFAULT_NUM_CHILDREN_LEAF},
     keygen::{AggProvingKey, AppProvingKey},
     SC,
 };
-use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2Engine;
-use openvm_stark_sdk::engine::{StarkEngine, StarkFriEngine};
-use openvm_stark_sdk::openvm_stark_backend::proof::Proof;
-use openvm_stark_sdk::openvm_stark_backend::prover::hal::DeviceDataTransporter;
+use openvm_stark_sdk::{
+    config::baby_bear_poseidon2::BabyBearPoseidon2Engine,
+    engine::{StarkEngine, StarkFriEngine},
+    openvm_stark_backend::{proof::Proof, prover::hal::DeviceDataTransporter},
+};
+
+use clap::Parser;
+
+#[derive(Debug, Parser)]
+struct Args {
+    #[clap(long, default_value = "false")]
+    skip_leaf: bool,
+    #[clap(long, default_value = "false")]
+    skip_internal: bool,
+}
 
 fn main() {
+    let args = Args::parse();
     let Fixtures { app_proof, leaf_proofs, app_pk, agg_pk } = read_fixtures();
     let AggProvingKey { leaf_vm_pk, internal_vm_pk, internal_committed_exe, .. } = agg_pk;
-    {
+    if !args.skip_leaf {
         let start = std::time::Instant::now();
         let engine = BabyBearPoseidon2Engine::new(leaf_vm_pk.fri_params);
         let d_pk = engine.device().transport_pk_to_device(&leaf_vm_pk.vm_pk);
@@ -44,7 +55,7 @@ fn main() {
             start.elapsed().as_secs_f64()
         );
     }
-    {
+    if !args.skip_internal {
         let start = std::time::Instant::now();
         let engine = BabyBearPoseidon2Engine::new(internal_vm_pk.fri_params);
         let d_pk = engine.device().transport_pk_to_device(&internal_vm_pk.vm_pk);

@@ -5328,6 +5328,7 @@ name = "openvm-reth-verifier-bench"
 version = "0.1.0"
 dependencies = [
  "bitcode",
+ "clap",
  "openvm-circuit",
  "openvm-continuations",
  "openvm-native-circuit",

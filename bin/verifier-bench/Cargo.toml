@@ -15,6 +15,7 @@ openvm-native-recursion = { workspace = true }
 openvm-stark-sdk.workspace = true
 
 bitcode.workspace = true
+clap = { version = "4.5.7", features = ["derive", "env"] }
 
 [lints]
 workspace = true
@@ -27,4 +28,3 @@ evm-prove = ["openvm-sdk/evm-prove"]
 evm-verify = ["evm-prove", "openvm-sdk/evm-verify"]
 jemalloc = ["openvm-sdk/jemalloc"]
 nightly-features = ["openvm-sdk/nightly-features"]
-
