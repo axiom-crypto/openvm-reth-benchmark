@@ -12,7 +12,7 @@ fn test_mpt_from_proof_reconstruction() {
 
     // Use the build_mpt helpers instead of touching private fields/methods.
     // We'll construct a tiny proof by serializing nodes via to_full_rlp and decoding them back.
-    use openvm_mpt::mpt::NodeData;
+    // use openvm_mpt::mpt::NodeData;
 
     // Build a leaf trie and serialize it
     let mut leaf_trie = MptTrie::default();
@@ -25,7 +25,7 @@ fn test_mpt_from_proof_reconstruction() {
     let mut ext_trie = MptTrie::default();
     ext_trie.insert(b"\x01\x03", b"dummy").unwrap(); // ensure we have an extension-like structure
                                                      // Replace the child with a digest of the leaf
-    let leaf_digest = leaf_trie.hash();
+    let _leaf_digest = leaf_trie.hash();
     // Serialize ext and then decode a minimal proof list [ext, leaf]
     let ext_rlp = ext_trie.to_full_rlp();
 

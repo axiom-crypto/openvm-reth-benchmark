@@ -14,10 +14,7 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
     // Check for BLOCK environment variable, default to 23100006
     let block_number = std::env::var("BLOCK").unwrap_or_else(|_| "23100006".to_string());
 
-    let input_file = format!(
-        "/Users/shayan/src/github.com/axiom-crypto/openvm-reth-benchmark/rpc-cache/input/1/{}.bin",
-        block_number
-    );
+    let input_file = format!("{}.bin", block_number);
 
     let buffer = fs::read(&input_file)
         .unwrap_or_else(|_| panic!("Failed to read benchmark data from '{}'. Run 'BLOCK={} cargo run --bin generate_benchmark_data' first to generate it.", input_file, block_number));

@@ -30,10 +30,7 @@ fn main() {
         .parse::<u64>()
         .unwrap_or_else(|_| panic!("Invalid BLOCK number"));
 
-    let input_file = format!(
-        "/Users/shayan/src/github.com/axiom-crypto/openvm-reth-benchmark/rpc-cache/input/1/{}.bin",
-        block_number
-    );
+    let input_file = format!("{}.bin", block_number);
 
     println!("MPT Memory Profiler");
     println!("Operation: {}", operation);
