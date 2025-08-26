@@ -4,7 +4,7 @@ use alloy_consensus::{TxEnvelope, TxReceipt};
 use alloy_primitives::Bloom;
 use alloy_provider::{network::Ethereum, Provider};
 use eyre::{eyre, Ok};
-use openvm_client_executor::io::NewClientExecutorInput;
+use openvm_client_executor::io::ClientExecutorInput;
 use openvm_mpt::EthereumState;
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
@@ -33,7 +33,7 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
     }
 
     /// Executes the block with the given block number.
-    pub async fn execute(&self, block_number: u64) -> eyre::Result<NewClientExecutorInput> {
+    pub async fn execute(&self, block_number: u64) -> eyre::Result<ClientExecutorInput> {
         // Fetch the current block and the previous block from the provider.
         tracing::info!("fetching the current block and the previous block");
         let current_block = self
@@ -211,7 +211,7 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
         };
 
         // Create the client input.
-        let client_input = NewClientExecutorInput {
+        let client_input = ClientExecutorInput {
             current_block,
             ancestor_headers,
             parent_state_bytes: state_bytes,

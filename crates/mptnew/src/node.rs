@@ -33,7 +33,8 @@ pub(crate) enum NodeRef<'a> {
     /// used for short encodings that are less than 32 bytes in length.
     Bytes(&'a [u8]),
     /// Represents an indirect reference to another node using the Keccak hash of its long
-    /// encoding. Used for encodings that are not less than 32 bytes in length.
+    /// encoding, so its length is always 32. Used for encodings that are not less than 32 bytes in
+    /// length.
     Digest(&'a [u8]),
 }
 
@@ -71,12 +72,4 @@ impl<'a> NodeRef<'a> {
             Self::Bytes(slice)
         }
     }
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum NodeRefError {
-    #[error("rlp decode error: {0}")]
-    RlpError(#[from] alloy_rlp::Error),
-    #[error("digest length mismatch: {0}")]
-    DigestLengthMismatch(#[from] core::array::TryFromSliceError),
 }

@@ -5,6 +5,7 @@ use revm_primitives::{keccak256, map::DefaultHashBuilder, HashMap, B256};
 
 use crate::{Error, MptTrie};
 
+/// Serialized Ethereum state.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct EthereumStateBytes {
     pub state_trie: (usize, bytes::Bytes),
@@ -31,6 +32,9 @@ impl EthereumState {
 
     pub fn update_from_bundle_state(&mut self, bundle_state: &BundleState) -> Result<(), Error> {
         for (address, account) in &bundle_state.state {
+            // A single insertion can split a leaf into an extension and a branch with two leaves,
+            // adding up to 3 new nodes. A deletion can also cause node modifications.
+            // We use a pessimistic multiplier of 4 to be safe.
             const MPT_NODE_MULTIPLIER: usize = 4;
 
             let num_changed_accounts = bundle_state.state.len();
