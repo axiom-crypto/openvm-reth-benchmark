@@ -41,10 +41,7 @@ arm64|aarch64)
     RUSTFLAGS="-Ctarget-cpu=native"
     ;;
 x86_64|amd64)
-    # cuda currently doesn't work with plonky3 avx
-    if [ "$USE_CUDA" != "true" ]; then
-        RUSTFLAGS="-Ctarget-cpu=native"
-    fi
+    RUSTFLAGS="-Ctarget-cpu=native"
     ;;
 *)
 echo "Unsupported architecture: $arch"
