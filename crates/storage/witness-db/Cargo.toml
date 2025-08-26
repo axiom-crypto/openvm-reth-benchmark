@@ -11,6 +11,7 @@ serde.workspace = true
 
 # workspace
 openvm-primitives.workspace = true
+openvm-mpt.workspace = true
 
 # reth
 reth-storage-errors.workspace = true

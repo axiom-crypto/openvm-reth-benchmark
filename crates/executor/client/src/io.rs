@@ -1,13 +1,16 @@
 use std::iter::once;
 
-use eyre::{OptionExt, Result};
+use eyre::Result;
 use itertools::Itertools;
-use openvm_mpt::{mpt::EMPTY_ROOT, EthereumState};
-use openvm_witness_db::WitnessDb;
+use openvm_mpt::EthereumState;
+use reth_evm::execute::ProviderError;
 use reth_primitives::{Block, Header, TransactionSigned};
-use reth_trie::TrieAccount;
-use revm::state::{AccountInfo, Bytecode};
-use revm_primitives::{keccak256, map::DefaultHashBuilder, Address, HashMap, B256, U256};
+use reth_trie::{TrieAccount, EMPTY_ROOT_HASH};
+use revm::{
+    state::{AccountInfo, Bytecode},
+    DatabaseRef,
+};
+use revm_primitives::{keccak256, Address, HashMap, B256, U256};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
@@ -44,7 +47,7 @@ impl ClientExecutorInput {
     }
 
     /// Creates a [`WitnessDb`].
-    pub fn witness_db(&self) -> Result<WitnessDb> {
+    pub fn witness_db(&self) -> Result<StateDb<'_>> {
         <Self as WitnessInput>::witness_db(self)
     }
 }
@@ -105,93 +108,110 @@ pub trait WitnessInput {
     /// implementing this trait causes a zkVM run to cost over 5M cycles more. To avoid this, define
     /// a method inside the type that calls this trait method instead.
     #[inline(always)]
-    fn witness_db(&self) -> Result<WitnessDb> {
+    fn witness_db(&self) -> Result<StateDb<'_>> {
         let state = self.state();
 
         if self.state_anchor() != state.state_root() {
-            eyre::bail!("parent state root mismatch");
+            eyre::bail!("Mismatched state root");
         }
 
-        for (hashed_address, storage_trie) in &state.storage_tries.0 {
-            let account_in_trie =
-                state.state_trie.get_rlp::<TrieAccount>(hashed_address.as_slice())?;
-            let expected_storage_root = account_in_trie.map_or(EMPTY_ROOT, |a| a.storage_root);
-            if storage_trie.hash() != expected_storage_root {
-                eyre::bail!("storage root hash mismatch")
+        for (hashed_address, storage_trie) in state.storage_tries.0.iter() {
+            let account =
+                state.state_trie.get_rlp::<TrieAccount>(hashed_address.as_slice()).unwrap();
+            let storage_root = account.map_or(EMPTY_ROOT_HASH, |a| a.storage_root);
+            if storage_root != storage_trie.hash() {
+                eyre::bail!("Mismatched storage root");
             }
         }
 
-        let bytecodes_by_hash =
+        let bytecode_by_hash =
             self.bytecodes().map(|code| (code.hash_slow(), code)).collect::<HashMap<_, _>>();
 
-        let state_requests_iter = self.state_requests();
-        let (lower, _) = state_requests_iter.size_hint();
-        let mut accounts = HashMap::with_capacity_and_hasher(lower, DefaultHashBuilder::default());
-        let mut storage = HashMap::with_capacity_and_hasher(lower, DefaultHashBuilder::default());
-
-        for (&address, slots) in state_requests_iter {
-            let hashed_address = keccak256(address);
-
-            let account_in_trie =
-                state.state_trie.get_rlp::<TrieAccount>(hashed_address.as_slice())?;
-
-            accounts.insert(
-                address,
-                match account_in_trie {
-                    Some(account_in_trie) => AccountInfo {
-                        balance: account_in_trie.balance,
-                        nonce: account_in_trie.nonce,
-                        code_hash: account_in_trie.code_hash,
-                        code: Some(
-                            (*bytecodes_by_hash
-                                .get(&account_in_trie.code_hash)
-                                .ok_or_eyre("missing bytecode")?)
-                            // Cloning here is fine as `Bytes` is cheap to clone.
-                            .to_owned(),
-                        ),
-                    },
-                    _ => Default::default(),
-                },
-            );
-
-            if !slots.is_empty() {
-                let mut address_storage =
-                    HashMap::with_capacity_and_hasher(slots.len(), DefaultHashBuilder::default());
-
-                let storage_trie = state
-                    .storage_tries
-                    .0
-                    .get(&hashed_address)
-                    .ok_or_eyre("parent state does not contain storage trie")?;
-
-                for &slot in slots {
-                    let slot_value = storage_trie
-                        .get_rlp::<U256>(keccak256(slot.to_be_bytes::<32>()).as_slice())?
-                        .unwrap_or_default();
-                    address_storage.insert(slot, slot_value);
-                }
-
-                storage.insert(address, address_storage);
-            }
-        }
-
         // Verify and build block hashes
-        let headers_iter = self.headers();
-        let (lower, _) = headers_iter.size_hint();
-        let mut block_hashes: HashMap<u64, B256, _> =
-            HashMap::with_capacity_and_hasher(lower, DefaultHashBuilder::default());
-        for (child_header, parent_header) in headers_iter.tuple_windows() {
+        let mut block_hashes: HashMap<u64, B256> = HashMap::with_hasher(Default::default());
+        for (child_header, parent_header) in self.headers().tuple_windows() {
             if parent_header.number != child_header.number - 1 {
-                eyre::bail!("non-consecutive blocks");
+                eyre::bail!("Invalid header block number");
             }
 
-            if parent_header.hash_slow() != child_header.parent_hash {
-                eyre::bail!("parent hash mismatch");
+            let parent_header_hash = parent_header.hash_slow();
+            if parent_header_hash != child_header.parent_hash {
+                eyre::bail!("Invalid header parent hash");
             }
 
             block_hashes.insert(parent_header.number, child_header.parent_hash);
         }
 
-        Ok(WitnessDb { accounts, storage, block_hashes })
+        Ok(StateDb::new(state, block_hashes, bytecode_by_hash))
+    }
+}
+
+#[derive(Debug)]
+pub struct StateDb<'a> {
+    inner: &'a EthereumState,
+    block_hashes: HashMap<u64, B256>,
+    bytecode_by_hash: HashMap<B256, &'a Bytecode>,
+}
+
+impl<'a> StateDb<'a> {
+    pub fn new(
+        state: &'a EthereumState,
+        block_hashes: HashMap<u64, B256>,
+        bytecode_by_hash: HashMap<B256, &'a Bytecode>,
+    ) -> Self {
+        Self { inner: state, block_hashes, bytecode_by_hash }
+    }
+}
+
+impl DatabaseRef for StateDb<'_> {
+    /// The database error type.
+    type Error = ProviderError;
+
+    /// Get basic account information.
+    fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
+        let hashed_address = keccak256(address);
+        let hashed_address = hashed_address.as_slice();
+
+        let account_in_trie = self.inner.state_trie.get_rlp::<TrieAccount>(hashed_address).unwrap();
+
+        let account = account_in_trie.map(|account_in_trie| AccountInfo {
+            balance: account_in_trie.balance,
+            nonce: account_in_trie.nonce,
+            code_hash: account_in_trie.code_hash,
+            code: None,
+        });
+
+        Ok(account)
+    }
+
+    /// Get account code by its hash.
+    fn code_by_hash_ref(&self, hash: B256) -> Result<Bytecode, Self::Error> {
+        Ok(self.bytecode_by_hash.get(&hash).map(|code| (*code).clone()).unwrap())
+    }
+
+    /// Get storage value of address at index.
+    fn storage_ref(&self, address: Address, index: U256) -> Result<U256, Self::Error> {
+        let hashed_address = keccak256(address);
+        let hashed_address = hashed_address.as_slice();
+
+        let storage_trie = self
+            .inner
+            .storage_tries
+            .0
+            .get(hashed_address)
+            .expect("A storage trie must be provided for each account");
+
+        Ok(storage_trie
+            .get_rlp::<U256>(keccak256(index.to_be_bytes::<32>()).as_slice())
+            .expect("Can get from MPT")
+            .unwrap_or_default())
+    }
+
+    /// Get block hash by block number.
+    fn block_hash_ref(&self, number: u64) -> Result<B256, Self::Error> {
+        Ok(*self
+            .block_hashes
+            .get(&number)
+            .expect("A block hash must be provided for each block number"))
     }
 }

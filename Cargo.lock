@@ -5592,6 +5592,7 @@ dependencies = [
 name = "openvm-witness-db"
 version = "0.1.0"
 dependencies = [
+ "openvm-mpt",
  "openvm-primitives",
  "reth-revm",
  "reth-storage-errors",

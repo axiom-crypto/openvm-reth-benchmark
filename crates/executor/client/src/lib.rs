@@ -99,6 +99,8 @@ impl ClientExecutor {
             vec![executor_output.result.requests],
         );
 
+        drop(witness_db);
+
         // Verify the state root.
         let state_root = profile!("compute state root", {
             input.parent_state.update_from_bundle_state(&executor_outcome.bundle);
