@@ -11,6 +11,9 @@ use revm_primitives::{keccak256, map::DefaultHashBuilder, Address, HashMap, B256
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
+/// Bump area size in bytes.
+const BUMP_AREA_SIZE: usize = 1000 * 1000;
+
 /// The input for the client to execute a block and fully verify the STF (state transition
 /// function).
 #[serde_as]
@@ -43,7 +46,7 @@ impl ClientExecutorInputWithState {
     /// Parses `input.parent_state_bytes` into `EthereumState` and verifies state and storage roots.
     pub fn build(input: ClientExecutorInput) -> Result<Self> {
         let input = Box::leak(Box::new(input));
-        let bump = Box::leak(Box::new(Bump::with_capacity(1000 * 1000)));
+        let bump = Box::leak(Box::new(Bump::with_capacity(BUMP_AREA_SIZE)));
 
         let state = {
             let (state_num_nodes, state_bytes) = &input.parent_state_bytes.state_trie;

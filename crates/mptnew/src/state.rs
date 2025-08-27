@@ -35,7 +35,7 @@ impl EthereumState {
             // A single insertion can split a leaf into an extension and a branch with two leaves,
             // adding up to 3 new nodes. A deletion can also cause node modifications.
             // We use a pessimistic multiplier of 4 to be safe.
-            const MPT_NODE_MULTIPLIER: usize = 4;
+            const MPT_NODE_MULTIPLIER: usize = 3;
 
             let num_changed_accounts = bundle_state.state.len();
             self.state_trie.reserve(num_changed_accounts * MPT_NODE_MULTIPLIER);
