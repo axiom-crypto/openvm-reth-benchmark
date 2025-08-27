@@ -276,7 +276,7 @@ dependencies = [
  "alloy-rlp",
  "alloy-serde",
  "alloy-sol-types",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "serde",
  "serde_json",
  "thiserror",
@@ -841,9 +841,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.18.1"
+version = "3.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "793db76d6187cd04dff33004d8e6c9cc4e05cd330500379d2394209271b4aeee"
+checksum = "46c5e41b57b8bba42a04676d81cb89e9ee8e859a1a66f80a5a72e1cb76b34d43"
 
 [[package]]
 name = "byte-slice-cast"
@@ -1943,6 +1943,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "mptnew"
+version = "0.1.0"
+dependencies = [
+ "alloy-rlp",
+ "bumpalo",
+ "bytes",
+ "reth-trie",
+ "revm",
+ "revm-primitives",
+ "serde",
+ "smallvec",
+ "thiserror",
+]
+
+[[package]]
 name = "num"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2216,8 +2231,10 @@ version = "0.1.0"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
+ "bumpalo",
  "eyre",
  "itertools 0.14.0",
+ "mptnew",
  "openvm-mpt",
  "openvm-primitives",
  "openvm-witness-db",
