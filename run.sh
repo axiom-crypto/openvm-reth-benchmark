@@ -1,9 +1,9 @@
 #!/bin/bash
 
-USE_CUDA=false
-if [ "$1" == "cuda" ]; then
-    USE_CUDA=true
-fi
+USE_CUDA=true
+# if [ "$1" == "cuda" ]; then
+#     USE_CUDA=true
+# fi
 
 set -e
 cd bin/client-eth
@@ -19,7 +19,7 @@ cd ../..
 
 mkdir -p rpc-cache
 source .env
-MODE=execute # can be execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
+MODE=prove-stark # can be execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
 PROFILE="release"
 FEATURES="metrics,jemalloc,tco,unprotected"
 BLOCK_NUMBER=23100006
