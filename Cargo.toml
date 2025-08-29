@@ -119,33 +119,33 @@ alloy-eips = { version = "1.0.9", default-features = false }
 alloy-trie = "0.8.1"
 alloy-hardforks = "0.2.7"
 
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0-rc.7", default-features = false }
-openvm-cuda-backend = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0-rc.7", default-features = false }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0-rc.8", default-features = false }
+openvm-cuda-backend = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0-rc.8", default-features = false }
 
 # openvm
 # Note: the openvm-sdk commit does not need to be exactly the same as the `openvm` commit used in the guest program: as long as
 # the openvm-sdk commit doesn't change any guest libraries, they are compatible
 # This allows us to not update revm and openvm-kzg each time we change openvm-sdk
-openvm-build = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-keccak256-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-keccak256-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-rv32im-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-bigint-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-bigint-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-algebra-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-algebra-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-ecc-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-ecc-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-pairing-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-build = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-keccak256-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-keccak256-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-rv32im-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-rv32im-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-bigint-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-bigint-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-algebra-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-algebra-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-ecc-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-ecc-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-pairing-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
+openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", branch = "chore/stark-backend-free-mem", default-features = false }
 
 [workspace.lints]
 rust.missing_debug_implementations = "warn"
