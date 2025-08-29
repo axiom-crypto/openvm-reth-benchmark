@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, mem::MaybeUninit};
 
 use alloy_rlp::Encodable;
 use bumpalo::Bump;
@@ -147,7 +147,7 @@ impl<'a> MptTrie<'a> {
         //
         // More advanced improvement: either pre-execute block at guest to know exact allocations in
         // advance, or allocate a separate arena specifically for updates.
-        let capacity = num_nodes + num_nodes / 10;
+        let capacity = num_nodes + (num_nodes / 2);
         let mut trie = Self::with_capacity(bump, capacity);
 
         let header = alloy_rlp::Header::decode(bytes).unwrap();
@@ -279,10 +279,16 @@ impl<'a> MptTrie<'a> {
             }
         };
 
-        let mut childs: [Option<NodeId>; 16] = Default::default();
-        childs[0] = child0;
-        childs[1] = child1;
-        for child in &mut childs[2..16] {
+        // Create an uninitialized array to avoid wasteful default initialization
+        let mut childs: [MaybeUninit<Option<NodeId>>; 16] =
+            unsafe { MaybeUninit::uninit().assume_init() };
+
+        // Initialize first two elements
+        childs[0] = MaybeUninit::new(child0);
+        childs[1] = MaybeUninit::new(child1);
+
+        // Initialize remaining elements
+        for child in &mut childs[2..] {
             let item_header_start = payload;
             let alloy_rlp::Header { payload_length: item_payload_length, .. } =
                 alloy_rlp::Header::decode(&mut payload)?;
@@ -292,15 +298,20 @@ impl<'a> MptTrie<'a> {
             let child_expected_node_ref =
                 NodeRef::from_rlp_slice(&item_header_start[..item_length]);
 
-            *child = {
+            *child = MaybeUninit::new({
                 if child_expected_node_ref.as_slice() == NULL_NODE_REF_SLICE {
                     bytes.advance(1);
                     None
                 } else {
                     Some(self.decode_trie_internal(bytes, child_expected_node_ref)?)
                 }
-            }
+            });
         }
+
+        // Transmute the fully initialized array to the final type
+        let childs: [Option<NodeId>; 16] = unsafe {
+            std::mem::transmute::<[MaybeUninit<Option<NodeId>>; 16], [Option<NodeId>; 16]>(childs)
+        };
 
         if payload != NULL_NODE_REF_SLICE {
             return Err(Error::ValueInBranch);
