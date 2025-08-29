@@ -300,7 +300,27 @@ fn try_load_input_from_cache(
 
             Some(client_input)
         } else {
-            None
+            let cache_path = cache_dir.join(format!("input/{}/{}.json", chain_id, block_number));
+            match std::fs::File::open(cache_path) {
+                Ok(cache_file) => {
+                    let input_json: serde_json::Value = serde_json::from_reader(cache_file)?;
+
+                    // Extract the hex string from the JSON
+                    let hex_str = input_json["input"][0]
+                        .as_str()
+                        .ok_or(eyre::eyre!("Expected string in input array"))?;
+
+                    // Remove the "0x01" prefix and decode hex to bytes
+                    let hex_bytes =
+                        hex_str.strip_prefix("0x01").ok_or(eyre::eyre!("Expected 0x01 prefix"))?;
+                    let bytes = hex::decode(hex_bytes)?;
+
+                    // Deserialize back to the original type
+                    let client_input: ClientExecutorInput = openvm::serde::from_slice(&bytes)?;
+                    Some(client_input)
+                }
+                Err(_) => None,
+            }
         }
     } else {
         None
