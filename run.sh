@@ -66,6 +66,7 @@ DEVICE_ID=1
 BLOCK_NUMBER=23100006
 
 mkdir -p metrics
+mkdir -p logs
 
 CUDA_VISIBLE_DEVICES=$DEVICE_ID RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics/metrics-${BLOCK_NUMBER}.json" ./target/$TARGET_DIR/$BIN_NAME \
 --kzg-params-dir $PARAMS_DIR \
@@ -80,4 +81,4 @@ CUDA_VISIBLE_DEVICES=$DEVICE_ID RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics/me
 --max-segment-length $MAX_SEGMENT_LENGTH \
 --segment-max-cells $SEGMENT_MAX_CELLS \
 --num-children-leaf 1 \
---num-children-internal 3
+--num-children-internal 3 | tee logs/log-${BLOCK_NUMBER}.txt
