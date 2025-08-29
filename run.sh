@@ -22,7 +22,6 @@ source .env
 MODE=prove-stark # can be execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
 PROFILE="release"
 FEATURES="metrics,jemalloc,tco,unprotected"
-BLOCK_NUMBER=23100006
 # switch to +nightly-2025-08-19 if using tco
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
 BIN_NAME="openvm-reth-benchmark-bin"
@@ -62,7 +61,13 @@ else
     TARGET_DIR="$PROFILE"
 fi
 
-RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics.json" ./target/$TARGET_DIR/$BIN_NAME \
+export CUDA_DEVICE_ORDER=PCI_BUS_ID
+DEVICE_ID=1
+BLOCK_NUMBER=23100006
+
+mkdir -p metrics
+
+CUDA_VISIBLE_DEVICES=$DEVICE_ID RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics/metrics-${BLOCK_NUMBER}.json" ./target/$TARGET_DIR/$BIN_NAME \
 --kzg-params-dir $PARAMS_DIR \
 --mode $MODE \
 --block-number $BLOCK_NUMBER \
