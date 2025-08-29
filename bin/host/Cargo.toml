@@ -31,3 +31,4 @@ cuda = [
     "openvm-reth-benchmark/cuda",
     "dep:openvm-cuda-backend",
 ]
+unprotected = ["openvm-reth-benchmark/unprotected"]

@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+#[allow(dead_code)]
 #[derive(Serialize, Deserialize)]
 struct ExecutionReportData {
     chain_id: u64,

@@ -70,3 +70,4 @@ cuda = [
     "openvm-native-circuit/cuda",
     "openvm-sdk/cuda",
 ]
+unprotected = ["openvm-sdk/unprotected"]
