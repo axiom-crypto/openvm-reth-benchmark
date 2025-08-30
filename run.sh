@@ -82,35 +82,54 @@ process_device() {
     local DEVICE_ID=$1
     local START_BLOCK=$((BASE_BLOCK + DEVICE_ID * BLOCKS_PER_DEVICE))
     local END_BLOCK=$((BASE_BLOCK + (DEVICE_ID + 1) * BLOCKS_PER_DEVICE))
+    local RETRY_COUNT=2  # Number of retries for failed blocks
 
     echo "Device $DEVICE_ID: Processing blocks $START_BLOCK to $((END_BLOCK - 1))"
 
     for BLOCK_NUMBER in $(seq $START_BLOCK $((END_BLOCK - 1))); do
         echo "Device $DEVICE_ID: Processing block $BLOCK_NUMBER"
 
-        CUDA_VISIBLE_DEVICES=$DEVICE_ID RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics/metrics-${BLOCK_NUMBER}.json" ./target/$TARGET_DIR/$BIN_NAME \
-        --kzg-params-dir $PARAMS_DIR \
-        --mode $MODE \
-        --block-number $BLOCK_NUMBER \
-        --rpc-url $RPC_1 \
-        --cache-dir rpc-cache \
-        --app-log-blowup 1 \
-        --leaf-log-blowup 1 \
-        --internal-log-blowup 2 \
-        --root-log-blowup 3 \
-        --max-segment-length $MAX_SEGMENT_LENGTH \
-        --segment-max-cells $SEGMENT_MAX_CELLS \
-        --num-children-leaf 1 \
-        --num-children-internal 3 2>&1 | tee logs/log-${BLOCK_NUMBER}.txt
+        # Try to process the block with retries
+        local ATTEMPT=1
+        local SUCCESS=false
 
-        EXIT_CODE=${PIPESTATUS[0]}
+        while [ $ATTEMPT -le $RETRY_COUNT ] && [ "$SUCCESS" = "false" ]; do
+            if [ $ATTEMPT -gt 1 ]; then
+                echo "Device $DEVICE_ID: Retry attempt $ATTEMPT for block $BLOCK_NUMBER"
+                sleep 5  # Brief pause before retry
+            fi
 
-        if [ $EXIT_CODE -eq 0 ]; then
-            echo "Device $DEVICE_ID: Successfully completed block $BLOCK_NUMBER"
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] Device $DEVICE_ID: Block $BLOCK_NUMBER - SUCCESS" >> "$SUCCESS_LOG"
-        else
+            CUDA_VISIBLE_DEVICES=$DEVICE_ID RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics/metrics-${BLOCK_NUMBER}.json" ./target/$TARGET_DIR/$BIN_NAME \
+            --kzg-params-dir $PARAMS_DIR \
+            --mode $MODE \
+            --block-number $BLOCK_NUMBER \
+            --rpc-url $RPC_1 \
+            --cache-dir rpc-cache \
+            --app-log-blowup 1 \
+            --leaf-log-blowup 1 \
+            --internal-log-blowup 2 \
+            --root-log-blowup 3 \
+            --max-segment-length $MAX_SEGMENT_LENGTH \
+            --segment-max-cells $SEGMENT_MAX_CELLS \
+            --num-children-leaf 1 \
+            --num-children-internal 3 2>&1 | tee logs/log-${BLOCK_NUMBER}.txt
+
+            EXIT_CODE=${PIPESTATUS[0]}
+
+            if [ $EXIT_CODE -eq 0 ]; then
+                SUCCESS=true
+                echo "Device $DEVICE_ID: Successfully completed block $BLOCK_NUMBER"
+                echo "[$(date '+%Y-%m-%d %H:%M:%S')] Device $DEVICE_ID: Block $BLOCK_NUMBER - SUCCESS" >> "$SUCCESS_LOG"
+            else
+                echo "Device $DEVICE_ID: Attempt $ATTEMPT failed for block $BLOCK_NUMBER with exit code $EXIT_CODE"
+                ((ATTEMPT++))
+            fi
+        done
+
+        if [ "$SUCCESS" = "false" ]; then
             echo "Device $DEVICE_ID: FAILED block $BLOCK_NUMBER with exit code $EXIT_CODE"
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] Device $DEVICE_ID: Block $BLOCK_NUMBER failed with exit code $EXIT_CODE" >> "$FAILURE_LOG"
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] Device $DEVICE_ID: Block $BLOCK_NUMBER failed after $RETRY_COUNT attempts with exit code $EXIT_CODE" >> "$FAILURE_LOG"
+            echo "Device $DEVICE_ID: Failed to complete all blocks"
         fi
     done
 
