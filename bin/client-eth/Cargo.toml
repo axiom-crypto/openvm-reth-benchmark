@@ -24,6 +24,8 @@ openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", branch = "m
 ] }
 k256 = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
 
+openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", branch = "val/openvm-main", default-features = false }
+
 # Statically turns off logging
 log = { version = "0.4", features = ["max_level_off", "release_max_level_off"] }
 tracing = { version = "0.1", features = [
