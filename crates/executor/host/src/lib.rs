@@ -215,7 +215,6 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
             current_block,
             ancestor_headers,
             parent_state_bytes: state_bytes,
-            state_requests,
             bytecodes: rpc_db.get_bytecodes(),
         };
         tracing::info!("successfully generated client input");
