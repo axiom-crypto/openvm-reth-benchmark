@@ -25,7 +25,7 @@ FEATURES="metrics,jemalloc,tco,unprotected"
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
 BIN_NAME="openvm-reth-benchmark-bin"
 MAX_SEGMENT_LENGTH=8378608 # 2^23 - 10000
-SEGMENT_MAX_CELLS=1200000000 # 1B
+SEGMENT_MAX_CELLS=700000000 # 1B
 
 if [ "$USE_CUDA" = "true" ]; then
     FEATURES="$FEATURES,cuda"
@@ -49,7 +49,7 @@ echo "Unsupported architecture: $arch"
 exit 1
 ;;
 esac
-export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:10000,muzzy_decay_ms:10000,abort_conf:true"
+export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:20000,muzzy_decay_ms:20000,abort_conf:true"
 RUSTFLAGS=$RUSTFLAGS cargo $TOOLCHAIN build --bin $BIN_NAME --profile=$PROFILE --no-default-features --features=$FEATURES
 PARAMS_DIR="$HOME/.openvm/params/"
 
