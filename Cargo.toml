@@ -150,12 +150,13 @@ openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", br
 openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-keccak256 = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", branch = "main", default-features = false }
 openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false, features = [
     "bn254",
     "bls12_381",
 ] }
 openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+
+openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", branch = "val/openvm-main", default-features = false }
 
 k256 = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
 p256 = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
