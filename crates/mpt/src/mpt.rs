@@ -865,12 +865,8 @@ impl MptTrie<'_> {
     }
 
     pub fn encode_trie(&self) -> Vec<u8> {
-        let mut payload = Vec::new();
-        self.encode_trie_internal(self.root_id, &mut payload);
-
         let mut encoded = Vec::new();
-        alloy_rlp::Header { list: true, payload_length: payload.len() }.encode(&mut encoded);
-        encoded.append(&mut payload);
+        self.encode_trie_internal(self.root_id, &mut encoded);
         encoded
     }
 
@@ -878,12 +874,17 @@ impl MptTrie<'_> {
         let payload_length = self.payload_length_id(id);
         self.encode_id_with_payload_len(id, payload_length, out);
 
+        const MIN_ALIGN: usize = 4;
+        let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
+        let padding_len = (MIN_ALIGN - (rlp_length % MIN_ALIGN)) % MIN_ALIGN;
+        for _ in 0..padding_len {
+            out.put_u8(0);
+        }
+
         match self.nodes[id as usize] {
             NodeData::Branch(childs) => childs.iter().for_each(|c| {
                 if let Some(node) = c {
                     self.encode_trie_internal(*node, out);
-                } else {
-                    out.put_u8(alloy_rlp::EMPTY_STRING_CODE)
                 }
             }),
             NodeData::Extension(_, node) => {

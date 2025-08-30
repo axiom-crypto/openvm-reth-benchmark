@@ -186,6 +186,8 @@ fn test_serde_index_trie() -> Result<(), Error> {
         assert!(trie.insert_rlp(&i.to_rlp(), i)?);
     }
 
+    // trie.print_trie();
+
     let root_hash = trie.hash();
 
     let encoded = trie.encode_trie();
