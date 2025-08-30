@@ -47,8 +47,10 @@ unsafe impl BufMut for BumpBytesMut<'_> {
             panic_advance(&TryGetError { requested: cnt, available: remaining });
         }
 
-        // Addition will not overflow since the sum is at most the capacity.
-        self.inner.set_len(len + cnt);
+        // SAFETY: Addition will not overflow since the sum is at most the capacity.
+        unsafe {
+            self.inner.set_len(len + cnt);
+        }
     }
 
     #[inline(always)]
