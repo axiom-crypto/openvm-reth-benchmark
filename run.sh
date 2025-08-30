@@ -25,7 +25,7 @@ FEATURES="metrics,jemalloc,tco,unprotected"
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
 BIN_NAME="openvm-reth-benchmark-bin"
 MAX_SEGMENT_LENGTH=8378608 # 2^23 - 10000
-SEGMENT_MAX_CELLS=700000000 # 1B
+SEGMENT_MAX_CELLS=1400000000 # 1.4B
 
 if [ "$USE_CUDA" = "true" ]; then
     FEATURES="$FEATURES,cuda"
