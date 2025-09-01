@@ -412,6 +412,11 @@ jobs:
 
       - name: Run benchmark
         run: |
+          VMM_PAGE_SIZE=$((8<<20))
+          MAX_SEGMENT_LENGTH=${{ inputs.max_segment_length || github.event.inputs.max_segment_length }}
+          VMM_PAGES=$((12 * $MAX_SEGMENT_LENGTH/ $VMM_PAGE_SIZE))
+          export VMM_PAGES=$VMM_PAGES
+          export VMM_PAGE_SIZE=$VMM_PAGE_SIZE
           export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
           export RUST_LOG="info,p3_=warn"
           export OUTPUT_PATH=${METRIC_PATH}/metrics.json
