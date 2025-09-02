@@ -2237,7 +2237,6 @@ dependencies = [
  "mptnew",
  "openvm-mpt",
  "openvm-primitives",
- "openvm-witness-db",
  "reth-consensus",
  "reth-ethereum-consensus",
  "reth-ethereum-primitives",
@@ -2445,16 +2444,6 @@ version = "1.4.0"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#d35aac5d1037da76e43227ba0c4c3c632177cd3d"
 dependencies = [
  "openvm-platform",
-]
-
-[[package]]
-name = "openvm-witness-db"
-version = "0.1.0"
-dependencies = [
- "openvm-primitives",
- "reth-revm",
- "reth-storage-errors",
- "serde",
 ]
 
 [[package]]
