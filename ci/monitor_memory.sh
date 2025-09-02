@@ -27,23 +27,23 @@ echo "Timestamp,Used_MB,Free_MB,Total_MB" > "$OUTPUT_FILE"
 # Function to get system memory usage based on OS
 get_memory_usage() {
     TIMESTAMP=$(date +%s)
-    
+
     if [[ "$OS" == "macos" ]]; then
         # macOS memory stats using vm_stat
         VM_STAT=$(vm_stat)
         PAGE_SIZE=$(sysctl -n hw.pagesize)
         TOTAL_MEM=$(sysctl -n hw.memsize)
         TOTAL_MB=$(echo "scale=2; $TOTAL_MEM / 1048576" | bc)
-        
+
         PAGE_FREE=$(echo "$VM_STAT" | grep "Pages free:" | awk '{print $3}' | sed 's/\.//')
         PAGE_ACTIVE=$(echo "$VM_STAT" | grep "Pages active:" | awk '{print $3}' | sed 's/\.//')
         PAGE_INACTIVE=$(echo "$VM_STAT" | grep "Pages inactive:" | awk '{print $3}' | sed 's/\.//')
         PAGE_SPECULATIVE=$(echo "$VM_STAT" | grep "Pages speculative:" | awk '{print $3}' | sed 's/\.//')
         PAGE_WIRED=$(echo "$VM_STAT" | grep "Pages wired down:" | awk '{print $4}' | sed 's/\.//')
-        
+
         USED_PAGES=$(($PAGE_ACTIVE + $PAGE_WIRED))
         USED_MB=$(echo "scale=2; ($USED_PAGES * $PAGE_SIZE) / 1048576" | bc)
-        
+
         FREE_PAGES=$(($PAGE_FREE + $PAGE_INACTIVE + $PAGE_SPECULATIVE))
         FREE_MB=$(echo "scale=2; ($FREE_PAGES * $PAGE_SIZE) / 1048576" | bc)
     else
@@ -53,7 +53,7 @@ get_memory_usage() {
         USED_MB=$(echo "$MEM_INFO" | awk '{print $3}')
         FREE_MB=$(echo "$MEM_INFO" | awk '{print $4}')
     fi
-    
+
     echo "$TIMESTAMP,$USED_MB,$FREE_MB,$TOTAL_MB" >> "$OUTPUT_FILE"
 }
 
@@ -98,7 +98,7 @@ stats "${OUTPUT_FILE}" skip 1 using 1 prefix "ts_" nooutput
 if (ts_records > 0) {
     # Calculate the starting timestamp to use as time zero
     first_ts = ts_min
-    
+
     # Plot the data with relative time
     plot "${OUTPUT_FILE}" using (\$1-first_ts):2 with lines lw 2 title "Used Memory", \\
          "${OUTPUT_FILE}" using (\$1-first_ts):3 with lines lw 2 title "Free Memory"
@@ -116,3 +116,5 @@ rm plot_script.gnu
 echo "Memory usage graph saved as memory_usage.png"
 echo "Raw data saved as $OUTPUT_FILE"
 echo "Script exited with code $SCRIPT_EXIT_CODE"
+
+exit $SCRIPT_EXIT_CODE
