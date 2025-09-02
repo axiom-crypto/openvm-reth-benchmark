@@ -35,6 +35,9 @@ pub struct ClientExecutorInput {
     pub parent_state_bytes: mptnew::EthereumStateBytes,
     /// Account bytecodes.
     pub bytecodes: Vec<Bytecode>,
+
+    pub addresses: Vec<Address>,
+    pub storage_slots: Vec<U256>,
 }
 
 #[derive(Debug, Clone)]
@@ -81,7 +84,32 @@ impl ClientExecutorInputWithState {
 
                 storage_tries.insert(*hashed_address, storage_trie);
             }
-            mptnew::EthereumState { state_trie, storage_tries, bump }
+
+            let mut address_keccak_cache = HashMap::with_capacity_and_hasher(
+                input.addresses.len(),
+                DefaultHashBuilder::default(),
+            );
+            for address in &input.addresses {
+                let hashed_address = keccak256(address);
+                address_keccak_cache.insert(*address, hashed_address);
+            }
+
+            let mut slot_keccak_cache = HashMap::with_capacity_and_hasher(
+                input.storage_slots.len(),
+                DefaultHashBuilder::default(),
+            );
+            for slot in &input.storage_slots {
+                let hashed_slot = keccak256(slot.to_be_bytes::<32>());
+                slot_keccak_cache.insert(*slot, hashed_slot);
+            }
+
+            mptnew::EthereumState {
+                state_trie,
+                storage_tries,
+                address_keccak_cache,
+                slot_keccak_cache,
+                bump,
+            }
         };
 
         Ok(Self { input, state })
@@ -203,10 +231,10 @@ impl DatabaseRef for TrieDB<'_> {
 
     /// Get basic account information.
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        let hashed_address = keccak256(address);
-        let hashed_address = hashed_address.as_slice();
+        let hashed_address = self.inner.address_keccak_cache.get(&address).unwrap();
 
-        let account_in_trie = self.inner.state_trie.get_rlp::<TrieAccount>(hashed_address).unwrap();
+        let account_in_trie =
+            self.inner.state_trie.get_rlp::<TrieAccount>(hashed_address.as_slice()).unwrap();
 
         let account = account_in_trie.map(|account_in_trie| AccountInfo {
             balance: account_in_trie.balance,
@@ -225,8 +253,7 @@ impl DatabaseRef for TrieDB<'_> {
 
     /// Get storage value of address at index.
     fn storage_ref(&self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        let hashed_address = keccak256(address);
-        let hashed_address = hashed_address.as_slice();
+        let hashed_address = self.inner.address_keccak_cache.get(&address).unwrap();
 
         let storage_trie = self
             .inner
@@ -234,8 +261,9 @@ impl DatabaseRef for TrieDB<'_> {
             .get(hashed_address)
             .expect("A storage trie must be provided for each account");
 
+        let hashed_slot = self.inner.slot_keccak_cache.get(&index).unwrap();
         Ok(storage_trie
-            .get_rlp::<U256>(keccak256(index.to_be_bytes::<32>()).as_slice())
+            .get_rlp::<U256>(hashed_slot.as_slice())
             .expect("Can get from MPT")
             .unwrap_or_default())
     }
