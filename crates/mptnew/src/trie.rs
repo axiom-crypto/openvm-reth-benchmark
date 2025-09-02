@@ -114,7 +114,8 @@ impl<'a> MptTrie<'a> {
         self.encode_with_payload_len(node_id, payload_length, out);
 
         // Pad the RLP encoding so its total length is divisible by `MIN_ALIGN`.
-        // This let us to avoid memcpy operations when calculating keccak(rlp_encoded) during decoding.
+        // This let us to avoid memcpy operations when calculating keccak(rlp_encoded) during
+        // decoding.
         let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
         let padding_len = (MIN_ALIGN - (rlp_length % MIN_ALIGN)) % MIN_ALIGN;
         for _ in 0..padding_len {
