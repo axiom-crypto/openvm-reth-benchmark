@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, HashSet};
+use std::collections::BTreeSet;
 
 use alloy_consensus::{TxEnvelope, TxReceipt};
 use alloy_primitives::Bloom;
@@ -103,21 +103,6 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
         );
 
         let state_requests = rpc_db.get_state_requests();
-
-        let mut input_accounts = HashSet::new();
-        let mut input_slots = HashSet::new();
-        for (address, slots) in &state_requests {
-            input_accounts.insert(*address);
-            for slot in slots {
-                input_slots.insert(*slot);
-            }
-        }
-        for (address, account) in &executor_outcome.bundle.state {
-            input_accounts.insert(*address);
-            for slot in account.storage.keys() {
-                input_slots.insert(*slot);
-            }
-        }
 
         // For every account we touched, fetch the storage proofs for all the slots we touched.
         tracing::info!("fetching storage proofs");
@@ -231,8 +216,6 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
             ancestor_headers,
             parent_state_bytes: state_bytes,
             bytecodes: rpc_db.get_bytecodes(),
-            addresses: input_accounts.into_iter().collect(),
-            storage_slots: input_slots.into_iter().collect(),
         };
         tracing::info!("successfully generated client input");
 

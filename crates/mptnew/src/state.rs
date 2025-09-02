@@ -1,7 +1,7 @@
 use bumpalo::Bump;
 use reth_trie::TrieAccount;
 use revm::database::BundleState;
-use revm_primitives::{map::DefaultHashBuilder, Address, HashMap, B256, U256};
+use revm_primitives::{keccak256, map::DefaultHashBuilder, HashMap, B256};
 
 use crate::{Error, MptTrie};
 
@@ -16,9 +16,6 @@ pub struct EthereumStateBytes {
 pub struct EthereumState {
     pub state_trie: MptTrie<'static>,
     pub storage_tries: HashMap<B256, MptTrie<'static>>,
-    pub address_keccaks: HashMap<Address, B256>,
-    pub slot_keccaks: HashMap<U256, B256>,
-
     pub bump: &'static Bump,
 }
 
@@ -28,26 +25,24 @@ impl EthereumState {
         Self {
             state_trie: MptTrie::new(bump),
             storage_tries: HashMap::with_capacity_and_hasher(1, DefaultHashBuilder::default()),
-            address_keccaks: HashMap::with_capacity_and_hasher(1, DefaultHashBuilder::default()),
-            slot_keccaks: HashMap::with_capacity_and_hasher(1, DefaultHashBuilder::default()),
             bump,
         }
     }
 
     pub fn update_from_bundle_state(&mut self, bundle_state: &BundleState) -> Result<(), Error> {
         for (address, account) in &bundle_state.state {
-            let hashed_address = self.address_keccaks.get(address).unwrap();
+            let hashed_address = keccak256(address);
 
             if let Some(info) = &account.info {
                 let storage_trie =
-                    self.storage_tries.entry(*hashed_address).or_insert(MptTrie::new(self.bump));
+                    self.storage_tries.entry(hashed_address).or_insert(MptTrie::new(self.bump));
 
                 if account.status.was_destroyed() {
                     *storage_trie = MptTrie::new(self.bump);
                 }
 
                 for (slot, value) in &account.storage {
-                    let hashed_slot = self.slot_keccaks.get(slot).unwrap();
+                    let hashed_slot = keccak256(slot.to_be_bytes::<32>());
                     if value.present_value.is_zero() {
                         storage_trie.delete(hashed_slot.as_slice())?;
                     } else {
@@ -64,7 +59,7 @@ impl EthereumState {
                 self.state_trie.insert_rlp(hashed_address.as_slice(), state_account)?;
             } else {
                 self.state_trie.delete(hashed_address.as_slice()).unwrap();
-                self.storage_tries.remove(hashed_address);
+                self.storage_tries.remove(&hashed_address);
             }
         }
 
