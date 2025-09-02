@@ -2,6 +2,8 @@
 pub mod io;
 #[macro_use]
 mod utils;
+#[cfg(target_os = "zkvm")]
+mod crypto;
 
 use std::{fmt::Debug, sync::Arc};
 
@@ -50,6 +52,13 @@ pub enum ChainVariant {
 impl ClientExecutor {
     pub fn execute(&self, pre_input: ClientExecutorInput) -> eyre::Result<Header> {
         let mut input = ClientExecutorInputWithState::build(pre_input)?;
+
+        // Install OpenVM crypto optimizations
+        #[cfg(target_os = "zkvm")]
+        {
+            println!("Installing OpenVM crypto optimizations");
+            crypto::install_openvm_crypto().expect("failed to install OpenVM crypto provider");
+        }
 
         // Initialize the witnessed database with verified storage proofs.
         let witness_db = input.witness_db()?;
