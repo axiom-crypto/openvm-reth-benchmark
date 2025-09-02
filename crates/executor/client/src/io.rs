@@ -35,10 +35,6 @@ pub struct ClientExecutorInput {
     pub parent_state_bytes: mptnew::EthereumStateBytes,
     /// Account bytecodes.
     pub bytecodes: Vec<Bytecode>,
-    /// List of addresses accessed during the execution and state update.
-    pub addresses: Vec<Address>,
-    /// List of storage slots accessed during the execution and state update.
-    pub storage_slots: Vec<U256>,
 }
 
 #[derive(Debug, Clone)]
@@ -86,25 +82,7 @@ impl ClientExecutorInputWithState {
                 storage_tries.insert(*hashed_address, storage_trie);
             }
 
-            let mut address_keccaks = HashMap::with_capacity_and_hasher(
-                input.addresses.len(),
-                DefaultHashBuilder::default(),
-            );
-            for address in &input.addresses {
-                let hashed_address = keccak256(address);
-                address_keccaks.insert(*address, hashed_address);
-            }
-
-            let mut slot_keccaks = HashMap::with_capacity_and_hasher(
-                input.storage_slots.len(),
-                DefaultHashBuilder::default(),
-            );
-            for slot in &input.storage_slots {
-                let hashed_slot = keccak256(slot.to_be_bytes::<32>());
-                slot_keccaks.insert(*slot, hashed_slot);
-            }
-
-            mptnew::EthereumState { state_trie, storage_tries, address_keccaks, slot_keccaks, bump }
+            mptnew::EthereumState { state_trie, storage_tries, bump }
         };
 
         Ok(Self { input, state })
@@ -226,7 +204,7 @@ impl DatabaseRef for WitnessDb<'_> {
 
     /// Get basic account information.
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        let hashed_address = self.inner.address_keccaks.get(&address).unwrap();
+        let hashed_address = keccak256(address);
 
         let account_in_trie =
             self.inner.state_trie.get_rlp::<TrieAccount>(hashed_address.as_slice()).unwrap();
@@ -249,15 +227,15 @@ impl DatabaseRef for WitnessDb<'_> {
 
     /// Get storage value of address at index.
     fn storage_ref(&self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        let hashed_address = self.inner.address_keccaks.get(&address).unwrap();
+        let hashed_address = keccak256(address);
 
         let storage_trie = self
             .inner
             .storage_tries
-            .get(hashed_address)
+            .get(&hashed_address)
             .expect("A storage trie must be provided for each account");
 
-        let hashed_slot = self.inner.slot_keccaks.get(&index).unwrap();
+        let hashed_slot = keccak256(index.to_be_bytes::<32>());
         Ok(storage_trie
             .get_rlp::<U256>(hashed_slot.as_slice())
             .expect("Can get from MPT")
