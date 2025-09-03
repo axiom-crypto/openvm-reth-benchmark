@@ -7,8 +7,6 @@ use std::{fmt::Debug, sync::Arc};
 
 use alloy_consensus::TxReceipt;
 use alloy_primitives::Bloom;
-#[allow(unused_imports)]
-pub use openvm_mpt;
 use openvm_primitives::chain_spec::mainnet;
 use reth_consensus::{Consensus, HeaderValidator};
 use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus};

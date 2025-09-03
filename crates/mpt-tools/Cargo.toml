@@ -28,7 +28,6 @@ criterion = { version = "0.6", features = ["html_reports"] }
 openvm-host-executor.workspace = true
 openvm-client-executor.workspace = true
 openvm-primitives.workspace = true
-openvm-mpt = { workspace = true, features = ["build_mpt"] }
 mptnew = { workspace = true }
 
 # reth dependencies for benchmarking and profiling

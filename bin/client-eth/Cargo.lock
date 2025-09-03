@@ -722,26 +722,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55248b47b0caf0546f7988906588779981c43bb1bc9d0c44087278f80cdb44ba"
 
 [[package]]
-name = "bincode"
-version = "2.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "36eaf5d7b090263e8150820482d5d93cd964a81e4019913c972f4edcc6edb740"
-dependencies = [
- "bincode_derive",
- "serde",
- "unty",
-]
-
-[[package]]
-name = "bincode_derive"
-version = "2.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf95709a440f45e986983918d0e8a1f30a9b1df04918fc828670606804ac3c09"
-dependencies = [
- "virtue",
-]
-
-[[package]]
 name = "bit-set"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2235,7 +2215,6 @@ dependencies = [
  "eyre",
  "itertools 0.14.0",
  "mptnew",
- "openvm-mpt",
  "openvm-primitives",
  "reth-consensus",
  "reth-ethereum-consensus",
@@ -2322,26 +2301,6 @@ version = "1.4.0"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#d35aac5d1037da76e43227ba0c4c3c632177cd3d"
 dependencies = [
  "syn 2.0.103",
-]
-
-[[package]]
-name = "openvm-mpt"
-version = "0.1.0"
-dependencies = [
- "alloy-rlp",
- "bincode",
- "bumpalo",
- "eyre",
- "hashbrown 0.15.4",
- "reth-primitives",
- "reth-revm",
- "reth-trie",
- "revm",
- "revm-primitives",
- "rlp 0.6.1",
- "serde",
- "smallvec",
- "thiserror",
 ]
 
 [[package]]
@@ -3458,16 +3417,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rlp"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa24e92bb2a83198bb76d661a71df9f7076b8c420b8696e4d3d97d50d94479e3"
-dependencies = [
- "bytes",
- "rustc-hex",
-]
-
-[[package]]
 name = "rlsf"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3499,7 +3448,7 @@ dependencies = [
  "proptest",
  "rand 0.8.5",
  "rand 0.9.1",
- "rlp 0.5.2",
+ "rlp",
  "ruint-macro",
  "serde",
  "valuable",
@@ -4153,12 +4102,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "unty"
-version = "0.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d49784317cd0d1ee7ec5c716dd598ec5b4483ea832a2dced265471cc0f690ae"
-
-[[package]]
 name = "url"
 version = "2.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4186,12 +4129,6 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
-
-[[package]]
-name = "virtue"
-version = "0.0.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "051eb1abcf10076295e815102942cc58f9d5e3b4560e46e53c21e8ff6f3af7b1"
 
 [[package]]
 name = "wait-timeout"

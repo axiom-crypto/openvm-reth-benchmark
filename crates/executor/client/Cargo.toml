@@ -17,7 +17,6 @@ bumpalo.workspace = true
 itertools = "0.14"
 
 # workspace
-openvm-mpt.workspace = true
 openvm-primitives.workspace = true
 mptnew.workspace = true
 

@@ -2498,7 +2498,7 @@ dependencies = [
  "num_enum",
  "open-fastrlp",
  "rand 0.8.5",
- "rlp 0.5.2",
+ "rlp",
  "serde",
  "serde_json",
  "strum 0.26.3",
@@ -3560,7 +3560,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f28220f89297a075ddc7245cd538076ee98b01f2a9c23a53a4f1105d5a322808"
 dependencies = [
- "rlp 0.5.2",
+ "rlp",
 ]
 
 [[package]]
@@ -4692,7 +4692,6 @@ dependencies = [
  "eyre",
  "itertools 0.14.0",
  "mptnew",
- "openvm-mpt",
  "openvm-primitives",
  "reth-consensus",
  "reth-ethereum-consensus",
@@ -4877,7 +4876,6 @@ dependencies = [
  "eyre",
  "mptnew",
  "openvm-client-executor",
- "openvm-mpt",
  "openvm-primitives",
  "openvm-rpc-db",
  "reth-chainspec",
@@ -5002,27 +5000,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-mpt"
-version = "0.1.0"
-dependencies = [
- "alloy-rlp",
- "bincode 2.0.1",
- "bumpalo",
- "eyre",
- "hashbrown 0.15.4",
- "hex-literal 1.0.0",
- "reth-primitives",
- "reth-revm",
- "reth-trie",
- "revm",
- "revm-primitives 19.2.0",
- "rlp 0.6.1",
- "serde",
- "smallvec",
- "thiserror 2.0.12",
-]
-
-[[package]]
 name = "openvm-mpt-tools"
 version = "0.1.0"
 dependencies = [
@@ -5037,7 +5014,6 @@ dependencies = [
  "mptnew",
  "openvm-client-executor",
  "openvm-host-executor",
- "openvm-mpt",
  "openvm-primitives",
  "reth-chainspec",
  "reth-evm",
@@ -7448,16 +7424,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rlp"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa24e92bb2a83198bb76d661a71df9f7076b8c420b8696e4d3d97d50d94479e3"
-dependencies = [
- "bytes",
- "rustc-hex",
-]
-
-[[package]]
 name = "rlp-derive"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7498,7 +7464,7 @@ dependencies = [
  "proptest",
  "rand 0.8.5",
  "rand 0.9.1",
- "rlp 0.5.2",
+ "rlp",
  "ruint-macro",
  "serde",
  "valuable",

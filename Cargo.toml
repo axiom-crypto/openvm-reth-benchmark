@@ -3,7 +3,6 @@ members = [
     "bin/host",
     "crates/executor/client",
     "crates/executor/host",
-    "crates/mpt",
     "crates/mpt-tools",
     "crates/primitives",
     "crates/storage/rpc-db",
@@ -57,7 +56,6 @@ bitcode = { version = "0.6.5", default-features = false, features = ["serde"] }
 openvm-rpc-db = { path = "./crates/storage/rpc-db" }
 openvm-client-executor = { path = "./crates/executor/client" }
 openvm-host-executor = { path = "./crates/executor/host" }
-openvm-mpt = { path = "./crates/mpt" }
 openvm-primitives = { path = "./crates/primitives" }
 openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
 mptnew = { path = "./crates/mptnew" }
