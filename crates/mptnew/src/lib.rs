@@ -8,5 +8,7 @@ mod bump_bufmut;
 mod hp;
 mod node;
 
+pub mod build_mpt;
+
 #[cfg(test)]
 mod tests;
