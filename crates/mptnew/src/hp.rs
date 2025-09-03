@@ -167,7 +167,11 @@ pub(crate) fn encoded_path_strip_prefix<'a>(
 
 /// Encodes nibbles into the standard hex-prefix format directly into the bump arena.
 #[inline]
-pub(crate) fn to_encoded_path<'a>(bump: &'a bumpalo::Bump, nibs: &[u8], is_leaf: bool) -> &'a [u8] {
+pub(crate) fn to_encoded_path_with_bump<'a>(
+    bump: &'a bumpalo::Bump,
+    nibs: &[u8],
+    is_leaf: bool,
+) -> &'a [u8] {
     let is_odd = nibs.len() % 2 != 0;
     // Max path is 64 nibs (32 bytes) + 1 prefix byte = 33 bytes.
     let mut encoded = bumpalo::collections::Vec::with_capacity_in(33, bump);
@@ -187,6 +191,30 @@ pub(crate) fn to_encoded_path<'a>(bump: &'a bumpalo::Bump, nibs: &[u8], is_leaf:
     }
 
     encoded.into_bump_slice()
+}
+
+/// Encodes nibbles into the standard hex-prefix format.
+#[inline]
+pub(crate) fn to_encoded_path(nibs: &[u8], is_leaf: bool) -> Vec<u8> {
+    let is_odd = nibs.len() % 2 != 0;
+    // Max path is 64 nibs (32 bytes) + 1 prefix byte = 33 bytes.
+    let mut encoded = Vec::with_capacity(33);
+
+    let mut prefix = if is_leaf { 0x20 } else { 0x00 };
+    if is_odd {
+        prefix |= 0x10;
+        encoded.push(prefix | nibs[0]);
+        for i in (1..nibs.len()).step_by(2) {
+            encoded.push((nibs[i] << 4) | nibs[i + 1]);
+        }
+    } else {
+        encoded.push(prefix);
+        for i in (0..nibs.len()).step_by(2) {
+            encoded.push((nibs[i] << 4) | nibs[i + 1]);
+        }
+    }
+
+    encoded
 }
 
 #[cfg(test)]
@@ -223,16 +251,16 @@ mod tests {
 
         // extension node with an even path length
         let nibbles = vec![0x0a, 0x0b, 0x0c, 0x0d];
-        assert_eq!(to_encoded_path(&bump, &nibbles, false), vec![0x00, 0xab, 0xcd]);
+        assert_eq!(to_encoded_path_with_bump(&bump, &nibbles, false), vec![0x00, 0xab, 0xcd]);
         // extension node with an odd path length
         let nibbles = vec![0x0a, 0x0b, 0x0c];
-        assert_eq!(to_encoded_path(&bump, &nibbles, false), vec![0x1a, 0xbc]);
+        assert_eq!(to_encoded_path_with_bump(&bump, &nibbles, false), vec![0x1a, 0xbc]);
         // leaf node with an even path length
         let nibbles = vec![0x0a, 0x0b, 0x0c, 0x0d];
-        assert_eq!(to_encoded_path(&bump, &nibbles, true), vec![0x20, 0xab, 0xcd]);
+        assert_eq!(to_encoded_path_with_bump(&bump, &nibbles, true), vec![0x20, 0xab, 0xcd]);
         // leaf node with an odd path length
         let nibbles = vec![0x0a, 0x0b, 0x0c];
-        assert_eq!(to_encoded_path(&bump, &nibbles, true), vec![0x3a, 0xbc]);
+        assert_eq!(to_encoded_path_with_bump(&bump, &nibbles, true), vec![0x3a, 0xbc]);
     }
 
     #[test]
