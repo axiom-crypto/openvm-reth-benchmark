@@ -65,6 +65,23 @@ impl EthereumState {
 
         Ok(())
     }
+
+    #[cfg(feature = "host")]
+    pub fn encode_to_state_bytes(&self) -> EthereumStateBytes {
+        let state_num_nodes = self.state_trie.num_nodes();
+        let state_bytes = bytes::Bytes::from(self.state_trie.encode_trie());
+        let mut storage_bytes: Vec<_> = self
+            .storage_tries
+            .iter()
+            .map(|(addr, trie)| (*addr, trie.num_nodes(), bytes::Bytes::from(trie.encode_trie())))
+            .collect();
+        storage_bytes.sort_by_key(|(addr, _, _)| *addr);
+
+        EthereumStateBytes {
+            state_trie: (state_num_nodes, state_bytes),
+            storage_tries: storage_bytes,
+        }
+    }
 }
 
 impl Default for EthereumState {

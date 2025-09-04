@@ -3,6 +3,7 @@ use std::iter::once;
 use bumpalo::Bump;
 use eyre::{bail, Result};
 use itertools::Itertools;
+use mptnew::{EthereumState, EthereumStateBytes, MptTrie};
 use reth_evm::execute::ProviderError;
 use reth_primitives::{Block, Header, TransactionSigned};
 use reth_trie::TrieAccount;
@@ -32,7 +33,7 @@ pub struct ClientExecutorInput {
     #[serde_as(as = "Vec<alloy_consensus::serde_bincode_compat::Header>")]
     pub ancestor_headers: Vec<Header>,
     /// Network state as of the parent block.
-    pub parent_state_bytes: mptnew::EthereumStateBytes,
+    pub parent_state_bytes: EthereumStateBytes,
     /// Account bytecodes.
     pub bytecodes: Vec<Bytecode>,
 }
@@ -40,7 +41,7 @@ pub struct ClientExecutorInput {
 #[derive(Debug, Clone)]
 pub struct ClientExecutorInputWithState {
     pub input: &'static ClientExecutorInput,
-    pub state: mptnew::EthereumState,
+    pub state: EthereumState,
 }
 
 impl ClientExecutorInputWithState {
@@ -51,9 +52,8 @@ impl ClientExecutorInputWithState {
 
         let state = {
             let (state_num_nodes, state_bytes) = &input.parent_state_bytes.state_trie;
-
             let state_trie =
-                mptnew::MptTrie::decode_trie(bump, &mut state_bytes.as_ref(), *state_num_nodes)?;
+                MptTrie::decode_trie(bump, &mut state_bytes.as_ref(), *state_num_nodes)?;
             if state_trie.hash() != input.ancestor_headers[0].state_root {
                 bail!("state root mismatch");
             }
@@ -70,11 +70,8 @@ impl ClientExecutorInputWithState {
                 let expected_storage_root =
                     account_in_trie.map_or(reth_trie::EMPTY_ROOT_HASH, |a| a.storage_root);
 
-                let storage_trie = mptnew::MptTrie::decode_trie(
-                    bump,
-                    &mut storage_trie_bytes.as_ref(),
-                    *num_nodes,
-                )?;
+                let storage_trie =
+                    MptTrie::decode_trie(bump, &mut storage_trie_bytes.as_ref(), *num_nodes)?;
                 if storage_trie.hash() != expected_storage_root {
                     bail!("storage root mismatch");
                 }
@@ -82,7 +79,7 @@ impl ClientExecutorInputWithState {
                 storage_tries.insert(*hashed_address, storage_trie);
             }
 
-            mptnew::EthereumState { state_trie, storage_tries, bump }
+            EthereumState { state_trie, storage_tries, bump }
         };
 
         Ok(Self { input, state })
@@ -104,7 +101,7 @@ impl ClientExecutorInputWithState {
 
 impl WitnessInput for ClientExecutorInputWithState {
     #[inline(always)]
-    fn state(&self) -> &mptnew::EthereumState {
+    fn state(&self) -> &EthereumState {
         &self.state
     }
 
@@ -132,7 +129,7 @@ impl WitnessInput for ClientExecutorInputWithState {
 /// A trait for constructing [`WitnessDb`].
 pub trait WitnessInput {
     /// Gets a reference to the state from which account info and storage slots are loaded.
-    fn state(&self) -> &mptnew::EthereumState;
+    fn state(&self) -> &EthereumState;
 
     /// Gets the state trie root hash that the state referenced by
     /// [state()](trait.WitnessInput#tymethod.state) must conform to.
@@ -183,14 +180,14 @@ pub trait WitnessInput {
 
 #[derive(Debug)]
 pub struct WitnessDb<'a> {
-    inner: &'a mptnew::EthereumState,
+    inner: &'a EthereumState,
     block_hashes: HashMap<u64, B256>,
     bytecode_by_hash: HashMap<B256, &'a Bytecode>,
 }
 
 impl<'a> WitnessDb<'a> {
     pub fn new(
-        inner: &'a mptnew::EthereumState,
+        inner: &'a EthereumState,
         block_hashes: HashMap<u64, B256>,
         bytecode_by_hash: HashMap<B256, &'a Bytecode>,
     ) -> Self {

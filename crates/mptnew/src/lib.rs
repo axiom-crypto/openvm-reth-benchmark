@@ -8,7 +8,8 @@ mod bump_bufmut;
 mod hp;
 mod node;
 
-pub mod build_mpt;
+#[cfg(feature = "host")]
+pub mod from_proof;
 
 #[cfg(test)]
 mod tests;

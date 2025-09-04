@@ -194,6 +194,7 @@ pub(crate) fn to_encoded_path_with_bump<'a>(
 }
 
 /// Encodes nibbles into the standard hex-prefix format.
+#[cfg(feature = "host")]
 #[inline]
 pub(crate) fn to_encoded_path(nibs: &[u8], is_leaf: bool) -> Vec<u8> {
     let is_odd = nibs.len() % 2 != 0;
