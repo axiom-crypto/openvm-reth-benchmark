@@ -50,7 +50,7 @@ pub enum Error {
 /// memory layout and performance. The lifetime parameter `'a` allows zero-copy deserialization by
 /// borrowing from the input buffer.
 #[derive(Debug, Clone)]
-pub struct MptTrie<'a> {
+pub struct Mpt<'a> {
     root_id: NodeId,
 
     /// List of MPT nodes.
@@ -67,7 +67,7 @@ pub struct MptTrie<'a> {
     bump: &'a Bump,
 }
 
-impl<'a> MptTrie<'a> {
+impl<'a> Mpt<'a> {
     pub fn new(bump: &'a Bump) -> Self {
         Self::with_capacity(bump, 1)
     }
@@ -100,7 +100,7 @@ unsafe fn advance_unchecked<'a>(buf: &mut &'a [u8], cnt: usize) -> &'a [u8] {
     bytes
 }
 
-impl<'a> MptTrie<'a> {
+impl<'a> Mpt<'a> {
     /// Encodes the MPT into an array of bytes. This is only used in the host, as a result it's not
     /// performance-critical.
     #[cfg(feature = "host")]
@@ -344,7 +344,7 @@ impl<'a> MptTrie<'a> {
 
 const NULL_NODE_REF_SLICE: &[u8] = &[alloy_rlp::EMPTY_STRING_CODE];
 
-impl<'a> MptTrie<'a> {
+impl<'a> Mpt<'a> {
     #[inline]
     fn calc_reference(&self, node_id: NodeId) -> NodeRef<'a> {
         match &self.nodes[node_id as usize] {
@@ -466,7 +466,7 @@ impl<'a> MptTrie<'a> {
 }
 
 // Public API
-impl<'a> MptTrie<'a> {
+impl<'a> Mpt<'a> {
     /// Root hash of the MPT.
     #[inline]
     pub fn hash(&self) -> B256 {
@@ -543,7 +543,7 @@ impl<'a> MptTrie<'a> {
 }
 
 // Internal Implementation
-impl<'a> MptTrie<'a> {
+impl<'a> Mpt<'a> {
     #[inline]
     pub(crate) fn add_node(&mut self, data: NodeData<'a>, node_ref: Option<NodeRef<'a>>) -> NodeId {
         let id = self.nodes.len() as NodeId;
@@ -842,7 +842,7 @@ impl<'a> MptTrie<'a> {
     }
 }
 
-impl<'a> MptTrie<'a> {
+impl<'a> Mpt<'a> {
     #[cfg(feature = "host")]
     pub fn decode_from_proof_rlp(bump: &'a Bump, bytes: &mut &'a [u8]) -> Result<Self, Error> {
         let mut trie = Self::with_capacity(bump, 1);
@@ -898,7 +898,7 @@ impl<'a> MptTrie<'a> {
     }
 }
 
-impl MptTrie<'_> {
+impl Mpt<'_> {
     #[cfg(test)]
     pub fn print_trie(&self) {
         self.print_trie_internal(self.root_id, 0);
@@ -948,33 +948,33 @@ pub(crate) mod owned {
 
     use crate::{
         node::{NodeData, NodeId},
-        Error, MptTrie,
+        Error, Mpt,
     };
 
-    /// MptTrieOwned is a variant of MptTrie that owns its data. It owns the bump
-    /// arena and has all its data stored in its own bump arena.
+    /// [`MptOwned`] is a variant of [`Mpt`] that owns its data. It owns the bump
+    /// arena and has all its data stored in its bump.
     #[derive(Debug, Clone)]
-    pub(crate) struct MptTrieOwned {
-        inner: MptTrie<'static>,
+    pub(crate) struct MptOwned {
+        inner: Mpt<'static>,
     }
 
-    impl Default for MptTrieOwned {
+    impl Default for MptOwned {
         fn default() -> Self {
             let bump = Box::leak(Box::new(Bump::new()));
-            Self { inner: MptTrie::new(bump) }
+            Self { inner: Mpt::new(bump) }
         }
     }
 
-    impl MptTrieOwned {
+    impl MptOwned {
         pub(crate) fn decode_from_proof_rlp(bytes: &mut &[u8]) -> Result<Self, Error> {
             let bump = Box::leak(Box::new(Bump::new()));
             let bytes = bump.alloc_slice_copy(bytes);
             let mut bytes = unsafe { std::mem::transmute::<&[u8], &'static [u8]>(bytes) };
-            let inner = MptTrie::decode_from_proof_rlp(bump, &mut bytes)?;
+            let inner = Mpt::decode_from_proof_rlp(bump, &mut bytes)?;
             Ok(Self { inner })
         }
 
-        pub(crate) fn from_trie(other: &MptTrie<'_>) -> Self {
+        pub(crate) fn from_trie(other: &Mpt<'_>) -> Self {
             let mut trie = Self::default();
             for (i, node) in other.nodes.iter().enumerate() {
                 if i < trie.inner.nodes.len() {
@@ -999,11 +999,11 @@ pub(crate) mod owned {
             self.inner.nodes.get(node_id as usize)
         }
 
-        pub(crate) fn inner(&self) -> &MptTrie<'static> {
+        pub(crate) fn inner(&self) -> &Mpt<'static> {
             &self.inner
         }
 
-        pub(crate) fn into_inner(self) -> MptTrie<'static> {
+        pub(crate) fn into_inner(self) -> Mpt<'static> {
             self.inner
         }
 

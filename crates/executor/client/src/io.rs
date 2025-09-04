@@ -3,7 +3,7 @@ use std::iter::once;
 use bumpalo::Bump;
 use eyre::{bail, Result};
 use itertools::Itertools;
-use openvm_mpt::{EthereumState, EthereumStateBytes, MptTrie};
+use openvm_mpt::{EthereumState, EthereumStateBytes, Mpt};
 use reth_evm::execute::ProviderError;
 use reth_primitives::{Block, Header, TransactionSigned};
 use reth_trie::TrieAccount;
@@ -52,8 +52,7 @@ impl ClientExecutorInputWithState {
 
         let state = {
             let (state_num_nodes, state_bytes) = &input.parent_state_bytes.state_trie;
-            let state_trie =
-                MptTrie::decode_trie(bump, &mut state_bytes.as_ref(), *state_num_nodes)?;
+            let state_trie = Mpt::decode_trie(bump, &mut state_bytes.as_ref(), *state_num_nodes)?;
             if state_trie.hash() != input.ancestor_headers[0].state_root {
                 bail!("state root mismatch");
             }
@@ -71,7 +70,7 @@ impl ClientExecutorInputWithState {
                     account_in_trie.map_or(reth_trie::EMPTY_ROOT_HASH, |a| a.storage_root);
 
                 let storage_trie =
-                    MptTrie::decode_trie(bump, &mut storage_trie_bytes.as_ref(), *num_nodes)?;
+                    Mpt::decode_trie(bump, &mut storage_trie_bytes.as_ref(), *num_nodes)?;
                 if storage_trie.hash() != expected_storage_root {
                     bail!("storage root mismatch");
                 }
