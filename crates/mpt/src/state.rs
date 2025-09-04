@@ -3,7 +3,7 @@ use reth_trie::TrieAccount;
 use revm::database::BundleState;
 use revm_primitives::{keccak256, map::DefaultHashBuilder, HashMap, B256};
 
-use crate::{Error, MptTrie};
+use crate::{Error, Mpt};
 
 /// Serialized Ethereum state.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -14,8 +14,8 @@ pub struct EthereumStateBytes {
 
 #[derive(Debug, Clone)]
 pub struct EthereumState {
-    pub state_trie: MptTrie<'static>,
-    pub storage_tries: HashMap<B256, MptTrie<'static>>,
+    pub state_trie: Mpt<'static>,
+    pub storage_tries: HashMap<B256, Mpt<'static>>,
     pub bump: &'static Bump,
 }
 
@@ -23,7 +23,7 @@ impl EthereumState {
     pub fn new() -> Self {
         let bump = Box::leak(Box::new(Bump::new()));
         Self {
-            state_trie: MptTrie::new(bump),
+            state_trie: Mpt::new(bump),
             storage_tries: HashMap::with_capacity_and_hasher(1, DefaultHashBuilder::default()),
             bump,
         }
@@ -35,10 +35,10 @@ impl EthereumState {
 
             if let Some(info) = &account.info {
                 let storage_trie =
-                    self.storage_tries.entry(hashed_address).or_insert(MptTrie::new(self.bump));
+                    self.storage_tries.entry(hashed_address).or_insert(Mpt::new(self.bump));
 
                 if account.status.was_destroyed() {
-                    *storage_trie = MptTrie::new(self.bump);
+                    *storage_trie = Mpt::new(self.bump);
                 }
 
                 for (slot, value) in &account.storage {

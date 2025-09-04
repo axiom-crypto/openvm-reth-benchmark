@@ -5,23 +5,23 @@ use revm_primitives::{keccak256, Address, HashMap, B256};
 use crate::{
     hp::{prefix_to_nibs, to_encoded_path},
     node::{NodeData, NodeId},
-    owned::MptTrieOwned,
+    owned::MptOwned,
     Error, EthereumState,
 };
 
 /// Parses proof bytes into a vector of tries.
-fn parse_proof(proof: &[impl AsRef<[u8]>]) -> Result<Vec<MptTrieOwned>, Error> {
+fn parse_proof(proof: &[impl AsRef<[u8]>]) -> Result<Vec<MptOwned>, Error> {
     proof
         .iter()
-        .map(|bytes| MptTrieOwned::decode_from_proof_rlp(&mut bytes.as_ref()))
+        .map(|bytes| MptOwned::decode_from_proof_rlp(&mut bytes.as_ref()))
         .collect::<Result<Vec<_>, _>>()
 }
 
 /// Processes a proof by parsing it into a vector of tries and adding them to the given node store.
 fn process_proof(
     proof: &[impl AsRef<[u8]>],
-    node_store: &mut HashMap<B256, MptTrieOwned>,
-) -> Result<Option<MptTrieOwned>, Error> {
+    node_store: &mut HashMap<B256, MptOwned>,
+) -> Result<Option<MptOwned>, Error> {
     let proof_nodes = parse_proof(proof)?;
     let root_node = proof_nodes.first().cloned();
     for node in proof_nodes {
@@ -34,7 +34,7 @@ fn process_proof(
 fn add_orphaned_leafs(
     key: impl AsRef<[u8]>,
     proof: &[impl AsRef<[u8]>],
-    node_store: &mut HashMap<B256, MptTrieOwned>,
+    node_store: &mut HashMap<B256, MptOwned>,
 ) -> Result<(), Error> {
     if !proof.is_empty() {
         let proof_nodes = parse_proof(proof)?;
@@ -51,7 +51,7 @@ fn add_orphaned_leafs(
 /// given node.
 /// When nodes in an MPT are deleted, leaves or extensions may be extended. To still be
 /// able to identify the original nodes, we create all shortened versions of the node.
-fn shorten_node_path(node: &MptTrieOwned) -> Vec<MptTrieOwned> {
+fn shorten_node_path(node: &MptOwned) -> Vec<MptOwned> {
     let mut res = Vec::new();
     let (prefix, is_leaf, value, child_id) = match node.get_node(node.root_id()).unwrap() {
         NodeData::Leaf(prefix, value) => (*prefix, true, Some(*value), None),
@@ -65,12 +65,12 @@ fn shorten_node_path(node: &MptTrieOwned) -> Vec<MptTrieOwned> {
         let shortened_nibs = &nibs[i..];
         let path = to_encoded_path(shortened_nibs, is_leaf);
         let new_node = if is_leaf {
-            let mut new_node = MptTrieOwned::default();
+            let mut new_node = MptOwned::default();
             let value = value.unwrap();
             new_node.set_node(new_node.root_id(), &NodeData::Leaf(&path, value));
             new_node
         } else {
-            let mut new_node = MptTrieOwned::from_trie(node.inner());
+            let mut new_node = MptOwned::from_trie(node.inner());
             let child_id = child_id.unwrap();
             new_node.set_node(new_node.root_id(), &NodeData::Extension(&path, child_id));
             new_node
@@ -80,19 +80,19 @@ fn shorten_node_path(node: &MptTrieOwned) -> Vec<MptTrieOwned> {
     res
 }
 
-fn is_not_included(key: &[u8], proof_nodes: &[MptTrieOwned]) -> Result<bool, Error> {
+fn is_not_included(key: &[u8], proof_nodes: &[MptOwned]) -> Result<bool, Error> {
     let proof_trie = mpt_from_proof(proof_nodes)?;
     // For valid proofs, the get must not fail
     let value = proof_trie.get(key)?;
     Ok(value.is_none())
 }
 
-fn mpt_from_proof(proof_nodes: &[MptTrieOwned]) -> Result<MptTrieOwned, Error> {
+fn mpt_from_proof(proof_nodes: &[MptOwned]) -> Result<MptOwned, Error> {
     if proof_nodes.is_empty() {
-        return Ok(MptTrieOwned::default());
+        return Ok(MptOwned::default());
     }
 
-    let node_store: HashMap<B256, MptTrieOwned> =
+    let node_store: HashMap<B256, MptOwned> =
         proof_nodes.iter().map(|node| (node.hash(), node.clone())).collect();
 
     let root_node = proof_nodes.first().unwrap();
@@ -100,8 +100,8 @@ fn mpt_from_proof(proof_nodes: &[MptTrieOwned]) -> Result<MptTrieOwned, Error> {
     Ok(resolve_nodes(root_node, &node_store))
 }
 
-fn resolve_nodes(root: &MptTrieOwned, node_store: &HashMap<B256, MptTrieOwned>) -> MptTrieOwned {
-    let mut new_trie = MptTrieOwned::default();
+fn resolve_nodes(root: &MptOwned, node_store: &HashMap<B256, MptOwned>) -> MptOwned {
+    let mut new_trie = MptOwned::default();
 
     let root_id = resolve_nodes_internal(root, root.root_id(), node_store, &mut new_trie);
     new_trie.set_root_id(root_id);
@@ -113,10 +113,10 @@ fn resolve_nodes(root: &MptTrieOwned, node_store: &HashMap<B256, MptTrieOwned>) 
 }
 
 fn resolve_nodes_internal(
-    cur_trie: &MptTrieOwned,
+    cur_trie: &MptOwned,
     node_id: NodeId,
-    node_store: &HashMap<B256, MptTrieOwned>,
-    new_trie: &mut MptTrieOwned,
+    node_store: &HashMap<B256, MptOwned>,
+    new_trie: &mut MptOwned,
 ) -> NodeId {
     let cur_data = &cur_trie.get_node(node_id).unwrap();
     let resolved_data = match cur_data {
@@ -149,27 +149,24 @@ fn resolve_nodes_internal(
     new_trie.add_node(&resolved_data)
 }
 
-fn node_from_digest(digest: B256) -> MptTrieOwned {
+fn node_from_digest(digest: B256) -> MptOwned {
     match digest {
-        reth_trie::EMPTY_ROOT_HASH | B256::ZERO => MptTrieOwned::default(),
+        reth_trie::EMPTY_ROOT_HASH | B256::ZERO => MptOwned::default(),
         _ => {
-            let mut trie = MptTrieOwned::default();
+            let mut trie = MptOwned::default();
             trie.set_node(trie.root_id(), &NodeData::Digest(digest.as_slice()));
             trie
         }
     }
 }
 
-fn build_storage_trie(
-    proof: &AccountProof,
-    fini_proofs: &AccountProof,
-) -> Result<MptTrieOwned, Error> {
+fn build_storage_trie(proof: &AccountProof, fini_proofs: &AccountProof) -> Result<MptOwned, Error> {
     if proof.storage_proofs.is_empty() {
         return Ok(node_from_digest(proof.storage_root));
     }
 
     let mut storage_nodes = HashMap::default();
-    let mut storage_root_node = MptTrieOwned::default();
+    let mut storage_root_node = MptOwned::default();
 
     for storage_proof in &proof.storage_proofs {
         if let Some(root) = process_proof(&storage_proof.proof, &mut storage_nodes)? {
@@ -201,7 +198,7 @@ pub fn transition_proofs_to_tries(
 
     let mut storage_tries = HashMap::default();
     let mut state_nodes = HashMap::default();
-    let mut state_root_node = MptTrieOwned::default();
+    let mut state_root_node = MptOwned::default();
 
     for (address, proof) in parent_proofs {
         if let Some(root) = process_proof(&proof.proof, &mut state_nodes)? {
