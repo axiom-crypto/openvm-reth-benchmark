@@ -4,6 +4,7 @@ use alloy_consensus::{TxEnvelope, TxReceipt};
 use alloy_primitives::Bloom;
 use alloy_provider::{network::Ethereum, Provider};
 use eyre::{eyre, Ok};
+use mptnew::from_proof::transition_proofs_to_tries;
 use openvm_client_executor::io::ClientExecutorInput;
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
@@ -143,7 +144,7 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
             after_storage_proofs.push(eip1186_proof_to_account_proof(storage_proof));
         }
 
-        let state = mptnew::build_mpt::transition_proofs_to_tries(
+        let state = transition_proofs_to_tries(
             previous_block.state_root,
             &before_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
             &after_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
@@ -186,27 +187,7 @@ impl<P: Provider<Ethereum> + Clone> HostExecutor<P> {
             ancestor_headers.push(block.header.into());
         }
 
-        let state_bytes = {
-            let state_num_nodes = state.state_trie.num_nodes();
-            let state_bytes = state.state_trie.encode_trie();
-            let mut storage_bytes: Vec<_> = state
-                .storage_tries
-                .iter()
-                .map(|(addr, trie)| {
-                    (
-                        *addr,
-                        trie.num_nodes(),
-                        alloy_primitives::bytes::Bytes::from(trie.encode_trie()),
-                    )
-                })
-                .collect();
-            storage_bytes.sort_by_key(|(addr, _, _)| *addr);
-
-            mptnew::EthereumStateBytes {
-                state_trie: (state_num_nodes, alloy_primitives::bytes::Bytes::from(state_bytes)),
-                storage_tries: storage_bytes,
-            }
-        };
+        let state_bytes = state.encode_to_state_bytes();
 
         // Create the client input.
         let client_input = ClientExecutorInput {

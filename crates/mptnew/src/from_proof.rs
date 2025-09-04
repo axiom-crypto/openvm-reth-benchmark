@@ -3,46 +3,54 @@ use reth_trie::AccountProof;
 use revm_primitives::{keccak256, Address, HashMap, B256};
 
 use crate::{
-    hp::{prefix_to_nibs, to_encoded_path, to_encoded_path_with_bump},
+    hp::{prefix_to_nibs, to_encoded_path},
     node::{NodeData, NodeId},
-    Error, EthereumState, MptTrieOwned,
+    owned::MptTrieOwned,
+    Error, EthereumState,
 };
 
-fn parse_proof<'a>(proof: &[impl AsRef<[u8]>]) -> Result<Vec<MptTrieOwned>, Error> {
+/// Parses proof bytes into a vector of tries.
+fn parse_proof(proof: &[impl AsRef<[u8]>]) -> Result<Vec<MptTrieOwned>, Error> {
     proof
         .iter()
         .map(|bytes| MptTrieOwned::decode_from_proof_rlp(&mut bytes.as_ref()))
         .collect::<Result<Vec<_>, _>>()
 }
 
+/// Processes a proof by parsing it into a vector of tries and adding them to the given node store.
 fn process_proof(
     proof: &[impl AsRef<[u8]>],
-    nodes: &mut HashMap<B256, MptTrieOwned>,
+    node_store: &mut HashMap<B256, MptTrieOwned>,
 ) -> Result<Option<MptTrieOwned>, Error> {
     let proof_nodes = parse_proof(proof)?;
     let root_node = proof_nodes.first().cloned();
     for node in proof_nodes {
-        nodes.insert(node.hash(), node);
+        node_store.insert(node.hash(), node);
     }
     Ok(root_node)
 }
 
+/// Adds all the leaf nodes of non-inclusion proofs to the nodes.
 fn add_orphaned_leafs(
     key: impl AsRef<[u8]>,
     proof: &[impl AsRef<[u8]>],
-    nodes_by_reference: &mut HashMap<B256, MptTrieOwned>,
+    node_store: &mut HashMap<B256, MptTrieOwned>,
 ) -> Result<(), Error> {
     if !proof.is_empty() {
         let proof_nodes = parse_proof(proof)?;
         if is_not_included(keccak256(key).as_slice(), &proof_nodes)? {
-            for node in shorten_node_path(&proof_nodes.last().unwrap()) {
-                nodes_by_reference.insert(node.hash(), node);
+            for node in shorten_node_path(proof_nodes.last().unwrap()) {
+                node_store.insert(node.hash(), node);
             }
         }
     }
     Ok(())
 }
 
+/// Returns a list of all possible nodes that can be created by shortening the path of the
+/// given node.
+/// When nodes in an MPT are deleted, leaves or extensions may be extended. To still be
+/// able to identify the original nodes, we create all shortened versions of the node.
 fn shorten_node_path(node: &MptTrieOwned) -> Vec<MptTrieOwned> {
     let mut res = Vec::new();
     let (prefix, is_leaf, value, child_id) = match node.get_node(node.root_id()).unwrap() {
@@ -104,7 +112,7 @@ fn resolve_nodes(root: &MptTrieOwned, node_store: &HashMap<B256, MptTrieOwned>) 
     new_trie
 }
 
-fn resolve_nodes_internal<'a>(
+fn resolve_nodes_internal(
     cur_trie: &MptTrieOwned,
     node_id: NodeId,
     node_store: &HashMap<B256, MptTrieOwned>,
@@ -142,9 +150,14 @@ fn resolve_nodes_internal<'a>(
 }
 
 fn node_from_digest(digest: B256) -> MptTrieOwned {
-    let mut trie = MptTrieOwned::default();
-    trie.set_node(trie.root_id(), &NodeData::Digest(digest.as_slice()));
-    trie
+    match digest {
+        reth_trie::EMPTY_ROOT_HASH | B256::ZERO => MptTrieOwned::default(),
+        _ => {
+            let mut trie = MptTrieOwned::default();
+            trie.set_node(trie.root_id(), &NodeData::Digest(digest.as_slice()));
+            trie
+        }
+    }
 }
 
 fn build_storage_trie(

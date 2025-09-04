@@ -103,12 +103,14 @@ unsafe fn advance_unchecked<'a>(buf: &mut &'a [u8], cnt: usize) -> &'a [u8] {
 impl<'a> MptTrie<'a> {
     /// Encodes the MPT into an array of bytes. This is only used in the host, as a result it's not
     /// performance-critical.
+    #[cfg(feature = "host")]
     pub fn encode_trie(&self) -> Vec<u8> {
         let mut encoded = Vec::new();
         self.encode_trie_internal(self.root_id, &mut encoded);
         encoded
     }
 
+    #[cfg(feature = "host")]
     fn encode_trie_internal(&self, node_id: NodeId, out: &mut dyn alloy_rlp::BufMut) {
         let payload_length = self.payload_length(node_id);
         self.encode_with_payload_len(node_id, payload_length, out);
@@ -143,6 +145,10 @@ impl<'a> MptTrie<'a> {
         bytes: &mut &'a [u8],
         num_nodes: usize,
     ) -> Result<Self, Error> {
+        if bytes == &[alloy_rlp::EMPTY_STRING_CODE, 0, 0, 0] {
+            return Ok(Self::new(bump))
+        }
+
         // A growth factor applied to the node vector's capacity during deserialization.
         // This is a pragmatic optimization to pre-allocate a buffer for nodes that will be
         // added during the `update` phase. It prevents a "reallocation storm" where the
@@ -837,13 +843,15 @@ impl<'a> MptTrie<'a> {
 }
 
 impl<'a> MptTrie<'a> {
+    #[cfg(feature = "host")]
     pub fn decode_from_proof_rlp(bump: &'a Bump, bytes: &mut &'a [u8]) -> Result<Self, Error> {
-        let mut trie = Self::new(bump);
+        let mut trie = Self::with_capacity(bump, 1);
         let root_id = trie.decode_from_proof_rlp_internal(bytes)?;
         trie.root_id = root_id;
         Ok(trie)
     }
 
+    #[cfg(feature = "host")]
     fn decode_from_proof_rlp_internal(&mut self, bytes: &mut &'a [u8]) -> Result<NodeId, Error> {
         let node_id = match alloy_rlp::Header::decode_raw(bytes)? {
             alloy_rlp::PayloadView::String(item) => match item.len() {
@@ -891,10 +899,12 @@ impl<'a> MptTrie<'a> {
 }
 
 impl MptTrie<'_> {
+    #[cfg(test)]
     pub fn print_trie(&self) {
         self.print_trie_internal(self.root_id, 0);
     }
 
+    #[cfg(test)]
     fn print_trie_internal(&self, node_id: NodeId, depth: usize) {
         let indent = "  ".repeat(depth);
         match &self.nodes[node_id as usize] {
@@ -931,107 +941,120 @@ impl MptTrie<'_> {
     }
 }
 
-#[derive(Debug, Clone)]
-pub(crate) struct MptTrieOwned {
-    inner: MptTrie<'static>,
-}
+#[cfg(feature = "host")]
+pub(crate) mod owned {
+    use bumpalo::Bump;
+    use revm_primitives::B256;
 
-impl Default for MptTrieOwned {
-    fn default() -> Self {
-        let bump = Box::leak(Box::new(Bump::new()));
-        Self { inner: MptTrie::new(bump) }
-    }
-}
+    use crate::{
+        node::{NodeData, NodeId},
+        Error, MptTrie,
+    };
 
-impl MptTrieOwned {
-    pub(crate) fn decode_from_proof_rlp(bytes: &mut &[u8]) -> Result<Self, Error> {
-        let bump = Box::leak(Box::new(Bump::new()));
-        let bytes = bump.alloc_slice_copy(bytes);
-        let mut bytes = unsafe { std::mem::transmute::<&[u8], &'static [u8]>(bytes) };
-        let inner = MptTrie::decode_from_proof_rlp(bump, &mut bytes)?;
-        Ok(Self { inner })
+    /// MptTrieOwned is a variant of MptTrie that owns its data. It owns the bump
+    /// arena and has all its data stored in its own bump arena.
+    #[derive(Debug, Clone)]
+    pub(crate) struct MptTrieOwned {
+        inner: MptTrie<'static>,
     }
 
-    pub(crate) fn from_trie(other: &MptTrie<'_>) -> Self {
-        let mut trie = Self::default();
-        for (i, node) in other.nodes.iter().enumerate() {
-            if i < trie.inner.nodes.len() {
-                trie.set_node(i as NodeId, node);
-            } else {
-                trie.add_node(node);
-            }
-        }
-        trie.set_root_id(other.root_id);
-        trie
-    }
-
-    pub(crate) fn hash(&self) -> B256 {
-        self.inner.hash()
-    }
-
-    pub(crate) fn root_id(&self) -> NodeId {
-        self.inner.root_id
-    }
-
-    pub(crate) fn get_node(&self, node_id: NodeId) -> Option<&NodeData<'static>> {
-        self.inner.nodes.get(node_id as usize)
-    }
-
-    pub(crate) fn bump(&self) -> &'static Bump {
-        self.inner.bump
-    }
-
-    pub(crate) fn inner(&self) -> &MptTrie<'static> {
-        &self.inner
-    }
-
-    pub(crate) fn into_inner(self) -> MptTrie<'static> {
-        self.inner
-    }
-
-    pub(crate) fn get(&self, key: &[u8]) -> Result<Option<&'static [u8]>, Error> {
-        self.inner.get(key)
-    }
-
-    fn alloc_in_bump(&self, bytes: &[u8]) -> &'static [u8] {
-        let slice = self.inner.bump.alloc_slice_copy(bytes);
-        // Sound because `slice` lives as long as `self.bump`.
-        unsafe { std::mem::transmute::<&[u8], &'static [u8]>(slice) }
-    }
-
-    pub(crate) fn set_root_id(&mut self, root_id: NodeId) {
-        self.inner.root_id = root_id;
-    }
-
-    pub(crate) fn set_node(&mut self, node_id: NodeId, data: &NodeData<'_>) {
-        let i = node_id as usize;
-
-        match data {
-            NodeData::Null => {
-                self.inner.nodes[i] = NodeData::Null;
-            }
-            NodeData::Branch(childs) => {
-                self.inner.nodes[i] = NodeData::Branch(*childs);
-            }
-            NodeData::Leaf(prefix, value) => {
-                let prefix = self.alloc_in_bump(prefix);
-                let value = self.alloc_in_bump(value);
-                self.inner.nodes[i] = NodeData::Leaf(prefix, value);
-            }
-            NodeData::Extension(prefix, ext_node_id) => {
-                let prefix = self.alloc_in_bump(prefix);
-                self.inner.nodes[i] = NodeData::Extension(prefix, *ext_node_id);
-            }
-            NodeData::Digest(digest) => {
-                let digest = self.alloc_in_bump(digest);
-                self.inner.nodes[i] = NodeData::Digest(digest);
-            }
+    impl Default for MptTrieOwned {
+        fn default() -> Self {
+            let bump = Box::leak(Box::new(Bump::new()));
+            Self { inner: MptTrie::new(bump) }
         }
     }
 
-    pub(crate) fn add_node(&mut self, data: &NodeData<'_>) -> NodeId {
-        let id = self.inner.add_node(NodeData::Null, None);
-        self.set_node(id, data);
-        id
+    impl MptTrieOwned {
+        pub(crate) fn decode_from_proof_rlp(bytes: &mut &[u8]) -> Result<Self, Error> {
+            let bump = Box::leak(Box::new(Bump::new()));
+            let bytes = bump.alloc_slice_copy(bytes);
+            let mut bytes = unsafe { std::mem::transmute::<&[u8], &'static [u8]>(bytes) };
+            let inner = MptTrie::decode_from_proof_rlp(bump, &mut bytes)?;
+            Ok(Self { inner })
+        }
+
+        pub(crate) fn from_trie(other: &MptTrie<'_>) -> Self {
+            let mut trie = Self::default();
+            for (i, node) in other.nodes.iter().enumerate() {
+                if i < trie.inner.nodes.len() {
+                    trie.set_node(i as NodeId, node);
+                } else {
+                    trie.add_node(node);
+                }
+            }
+            trie.set_root_id(other.root_id);
+            trie
+        }
+
+        pub(crate) fn hash(&self) -> B256 {
+            self.inner.hash()
+        }
+
+        pub(crate) fn root_id(&self) -> NodeId {
+            self.inner.root_id
+        }
+
+        pub(crate) fn get_node(&self, node_id: NodeId) -> Option<&NodeData<'static>> {
+            self.inner.nodes.get(node_id as usize)
+        }
+
+        pub(crate) fn inner(&self) -> &MptTrie<'static> {
+            &self.inner
+        }
+
+        pub(crate) fn into_inner(self) -> MptTrie<'static> {
+            self.inner
+        }
+
+        pub(crate) fn get(&self, key: &[u8]) -> Result<Option<&'static [u8]>, Error> {
+            self.inner.get(key)
+        }
+
+        fn alloc_in_bump(&self, bytes: &[u8]) -> &'static [u8] {
+            let slice = self.inner.bump.alloc_slice_copy(bytes);
+            // Sound because `slice` lives as long as `self.bump`.
+            unsafe { std::mem::transmute::<&[u8], &'static [u8]>(slice) }
+        }
+
+        pub(crate) fn set_root_id(&mut self, root_id: NodeId) {
+            self.inner.root_id = root_id;
+        }
+
+        /// Sets a node at the specified index, copying any referenced data into the owned bump
+        /// arena.
+        pub(crate) fn set_node(&mut self, node_id: NodeId, data: &NodeData<'_>) {
+            let i = node_id as usize;
+
+            match data {
+                NodeData::Null => {
+                    self.inner.nodes[i] = NodeData::Null;
+                }
+                NodeData::Branch(childs) => {
+                    self.inner.nodes[i] = NodeData::Branch(*childs);
+                }
+                NodeData::Leaf(prefix, value) => {
+                    let prefix = self.alloc_in_bump(prefix);
+                    let value = self.alloc_in_bump(value);
+                    self.inner.nodes[i] = NodeData::Leaf(prefix, value);
+                }
+                NodeData::Extension(prefix, ext_node_id) => {
+                    let prefix = self.alloc_in_bump(prefix);
+                    self.inner.nodes[i] = NodeData::Extension(prefix, *ext_node_id);
+                }
+                NodeData::Digest(digest) => {
+                    let digest = self.alloc_in_bump(digest);
+                    self.inner.nodes[i] = NodeData::Digest(digest);
+                }
+            }
+        }
+
+        /// Adds a new node to the trie, copies the data into its own bump and returns the new
+        /// node's ID.
+        pub(crate) fn add_node(&mut self, data: &NodeData<'_>) -> NodeId {
+            let id = self.inner.add_node(NodeData::Null, None);
+            self.set_node(id, data);
+            id
+        }
     }
 }

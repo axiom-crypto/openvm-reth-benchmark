@@ -31,3 +31,4 @@ workspace = true
 
 [features]
 default = []
+host = []

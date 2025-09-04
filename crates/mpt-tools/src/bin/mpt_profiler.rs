@@ -3,6 +3,7 @@ static ALLOC: dhat::Alloc = dhat::Alloc;
 
 use bincode::config::standard;
 use dhat::Profiler;
+use mptnew::EthereumState;
 use openvm_client_executor::io::{ClientExecutorInput, ClientExecutorInputWithState};
 use openvm_primitives::chain_spec::mainnet;
 use reth_evm::execute::{BasicBlockExecutor, Executor};
@@ -130,16 +131,13 @@ fn profile_witness_db(client_input: ClientExecutorInput) {
     let _witness_db = input.witness_db().unwrap();
 }
 
-fn profile_update(mut parent_state: mptnew::EthereumState, executor_outcome: &ExecutionOutcome) {
+fn profile_update(mut parent_state: EthereumState, executor_outcome: &ExecutionOutcome) {
     let _profiler = Profiler::new_heap();
 
     parent_state.update_from_bundle_state(&executor_outcome.bundle).unwrap();
 }
 
-fn profile_state_root(
-    mut parent_state: mptnew::EthereumState,
-    executor_outcome: &ExecutionOutcome,
-) {
+fn profile_state_root(mut parent_state: EthereumState, executor_outcome: &ExecutionOutcome) {
     let _profiler = Profiler::new_heap();
 
     parent_state.update_from_bundle_state(&executor_outcome.bundle).unwrap();
