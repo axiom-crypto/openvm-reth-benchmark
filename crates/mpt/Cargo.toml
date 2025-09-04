@@ -1,5 +1,5 @@
 [package]
-name = "mptnew"
+name = "openvm-mpt"
 edition.workspace = true
 repository.workspace = true
 homepage.workspace = true

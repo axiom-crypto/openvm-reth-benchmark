@@ -19,7 +19,7 @@ tracing.workspace = true
 openvm-rpc-db.workspace = true
 openvm-client-executor.workspace = true
 openvm-primitives.workspace = true
-mptnew = { workspace = true, features = ["host"] }
+openvm-mpt = { workspace = true, features = ["host"] }
 
 # reth
 reth-primitives = { workspace = true, features = ["secp256k1"] }

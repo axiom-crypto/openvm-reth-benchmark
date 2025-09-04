@@ -3,7 +3,7 @@ use std::iter::once;
 use bumpalo::Bump;
 use eyre::{bail, Result};
 use itertools::Itertools;
-use mptnew::{EthereumState, EthereumStateBytes, MptTrie};
+use openvm_mpt::{EthereumState, EthereumStateBytes, MptTrie};
 use reth_evm::execute::ProviderError;
 use reth_primitives::{Block, Header, TransactionSigned};
 use reth_trie::TrieAccount;

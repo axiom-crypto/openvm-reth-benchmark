@@ -1923,21 +1923,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mptnew"
-version = "0.1.0"
-dependencies = [
- "alloy-rlp",
- "bumpalo",
- "bytes",
- "reth-trie",
- "revm",
- "revm-primitives",
- "serde",
- "smallvec",
- "thiserror",
-]
-
-[[package]]
 name = "num"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2214,7 +2199,7 @@ dependencies = [
  "bumpalo",
  "eyre",
  "itertools 0.14.0",
- "mptnew",
+ "openvm-mpt",
  "openvm-primitives",
  "reth-consensus",
  "reth-ethereum-consensus",
@@ -2301,6 +2286,21 @@ version = "1.4.0"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#d35aac5d1037da76e43227ba0c4c3c632177cd3d"
 dependencies = [
  "syn 2.0.103",
+]
+
+[[package]]
+name = "openvm-mpt"
+version = "0.1.0"
+dependencies = [
+ "alloy-rlp",
+ "bumpalo",
+ "bytes",
+ "reth-trie",
+ "revm",
+ "revm-primitives",
+ "serde",
+ "smallvec",
+ "thiserror",
 ]
 
 [[package]]
