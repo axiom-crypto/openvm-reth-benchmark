@@ -18,7 +18,7 @@ itertools = "0.14"
 
 # workspace
 openvm-primitives.workspace = true
-mptnew.workspace = true
+openvm-mpt.workspace = true
 
 # reth
 reth-consensus.workspace = true

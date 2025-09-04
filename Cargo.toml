@@ -7,7 +7,7 @@ members = [
     "crates/primitives",
     "crates/storage/rpc-db",
     "crates/host-bench",
-    "crates/mptnew",
+    "crates/mpt",
 ]
 exclude = []
 resolver = "2"
@@ -56,7 +56,7 @@ openvm-client-executor = { path = "./crates/executor/client" }
 openvm-host-executor = { path = "./crates/executor/host" }
 openvm-primitives = { path = "./crates/primitives" }
 openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
-mptnew = { path = "./crates/mptnew" }
+openvm-mpt = { path = "./crates/mpt" }
 
 # reth
 reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.4.8", default-features = false }
