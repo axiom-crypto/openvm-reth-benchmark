@@ -1,6 +1,6 @@
 use revm_primitives::{b256, keccak256};
 
-use crate::{Error, MptTrie};
+use crate::{Error, Mpt};
 
 trait RlpBytes {
     /// Returns the RLP-encoding.
@@ -24,7 +24,7 @@ where
 #[test]
 fn test_empty() {
     let bump = bumpalo::Bump::new();
-    let trie = MptTrie::new(&bump);
+    let trie = Mpt::new(&bump);
 
     assert!(trie.is_empty());
     let expected = b256!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
@@ -34,7 +34,7 @@ fn test_empty() {
 #[test]
 fn test_empty_key() -> Result<(), Error> {
     let bump = bumpalo::Bump::new();
-    let mut trie = MptTrie::new(&bump);
+    let mut trie = Mpt::new(&bump);
 
     trie.insert(&[], b"empty")?;
     assert_eq!(trie.get(&[])?, Some(b"empty".as_ref()));
@@ -46,7 +46,7 @@ fn test_empty_key() -> Result<(), Error> {
 #[test]
 fn test_branch_value() {
     let bump = bumpalo::Bump::new();
-    let mut trie = MptTrie::new(&bump);
+    let mut trie = Mpt::new(&bump);
     trie.insert(b"do", b"verb").unwrap();
     // leads to a branch with value which is not supported
     trie.insert(b"dog", b"puppy").unwrap_err();
@@ -55,7 +55,7 @@ fn test_branch_value() {
 #[test]
 fn test_insert() -> Result<(), Error> {
     let bump = bumpalo::Bump::new();
-    let mut trie = MptTrie::new(&bump);
+    let mut trie = Mpt::new(&bump);
 
     let key_vals = vec![
         ("painting", "place"),
@@ -94,14 +94,14 @@ fn test_keccak_trie() -> Result<(), Error> {
 
     // insert
     let bump = bumpalo::Bump::new();
-    let mut trie = MptTrie::new(&bump);
+    let mut trie = Mpt::new(&bump);
 
     for i in 0..N {
         assert!(trie.insert_rlp(keccak256(i.to_be_bytes()).as_slice(), i)?);
 
         // check hash against trie build in reverse
         let bump2 = bumpalo::Bump::new();
-        let mut trie2 = MptTrie::new(&bump2);
+        let mut trie2 = Mpt::new(&bump2);
         for j in (0..=i).rev() {
             trie2.insert_rlp(keccak256(j.to_be_bytes()).as_slice(), j)?;
         }
@@ -122,7 +122,7 @@ fn test_keccak_trie() -> Result<(), Error> {
         assert!(trie.delete(keccak256(i.to_be_bytes()).as_slice())?);
 
         let bump2 = bumpalo::Bump::new();
-        let mut trie2 = MptTrie::new(&bump2);
+        let mut trie2 = Mpt::new(&bump2);
         for j in ((i + 1)..N).rev() {
             trie2.insert_rlp(keccak256(j.to_be_bytes()).as_slice(), j)?;
         }
@@ -139,14 +139,14 @@ fn test_index_trie() -> Result<(), Error> {
 
     // insert
     let bump = bumpalo::Bump::new();
-    let mut trie = MptTrie::new(&bump);
+    let mut trie = Mpt::new(&bump);
 
     for i in 0..N {
         assert!(trie.insert_rlp(&i.to_rlp(), i)?);
 
         // check hash against trie build in reverse
         let bump2 = bumpalo::Bump::new();
-        let mut trie2 = MptTrie::new(&bump2);
+        let mut trie2 = Mpt::new(&bump2);
         for j in (0..=i).rev() {
             trie2.insert_rlp(&j.to_rlp(), j)?;
         }
@@ -164,7 +164,7 @@ fn test_index_trie() -> Result<(), Error> {
         assert!(trie.delete(&i.to_rlp()).unwrap());
 
         let bump2 = bumpalo::Bump::new();
-        let mut trie2 = MptTrie::new(&bump2);
+        let mut trie2 = Mpt::new(&bump2);
         for j in ((i + 1)..N).rev() {
             trie2.insert_rlp(&j.to_rlp(), j)?;
         }
@@ -180,7 +180,7 @@ fn test_serde_index_trie() -> Result<(), Error> {
     const N: usize = 512;
 
     let bump = bumpalo::Bump::new();
-    let mut trie = MptTrie::new(&bump);
+    let mut trie = Mpt::new(&bump);
 
     for i in 0..N {
         assert!(trie.insert_rlp(&i.to_rlp(), i)?);
@@ -190,7 +190,7 @@ fn test_serde_index_trie() -> Result<(), Error> {
 
     let encoded = trie.encode_trie();
 
-    let recovered_trie = MptTrie::decode_trie(&bump, &mut encoded.as_slice(), trie.num_nodes())?;
+    let recovered_trie = Mpt::decode_trie(&bump, &mut encoded.as_slice(), trie.num_nodes())?;
     assert_eq!(recovered_trie.hash(), root_hash);
 
     for i in 0..N {
@@ -206,7 +206,7 @@ fn test_serde_keccak_trie() -> Result<(), Error> {
     const N: usize = 512;
 
     let bump = bumpalo::Bump::new();
-    let mut trie = MptTrie::new(&bump);
+    let mut trie = Mpt::new(&bump);
 
     for i in 0..N {
         assert!(trie.insert_rlp(keccak256(i.to_be_bytes()).as_slice(), i)?);
@@ -216,7 +216,7 @@ fn test_serde_keccak_trie() -> Result<(), Error> {
 
     let encoded = trie.encode_trie();
 
-    let recovered_trie = MptTrie::decode_trie(&bump, &mut encoded.as_slice(), trie.num_nodes())?;
+    let recovered_trie = Mpt::decode_trie(&bump, &mut encoded.as_slice(), trie.num_nodes())?;
     assert_eq!(recovered_trie.hash(), root_hash);
 
     for i in 0..N {

@@ -3,7 +3,7 @@ use reth_trie::TrieAccount;
 use revm::database::BundleState;
 use revm_primitives::{keccak256, map::DefaultHashBuilder, HashMap, B256};
 
-use crate::{Error, MptTrie};
+use crate::{Error, Mpt};
 
 /// Serialized Ethereum state.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -14,8 +14,8 @@ pub struct EthereumStateBytes {
 
 #[derive(Debug, Clone)]
 pub struct EthereumState {
-    pub state_trie: MptTrie<'static>,
-    pub storage_tries: HashMap<B256, MptTrie<'static>>,
+    pub state_trie: Mpt<'static>,
+    pub storage_tries: HashMap<B256, Mpt<'static>>,
     pub bump: &'static Bump,
 }
 
@@ -23,7 +23,7 @@ impl EthereumState {
     pub fn new() -> Self {
         let bump = Box::leak(Box::new(Bump::new()));
         Self {
-            state_trie: MptTrie::new(bump),
+            state_trie: Mpt::new(bump),
             storage_tries: HashMap::with_capacity_and_hasher(1, DefaultHashBuilder::default()),
             bump,
         }
@@ -35,10 +35,10 @@ impl EthereumState {
 
             if let Some(info) = &account.info {
                 let storage_trie =
-                    self.storage_tries.entry(hashed_address).or_insert(MptTrie::new(self.bump));
+                    self.storage_tries.entry(hashed_address).or_insert(Mpt::new(self.bump));
 
                 if account.status.was_destroyed() {
-                    *storage_trie = MptTrie::new(self.bump);
+                    *storage_trie = Mpt::new(self.bump);
                 }
 
                 for (slot, value) in &account.storage {
@@ -64,6 +64,23 @@ impl EthereumState {
         }
 
         Ok(())
+    }
+
+    #[cfg(feature = "host")]
+    pub fn encode_to_state_bytes(&self) -> EthereumStateBytes {
+        let state_num_nodes = self.state_trie.num_nodes();
+        let state_bytes = bytes::Bytes::from(self.state_trie.encode_trie());
+        let mut storage_bytes: Vec<_> = self
+            .storage_tries
+            .iter()
+            .map(|(addr, trie)| (*addr, trie.num_nodes(), bytes::Bytes::from(trie.encode_trie())))
+            .collect();
+        storage_bytes.sort_by_key(|(addr, _, _)| *addr);
+
+        EthereumStateBytes {
+            state_trie: (state_num_nodes, state_bytes),
+            storage_tries: storage_bytes,
+        }
     }
 }
 

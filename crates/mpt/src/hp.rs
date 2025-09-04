@@ -36,7 +36,7 @@ pub(crate) fn to_nibs(slice: &[u8]) -> Nibbles {
 /// Decodes a compact hex-prefix-encoded path (as used in MPT leaf/extension nodes)
 /// into its nibble sequence. This allocates a `SmallVec` with the exact nibble capacity.
 #[inline]
-pub(crate) fn prefix_to_small_nibs(encoded_path: &[u8]) -> Nibbles {
+pub(crate) fn prefix_to_nibs(encoded_path: &[u8]) -> Nibbles {
     if encoded_path.is_empty() {
         return SmallVec::new();
     }
@@ -165,6 +165,59 @@ pub(crate) fn encoded_path_strip_prefix<'a>(
     Some(&nibs[i..])
 }
 
+/// Encodes nibbles into the standard hex-prefix format directly into the bump arena.
+#[inline]
+pub(crate) fn to_encoded_path_with_bump<'a>(
+    bump: &'a bumpalo::Bump,
+    nibs: &[u8],
+    is_leaf: bool,
+) -> &'a [u8] {
+    let is_odd = nibs.len() % 2 != 0;
+    // Max path is 64 nibs (32 bytes) + 1 prefix byte = 33 bytes.
+    let mut encoded = bumpalo::collections::Vec::with_capacity_in(33, bump);
+
+    let mut prefix = if is_leaf { 0x20 } else { 0x00 };
+    if is_odd {
+        prefix |= 0x10;
+        encoded.push(prefix | nibs[0]);
+        for i in (1..nibs.len()).step_by(2) {
+            encoded.push((nibs[i] << 4) | nibs[i + 1]);
+        }
+    } else {
+        encoded.push(prefix);
+        for i in (0..nibs.len()).step_by(2) {
+            encoded.push((nibs[i] << 4) | nibs[i + 1]);
+        }
+    }
+
+    encoded.into_bump_slice()
+}
+
+/// Encodes nibbles into the standard hex-prefix format.
+#[cfg(feature = "host")]
+#[inline]
+pub(crate) fn to_encoded_path(nibs: &[u8], is_leaf: bool) -> Vec<u8> {
+    let is_odd = nibs.len() % 2 != 0;
+    // Max path is 64 nibs (32 bytes) + 1 prefix byte = 33 bytes.
+    let mut encoded = Vec::with_capacity(33);
+
+    let mut prefix = if is_leaf { 0x20 } else { 0x00 };
+    if is_odd {
+        prefix |= 0x10;
+        encoded.push(prefix | nibs[0]);
+        for i in (1..nibs.len()).step_by(2) {
+            encoded.push((nibs[i] << 4) | nibs[i + 1]);
+        }
+    } else {
+        encoded.push(prefix);
+        for i in (0..nibs.len()).step_by(2) {
+            encoded.push((nibs[i] << 4) | nibs[i + 1]);
+        }
+    }
+
+    encoded
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -191,5 +244,40 @@ mod tests {
 
         let key_mismatch = [1, 2, 4];
         assert!(encoded_path_strip_prefix(&path, &key_mismatch).is_none());
+    }
+
+    #[test]
+    fn test_to_encoded_path() {
+        let bump = bumpalo::Bump::new();
+
+        // extension node with an even path length
+        let nibbles = vec![0x0a, 0x0b, 0x0c, 0x0d];
+        assert_eq!(to_encoded_path_with_bump(&bump, &nibbles, false), vec![0x00, 0xab, 0xcd]);
+        // extension node with an odd path length
+        let nibbles = vec![0x0a, 0x0b, 0x0c];
+        assert_eq!(to_encoded_path_with_bump(&bump, &nibbles, false), vec![0x1a, 0xbc]);
+        // leaf node with an even path length
+        let nibbles = vec![0x0a, 0x0b, 0x0c, 0x0d];
+        assert_eq!(to_encoded_path_with_bump(&bump, &nibbles, true), vec![0x20, 0xab, 0xcd]);
+        // leaf node with an odd path length
+        let nibbles = vec![0x0a, 0x0b, 0x0c];
+        assert_eq!(to_encoded_path_with_bump(&bump, &nibbles, true), vec![0x3a, 0xbc]);
+    }
+
+    #[test]
+    fn test_lcp() {
+        let cases = [
+            (vec![], vec![], 0),
+            (vec![0xa], vec![0xa], 1),
+            (vec![0xa, 0xb], vec![0xa, 0xc], 1),
+            (vec![0xa, 0xb], vec![0xa, 0xb], 2),
+            (vec![0xa, 0xb], vec![0xa, 0xb, 0xc], 2),
+            (vec![0xa, 0xb, 0xc], vec![0xa, 0xb, 0xc], 3),
+            (vec![0xa, 0xb, 0xc], vec![0xa, 0xb, 0xc, 0xd], 3),
+            (vec![0xa, 0xb, 0xc, 0xd], vec![0xa, 0xb, 0xc, 0xd], 4),
+        ];
+        for (a, b, cpl) in cases {
+            assert_eq!(lcp(&a, &b), cpl)
+        }
     }
 }
