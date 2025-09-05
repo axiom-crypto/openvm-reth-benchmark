@@ -58,6 +58,7 @@ on:
           - none
           - host # host profiling (samply, flamegraphs, etc)
           - guest # guest profiling (circuit flamegraphs)
+          - nsys # nsys profiling (cuda)
         default: none
       max_segment_length:
         type: number
@@ -128,7 +129,7 @@ on:
       profiling:
         type: string
         required: false
-        description: Profiling mode (none, host, guest)
+        description: Profiling mode (none, host, guest, nsys)
         default: none
       max_segment_length:
         type: number
@@ -437,11 +438,11 @@ jobs:
 
       - name: Run benchmark
         run: |
-          VMM_PAGE_SIZE=$((8<<20))
+          VPMM_PAGE_SIZE=$((4<<20))
           MAX_SEGMENT_LENGTH=${{ inputs.max_segment_length || github.event.inputs.max_segment_length }}
-          VMM_PAGES=$((12 * $MAX_SEGMENT_LENGTH/ $VMM_PAGE_SIZE))
-          export VMM_PAGES=$VMM_PAGES
-          export VMM_PAGE_SIZE=$VMM_PAGE_SIZE
+          VPMM_PAGES=$((12 * $MAX_SEGMENT_LENGTH/ $VPMM_PAGE_SIZE))
+          export VPMM_PAGES=$VPMM_PAGES
+          export VPMM_PAGE_SIZE=$VPMM_PAGE_SIZE
           export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
           export RUST_LOG="info,p3_=warn"
           export OUTPUT_PATH=${METRIC_PATH}/metrics.json
@@ -455,6 +456,14 @@ jobs:
 
             perf --version
             perf record -F 100 --call-graph=fp -g -o perf.data -- ./run_benchmark.sh
+          elif [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "nsys" ]]; then
+            export NSYS_REP_PATH=${METRIC_PATH}/reth.nsys-rep
+            nsys profile --trace=cuda,osrt,nvtx \
+             --cuda-memory-usage=true \
+             --force-overwrite=true \
+             --stats=true \
+             -o $NSYS_REP_PATH \
+             ./run_benchmark.sh
           else
             ./ci/monitor_memory.sh ./run_benchmark.sh
             echo "MEM_USAGE_PATH=memory_usage.png" >> $GITHUB_ENV

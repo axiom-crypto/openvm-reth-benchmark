@@ -28,8 +28,8 @@ TOOLCHAIN="+nightly-2025-08-19" # "+stable"
 BIN_NAME="openvm-reth-benchmark-bin"
 MAX_SEGMENT_LENGTH=4194204
 SEGMENT_MAX_CELLS=700000000
-VMM_PAGE_SIZE=$((8<<20))
-VMM_PAGES=$((12 * $MAX_SEGMENT_LENGTH/ $VMM_PAGE_SIZE))
+VPMM_PAGE_SIZE=$((4<<20))
+VPMM_PAGES=$((12 * $MAX_SEGMENT_LENGTH/ $VPMM_PAGE_SIZE))
 
 
 if [ "$USE_CUDA" = "true" ]; then
@@ -65,7 +65,7 @@ else
     TARGET_DIR="$PROFILE"
 fi
 
-RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics.json" VMM_PAGES=$VMM_PAGES VMM_PAGE_SIZE=$VMM_PAGE_SIZE ./target/$TARGET_DIR/$BIN_NAME \
+RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics.json" VPMM_PAGES=$VPMM_PAGES VPMM_PAGE_SIZE=$VPMM_PAGE_SIZE ./target/$TARGET_DIR/$BIN_NAME \
 --kzg-params-dir $PARAMS_DIR \
 --mode $MODE \
 --block-number $BLOCK_NUMBER \
