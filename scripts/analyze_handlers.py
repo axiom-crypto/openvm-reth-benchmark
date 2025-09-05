@@ -337,20 +337,7 @@ def categorize_handler(handler_name):
 
 def get_objdump_command():
     """Get the appropriate objdump command for the current platform."""
-    system = platform.system().lower()
-
-    if system == "darwin":  # macOS
-        # Try gobjdump first (GNU binutils), fallback to system objdump
-        gobjdump_paths = [
-            "/opt/homebrew/opt/binutils/bin/gobjdump",
-            "/usr/local/opt/binutils/bin/gobjdump"
-        ]
-        for path in gobjdump_paths:
-            if Path(path).exists():
-                return path
-        return "objdump"  # Fallback to system objdump
-    else:  # Linux and others
-        return "objdump"
+    return "objdump"
 
 def generate_dsym(binary_path, verbose=False):
     """Generate dSYM file for source code mapping on macOS."""
@@ -598,7 +585,8 @@ def build_binary(force_rebuild=False):
         if force_rebuild:
             print(f"Running: {' '.join(build_cmd)}")
 
-        result = subprocess.run(build_cmd, env=env, cwd=".", capture_output=True, text=True)
+        # Show build progress instead of capturing output
+        result = subprocess.run(build_cmd, env=env, cwd=".")
 
         if result.returncode == 0:
             print("Build completed successfully!")
@@ -612,9 +600,7 @@ def build_binary(force_rebuild=False):
 
             return True
         else:
-            print("Build failed:")
-            print(f"STDOUT: {result.stdout}")
-            print(f"STDERR: {result.stderr}")
+            print(f"Build failed with exit code: {result.returncode}")
             return False
     except Exception as e:
         print(f"Error building binary: {e}")
