@@ -421,15 +421,8 @@ jobs:
           if [[ "${{ inputs.mode || github.event.inputs.mode }}" == "generate-fixtures" ]]; then
             FIXTURES_PATH="--fixtures-path ./fixtures/"
           fi
-          if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "nsys" ]]; then
-            NSYS_ARGS="nsys profile --trace=cuda,osrt,nvtx \
-             --cuda-memory-usage=true \
-             --force-overwrite=true \
-             --stats=true \
-             -o reth.nsys-rep "
-          fi
           cat > run_benchmark.sh <<EOF
-          $NSYS_ARGS ./target/$HOST_PROFILE/openvm-reth-benchmark-bin \
+          ./target/$HOST_PROFILE/openvm-reth-benchmark-bin \
             --mode $MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
             --app-log-blowup ${{ inputs.app_log_blowup || github.event.inputs.app_log_blowup }} \
             --leaf-log-blowup ${{ inputs.leaf_log_blowup || github.event.inputs.leaf_log_blowup }} \
@@ -463,6 +456,13 @@ jobs:
 
             perf --version
             perf record -F 100 --call-graph=fp -g -o perf.data -- ./run_benchmark.sh
+          elif [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "nsys" ]]; then
+            nsys profile --trace=cuda,osrt,nvtx \
+             --cuda-memory-usage=true \
+             --force-overwrite=true \
+             --stats=true \
+             -o reth.nsys-rep \
+             ./run_benchmark.sh
           else
             ./ci/monitor_memory.sh ./run_benchmark.sh
             echo "MEM_USAGE_PATH=memory_usage.png" >> $GITHUB_ENV
