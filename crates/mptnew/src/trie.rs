@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, mem::MaybeUninit};
 
 use alloy_rlp::Encodable;
 use bumpalo::Bump;
@@ -14,6 +14,9 @@ use crate::{
     },
     node::{NodeData, NodeId, NodeRef},
 };
+
+/// OpenVM memory alignment word size.
+const MIN_ALIGN: usize = 4;
 
 /// Initial capacity of [`MptTrie`]'s `rlp_scratch`.
 const RLP_SCRATCH_INIT_CAPACITY: usize = 600;
@@ -101,12 +104,8 @@ impl<'a> MptTrie<'a> {
     /// Encodes the MPT into an array of bytes. This is only used in the host, as a result it's not
     /// performance-critical.
     pub fn encode_trie(&self) -> Vec<u8> {
-        let mut payload = Vec::new();
-        self.encode_trie_internal(self.root_id, &mut payload);
-
         let mut encoded = Vec::new();
-        alloy_rlp::Header { list: true, payload_length: payload.len() }.encode(&mut encoded);
-        encoded.append(&mut payload);
+        self.encode_trie_internal(self.root_id, &mut encoded);
         encoded
     }
 
@@ -114,11 +113,21 @@ impl<'a> MptTrie<'a> {
         let payload_length = self.payload_length(node_id);
         self.encode_with_payload_len(node_id, payload_length, out);
 
+        // Pad the RLP encoding so its total length is divisible by `MIN_ALIGN`.
+        // This let us to avoid memcpy operations when calculating keccak(rlp_encoded) during
+        // decoding.
+        let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
+        let padding_len = (MIN_ALIGN - (rlp_length % MIN_ALIGN)) % MIN_ALIGN;
+        for _ in 0..padding_len {
+            out.put_u8(0);
+        }
+
         match self.nodes[node_id as usize] {
             NodeData::Branch(childs) => {
-                childs.iter().for_each(|c| match c {
-                    Some(child_id) => self.encode_trie_internal(*child_id, out),
-                    None => out.put_u8(alloy_rlp::EMPTY_STRING_CODE),
+                childs.iter().for_each(|c| {
+                    if let Some(child_id) = c {
+                        self.encode_trie_internal(*child_id, out)
+                    }
                 });
             }
             NodeData::Extension(_, ext_id) => {
@@ -147,13 +156,8 @@ impl<'a> MptTrie<'a> {
         //
         // More advanced improvement: either pre-execute block at guest to know exact allocations in
         // advance, or allocate a separate arena specifically for updates.
-        let capacity = num_nodes + num_nodes / 10;
+        let capacity = num_nodes + (num_nodes / 2);
         let mut trie = Self::with_capacity(bump, capacity);
-
-        let header = alloy_rlp::Header::decode(bytes).unwrap();
-        if !header.list {
-            return Err(Error::RlpError(alloy_rlp::Error::UnexpectedString));
-        }
 
         // construct the expected root reference
         let root_ref = {
@@ -193,9 +197,13 @@ impl<'a> MptTrie<'a> {
         let rlp_node_length = rlp_node_header_start.len() - bytes.len();
 
         let rlp_node = &rlp_node_header_start[..rlp_node_length];
+
+        let padding_len = (MIN_ALIGN - (rlp_node_length % MIN_ALIGN)) % MIN_ALIGN;
+        unsafe { advance_unchecked(bytes, padding_len) };
+
         // calculate node's reference and ensure it matches the `expected_node_ref` from parent.
         let node_ref = {
-            if rlp_node.len() < 32 {
+            if rlp_node_length < 32 {
                 if rlp_node != expected_node_ref.as_slice() {
                     return Err(Error::NodeRefMismatch);
                 }
@@ -262,7 +270,6 @@ impl<'a> MptTrie<'a> {
         let child0_expected_node_ref = NodeRef::from_rlp_slice(&item0_header_start[..item0_length]);
         let child0 = {
             if child0_expected_node_ref.as_slice() == NULL_NODE_REF_SLICE {
-                bytes.advance(1);
                 None
             } else {
                 Some(self.decode_trie_internal(bytes, child0_expected_node_ref)?)
@@ -272,17 +279,22 @@ impl<'a> MptTrie<'a> {
         let child1_expected_node_ref = NodeRef::from_rlp_slice(&item1_header_start[..item1_length]);
         let child1 = {
             if child1_expected_node_ref.as_slice() == NULL_NODE_REF_SLICE {
-                bytes.advance(1);
                 None
             } else {
                 Some(self.decode_trie_internal(bytes, child1_expected_node_ref)?)
             }
         };
 
-        let mut childs: [Option<NodeId>; 16] = Default::default();
-        childs[0] = child0;
-        childs[1] = child1;
-        for child in &mut childs[2..16] {
+        // Create an uninitialized array to avoid wasteful default initialization
+        let mut childs: [MaybeUninit<Option<NodeId>>; 16] =
+            unsafe { MaybeUninit::uninit().assume_init() };
+
+        // Initialize first two elements
+        childs[0] = MaybeUninit::new(child0);
+        childs[1] = MaybeUninit::new(child1);
+
+        // Initialize remaining elements
+        for child in &mut childs[2..] {
             let item_header_start = payload;
             let alloy_rlp::Header { payload_length: item_payload_length, .. } =
                 alloy_rlp::Header::decode(&mut payload)?;
@@ -292,15 +304,19 @@ impl<'a> MptTrie<'a> {
             let child_expected_node_ref =
                 NodeRef::from_rlp_slice(&item_header_start[..item_length]);
 
-            *child = {
+            *child = MaybeUninit::new({
                 if child_expected_node_ref.as_slice() == NULL_NODE_REF_SLICE {
-                    bytes.advance(1);
                     None
                 } else {
                     Some(self.decode_trie_internal(bytes, child_expected_node_ref)?)
                 }
-            }
+            });
         }
+
+        // Transmute the fully initialized array to the final type
+        let childs: [Option<NodeId>; 16] = unsafe {
+            std::mem::transmute::<[MaybeUninit<Option<NodeId>>; 16], [Option<NodeId>; 16]>(childs)
+        };
 
         if payload != NULL_NODE_REF_SLICE {
             return Err(Error::ValueInBranch);
@@ -805,5 +821,46 @@ impl<'a> MptTrie<'a> {
             self.invalidate_ref_cache(node_id);
         }
         Ok(updated)
+    }
+}
+
+impl MptTrie<'_> {
+    pub fn print_trie(&self) {
+        self.print_trie_internal(self.root_id, 0);
+    }
+
+    fn print_trie_internal(&self, node_id: NodeId, depth: usize) {
+        let indent = "  ".repeat(depth);
+        match &self.nodes[node_id as usize] {
+            NodeData::Null => {
+                println!("{}Null", indent);
+            }
+            NodeData::Branch(children) => {
+                println!("{}Branch", indent);
+                for (i, child) in children.iter().enumerate() {
+                    if let Some(child_id) = child {
+                        println!("{}  [{}]:", indent, i);
+                        self.print_trie_internal(*child_id, depth + 2);
+                    }
+                }
+            }
+            NodeData::Leaf(path, value) => {
+                let path_nibs = prefix_to_nibs(path);
+                println!(
+                    "{}Leaf path={:?} value_len={}",
+                    indent,
+                    path_nibs.as_slice(),
+                    value.len()
+                );
+            }
+            NodeData::Extension(path, child_id) => {
+                let path_nibs = prefix_to_nibs(path);
+                println!("{}Extension path={:?}", indent, path_nibs.as_slice());
+                self.print_trie_internal(*child_id, depth + 1);
+            }
+            NodeData::Digest(digest) => {
+                println!("{}Digest {:?}", indent, B256::from_slice(digest));
+            }
+        }
     }
 }

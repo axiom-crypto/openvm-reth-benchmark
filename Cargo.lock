@@ -4694,7 +4694,6 @@ dependencies = [
  "mptnew",
  "openvm-mpt",
  "openvm-primitives",
- "openvm-witness-db",
  "reth-consensus",
  "reth-ethereum-consensus",
  "reth-ethereum-primitives",
@@ -5620,16 +5619,6 @@ dependencies = [
  "rrs-lib",
  "rustc-demangle",
  "thiserror 1.0.69",
-]
-
-[[package]]
-name = "openvm-witness-db"
-version = "0.1.0"
-dependencies = [
- "openvm-primitives",
- "reth-revm",
- "reth-storage-errors",
- "serde",
 ]
 
 [[package]]

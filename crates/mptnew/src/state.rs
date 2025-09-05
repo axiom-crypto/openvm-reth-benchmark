@@ -16,7 +16,6 @@ pub struct EthereumStateBytes {
 pub struct EthereumState {
     pub state_trie: MptTrie<'static>,
     pub storage_tries: HashMap<B256, MptTrie<'static>>,
-
     pub bump: &'static Bump,
 }
 
@@ -32,27 +31,18 @@ impl EthereumState {
 
     pub fn update_from_bundle_state(&mut self, bundle_state: &BundleState) -> Result<(), Error> {
         for (address, account) in &bundle_state.state {
-            // A single insertion can split a leaf into an extension and a branch with two leaves,
-            // adding up to 3 new nodes. A deletion can also cause node modifications.
-            // We use a pessimistic multiplier of 4 to be safe.
-            const MPT_NODE_MULTIPLIER: usize = 3;
-
-            let num_changed_accounts = bundle_state.state.len();
-            self.state_trie.reserve(num_changed_accounts * MPT_NODE_MULTIPLIER);
-
             let hashed_address = keccak256(address);
 
             if let Some(info) = &account.info {
                 let storage_trie =
                     self.storage_tries.entry(hashed_address).or_insert(MptTrie::new(self.bump));
-                storage_trie.reserve(account.storage.len() * MPT_NODE_MULTIPLIER);
 
                 if account.status.was_destroyed() {
                     *storage_trie = MptTrie::new(self.bump);
                 }
 
                 for (slot, value) in &account.storage {
-                    let hashed_slot = keccak256(B256::from(*slot));
+                    let hashed_slot = keccak256(slot.to_be_bytes::<32>());
                     if value.present_value.is_zero() {
                         storage_trie.delete(hashed_slot.as_slice())?;
                     } else {
