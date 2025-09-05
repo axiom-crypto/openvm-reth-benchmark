@@ -421,8 +421,15 @@ jobs:
           if [[ "${{ inputs.mode || github.event.inputs.mode }}" == "generate-fixtures" ]]; then
             FIXTURES_PATH="--fixtures-path ./fixtures/"
           fi
+          if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "nsys" ]]; then
+            NSYS_ARGS="nsys profile --trace=cuda,osrt,nvtx \
+             --cuda-memory-usage=true \
+             --force-overwrite=true \
+             --stats=true \
+             -o reth.nsys-rep "
+          fi
           cat > run_benchmark.sh <<EOF
-          ./target/$HOST_PROFILE/openvm-reth-benchmark-bin \
+          $NSYS_ARGS ./target/$HOST_PROFILE/openvm-reth-benchmark-bin \
             --mode $MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
             --app-log-blowup ${{ inputs.app_log_blowup || github.event.inputs.app_log_blowup }} \
             --leaf-log-blowup ${{ inputs.leaf_log_blowup || github.event.inputs.leaf_log_blowup }} \
@@ -456,14 +463,6 @@ jobs:
 
             perf --version
             perf record -F 100 --call-graph=fp -g -o perf.data -- ./run_benchmark.sh
-          elif [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "nsys" ]]; then
-            export NSYS_REP_PATH=${METRIC_PATH}/reth.nsys-rep
-            nsys profile --trace=cuda,osrt,nvtx \
-             --cuda-memory-usage=true \
-             --force-overwrite=true \
-             --stats=true \
-             -o $NSYS_REP_PATH \
-             ./run_benchmark.sh
           else
             ./ci/monitor_memory.sh ./run_benchmark.sh
             echo "MEM_USAGE_PATH=memory_usage.png" >> $GITHUB_ENV
@@ -483,6 +482,14 @@ jobs:
         with:
           name: ${{ steps.set-metric-name.outputs.name }}-memory-usage
           path: ${{ env.MEM_USAGE_PATH }}
+          retention-days: 1
+
+      - name: Upload nsys report
+        if: ${{ (inputs.profiling || github.event.inputs.profiling) == 'nsys' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.set-metric-name.outputs.name }}-nsys-report
+          path: ./reth.nsys-rep
           retention-days: 1
 
       - name: Upload Benchmark Metrics
