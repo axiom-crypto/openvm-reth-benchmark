@@ -416,7 +416,7 @@ jobs:
           HOST_PROFILE=${{ steps.set-build-profiles.outputs.host_profile }}
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
             OPTIONAL_ARGS="${OPTIONAL_ARGS} --profiling"
-          fi          
+          fi
           if [[ "${{ inputs.mode || github.event.inputs.mode }}" == "generate-fixtures" ]]; then
             FIXTURES_PATH="--fixtures-path ./fixtures/"
           fi
@@ -445,6 +445,13 @@ jobs:
           fi
 
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
+            # https://bugs.launchpad.net/ubuntu/+source/linux-hwe-6.14/+bug/2117159
+            wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.15.tar.xz
+            tar -xf linux-6.15.tar.xz
+            cd linux-6.15/tools/perf
+            make
+            sudo make install
+
             echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
             echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
 
