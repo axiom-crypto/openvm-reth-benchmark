@@ -192,6 +192,8 @@ jobs:
     outputs:
       metric_name: ${{ steps.set-metric-name.outputs.name }}
     steps:
+      - run: ls /usr/lib/linux-tools-*
+          exit 1
       - uses: runs-on/action@v2
       - uses: actions/checkout@v5
         with:
