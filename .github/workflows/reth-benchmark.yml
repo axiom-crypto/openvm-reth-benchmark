@@ -445,18 +445,12 @@ jobs:
           fi
 
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "host" ]]; then
-            # https://bugs.launchpad.net/ubuntu/+source/linux-hwe-6.14/+bug/2117159
-            wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.15.tar.xz
-            tar -xf linux-6.15.tar.xz
-            cd linux-6.15/tools/perf
-            make
-            sudo make install
-
             echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
             echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
 
-            perf --version
-            perf record -F 100 --call-graph=fp -g -o perf.data -- ./run_benchmark.sh
+            # https://bugs.launchpad.net/ubuntu/+source/linux-hwe-6.14/+bug/2117159
+            /usr/lib/linux-tools-*/perf --version
+            /usr/lib/linux-tools-*/perf record -F 100 --call-graph=fp -g -o perf.data -- ./run_benchmark.sh
           else
             ./ci/monitor_memory.sh ./run_benchmark.sh
             echo "MEM_USAGE_PATH=memory_usage.png" >> $GITHUB_ENV
