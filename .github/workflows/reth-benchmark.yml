@@ -417,11 +417,12 @@ jobs:
           HOST_PROFILE=${{ steps.set-build-profiles.outputs.host_profile }}
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
             OPTIONAL_ARGS="${OPTIONAL_ARGS} --profiling"
-          fi          
+          fi
           if [[ "${{ inputs.mode || github.event.inputs.mode }}" == "generate-fixtures" ]]; then
             FIXTURES_PATH="--fixtures-path ./fixtures/"
           fi
           cat > run_benchmark.sh <<EOF
+          #!/bin/bash
           ./target/$HOST_PROFILE/openvm-reth-benchmark-bin \
             --mode $MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
             --app-log-blowup ${{ inputs.app_log_blowup || github.event.inputs.app_log_blowup }} \
