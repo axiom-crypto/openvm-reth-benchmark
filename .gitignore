@@ -33,3 +33,9 @@ metrics.json
 
 # Dhat heap profile
 **/dhat-heap.json
+
+# Python cache
+**/__pycache__
+
+## Samply profiles
+**/profile.json*

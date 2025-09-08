@@ -328,6 +328,8 @@ jobs:
           install_s5cmd
           sudo apt update
           sudo apt install gnuplot
+          sudo apt install -y linux-tools-common linux-tools-generic linux-tools-$(uname -r) || \
+            sudo apt install -y linux-tools-aws linux-cloud-tools-aws || true
 
       - name: Setup halo2
         if: ${{ (github.event.inputs.mode == 'prove-evm') || (inputs.mode == 'prove-evm') }}
