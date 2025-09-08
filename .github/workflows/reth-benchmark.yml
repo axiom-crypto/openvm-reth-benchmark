@@ -331,6 +331,22 @@ jobs:
           sudo apt install -y linux-tools-common linux-tools-generic linux-tools-$(uname -r) || \
             sudo apt install -y linux-tools-aws linux-cloud-tools-aws || true
 
+          # Workaround for https://bugs.launchpad.net/ubuntu/+source/linux-hwe-6.14/+bug/2117159
+          if ! command -v perf &> /dev/null || ! perf --version &> /dev/null; then
+            echo "Applying workaround for missing perf in HWE 6.14 packages..."
+            # Find available perf binary
+            PERF_PATH=$(find /usr/lib/linux-tools* -name perf -executable 2>/dev/null | head -n1)
+            if [ -n "$PERF_PATH" ]; then
+              KERNEL_VERSION=$(uname -r)
+              TARGET_DIR="/usr/lib/linux-tools/${KERNEL_VERSION}"
+              sudo mkdir -p "$TARGET_DIR"
+              sudo ln -sf "$PERF_PATH" "$TARGET_DIR/perf"
+              echo "Symlinked $PERF_PATH to $TARGET_DIR/perf"
+            else
+              echo "Warning: Could not find any perf binary to symlink"
+            fi
+          fi
+
       - name: Setup halo2
         if: ${{ (github.event.inputs.mode == 'prove-evm') || (inputs.mode == 'prove-evm') }}
         run: |
