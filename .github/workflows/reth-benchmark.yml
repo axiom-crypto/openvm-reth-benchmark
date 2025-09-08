@@ -473,8 +473,16 @@ jobs:
             echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
             echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
 
+            # Set sampling frequency based on mode
+            MODE="${{ inputs.mode || github.event.inputs.mode }}"
+            if [[ "$MODE" == "execute" || "$MODE" == "execute-metered" ]]; then
+              PERF_FREQ=4000
+            else
+              PERF_FREQ=100
+            fi
+
             perf --version
-            perf record -F 100 --call-graph=fp -g -o perf.data -- ./run_benchmark.sh
+            perf record -F $PERF_FREQ --call-graph=fp -g -o perf.data -- ./run_benchmark.sh
           elif [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "nsys" ]]; then
             nsys profile --trace=cuda,osrt,nvtx \
              --cuda-memory-usage=true \
