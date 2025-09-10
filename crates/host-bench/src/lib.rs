@@ -186,8 +186,6 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
         }
     };
 
-    let program_name = format!("reth.{}.block_{}", args.mode, args.block_number);
-
     let mut stdin = StdIn::default();
     stdin.write(&client_input);
 
@@ -219,6 +217,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     let elf = Elf::decode(openvm_client_eth_elf, MEM_SIZE as u32)?;
     let exe = sdk.convert_to_exe(elf.clone())?;
 
+    let program_name = format!("reth.{}.block_{}", args.mode, args.block_number);
     // NOTE: args.benchmark.app_config resets SegmentationLimits if max_segment_length is set
     args.benchmark.max_segment_length = None;
 
@@ -227,15 +226,15 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
             || -> eyre::Result<()> {
                 // Always run native execution for comparison
                 {
-                    let header = info_span!("native.execute", group = program_name.clone())
-                        .in_scope(|| {
+                    let header =
+                        info_span!("native.execute", group = program_name).in_scope(|| {
                             let executor = ClientExecutor;
                             // Create a child span to get the group label propagated
                             info_span!("client.execute")
                                 .in_scope(|| executor.execute(client_input.clone()))
                         })?;
                     let block_hash = header.hash_slow();
-                    println!("block_hash (native): {}", ToHexExt::encode_hex(&block_hash));
+                    println!("block_hash (execute-native): {}", ToHexExt::encode_hex(&block_hash));
                 }
 
                 // For ExecuteNative mode, only do native execution
