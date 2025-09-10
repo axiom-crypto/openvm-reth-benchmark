@@ -19,6 +19,7 @@ on:
         options:
           - execute
           - execute-metered
+          - execute-native
           - prove-app
           - prove-stark
           - prove-evm

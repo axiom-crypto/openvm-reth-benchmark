@@ -6,21 +6,26 @@ if [ "$1" == "cuda" ]; then
 fi
 
 set -e
-cd bin/client-eth
-cargo openvm build
-mkdir -p ../host/elf
-SRC="target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth"
-DEST="../host/elf/openvm-client-eth"
-
-if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
-    cp "$SRC" "$DEST"
-fi
-cd ../..
 
 mkdir -p rpc-cache
 source .env
-MODE=execute # can be execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
-PROFILE="release"
+MODE=execute # can be execute, execute-metered, execute-native, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
+
+# Skip cargo openvm build for execute-native mode
+if [ "$MODE" != "execute-native" ]; then
+    cd bin/client-eth
+    cargo openvm build
+    mkdir -p ../host/elf
+    SRC="target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth"
+    DEST="../host/elf/openvm-client-eth"
+
+    if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
+        cp "$SRC" "$DEST"
+    fi
+    cd ../..
+fi
+
+PROFILE="profiling"
 FEATURES="metrics,jemalloc,tco,unprotected"
 BLOCK_NUMBER=23100006
 # switch to +nightly-2025-08-19 if using tco
@@ -30,7 +35,6 @@ MAX_SEGMENT_LENGTH=4194204
 SEGMENT_MAX_CELLS=700000000
 VPMM_PAGE_SIZE=$((4<<20))
 VPMM_PAGES=$((12 * $MAX_SEGMENT_LENGTH/ $VPMM_PAGE_SIZE))
-
 
 if [ "$USE_CUDA" = "true" ]; then
     FEATURES="$FEATURES,cuda"

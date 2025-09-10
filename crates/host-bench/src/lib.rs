@@ -12,7 +12,7 @@ use openvm_circuit::{
         bench::run_with_metric_collection, openvm_stark_backend::p3_field::PrimeField32,
     },
 };
-use openvm_client_executor::{io::ClientExecutorInput, CHAIN_ID_ETH_MAINNET};
+use openvm_client_executor::{io::ClientExecutorInput, ClientExecutor, CHAIN_ID_ETH_MAINNET};
 use openvm_host_executor::HostExecutor;
 pub use openvm_native_circuit::NativeConfig;
 
@@ -40,6 +40,8 @@ pub enum BenchMode {
     Execute,
     /// Execute the VM with metering to get segments information.
     ExecuteMetered,
+    /// Execute natively without OpenVM interpreter.
+    ExecuteNative,
     /// Generate sequence of app proofs for continuation segments.
     ProveApp,
     /// Generate a full end-to-end STARK proof with aggregation.
@@ -58,6 +60,7 @@ impl std::fmt::Display for BenchMode {
         match self {
             Self::Execute => write!(f, "execute"),
             Self::ExecuteMetered => write!(f, "execute_metered"),
+            Self::ExecuteNative => write!(f, "execute_native"),
             Self::ProveApp => write!(f, "prove_app"),
             Self::ProveStark => write!(f, "prove_stark"),
             #[cfg(feature = "evm-verify")]
@@ -183,6 +186,15 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
         }
     };
 
+    if matches!(args.mode, BenchMode::ExecuteNative) {
+        // Execute natively without OpenVM
+        let executor = ClientExecutor;
+        let header = executor.execute(client_input)?;
+        let block_hash = header.hash_slow();
+        println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+        return Ok(());
+    }
+
     let mut stdin = StdIn::default();
     stdin.write(&client_input);
 
@@ -221,7 +233,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     run_with_metric_collection("OUTPUT_PATH", || {
         info_span!("reth-block", block_number = args.block_number).in_scope(
             || -> eyre::Result<()> {
-                // Always execute_e1 for benchmarking:
+                // Always execute for benchmarking:
                 {
                     let pvs = info_span!("sdk.execute", group = program_name)
                         .in_scope(|| sdk.execute(elf.clone(), stdin.clone()))?;
@@ -277,6 +289,10 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                         let proof = prover.prove_evm(stdin)?;
                         let block_hash = &proof.user_public_values;
                         println!("block_hash: {}", ToHexExt::encode_hex(block_hash));
+                    }
+                    BenchMode::ExecuteNative => {
+                        // This case is handled earlier and should not reach here
+                        unreachable!();
                     }
                     BenchMode::MakeInput => {
                         // This case is handled earlier and should not reach here

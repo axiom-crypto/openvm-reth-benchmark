@@ -45,6 +45,7 @@ on:
         options:
           - execute
           - execute-metered
+          - execute-native
           - prove-app
           - prove-stark
           - prove-evm
@@ -371,18 +372,18 @@ jobs:
           key: cargo-openvm-${{ steps.get-openvm-rev.outputs.result }}-${{ runner.os }}-${{ runner.arch }}
 
       - name: Install cargo-openvm
-        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true' && steps.cache-cargo-openvm-restore.outputs.cache-hit != 'true'
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true' && steps.cache-cargo-openvm-restore.outputs.cache-hit != 'true' && (inputs.mode != 'execute-native' && github.event.inputs.mode != 'execute-native')
         run: |
           cargo install --git https://github.com/openvm-org/openvm.git --rev ${{ steps.get-openvm-rev.outputs.result }} --locked --force cargo-openvm
 
       - name: Save cargo-openvm to cache
-        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true' && steps.cache-cargo-openvm-restore.outputs.cache-hit != 'true'
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true' && steps.cache-cargo-openvm-restore.outputs.cache-hit != 'true' && (inputs.mode != 'execute-native' && github.event.inputs.mode != 'execute-native')
         uses: runs-on/cache/save@v4
         with:
           path: ~/.cargo/bin/cargo-openvm
           key: ${{ steps.cache-cargo-openvm-restore.outputs.cache-primary-key }}
       - name: Build Guest ELF
-        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true' && (inputs.mode != 'execute-native' && github.event.inputs.mode != 'execute-native')
         working-directory: bin/client-eth
         run: |
           GUEST_PROFILE=${{ steps.set-build-profiles.outputs.guest_profile }}
@@ -391,7 +392,7 @@ jobs:
           cp target/riscv32im-risc0-zkvm-elf/$GUEST_PROFILE/openvm-client-eth ../host/elf/
 
       - name: Save Guest ELF to cache
-        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true' && (inputs.mode != 'execute-native' && github.event.inputs.mode != 'execute-native')
         uses: runs-on/cache/save@v4
         with:
           path: bin/host/elf/openvm-client-eth
@@ -475,7 +476,7 @@ jobs:
 
             # Set sampling frequency based on mode
             MODE="${{ inputs.mode || github.event.inputs.mode }}"
-            if [[ "$MODE" == "execute" || "$MODE" == "execute-metered" ]]; then
+            if [[ "$MODE" == "execute" || "$MODE" == "execute-metered" || "$MODE" == "execute-native" ]]; then
               PERF_FREQ=4000
             else
               PERF_FREQ=100
