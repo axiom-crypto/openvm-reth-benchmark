@@ -187,12 +187,20 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     };
 
     if matches!(args.mode, BenchMode::ExecuteNative) {
-        // Execute natively without OpenVM
-        let executor = ClientExecutor;
-        let header = executor.execute(client_input)?;
-        let block_hash = header.hash_slow();
-        println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
-        return Ok(());
+        let program_name = format!("reth.{}.block_{}", args.mode, args.block_number);
+        return run_with_metric_collection("OUTPUT_PATH", || {
+            info_span!("reth-block", block_number = args.block_number).in_scope(
+                || -> eyre::Result<()> {
+                    // Execute natively without OpenVM
+                    let executor = ClientExecutor;
+                    let header = info_span!("native.execute", group = program_name)
+                        .in_scope(|| executor.execute(client_input))?;
+                    let block_hash = header.hash_slow();
+                    println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+                    Ok(())
+                },
+            )
+        });
     }
 
     let mut stdin = StdIn::default();

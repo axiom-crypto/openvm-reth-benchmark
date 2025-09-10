@@ -372,18 +372,18 @@ jobs:
           key: cargo-openvm-${{ steps.get-openvm-rev.outputs.result }}-${{ runner.os }}-${{ runner.arch }}
 
       - name: Install cargo-openvm
-        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true' && steps.cache-cargo-openvm-restore.outputs.cache-hit != 'true' && (inputs.mode != 'execute-native' && github.event.inputs.mode != 'execute-native')
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true' && steps.cache-cargo-openvm-restore.outputs.cache-hit != 'true'
         run: |
           cargo install --git https://github.com/openvm-org/openvm.git --rev ${{ steps.get-openvm-rev.outputs.result }} --locked --force cargo-openvm
 
       - name: Save cargo-openvm to cache
-        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true' && steps.cache-cargo-openvm-restore.outputs.cache-hit != 'true' && (inputs.mode != 'execute-native' && github.event.inputs.mode != 'execute-native')
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true' && steps.cache-cargo-openvm-restore.outputs.cache-hit != 'true'
         uses: runs-on/cache/save@v4
         with:
           path: ~/.cargo/bin/cargo-openvm
           key: ${{ steps.cache-cargo-openvm-restore.outputs.cache-primary-key }}
       - name: Build Guest ELF
-        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true' && (inputs.mode != 'execute-native' && github.event.inputs.mode != 'execute-native')
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
         working-directory: bin/client-eth
         run: |
           GUEST_PROFILE=${{ steps.set-build-profiles.outputs.guest_profile }}
@@ -392,7 +392,7 @@ jobs:
           cp target/riscv32im-risc0-zkvm-elf/$GUEST_PROFILE/openvm-client-eth ../host/elf/
 
       - name: Save Guest ELF to cache
-        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true' && (inputs.mode != 'execute-native' && github.event.inputs.mode != 'execute-native')
+        if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
         uses: runs-on/cache/save@v4
         with:
           path: bin/host/elf/openvm-client-eth

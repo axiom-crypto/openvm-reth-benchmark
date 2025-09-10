@@ -11,19 +11,16 @@ mkdir -p rpc-cache
 source .env
 MODE=execute # can be execute, execute-metered, execute-native, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
 
-# Skip cargo openvm build for execute-native mode
-if [ "$MODE" != "execute-native" ]; then
-    cd bin/client-eth
-    cargo openvm build
-    mkdir -p ../host/elf
-    SRC="target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth"
-    DEST="../host/elf/openvm-client-eth"
+cd bin/client-eth
+cargo openvm build
+mkdir -p ../host/elf
+SRC="target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth"
+DEST="../host/elf/openvm-client-eth"
 
-    if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
-        cp "$SRC" "$DEST"
-    fi
-    cd ../..
+if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
+    cp "$SRC" "$DEST"
 fi
+cd ../..
 
 PROFILE="profiling"
 FEATURES="metrics,jemalloc,tco,unprotected"
