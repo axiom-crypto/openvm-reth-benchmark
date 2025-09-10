@@ -36,8 +36,8 @@ use cli::ProviderArgs;
 /// Enum representing the execution mode of the host executable.
 #[derive(Debug, Clone, clap::ValueEnum)]
 pub enum BenchMode {
-    /// Execute natively without OpenVM interpreter.
-    ExecuteNative,
+    /// Execute natively on host.
+    ExecuteHost,
     /// Execute the VM without generating a proof.
     Execute,
     /// Execute the VM with metering to get segments information.
@@ -58,7 +58,7 @@ pub enum BenchMode {
 impl std::fmt::Display for BenchMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::ExecuteNative => write!(f, "execute_native"),
+            Self::ExecuteHost => write!(f, "execute_host"),
             Self::Execute => write!(f, "execute"),
             Self::ExecuteMetered => write!(f, "execute_metered"),
             Self::ProveApp => write!(f, "prove_app"),
@@ -224,9 +224,9 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     run_with_metric_collection("OUTPUT_PATH", || {
         info_span!("reth-block", block_number = args.block_number).in_scope(
             || -> eyre::Result<()> {
-                // Always run native execution for comparison
+                // Always run host execution for comparison
                 {
-                    let block_hash = info_span!("native.execute", group = program_name).in_scope(
+                    let block_hash = info_span!("host.execute", group = program_name).in_scope(
                         || -> eyre::Result<_> {
                             let executor = ClientExecutor;
                             // Create a child span to get the group label propagated
@@ -237,11 +237,11 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             Ok(block_hash)
                         },
                     )?;
-                    println!("block_hash (execute-native): {}", ToHexExt::encode_hex(&block_hash));
+                    println!("block_hash (execute-host): {}", ToHexExt::encode_hex(&block_hash));
                 }
 
-                // For ExecuteNative mode, only do native execution
-                if matches!(args.mode, BenchMode::ExecuteNative) {
+                // For ExecuteHost mode, only do host execution
+                if matches!(args.mode, BenchMode::ExecuteHost) {
                     return Ok(());
                 }
 

@@ -9,7 +9,7 @@ set -e
 
 mkdir -p rpc-cache
 source .env
-MODE=execute # can be execute-native, execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
+MODE=execute # can be execute-host, execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
 
 cd bin/client-eth
 cargo openvm build
