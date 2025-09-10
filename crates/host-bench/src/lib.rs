@@ -188,28 +188,6 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
 
     let program_name = format!("reth.{}.block_{}", args.mode, args.block_number);
 
-    // Always run native execution for comparison
-    let native_result = run_with_metric_collection("OUTPUT_PATH", || {
-        info_span!("reth-block", block_number = args.block_number).in_scope(
-            || -> eyre::Result<()> {
-                let header =
-                    info_span!("native.execute", group = program_name.clone()).in_scope(|| {
-                        let executor = ClientExecutor;
-                        // Create a child span to get the group label propagated
-                        info_span!("client.execute")
-                            .in_scope(|| executor.execute(client_input.clone()))
-                    })?;
-                let block_hash = header.hash_slow();
-                println!("block_hash (native): {}", ToHexExt::encode_hex(&block_hash));
-                Ok(())
-            },
-        )
-    });
-
-    if matches!(args.mode, BenchMode::ExecuteNative) {
-        return native_result;
-    }
-
     let mut stdin = StdIn::default();
     stdin.write(&client_input);
 
@@ -247,6 +225,24 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     run_with_metric_collection("OUTPUT_PATH", || {
         info_span!("reth-block", block_number = args.block_number).in_scope(
             || -> eyre::Result<()> {
+                // Always run native execution for comparison
+                {
+                    let header = info_span!("native.execute", group = program_name.clone())
+                        .in_scope(|| {
+                            let executor = ClientExecutor;
+                            // Create a child span to get the group label propagated
+                            info_span!("client.execute")
+                                .in_scope(|| executor.execute(client_input.clone()))
+                        })?;
+                    let block_hash = header.hash_slow();
+                    println!("block_hash (native): {}", ToHexExt::encode_hex(&block_hash));
+                }
+
+                // For ExecuteNative mode, only do native execution
+                if matches!(args.mode, BenchMode::ExecuteNative) {
+                    return Ok(());
+                }
+
                 // Always execute for benchmarking:
                 {
                     let pvs = info_span!("sdk.execute", group = program_name)
@@ -254,6 +250,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                     let block_hash = pvs;
                     println!("block_hash (execute): {}", ToHexExt::encode_hex(&block_hash));
                 }
+
                 match args.mode {
                     BenchMode::Execute => {}
                     BenchMode::ExecuteMetered => {
@@ -304,14 +301,6 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                         let block_hash = &proof.user_public_values;
                         println!("block_hash (prove_evm): {}", ToHexExt::encode_hex(block_hash));
                     }
-                    BenchMode::ExecuteNative => {
-                        // This case is handled earlier and should not reach here
-                        unreachable!();
-                    }
-                    BenchMode::MakeInput => {
-                        // This case is handled earlier and should not reach here
-                        unreachable!();
-                    }
                     BenchMode::GenerateFixtures => {
                         let mut prover = sdk.prover(elf)?.with_program_name(program_name);
                         let app_proof = prover.app_prover.prove(stdin)?;
@@ -333,6 +322,10 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                         let mut agg_pk_path = fixture_path.clone();
                         agg_pk_path.push("agg_pk.bitcode");
                         fs::write(agg_pk_path, bitcode::serialize(sdk.agg_pk())?)?;
+                    }
+                    _ => {
+                        // This case is handled earlier and should not reach here
+                        unreachable!();
                     }
                 }
 
