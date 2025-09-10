@@ -8,6 +8,7 @@ members = [
     "crates/storage/rpc-db",
     "crates/host-bench",
     "crates/mpt",
+    "bin/verifier-bench"
 ]
 exclude = []
 resolver = "2"
@@ -49,6 +50,7 @@ derive_more = "1.0.0"
 smallvec = "1.13"
 bumpalo = "3.19.0"
 bytes = "1"
+bitcode = { version = "0.6.5", default-features = false, features = ["serde"] }
 
 # workspace
 openvm-rpc-db = { path = "./crates/storage/rpc-db" }
@@ -126,6 +128,7 @@ openvm-build = { git = "https://github.com/openvm-org/openvm.git", branch = "mai
 openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-keccak256-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-keccak256-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
