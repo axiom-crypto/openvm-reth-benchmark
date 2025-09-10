@@ -36,12 +36,12 @@ use cli::ProviderArgs;
 /// Enum representing the execution mode of the host executable.
 #[derive(Debug, Clone, clap::ValueEnum)]
 pub enum BenchMode {
+    /// Execute natively without OpenVM interpreter.
+    ExecuteNative,
     /// Execute the VM without generating a proof.
     Execute,
     /// Execute the VM with metering to get segments information.
     ExecuteMetered,
-    /// Execute natively without OpenVM interpreter.
-    ExecuteNative,
     /// Generate sequence of app proofs for continuation segments.
     ProveApp,
     /// Generate a full end-to-end STARK proof with aggregation.
@@ -58,9 +58,9 @@ pub enum BenchMode {
 impl std::fmt::Display for BenchMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::ExecuteNative => write!(f, "execute_native"),
             Self::Execute => write!(f, "execute"),
             Self::ExecuteMetered => write!(f, "execute_metered"),
-            Self::ExecuteNative => write!(f, "execute_native"),
             Self::ProveApp => write!(f, "prove_app"),
             Self::ProveStark => write!(f, "prove_stark"),
             #[cfg(feature = "evm-verify")]

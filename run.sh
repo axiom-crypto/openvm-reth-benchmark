@@ -9,7 +9,7 @@ set -e
 
 mkdir -p rpc-cache
 source .env
-MODE=execute # can be execute, execute-metered, execute-native, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
+MODE=execute # can be execute-native, execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
 
 cd bin/client-eth
 cargo openvm build
@@ -22,7 +22,7 @@ if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
 fi
 cd ../..
 
-PROFILE="profiling"
+PROFILE="release"
 FEATURES="metrics,jemalloc,tco,unprotected"
 BLOCK_NUMBER=23100006
 # switch to +nightly-2025-08-19 if using tco

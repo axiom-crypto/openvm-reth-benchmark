@@ -17,9 +17,9 @@ on:
         required: false
         description: Running mode
         options:
+          - execute-native
           - execute
           - execute-metered
-          - execute-native
           - prove-app
           - prove-stark
           - prove-evm
