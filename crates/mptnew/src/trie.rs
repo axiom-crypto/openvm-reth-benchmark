@@ -164,6 +164,7 @@ impl<'a> MptTrie<'a> {
             let mut buf = *bytes;
             let rlp_node_header_start = buf;
             let alloy_rlp::Header { list, payload_length } = alloy_rlp::Header::decode(&mut buf)?;
+            // SAFETY: we already decoded the header, so we know the payload length.
             let payload = unsafe { advance_unchecked(&mut buf, payload_length) };
             let rlp_node_length = rlp_node_header_start.len() - buf.len();
 
@@ -193,12 +194,14 @@ impl<'a> MptTrie<'a> {
         let rlp_node_header_start = *bytes;
         let alloy_rlp::Header { list, payload_length } = alloy_rlp::Header::decode(bytes)?;
 
+        // SAFETY: we already decoded the header, so we know the payload length.
         let mut payload = unsafe { advance_unchecked(bytes, payload_length) };
         let rlp_node_length = rlp_node_header_start.len() - bytes.len();
 
         let rlp_node = &rlp_node_header_start[..rlp_node_length];
 
         let padding_len = (MIN_ALIGN - (rlp_node_length % MIN_ALIGN)) % MIN_ALIGN;
+        // SAFETY: we expect the padding. See the `encode_trie_internal` function.
         unsafe { advance_unchecked(bytes, padding_len) };
 
         // calculate node's reference and ensure it matches the `expected_node_ref` from parent.
@@ -237,6 +240,7 @@ impl<'a> MptTrie<'a> {
         let item0_header_start = payload;
         let alloy_rlp::Header { payload_length: item0_payload_length, .. } =
             alloy_rlp::Header::decode(&mut payload)?;
+        // SAFETY: we already decoded the header, so we know the payload length.
         let item0_payload_start = unsafe { advance_unchecked(&mut payload, item0_payload_length) };
         let item0_length = item0_header_start.len() - payload.len();
 
@@ -244,6 +248,7 @@ impl<'a> MptTrie<'a> {
         let item1_header_start = payload;
         let alloy_rlp::Header { payload_length: item1_payload_length, .. } =
             alloy_rlp::Header::decode(&mut payload)?;
+        // SAFETY: we already decoded the header, so we know the payload length.
         let item1_payload_start = unsafe { advance_unchecked(&mut payload, item1_payload_length) };
         let item1_length = item1_header_start.len() - payload.len();
 
@@ -286,6 +291,7 @@ impl<'a> MptTrie<'a> {
         };
 
         // Create an uninitialized array to avoid wasteful default initialization
+        // SAFETY: below we assign to each element of the array.
         let mut childs: [MaybeUninit<Option<NodeId>>; 16] =
             unsafe { MaybeUninit::uninit().assume_init() };
 
@@ -298,6 +304,7 @@ impl<'a> MptTrie<'a> {
             let item_header_start = payload;
             let alloy_rlp::Header { payload_length: item_payload_length, .. } =
                 alloy_rlp::Header::decode(&mut payload)?;
+            // SAFETY: we already decoded the header, so we know the payload length.
             unsafe { advance_unchecked(&mut payload, item_payload_length) };
             let item_length = item_header_start.len() - payload.len();
 
@@ -314,6 +321,7 @@ impl<'a> MptTrie<'a> {
         }
 
         // Transmute the fully initialized array to the final type
+        // SAFETY: we already initialized all elements of the array.
         let childs: [Option<NodeId>; 16] = unsafe {
             std::mem::transmute::<[MaybeUninit<Option<NodeId>>; 16], [Option<NodeId>; 16]>(childs)
         };
