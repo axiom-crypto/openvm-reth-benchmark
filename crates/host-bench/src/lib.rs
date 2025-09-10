@@ -192,9 +192,12 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
             info_span!("reth-block", block_number = args.block_number).in_scope(
                 || -> eyre::Result<()> {
                     // Execute natively without OpenVM
-                    let executor = ClientExecutor;
-                    let header = info_span!("native.execute", group = program_name)
-                        .in_scope(|| executor.execute(client_input))?;
+                    let header =
+                        info_span!("native.execute", group = program_name).in_scope(|| {
+                            let executor = ClientExecutor;
+                            // Create a child span to get the group label propagated
+                            info_span!("client.execute").in_scope(|| executor.execute(client_input))
+                        })?;
                     let block_hash = header.hash_slow();
                     println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
                     Ok(())
