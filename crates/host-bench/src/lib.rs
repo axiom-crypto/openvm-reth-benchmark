@@ -186,24 +186,28 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
         }
     };
 
+    let program_name = format!("reth.{}.block_{}", args.mode, args.block_number);
+
+    // Always run native execution for comparison
+    let native_result = run_with_metric_collection("OUTPUT_PATH", || {
+        info_span!("reth-block", block_number = args.block_number).in_scope(
+            || -> eyre::Result<()> {
+                let header =
+                    info_span!("native.execute", group = program_name.clone()).in_scope(|| {
+                        let executor = ClientExecutor;
+                        // Create a child span to get the group label propagated
+                        info_span!("client.execute")
+                            .in_scope(|| executor.execute(client_input.clone()))
+                    })?;
+                let block_hash = header.hash_slow();
+                println!("block_hash (native): {}", ToHexExt::encode_hex(&block_hash));
+                Ok(())
+            },
+        )
+    });
+
     if matches!(args.mode, BenchMode::ExecuteNative) {
-        let program_name = format!("reth.{}.block_{}", args.mode, args.block_number);
-        return run_with_metric_collection("OUTPUT_PATH", || {
-            info_span!("reth-block", block_number = args.block_number).in_scope(
-                || -> eyre::Result<()> {
-                    // Execute natively without OpenVM
-                    let header =
-                        info_span!("native.execute", group = program_name).in_scope(|| {
-                            let executor = ClientExecutor;
-                            // Create a child span to get the group label propagated
-                            info_span!("client.execute").in_scope(|| executor.execute(client_input))
-                        })?;
-                    let block_hash = header.hash_slow();
-                    println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
-                    Ok(())
-                },
-            )
-        });
+        return native_result;
     }
 
     let mut stdin = StdIn::default();
@@ -237,7 +241,6 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     let elf = Elf::decode(openvm_client_eth_elf, MEM_SIZE as u32)?;
     let exe = sdk.convert_to_exe(elf.clone())?;
 
-    let program_name = format!("reth.{}.block_{}", args.mode, args.block_number);
     // NOTE: args.benchmark.app_config resets SegmentationLimits if max_segment_length is set
     args.benchmark.max_segment_length = None;
 
@@ -249,7 +252,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                     let pvs = info_span!("sdk.execute", group = program_name)
                         .in_scope(|| sdk.execute(elf.clone(), stdin.clone()))?;
                     let block_hash = pvs;
-                    println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+                    println!("block_hash (execute): {}", ToHexExt::encode_hex(&block_hash));
                 }
                 match args.mode {
                     BenchMode::Execute => {}
@@ -283,7 +286,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             .iter()
                             .map(|pv| pv.as_canonical_u32() as u8)
                             .collect::<Vec<u8>>();
-                        println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+                        println!("block_hash (prove_stark): {}", ToHexExt::encode_hex(&block_hash));
                     }
                     #[cfg(feature = "evm-verify")]
                     BenchMode::ProveEvm => {
@@ -299,7 +302,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                         );
                         let proof = prover.prove_evm(stdin)?;
                         let block_hash = &proof.user_public_values;
-                        println!("block_hash: {}", ToHexExt::encode_hex(block_hash));
+                        println!("block_hash (prove_evm): {}", ToHexExt::encode_hex(block_hash));
                     }
                     BenchMode::ExecuteNative => {
                         // This case is handled earlier and should not reach here

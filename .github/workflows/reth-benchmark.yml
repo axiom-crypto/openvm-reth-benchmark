@@ -591,7 +591,7 @@ jobs:
           s5cmd cp $SAMPLY_PROFILE_PATH/profile.json.gz ${{ env.S3_SAMPLY_PROFILE_PATH }}/${METRIC_NAME}/profile.json.gz
 
           MODE=${{ inputs.mode || github.event.inputs.mode }}
-          if [[ "$MODE" == "execute" || "$MODE" == "execute-metered" ]]; then
+          if [[ "$MODE" == "execute" || "$MODE" == "execute-metered" || "$MODE" == "execute-native" ]]; then
             FIREFOX_PROFILER_TOKEN=$(curl 'https://api.profiler.firefox.com/compressed-store' -X POST -H 'Accept: application/vnd.firefox-profiler+json;version=1.0' --data-binary @"$SAMPLY_PROFILE_PATH/profile.json.gz" | python3 -c "import sys,base64,json; t=sys.stdin.read().strip().split('.')[1]; t+='='*(4-len(t)%4)if len(t)%4 else''; print(json.loads(base64.urlsafe_b64decode(t))['profileToken'])")
 
             if [ -n "$FIREFOX_PROFILER_TOKEN" ]; then
