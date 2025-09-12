@@ -47,7 +47,7 @@ fn main() {
             let out = vm
                 .execute_preflight(&mut interpreter, state, None, NATIVE_MAX_TRACE_HEIGHTS)
                 .expect("Failed to execute preflight");
-            println!("end pc {}", out.to_state.pc);
+            println!("end pc {}", out.to_state.pc());
             println!("Time to aggregate app proof chunk {i}, {}s", start.elapsed().as_secs_f64());
         }
         println!(
@@ -77,7 +77,7 @@ fn main() {
             let out = vm
                 .execute_preflight(&mut interpreter, state, None, NATIVE_MAX_TRACE_HEIGHTS)
                 .expect("Failed to execute preflight");
-            println!("end pc {}", out.to_state.pc);
+            println!("end pc {}", out.to_state.pc());
             println!("Time to aggregate leaf proof chunk {i}, {}s", start.elapsed().as_secs_f64());
         }
         println!(
