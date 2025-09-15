@@ -4524,6 +4524,11 @@ dependencies = [
 ]
 
 [[patch.unused]]
+name = "p256"
+version = "0.13.2"
+source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=adaea75535b46064b7c6b8e8cca947d1d4c079af#adaea75535b46064b7c6b8e8cca947d1d4c079af"
+
+[[patch.unused]]
 name = "cargo-openvm"
 version = "1.4.1-rc.0"
 source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=adaea75535b46064b7c6b8e8cca947d1d4c079af#adaea75535b46064b7c6b8e8cca947d1d4c079af"
@@ -4707,8 +4712,3 @@ source = "git+ssh://git@github.com/openvm-org/stark-backend.git?rev=e7c34cca883d
 name = "openvm-stark-sdk"
 version = "1.2.1-rc.1"
 source = "git+ssh://git@github.com/openvm-org/stark-backend.git?rev=e7c34cca883db8a1061d00f61460209fc3965c53#e7c34cca883db8a1061d00f61460209fc3965c53"
-
-[[patch.unused]]
-name = "p256"
-version = "0.13.2"
-source = "git+ssh://git@github.com/openvm-org/openvm.git?rev=adaea75535b46064b7c6b8e8cca947d1d4c079af#adaea75535b46064b7c6b8e8cca947d1d4c079af"

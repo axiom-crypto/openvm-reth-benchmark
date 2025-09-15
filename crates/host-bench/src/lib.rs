@@ -265,7 +265,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                         let executor_idx_to_air_idx = vm.executor_idx_to_air_idx();
                         let interpreter =
                             vm.executor().metered_instance(&exe, &executor_idx_to_air_idx)?;
-                        let metered_ctx = vm.build_metered_ctx();
+                        let metered_ctx = vm.build_metered_ctx(&exe);
                         let (segments, _) =
                             info_span!("interpreter.execute_metered", group = program_name)
                                 .in_scope(|| interpreter.execute_metered(stdin, metered_ctx))?;
