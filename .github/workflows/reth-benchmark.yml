@@ -316,7 +316,7 @@ jobs:
 
       - name: Install openvm-prof
         run: |
-          cargo install --git https://github.com/openvm-org/openvm.git --rev ${{ steps.get-openvm-rev.outputs.result }} --profile=dev --force openvm-prof
+          cargo install --git https://github.com/openvm-org/openvm.git --rev a96af772937791f15cc901156531e274f4dc0aea --profile=dev --force openvm-prof
 
       - name: Checkout openvm (for scripts)
         run: |
