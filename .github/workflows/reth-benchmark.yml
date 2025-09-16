@@ -70,7 +70,7 @@ on:
         type: string
         required: false
         description: Total main trace cells (excluding memory)
-        default: "700000000"
+        default: "1200000000"
       # num_children_leaf:
       #   type: number
       #   required: false
@@ -141,7 +141,7 @@ on:
         type: string
         required: false
         description: Total main trace cells (excluding memory)
-        default: "700000000"
+        default: "1200000000"
       num_children_leaf:
         type: number
         required: false
