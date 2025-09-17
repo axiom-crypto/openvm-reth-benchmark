@@ -28,9 +28,9 @@ BLOCK_NUMBER=23100006
 # switch to +nightly-2025-08-19 if using tco
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
 BIN_NAME="openvm-reth-benchmark-bin"
-MAX_SEGMENT_LENGTH=4194204
+MAX_SEGMENT_LENGTH=$((1 << 22))
 SEGMENT_MAX_CELLS=1200000000
-VPMM_PAGE_SIZE=$((4<<20))
+VPMM_PAGE_SIZE=$((4 << 20))
 VPMM_PAGES=$((12 * $MAX_SEGMENT_LENGTH/ $VPMM_PAGE_SIZE))
 
 if [ "$USE_CUDA" = "true" ]; then

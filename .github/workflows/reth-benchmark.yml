@@ -65,7 +65,7 @@ on:
         type: number
         required: false
         description: Max segment length for continuations
-        default: 4194204 # 2**22 - 100, but the main criteria should be segment_max_cells
+        default: 4194304 # 2^22, but the main criteria should be segment_max_cells
       segment_max_cells:
         type: string
         required: false
@@ -136,7 +136,7 @@ on:
         type: number
         required: false
         description: Max segment length for continuations
-        default: 4194204 # 2**22 - 100, but the main criteria should be segment_max_cells
+        default: 4194304 # 2^22, but the main criteria should be segment_max_cells
       segment_max_cells:
         type: string
         required: false
