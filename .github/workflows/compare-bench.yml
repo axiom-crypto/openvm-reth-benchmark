@@ -23,7 +23,7 @@ on:
           - prove-app
           - prove-stark
           - prove-evm
-        default: prove-evm
+        default: prove-stark
       block_number:
         type: number
         required: false

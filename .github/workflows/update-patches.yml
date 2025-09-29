@@ -28,12 +28,12 @@ on:
         description: "Benchmark mode (if running benchmark)"
         type: string
         required: false
-        default: prove-evm
+        default: prove-stark
       instance_family:
         description: "Instance family to use for benchmark"
         type: string
         required: false
-        default: m8g.24xlarge
+        default: g6e.8xlarge
       benchmark_block_number:
         description: "Block number to run the benchmark on"
         type: number
@@ -70,7 +70,7 @@ on:
         type: string
         required: false
         description: "Benchmark mode (if running benchmark)"
-        default: prove-evm
+        default: prove-stark
       instance_family:
         type: string
         required: false
@@ -230,8 +230,8 @@ jobs:
     if: ${{ github.event.inputs.run_benchmark == 'true' || inputs.run_benchmark || github.event_name == 'schedule' }}
     uses: ./.github/workflows/reth-benchmark.yml
     with:
-      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-evm' }}
-      instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
+      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-stark' }}
+      instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'g6e.8xlarge' }}
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
       block_number: ${{ fromJSON(inputs.benchmark_block_number || github.event.inputs.benchmark_block_number || '23100006') }}
@@ -243,7 +243,7 @@ jobs:
     if: ${{ github.event.inputs.host_flamegraph == 'true' || inputs.host_flamegraph || github.event_name == 'schedule' }}
     uses: ./.github/workflows/reth-benchmark.yml
     with:
-      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-evm' }}
+      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-stark' }}
       instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
@@ -256,7 +256,7 @@ jobs:
     if: ${{ github.event.inputs.guest_flamegraph == 'true' || inputs.guest_flamegraph || github.event_name == 'schedule' }}
     uses: ./.github/workflows/reth-benchmark.yml
     with:
-      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-evm' }}
+      mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-stark' }}
       instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
