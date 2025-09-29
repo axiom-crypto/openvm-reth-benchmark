@@ -179,7 +179,7 @@ env:
   INPUT_ARGS: ""
   CARGO_NET_GIT_FETCH_WITH_CLI: "true"
   BENCHER_PROJECT: openvm-reth-benchmark
-  OPENVM_RUST_TOOLCHAIN: "nightly-2025-08-01"
+  OPENVM_RUST_TOOLCHAIN: "nightly-2025-08-02"
 
 jobs:
   run-reth:
