@@ -179,6 +179,7 @@ env:
   INPUT_ARGS: ""
   CARGO_NET_GIT_FETCH_WITH_CLI: "true"
   BENCHER_PROJECT: openvm-reth-benchmark
+  OPENVM_RUST_TOOLCHAIN: "nightly-2025-08-01"
 
 jobs:
   run-reth:
@@ -324,7 +325,6 @@ jobs:
 
       - name: Install architecture specific tools
         run: |
-          rustup install nightly-2024-10-30
           source openvm/ci/scripts/utils.sh
           install_s5cmd
           sudo apt update
