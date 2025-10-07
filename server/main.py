@@ -1,11 +1,11 @@
 import os
-import shutil
 import subprocess
 from pathlib import Path
 from typing import Dict
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -15,79 +15,50 @@ class Job:
         self,
         pid: int,
         popen: subprocess.Popen,
-        input_path: Path,
-        stdout_path: Path,
-        stderr_path: Path,
+        job_dir: Path,
         mode: str,
     ):
         self.pid = pid
         self.popen = popen
-        self.input_path = input_path
-        self.stdout_path = stdout_path
-        self.stderr_path = stderr_path
+        self.job_dir = job_dir
         self.mode = mode
 
 
 JOBS: Dict[str, Job] = {}
 
 
-def run_benchmark_binary(
-    input_path: Path,
-    block_number: str,
-    mode: str,
-    extra_args: list[str],
+def run_proof(
+    proof_uuid: str,
     stdout_path: Path,
     stderr_path: Path,
 ) -> subprocess.Popen:
-    bin_path = os.environ.get("OVM_BIN", "/usr/local/bin/openvm-reth-benchmark-bin")
-    if not Path(bin_path).exists():
-        raise FileNotFoundError(f"Binary not found at {bin_path}")
+    script_path = Path(__file__).parent / "prove_block.sh"
+    if not script_path.exists():
+        raise FileNotFoundError(f"Wrapper script not found at {script_path}")
 
-    args = [
-        bin_path,
-        "--mode",
-        mode,
-        "--input-path",
-        str(input_path),
-        "--app-log-blowup",
-        os.environ.get("APP_LOG_BLOWUP", "1"),
-        "--leaf-log-blowup",
-        os.environ.get("LEAF_LOG_BLOWUP", "1"),
-        "--internal-log-blowup",
-        os.environ.get("INTERNAL_LOG_BLOWUP", "2"),
-        "--root-log-blowup",
-        os.environ.get("ROOT_LOG_BLOWUP", "3"),
-        "--block-number",
-        block_number,
-        "--max-segment-length",
-        os.environ.get("MAX_SEGMENT_LENGTH", "4194204"),
-        "--segment-max-cells",
-        os.environ.get("SEGMENT_MAX_CELLS", "700000000"),
-    ]
-    args.extend(extra_args)
+    args = [str(script_path), proof_uuid]
 
     stdout_f = stdout_path.open("w")
     stderr_f = stderr_path.open("w")
     return subprocess.Popen(args, stdout=stdout_f, stderr=stderr_f, text=True)
 
 
+class StartProofRequest(BaseModel):
+    proof_uuid: str
+
+
 @app.post("/start_proof")
-async def start_proof(
-    block_number: str,
-    file: UploadFile = File(
-        ..., description="Input JSON produced by make_input or .bin"
-    ),
-    extra: str = Form("", description="Optional extra CLI args, space-separated"),
-):
+async def start_proof(req: StartProofRequest):
+    proof_uuid = req.proof_uuid
     mode = "prove-stark"
-    # If a job for this block is already running, return its info
-    j = JOBS.get(block_number)
+    # If a job for this proof is already running, return its info
+    j = JOBS.get(proof_uuid)
     if j and j.popen.poll() is None:
         return JSONResponse(
             status_code=200,
             content={
                 "message": "job already running",
-                "block_number": block_number,
+                "proof_uuid": proof_uuid,
                 "pid": j.pid,
                 "stdout_path": str(j.stdout_path),
                 "stderr_path": str(j.stderr_path),
@@ -96,63 +67,61 @@ async def start_proof(
 
     jobs_root = Path(os.environ.get("JOBS_DIR", "/app/jobs"))
     jobs_root.mkdir(parents=True, exist_ok=True)
-    job_dir = jobs_root / block_number
+    job_dir = jobs_root / proof_uuid
     job_dir.mkdir(parents=True, exist_ok=True)
-
-    # Save input to block-specific directory
-    suffix = Path(file.filename or "input.json").suffix or ".json"
-    input_path = job_dir / f"input{suffix}"
-    with input_path.open("wb") as f:
-        shutil.copyfileobj(file.file, f)
 
     stdout_path = job_dir / "stdout.log"
     stderr_path = job_dir / "stderr.log"
 
     try:
-        extra_args = [arg for arg in extra.split() if arg]
-        proc = run_benchmark_binary(
-            input_path, block_number, mode, extra_args, stdout_path, stderr_path
-        )
+        proc = run_proof(proof_uuid, stdout_path, stderr_path)
     except FileNotFoundError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    JOBS[block_number] = Job(proc.pid, proc, input_path, stdout_path, stderr_path, mode)
+    JOBS[proof_uuid] = Job(proc.pid, proc, job_dir, mode)
 
     return JSONResponse(
         status_code=202,
         content={
             "message": "job started",
-            "block_number": block_number,
+            "proof_uuid": proof_uuid,
             "pid": proc.pid,
-            "input_path": str(input_path),
-            "stdout_path": str(stdout_path),
-            "stderr_path": str(stderr_path),
+            "job_dir": str(job_dir),
         },
     )
 
 
-@app.get("/status")
-async def status(block_number: str):
-    j = JOBS.get(block_number)
+@app.get("/proof_state")
+async def status(proof_uuid: str):
+    j = JOBS.get(proof_uuid)
     if not j:
         return JSONResponse(status_code=404, content={"error": "job not found"})
     exit_code = j.popen.poll()
+    if exit_code is None:
+        status = "InProgress"
+    elif exit_code == 0:
+        status = "Completed"
+    else:
+        status = "Failed"
+    e2e_latency_ms = None
+    latency_ms_path = j.job_dir / "latency_ms.txt"
+    if os.path.exists(latency_ms_path):
+        with open(latency_ms_path, "r") as f:
+            e2e_latency_ms = int(f.read())
+
     return JSONResponse(
         status_code=200,
         content={
-            "block_number": block_number,
-            "pid": j.pid,
-            "running": exit_code is None,
-            "exit_code": exit_code,
-            "stdout_path": str(j.stdout_path),
-            "stderr_path": str(j.stderr_path),
+            "status": status,
+            "num_instructions": 0,  # TODO: fix this
+            "e2e_latency_ms": e2e_latency_ms,
         },
     )
 
 
 @app.get("/logs")
-async def logs(block_number: str, n: int = 200):
-    j = JOBS.get(block_number)
+async def logs(proof_uuid: str, n: int = 200):
+    j = JOBS.get(proof_uuid)
     if not j:
         return JSONResponse(status_code=404, content={"error": "job not found"})
 

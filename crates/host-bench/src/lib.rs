@@ -19,6 +19,7 @@ pub use openvm_native_circuit::NativeConfig;
 use openvm_sdk::{
     config::{AppConfig, SdkVmBuilder, SdkVmConfig},
     prover::verify_app_proof,
+    types::VersionedVmStarkProof,
     DefaultStarkEngine, Sdk, StdIn,
 };
 use openvm_stark_sdk::engine::StarkFriEngine;
@@ -106,6 +107,9 @@ pub struct HostArgs {
     /// In make_input mode, this path is where the input JSON is written.
     #[arg(long)]
     pub generated_input_path: Option<PathBuf>,
+
+    #[arg(long)]
+    pub proof_output_path: Option<PathBuf>,
 }
 
 pub fn reth_vm_config(app_log_blowup: usize) -> SdkVmConfig {
@@ -298,7 +302,18 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             .iter()
                             .map(|pv| pv.as_canonical_u32() as u8)
                             .collect::<Vec<u8>>();
+<<<<<<< HEAD
                         println!("block_hash (prove_stark): {}", ToHexExt::encode_hex(&block_hash));
+=======
+                        println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
+
+                        if let Some(proof_output_path) = args.proof_output_path.as_ref() {
+                            let versioned_proof = VersionedVmStarkProof::new(proof)?;
+                            let json = serde_json::to_vec_pretty(&versioned_proof)?;
+                            fs::write(proof_output_path, json)?;
+                            println!("wrote proof json to {}", proof_output_path.display());
+                        }
+>>>>>>> 60fb4f3b (match ethproof api)
                     }
                     #[cfg(feature = "evm-verify")]
                     BenchMode::ProveEvm => {

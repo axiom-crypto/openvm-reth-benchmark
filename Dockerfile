@@ -46,8 +46,14 @@ RUN cargo +nightly-2025-08-19 build --bin openvm-reth-benchmark-bin --profile=${
 
 # Runtime image
 FROM nvidia/cuda:12.8.1-runtime-ubuntu24.04 AS runtime
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates python3 python3-venv \
-  && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates python3 python3-venv curl tar gzip \
+   && rm -rf /var/lib/apt/lists/*
+RUN S5CMD_VER=$(curl -s https://api.github.com/repos/peak/s5cmd/releases/latest | \
+    grep tag_name | cut -d '"' -f 4) && \
+    S5CMD_VER_TRIMMED=$(printf "%s" "$S5CMD_VER" | sed 's/^v//') && \
+    curl -L -o /tmp/s5cmd.tar.gz "https://github.com/peak/s5cmd/releases/download/${S5CMD_VER}/s5cmd_${S5CMD_VER_TRIMMED}_Linux-64bit.tar.gz" && \
+    tar xvf /tmp/s5cmd.tar.gz -C /usr/local/bin s5cmd && \
+    rm /tmp/s5cmd.tar.gz
 
 WORKDIR /app
 COPY --from=builder /app/target/release/openvm-reth-benchmark-bin /usr/local/bin/openvm-reth-benchmark-bin
