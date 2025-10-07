@@ -59,6 +59,10 @@ def run_benchmark_binary(
         os.environ.get("ROOT_LOG_BLOWUP", "3"),
         "--block-number",
         block_number,
+        "--max-segment-length",
+        os.environ.get("MAX_SEGMENT_LENGTH", "4194204"),
+        "--segment-max-cells",
+        os.environ.get("SEGMENT_MAX_CELLS", "700000000"),
     ]
     args.extend(extra_args)
 
