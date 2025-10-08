@@ -129,7 +129,7 @@ async def status(proof_uuid: str):
     elif exit_code == 0:
         status = "Completed"
     else:
-        status = f"{{Failed: {exit_code}}}"
+        status = "Failed"
     e2e_latency_ms = None
     latency_ms_path = j.job_dir / "latency_ms.txt"
     if os.path.exists(latency_ms_path):
