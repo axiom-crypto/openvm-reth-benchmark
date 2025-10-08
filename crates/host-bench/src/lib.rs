@@ -302,10 +302,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             .iter()
                             .map(|pv| pv.as_canonical_u32() as u8)
                             .collect::<Vec<u8>>();
-<<<<<<< HEAD
                         println!("block_hash (prove_stark): {}", ToHexExt::encode_hex(&block_hash));
-=======
-                        println!("block_hash: {}", ToHexExt::encode_hex(&block_hash));
 
                         if let Some(proof_output_path) = args.proof_output_path.as_ref() {
                             let versioned_proof = VersionedVmStarkProof::new(proof)?;
@@ -313,7 +310,6 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             fs::write(proof_output_path, json)?;
                             println!("wrote proof json to {}", proof_output_path.display());
                         }
->>>>>>> 60fb4f3b (match ethproof api)
                     }
                     #[cfg(feature = "evm-verify")]
                     BenchMode::ProveEvm => {
@@ -410,10 +406,11 @@ fn try_load_input_from_path(path: &PathBuf) -> eyre::Result<ClientExecutorInput>
         if bytes.len() % 4 != 0 {
             eyre::bail!("input bytes length must be multiple of 4");
         }
-        let words: Vec<u32> =
-            bytes.chunks_exact(4).map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect();
-        let input: ClientExecutorInput = openvm::serde::from_slice(&words)
-            .map_err(|_| eyre::eyre!("failed to decode input words using openvm::serde"))?;
+        // let words: Vec<u32> =
+        //     bytes.chunks_exact(4).map(|c| u32::from_le_bytes([c[0], c[1], c[2],
+        // c[3]])).collect();
+        let input: ClientExecutorInput = openvm::serde::from_slice(&bytes)
+            .map_err(|e| eyre::eyre!("failed to decode input words using openvm::serde: {e:?}"))?;
         Ok(input)
     } else {
         let mut file = std::fs::File::open(path)?;
