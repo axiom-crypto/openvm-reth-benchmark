@@ -3,10 +3,37 @@ import subprocess
 from pathlib import Path
 from typing import Dict
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+# import secrets
+# from fastapi.security import HTTPBasic, HTTPBasicCredentials
+
+
+# security = HTTPBasic()
+# API_USERNAME = os.environ.get("API_USERNAME") or os.environ.get("BASIC_AUTH_USERNAME")
+# API_PASSWORD = os.environ.get("API_PASSWORD") or os.environ.get("BASIC_AUTH_PASSWORD")
+
+
+# def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
+#     if not API_USERNAME or not API_PASSWORD:
+#         # Fail closed if server auth is not configured
+#         raise HTTPException(status_code=500, detail="Server auth not configured")
+
+#     is_user_ok = secrets.compare_digest(credentials.username, API_USERNAME)
+#     is_pass_ok = secrets.compare_digest(credentials.password, API_PASSWORD)
+#     if not (is_user_ok and is_pass_ok):
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Unauthorized",
+#             headers={"WWW-Authenticate": "Basic"},
+#         )
+
+#     return credentials.username
+
+
+# app = FastAPI(dependencies=[Depends(authenticate)])
 app = FastAPI()
 
 
@@ -91,7 +118,7 @@ async def start_proof(req: StartProofRequest):
     )
 
 
-@app.get("/proof_state")
+@app.get("/proof_state/{proof_uuid}")
 async def status(proof_uuid: str):
     j = JOBS.get(proof_uuid)
     if not j:
@@ -102,7 +129,7 @@ async def status(proof_uuid: str):
     elif exit_code == 0:
         status = "Completed"
     else:
-        status = "Failed"
+        status = f"{{Failed: {exit_code}}}"
     e2e_latency_ms = None
     latency_ms_path = j.job_dir / "latency_ms.txt"
     if os.path.exists(latency_ms_path):
@@ -135,7 +162,7 @@ async def logs(proof_uuid: str, n: int = 200):
     return JSONResponse(
         status_code=200,
         content={
-            "stdout": tail(j.stdout_path, n),
-            "stderr": tail(j.stderr_path, n),
+            "stdout": tail(j.job_dir / "stdout.log", n),
+            "stderr": tail(j.job_dir / "stderr.log", n),
         },
     )
