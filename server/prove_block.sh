@@ -61,7 +61,7 @@ echo "[prove_block.sh] Using input: $INPUT_PATH" >&2
 start_ts_ms=$(date +%s%3N)
 PROOF_JSON="$job_dir/proof.json"
 
-OUTPUT_PATH="metrics.json"
+OUTPUT_PATH="$job_dir/metrics.json"
 
 "$BIN_PATH" \
   --mode "$MODE" \
