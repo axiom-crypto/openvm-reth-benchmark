@@ -110,9 +110,9 @@ pub struct HostArgs {
     #[arg(long)]
     pub generated_input_path: Option<PathBuf>,
 
-    /// If specificed, the proof is written to this path as json.
+    /// If specificed, the proof and other output is written to this dir.
     #[arg(long)]
-    pub proof_output_path: Option<PathBuf>,
+    pub output_dir: Option<PathBuf>,
 
     /// If specified, loads the app proving key from this path.
     #[arg(long)]
@@ -327,11 +327,22 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             .collect::<Vec<u8>>();
                         println!("block_hash (prove_stark): {}", ToHexExt::encode_hex(&block_hash));
 
-                        if let Some(proof_output_path) = args.proof_output_path.as_ref() {
+                        if let Some(state) = prover.app_prover.instance().state() {
+                            println!("state instret: {}", state.instret());
+                            if let Some(output_dir) = args.output_dir.as_ref() {
+                                fs::write(
+                                    output_dir.join("num_instret"),
+                                    state.instret().to_string(),
+                                )?;
+                                println!("wrote state instret to {}", output_dir.display());
+                            }
+                        }
+
+                        if let Some(output_dir) = args.output_dir.as_ref() {
                             let versioned_proof = VersionedVmStarkProof::new(proof)?;
                             let json = serde_json::to_vec_pretty(&versioned_proof)?;
-                            fs::write(proof_output_path, json)?;
-                            println!("wrote proof json to {}", proof_output_path.display());
+                            fs::write(output_dir.join("proof.json"), json)?;
+                            println!("wrote proof json to {}", output_dir.display());
                         }
                     }
                     #[cfg(feature = "evm-verify")]

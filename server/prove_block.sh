@@ -73,7 +73,7 @@ OUTPUT_PATH="$job_dir/metrics.json"
   --root-log-blowup "$ROOT_LOG_BLOWUP" \
   --max-segment-length "$MAX_SEGMENT_LENGTH" \
   --segment-max-cells "$SEGMENT_MAX_CELLS" \
-  --proof-output-path "$PROOF_JSON" \
+  --output-dir "$job_dir" \
   --app-pk-path /app/app_pk \
   --agg-pk-path /app/agg_pk \
   --skip-comparison

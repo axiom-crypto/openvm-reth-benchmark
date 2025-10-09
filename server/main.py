@@ -163,11 +163,18 @@ async def status(proof_uuid: str):
         with open(latency_ms_path, "r") as f:
             e2e_latency_ms = int(f.read())
 
+    state_instret_path = j.job_dir / "num_instret"
+    if os.path.exists(state_instret_path):
+        with open(state_instret_path, "r") as f:
+            num_instret = int(f.read())
+    else:
+        num_instret = 0
+
     return JSONResponse(
         status_code=200,
         content={
             "status": status,
-            "num_instructions": 0,  # TODO: fix this
+            "num_instructions": num_instret,
             "e2e_latency_ms": e2e_latency_ms,
         },
     )
