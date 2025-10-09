@@ -75,7 +75,8 @@ OUTPUT_PATH="$job_dir/metrics.json"
   --segment-max-cells "$SEGMENT_MAX_CELLS" \
   --proof-output-path "$PROOF_JSON" \
   --app-pk-path /app/app_pk \
-  --agg-pk-path /app/agg_pk
+  --agg-pk-path /app/agg_pk \
+  --skip-comparison
 status=$?
 
 end_ts_ms=$(date +%s%3N)

@@ -37,6 +37,33 @@ from pydantic import BaseModel
 app = FastAPI()
 
 
+def _run_s5cmd_copy(source_uri: str, destination_path: Path) -> None:
+    destination_path.parent.mkdir(parents=True, exist_ok=True)
+    args = ["s5cmd", "cp", source_uri, str(destination_path)]
+    # Use a simple run that surfaces non-zero exit codes
+    subprocess.run(args, check=True, text=True)
+
+
+@app.on_event("startup")
+def download_proving_keys_on_startup() -> None:
+    config_uuid = os.environ.get("CONFIG_UUID", "cfg_01k43tmxayxwktkbh5wqsv10em")
+    app_pk_uri = f"s3://cloud-proving-staging-data/configs/testing_v2/{config_uuid}/app_pk"
+    agg_pk_uri = f"s3://cloud-proving-staging-data/configs/testing_v2/{config_uuid}/agg_pk"
+
+    app_pk_path = Path(os.environ.get("APP_PK_PATH", "/app/app_pk"))
+    agg_pk_path = Path(os.environ.get("AGG_PK_PATH", "/app/agg_pk"))
+
+    # Download only if missing to keep startup idempotent
+    try:
+        if not app_pk_path.exists():
+            _run_s5cmd_copy(app_pk_uri, app_pk_path)
+        if not agg_pk_path.exists():
+            _run_s5cmd_copy(agg_pk_uri, agg_pk_path)
+    except Exception as e:  # Keep server up but surface the error in logs
+        # Printing rather than logging to avoid adding a logger dependency
+        print(f"[startup] failed to download proving keys: {e}", flush=True)
+
+
 class Job:
     def __init__(
         self,

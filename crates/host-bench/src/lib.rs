@@ -110,14 +110,20 @@ pub struct HostArgs {
     #[arg(long)]
     pub generated_input_path: Option<PathBuf>,
 
+    /// If specificed, the proof is written to this path as json.
     #[arg(long)]
     pub proof_output_path: Option<PathBuf>,
 
+    /// If specified, loads the app proving key from this path.
     #[arg(long)]
     pub app_pk_path: Option<PathBuf>,
 
+    /// If specified, loads the agg proving key from this path.
     #[arg(long)]
     pub agg_pk_path: Option<PathBuf>,
+
+    #[arg(long, default_value_t = false)]
+    pub skip_comparison: bool,
 }
 
 pub fn reth_vm_config(app_log_blowup: usize) -> SdkVmConfig {
@@ -258,8 +264,8 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     run_with_metric_collection("OUTPUT_PATH", || {
         info_span!("reth-block", block_number = args.block_number).in_scope(
             || -> eyre::Result<()> {
-                // Always run host execution for comparison
-                {
+                // Rrun host execution for comparison
+                if !args.skip_comparison {
                     let block_hash = info_span!("host.execute", group = program_name).in_scope(
                         || -> eyre::Result<_> {
                             let executor = ClientExecutor;
@@ -279,8 +285,8 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                     return Ok(());
                 }
 
-                // Always execute for benchmarking:
-                {
+                // Execute for benchmarking:
+                if !args.skip_comparison {
                     let pvs = info_span!("sdk.execute", group = program_name)
                         .in_scope(|| sdk.execute(elf.clone(), stdin.clone()))?;
                     let block_hash = pvs;
@@ -312,7 +318,6 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                         verify_app_proof(&app_vk, &proof)?;
                     }
                     BenchMode::ProveStark => {
-                        println!("proving stark");
                         let mut prover = sdk.prover(elf)?.with_program_name(program_name);
                         let proof = prover.prove(stdin)?;
                         let block_hash = proof
@@ -424,9 +429,6 @@ fn try_load_input_from_path(path: &PathBuf) -> eyre::Result<ClientExecutorInput>
         if bytes.len() % 4 != 0 {
             eyre::bail!("input bytes length must be multiple of 4");
         }
-        // let words: Vec<u32> =
-        //     bytes.chunks_exact(4).map(|c| u32::from_le_bytes([c[0], c[1], c[2],
-        // c[3]])).collect();
         let input: ClientExecutorInput = openvm::serde::from_slice(&bytes)
             .map_err(|e| eyre::eyre!("failed to decode input words using openvm::serde: {e:?}"))?;
         Ok(input)

@@ -75,9 +75,6 @@ VOLUME ["/app/rpc-cache", "/root/.openvm/params"]
 ENV PATH="/opt/venv/bin:${PATH}" \
     OVM_BIN="/usr/local/bin/openvm-reth-benchmark-bin"
 
-RUN s5cmd cp "s3://cloud-proving-staging-data/configs/testing_v2/cfg_01k43tmxayxwktkbh5wqsv10em/app_pk" /app/app_pk
-RUN s5cmd cp "s3://cloud-proving-staging-data/configs/testing_v2/cfg_01k43tmxayxwktkbh5wqsv10em/agg_pk" /app/agg_pk
-
 EXPOSE 8000
 ENTRYPOINT ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
