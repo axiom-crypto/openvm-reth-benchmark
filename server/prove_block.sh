@@ -61,6 +61,8 @@ echo "[prove_block.sh] Using input: $INPUT_PATH" >&2
 start_ts_ms=$(date +%s%3N)
 PROOF_JSON="$job_dir/proof.json"
 
+OUTPUT_PATH="metrics.json"
+
 "$BIN_PATH" \
   --mode "$MODE" \
   --block-number 1234 \
@@ -71,7 +73,9 @@ PROOF_JSON="$job_dir/proof.json"
   --root-log-blowup "$ROOT_LOG_BLOWUP" \
   --max-segment-length "$MAX_SEGMENT_LENGTH" \
   --segment-max-cells "$SEGMENT_MAX_CELLS" \
-  --proof-output-path "$PROOF_JSON"
+  --proof-output-path "$PROOF_JSON" \
+  --app-pk-path /app/app_pk \
+  --agg-pk-path /app/agg_pk
 status=$?
 
 end_ts_ms=$(date +%s%3N)
@@ -92,6 +96,16 @@ if [[ -f "$PROOF_JSON" ]]; then
   set -e
 else
   echo "[prove_block.sh] Warning: proof.json not found at $PROOF_JSON" >&2
+fi
+
+if [[ -f "$OUTPUT_PATH" ]]; then
+  s5cmd cp "$OUTPUT_PATH" "s3://${S3_BUCKET}/${S3_PREFIX}/${PROOF_UUID}/metrics.json"
+  upload_rc=$?
+  if [[ $upload_rc -ne 0 ]]; then
+    echo "[prove_block.sh] Warning: failed to upload metrics.json to S3 (rc=$upload_rc)" >&2
+  fi
+else
+  echo "[prove_block.sh] Warning: metrics.json not found at $OUTPUT_PATH" >&2
 fi
 
 exit $status

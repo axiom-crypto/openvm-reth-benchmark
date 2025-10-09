@@ -18,6 +18,8 @@ pub use openvm_native_circuit::NativeConfig;
 
 use openvm_sdk::{
     config::{AppConfig, SdkVmBuilder, SdkVmConfig},
+    fs::read_object_from_file,
+    keygen::{AggProvingKey, AppProvingKey},
     prover::verify_app_proof,
     types::VersionedVmStarkProof,
     DefaultStarkEngine, Sdk, StdIn,
@@ -110,6 +112,12 @@ pub struct HostArgs {
 
     #[arg(long)]
     pub proof_output_path: Option<PathBuf>,
+
+    #[arg(long)]
+    pub app_pk_path: Option<PathBuf>,
+
+    #[arg(long)]
+    pub agg_pk_path: Option<PathBuf>,
 }
 
 pub fn reth_vm_config(app_log_blowup: usize) -> SdkVmConfig {
@@ -230,6 +238,16 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     let sdk = Sdk::new(app_config.clone())?
         .with_agg_config(args.benchmark.agg_config())
         .with_agg_tree_config(args.benchmark.agg_tree_config);
+
+    if let Some(app_pk_path) = args.app_pk_path {
+        let app_pk: AppProvingKey<SdkVmConfig> = read_object_from_file(app_pk_path)?;
+        sdk.set_app_pk(app_pk).map_err(|_| eyre::eyre!("failed to set app pk"))?;
+    }
+    if let Some(agg_pk_path) = args.agg_pk_path {
+        let agg_pk: AggProvingKey = read_object_from_file(agg_pk_path)?;
+        sdk.set_agg_pk(agg_pk).map_err(|_| eyre::eyre!("failed to set agg pk"))?;
+    }
+
     let elf = Elf::decode(openvm_client_eth_elf, MEM_SIZE as u32)?;
     let exe = sdk.convert_to_exe(elf.clone())?;
 
