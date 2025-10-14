@@ -100,6 +100,9 @@ def run_proof(
 class StartProofRequest(BaseModel):
     proof_uuid: str
 
+@app.get("/healthz")
+async def health():
+    return JSONResponse(status_code=200, content={"status": "healthy"})
 
 @app.post("/start_proof")
 async def start_proof(req: StartProofRequest):
