@@ -20,9 +20,10 @@ def _run_s5cmd_copy(source_uri: str, destination_path: Path) -> None:
 
 @app.on_event("startup")
 def download_proving_keys_on_startup() -> None:
-    config_uuid = os.environ.get("CONFIG_UUID", "cfg_01k43tmxayxwktkbh5wqsv10em")
-    app_pk_uri = f"s3://cloud-proving-staging-data/configs/testing_v2/{config_uuid}/app_pk"
-    agg_pk_uri = f"s3://cloud-proving-staging-data/configs/testing_v2/{config_uuid}/agg_pk"
+    app_pk_uri = os.environ.get("APP_PK_URI")
+    agg_pk_uri = os.environ.get("AGG_PK_URI")
+    if not app_pk_uri or not agg_pk_uri:
+        raise ValueError("APP_PK_URI and AGG_PK_URI must be set")
 
     app_pk_path = Path(os.environ.get("APP_PK_PATH", "/app/app_pk"))
     agg_pk_path = Path(os.environ.get("AGG_PK_PATH", "/app/agg_pk"))
