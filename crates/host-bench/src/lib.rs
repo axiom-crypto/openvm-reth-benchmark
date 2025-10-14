@@ -18,14 +18,14 @@ pub use openvm_native_circuit::NativeConfig;
 
 use openvm_sdk::{
     config::{AppConfig, SdkVmBuilder, SdkVmConfig},
-    prover::verify_app_proof,
+    prover::{verify_app_proof, AsyncAppProver},
     DefaultStarkEngine, Sdk, StdIn,
 };
 use openvm_stark_sdk::engine::StarkFriEngine;
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 pub use reth_primitives;
 use serde_json::json;
-use std::{fs, path::PathBuf};
+use std::{env, fs, path::PathBuf};
 use tracing::info_span;
 
 mod execute;
@@ -223,7 +223,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
 
     run_with_metric_collection("OUTPUT_PATH", || {
         info_span!("reth-block", block_number = args.block_number).in_scope(
-            || -> eyre::Result<()> {
+            async || -> eyre::Result<()> {
                 // Always run host execution for comparison
                 {
                     let block_hash = info_span!("host.execute", group = program_name).in_scope(
@@ -272,9 +272,20 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                         println!("Number of segments: {}", segments.len());
                     }
                     BenchMode::ProveApp => {
-                        let mut prover = sdk.app_prover(elf)?.with_program_name(program_name);
-                        let (_, app_vk) = sdk.app_keygen();
-                        let proof = prover.prove(stdin)?;
+                        let (app_pk, app_vk) = sdk.app_keygen();
+                        let max_concurrency = env::var("MAX_CONCURRENCY")
+                            .unwrap_or_else(|_| "1".to_string())
+                            .parse()
+                            .unwrap_or(1);
+                        let prover = AsyncAppProver::<DefaultStarkEngine, _>::new(
+                            SdkVmBuilder,
+                            app_pk.app_vm_pk.clone(),
+                            exe.clone(),
+                            app_pk.leaf_verifier_program_commit(),
+                            max_concurrency,
+                        )?
+                        .with_program_name(program_name);
+                        let proof = prover.prove(stdin).await?;
                         verify_app_proof(&app_vk, &proof)?;
                     }
                     BenchMode::ProveStark => {
@@ -334,7 +345,8 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                 Ok(())
             },
         )
-    })?;
+    })
+    .await?;
     Ok(())
 }
 
