@@ -29,7 +29,7 @@ use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 pub use reth_primitives;
 use serde_json::json;
 use std::{fs, path::PathBuf};
-use tracing::info_span;
+use tracing::{info, info_span};
 
 mod execute;
 
@@ -217,7 +217,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
 
     let mut stdin = StdIn::default();
     stdin.write(&client_input);
-    println!("input loaded");
+    info!("input loaded");
 
     if matches!(args.mode, BenchMode::MakeInput) {
         let words: Vec<u32> = openvm::serde::to_vec(&client_input).unwrap();
@@ -264,7 +264,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     run_with_metric_collection("OUTPUT_PATH", || {
         info_span!("reth-block", block_number = args.block_number).in_scope(
             || -> eyre::Result<()> {
-                // Rrun host execution for comparison
+                // Run host execution for comparison
                 if !args.skip_comparison {
                     let block_hash = info_span!("host.execute", group = program_name).in_scope(
                         || -> eyre::Result<_> {
@@ -328,13 +328,13 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                         println!("block_hash (prove_stark): {}", ToHexExt::encode_hex(&block_hash));
 
                         if let Some(state) = prover.app_prover.instance().state() {
-                            println!("state instret: {}", state.instret());
+                            info!("state instret: {}", state.instret());
                             if let Some(output_dir) = args.output_dir.as_ref() {
                                 fs::write(
                                     output_dir.join("num_instret"),
                                     state.instret().to_string(),
                                 )?;
-                                println!("wrote state instret to {}", output_dir.display());
+                                info!("wrote state instret to {}", output_dir.display());
                             }
                         }
 
