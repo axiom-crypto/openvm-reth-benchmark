@@ -7,33 +7,7 @@ from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-# import secrets
-# from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
-
-# security = HTTPBasic()
-# API_USERNAME = os.environ.get("API_USERNAME") or os.environ.get("BASIC_AUTH_USERNAME")
-# API_PASSWORD = os.environ.get("API_PASSWORD") or os.environ.get("BASIC_AUTH_PASSWORD")
-
-
-# def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
-#     if not API_USERNAME or not API_PASSWORD:
-#         # Fail closed if server auth is not configured
-#         raise HTTPException(status_code=500, detail="Server auth not configured")
-
-#     is_user_ok = secrets.compare_digest(credentials.username, API_USERNAME)
-#     is_pass_ok = secrets.compare_digest(credentials.password, API_PASSWORD)
-#     if not (is_user_ok and is_pass_ok):
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="Unauthorized",
-#             headers={"WWW-Authenticate": "Basic"},
-#         )
-
-#     return credentials.username
-
-
-# app = FastAPI(dependencies=[Depends(authenticate)])
 app = FastAPI()
 
 
