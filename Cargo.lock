@@ -5323,6 +5323,7 @@ dependencies = [
  "reth-primitives",
  "serde",
  "serde_json",
+ "tokio",
  "toml 0.9.5",
  "tracing",
  "tracing-subscriber 0.3.20",
