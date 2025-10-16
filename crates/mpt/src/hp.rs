@@ -172,7 +172,7 @@ pub(crate) fn to_encoded_path_with_bump<'a>(
     nibs: &[u8],
     is_leaf: bool,
 ) -> &'a [u8] {
-    let is_odd = !nibs.len().is_multiple_of(2);
+    let is_odd = nibs.len() % 2 != 0;
     // Max path is 64 nibs (32 bytes) + 1 prefix byte = 33 bytes.
     let mut encoded = bumpalo::collections::Vec::with_capacity_in(33, bump);
 
