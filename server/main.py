@@ -3,10 +3,9 @@ import subprocess
 from pathlib import Path
 from typing import Dict
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-
 
 app = FastAPI()
 
@@ -75,9 +74,11 @@ def run_proof(
 class StartProofRequest(BaseModel):
     proof_uuid: str
 
+
 @app.get("/healthz")
 async def health():
     return JSONResponse(status_code=200, content={"status": "healthy"})
+
 
 @app.post("/start_proof")
 async def start_proof(req: StartProofRequest):
@@ -124,7 +125,7 @@ async def start_proof(req: StartProofRequest):
 
 
 @app.get("/proof_state/{proof_uuid}")
-async def status(proof_uuid: str):
+async def get_proof_state(proof_uuid: str):
     j = JOBS.get(proof_uuid)
     if not j:
         return JSONResponse(status_code=404, content={"error": "job not found"})
