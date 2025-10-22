@@ -15,10 +15,9 @@ use openvm_circuit::{
 use openvm_client_executor::{io::ClientExecutorInput, ClientExecutor, CHAIN_ID_ETH_MAINNET};
 use openvm_host_executor::HostExecutor;
 pub use openvm_native_circuit::NativeConfig;
-use openvm_native_compiler::conversion::CompilerOptions;
 
 use openvm_sdk::{
-    config::{AggregationConfig, AppConfig, SdkVmBuilder, SdkVmConfig},
+    config::{AppConfig, SdkVmBuilder, SdkVmConfig},
     fs::read_object_from_file,
     keygen::{AggProvingKey, AppProvingKey},
     prover::verify_app_proof,
@@ -240,9 +239,9 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     #[cfg(feature = "cuda")]
     println!("CUDA Backend Enabled");
 
-    let mut vm_config = reth_vm_config(app_log_blowup);
-    let mut app_config = args.benchmark.app_config(vm_config);
-    let mut sdk = Sdk::new(app_config.clone())?
+    let vm_config = reth_vm_config(app_log_blowup);
+    let app_config = args.benchmark.app_config(vm_config.clone());
+    let sdk = Sdk::new(app_config.clone())?
         .with_agg_config(args.benchmark.agg_config())
         .with_agg_tree_config(args.benchmark.agg_tree_config);
 
@@ -253,29 +252,15 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
         let app_pk: AppProvingKey<SdkVmConfig> = read_object_from_file(app_pk_path)?;
         let agg_pk_path = args.agg_pk_path.unwrap();
         let agg_pk: AggProvingKey = read_object_from_file(agg_pk_path)?;
-        vm_config = app_pk.app_vm_pk.vm_config.clone();
-        args.benchmark.app_log_blowup = Some(app_pk.app_fri_params().log_blowup);
-        args.benchmark.leaf_log_blowup = Some(agg_pk.leaf_vm_pk.fri_params.log_blowup);
-        app_config = args.benchmark.app_config(vm_config);
-        let agg_config = AggregationConfig {
-            leaf_fri_params: agg_pk.leaf_vm_pk.fri_params,
-            internal_fri_params: agg_pk.internal_vm_pk.fri_params,
-            root_fri_params: agg_pk.root_verifier_pk.vm_pk.fri_params,
-            profiling: args.benchmark.profiling,
-            compiler_options: CompilerOptions {
-                enable_cycle_tracker: args.benchmark.profiling,
-                ..Default::default()
-            },
-            root_max_constraint_degree: agg_pk
-                .root_verifier_pk
-                .vm_pk
-                .fri_params
-                .max_constraint_degree(),
-            ..Default::default()
-        };
-        sdk = Sdk::new(app_config.clone())?
-            .with_agg_config(agg_config)
-            .with_agg_tree_config(args.benchmark.agg_tree_config);
+        let vm_config_loaded = app_pk.app_vm_pk.vm_config.clone();
+        let vm_config_json =
+            serde_json::to_value(&vm_config).expect("failed to serialize vm_config to json value");
+        let vm_config_loaded_json = serde_json::to_value(&vm_config_loaded)
+            .expect("failed to serialize vm_config_loaded to json value");
+        assert_eq!(
+            vm_config_json, vm_config_loaded_json,
+            "vm_config mismatch between runtime config and proving key"
+        );
         sdk.set_app_pk(app_pk).map_err(|_| eyre::eyre!("failed to set app pk"))?;
         sdk.set_agg_pk(agg_pk).map_err(|_| eyre::eyre!("failed to set agg pk"))?;
     }
