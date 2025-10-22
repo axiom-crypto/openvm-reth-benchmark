@@ -18,7 +18,10 @@ pub use openvm_native_circuit::NativeConfig;
 
 use openvm_sdk::{
     config::{AppConfig, SdkVmBuilder, SdkVmConfig},
+    fs::read_object_from_file,
+    keygen::{AggProvingKey, AppProvingKey},
     prover::{verify_app_proof, AsyncAppProver},
+    types::VersionedVmStarkProof,
     DefaultStarkEngine, Sdk, StdIn,
 };
 use openvm_stark_sdk::engine::StarkFriEngine;
@@ -26,7 +29,7 @@ use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 pub use reth_primitives;
 use serde_json::json;
 use std::{env, fs, path::PathBuf};
-use tracing::{info_span, Instrument};
+use tracing::{info, info_span, Instrument};
 
 mod execute;
 
@@ -95,13 +98,32 @@ pub struct HostArgs {
     #[clap(flatten)]
     benchmark: BenchmarkCli,
 
-    /// Optional path to write the input to. Only needed for mode=make_input
+    /// Optional path to the input file.
     #[arg(long)]
     pub input_path: Option<PathBuf>,
 
     /// Path to write the fixtures to. Only needed for mode=make_input
     #[arg(long)]
     pub fixtures_path: Option<PathBuf>,
+
+    /// In make_input mode, this path is where the input JSON is written.
+    #[arg(long)]
+    pub generated_input_path: Option<PathBuf>,
+
+    /// If specificed, the proof and other output is written to this dir.
+    #[arg(long)]
+    pub output_dir: Option<PathBuf>,
+
+    /// If specified, loads the app proving key from this path.
+    #[arg(long)]
+    pub app_pk_path: Option<PathBuf>,
+
+    /// If specified, loads the agg proving key from this path.
+    #[arg(long)]
+    pub agg_pk_path: Option<PathBuf>,
+
+    #[arg(long, default_value_t = false)]
+    pub skip_comparison: bool,
 }
 
 pub fn reth_vm_config(app_log_blowup: usize) -> SdkVmConfig {
@@ -131,63 +153,71 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
 
     // Parse the command line arguments.
     let mut args = args;
-    let provider_config = args.provider.into_provider().await?;
 
-    match provider_config.chain_id {
-        #[allow(non_snake_case)]
-        CHAIN_ID_ETH_MAINNET => (),
-        _ => {
-            eyre::bail!("unknown chain ID: {}", provider_config.chain_id);
-        }
-    };
+    let client_input_from_path =
+        args.input_path.as_ref().map(|path| try_load_input_from_path(path).unwrap());
 
-    let client_input_from_cache = try_load_input_from_cache(
-        args.cache_dir.as_ref(),
-        provider_config.chain_id,
-        args.block_number,
-    )?;
+    let client_input = if let Some(client_input_from_path) = client_input_from_path {
+        client_input_from_path
+    } else {
+        let provider_config = args.provider.into_provider().await?;
+        match provider_config.chain_id {
+            #[allow(non_snake_case)]
+            CHAIN_ID_ETH_MAINNET => (),
+            _ => {
+                eyre::bail!("unknown chain ID: {}", provider_config.chain_id);
+            }
+        };
+        let client_input_from_cache = try_load_input_from_cache(
+            args.cache_dir.as_ref(),
+            provider_config.chain_id,
+            args.block_number,
+        )?;
 
-    let client_input = match (client_input_from_cache, provider_config.rpc_url) {
-        (Some(client_input_from_cache), _) => client_input_from_cache,
-        (None, Some(rpc_url)) => {
-            // Cache not found but we have RPC
-            // Setup the provider.
-            let client =
-                RpcClient::builder().layer(RetryBackoffLayer::new(5, 1000, 100)).http(rpc_url);
-            let provider = RootProvider::new(client);
+        match (client_input_from_cache, provider_config.rpc_url) {
+            (Some(client_input_from_cache), _) => client_input_from_cache,
+            (None, Some(rpc_url)) => {
+                // Cache not found but we have RPC
+                // Setup the provider.
+                let client =
+                    RpcClient::builder().layer(RetryBackoffLayer::new(5, 1000, 100)).http(rpc_url);
+                let provider = RootProvider::new(client);
 
-            // Setup the host executor.
-            let host_executor = HostExecutor::new(provider);
+                // Setup the host executor.
+                let host_executor = HostExecutor::new(provider);
 
-            // Execute the host.
-            let client_input =
-                host_executor.execute(args.block_number).await.expect("failed to execute host");
+                // Execute the host.
+                let client_input =
+                    host_executor.execute(args.block_number).await.expect("failed to execute host");
 
-            if let Some(cache_dir) = args.cache_dir {
-                let input_folder = cache_dir.join(format!("input/{}", provider_config.chain_id));
-                if !input_folder.exists() {
-                    std::fs::create_dir_all(&input_folder)?;
+                if let Some(cache_dir) = args.cache_dir {
+                    let input_folder =
+                        cache_dir.join(format!("input/{}", provider_config.chain_id));
+                    if !input_folder.exists() {
+                        std::fs::create_dir_all(&input_folder)?;
+                    }
+
+                    let input_path = input_folder.join(format!("{}.bin", args.block_number));
+                    let mut cache_file = std::fs::File::create(input_path)?;
+
+                    bincode::serde::encode_into_std_write(
+                        &client_input,
+                        &mut cache_file,
+                        bincode::config::standard(),
+                    )?;
                 }
 
-                let input_path = input_folder.join(format!("{}.bin", args.block_number));
-                let mut cache_file = std::fs::File::create(input_path)?;
-
-                bincode::serde::encode_into_std_write(
-                    &client_input,
-                    &mut cache_file,
-                    bincode::config::standard(),
-                )?;
+                client_input
             }
-
-            client_input
-        }
-        (None, None) => {
-            eyre::bail!("cache not found and RPC URL not provided")
+            (None, None) => {
+                eyre::bail!("cache not found and RPC URL not provided")
+            }
         }
     };
 
     let mut stdin = StdIn::default();
     stdin.write(&client_input);
+    info!("input loaded");
 
     if matches!(args.mode, BenchMode::MakeInput) {
         let words: Vec<u32> = openvm::serde::to_vec(&client_input).unwrap();
@@ -197,7 +227,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
             "input": [hex_bytes]
         });
         let input = serde_json::to_string(&input).unwrap();
-        fs::write(args.input_path.unwrap(), input)?;
+        fs::write(args.generated_input_path.unwrap(), input)?;
         return Ok(());
     }
 
@@ -214,6 +244,16 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     let sdk = Sdk::new(app_config.clone())?
         .with_agg_config(args.benchmark.agg_config())
         .with_agg_tree_config(args.benchmark.agg_tree_config);
+
+    if let Some(app_pk_path) = args.app_pk_path {
+        let app_pk: AppProvingKey<SdkVmConfig> = read_object_from_file(app_pk_path)?;
+        sdk.set_app_pk(app_pk).map_err(|_| eyre::eyre!("failed to set app pk"))?;
+    }
+    if let Some(agg_pk_path) = args.agg_pk_path {
+        let agg_pk: AggProvingKey = read_object_from_file(agg_pk_path)?;
+        sdk.set_agg_pk(agg_pk).map_err(|_| eyre::eyre!("failed to set agg pk"))?;
+    }
+
     let elf = Elf::decode(openvm_client_eth_elf, MEM_SIZE as u32)?;
     let exe = sdk.convert_to_exe(elf.clone())?;
 
@@ -226,8 +266,8 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
             let span = info_span!("reth-block", block_number = args.block_number);
             tokio::runtime::Handle::current().block_on(
                 async {
-                    // Always run host execution for comparison
-                    {
+                    // Run host execution for comparison
+                    if !args.skip_comparison {
                         let block_hash = info_span!("host.execute", group = program_name)
                             .in_scope(|| -> eyre::Result<_> {
                                 let executor = ClientExecutor;
@@ -249,8 +289,8 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                         return Ok(());
                     }
 
-                    // Always execute for benchmarking:
-                    {
+                    // Execute for benchmarking:
+                    if !args.skip_comparison {
                         let pvs = info_span!("sdk.execute", group = program_name)
                             .in_scope(|| sdk.execute(elf.clone(), stdin.clone()))?;
                         let block_hash = pvs;
@@ -305,6 +345,24 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                                 "block_hash (prove_stark): {}",
                                 ToHexExt::encode_hex(&block_hash)
                             );
+
+                            if let Some(state) = prover.app_prover.instance().state() {
+                                info!("state instret: {}", state.instret());
+                                if let Some(output_dir) = args.output_dir.as_ref() {
+                                    fs::write(
+                                        output_dir.join("num_instret"),
+                                        state.instret().to_string(),
+                                    )?;
+                                    info!("wrote state instret to {}", output_dir.display());
+                                }
+                            }
+
+                            if let Some(output_dir) = args.output_dir.as_ref() {
+                                let versioned_proof = VersionedVmStarkProof::new(proof)?;
+                                let json = serde_json::to_vec_pretty(&versioned_proof)?;
+                                fs::write(output_dir.join("proof.json"), json)?;
+                                println!("wrote proof json to {}", output_dir.display());
+                            }
                         }
                         #[cfg(feature = "evm-verify")]
                         BenchMode::ProveEvm => {
@@ -383,4 +441,36 @@ fn try_load_input_from_cache(
     } else {
         None
     })
+}
+
+fn try_load_input_from_path(path: &PathBuf) -> eyre::Result<ClientExecutorInput> {
+    let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("");
+    if ext.eq_ignore_ascii_case("json") {
+        let s = std::fs::read_to_string(path)?;
+        let v: serde_json::Value = serde_json::from_str(&s)?;
+        let arr = v
+            .get("input")
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| eyre::eyre!("invalid JSON: missing 'input' array"))?;
+        let hex_str = arr
+            .first()
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| eyre::eyre!("invalid JSON: 'input[0]' must be string"))?;
+        let stripped = hex_str.trim_start_matches("0x");
+        let mut bytes = hex::decode(stripped)?;
+        if let Some(1u8) = bytes.first().copied() {
+            bytes.remove(0);
+        }
+        if bytes.len() % 4 != 0 {
+            eyre::bail!("input bytes length must be multiple of 4");
+        }
+        let input: ClientExecutorInput = openvm::serde::from_slice(&bytes)
+            .map_err(|e| eyre::eyre!("failed to decode input words using openvm::serde: {e:?}"))?;
+        Ok(input)
+    } else {
+        let mut file = std::fs::File::open(path)?;
+        let client_input: ClientExecutorInput =
+            bincode::serde::decode_from_std_read(&mut file, bincode::config::standard())?;
+        Ok(client_input)
+    }
 }
