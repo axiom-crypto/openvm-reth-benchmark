@@ -463,6 +463,7 @@ jobs:
           VPMM_PAGES=$((12 * $MAX_SEGMENT_LENGTH/ $VPMM_PAGE_SIZE))
           export VPMM_PAGES=$VPMM_PAGES
           export VPMM_PAGE_SIZE=$VPMM_PAGE_SIZE
+          export MAX_CONCURRENCY=2
           export JEMALLOC_SYS_WITH_MALLOC_CONF=${JEMALLOC_SYS_WITH_MALLOC_CONF}
           export RUST_LOG="info,p3_=warn"
           export OUTPUT_PATH=${METRIC_PATH}/metrics.json

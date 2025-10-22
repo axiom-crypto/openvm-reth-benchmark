@@ -20,7 +20,7 @@ use openvm_sdk::{
     config::{AppConfig, SdkVmBuilder, SdkVmConfig},
     fs::read_object_from_file,
     keygen::{AggProvingKey, AppProvingKey},
-    prover::verify_app_proof,
+    prover::{verify_app_proof, AsyncAppProver},
     types::VersionedVmStarkProof,
     DefaultStarkEngine, Sdk, StdIn,
 };
@@ -28,8 +28,8 @@ use openvm_stark_sdk::engine::StarkFriEngine;
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 pub use reth_primitives;
 use serde_json::json;
-use std::{fs, path::PathBuf};
-use tracing::{info, info_span};
+use std::{env, fs, path::PathBuf};
+use tracing::{info, info_span, Instrument};
 
 mod execute;
 
@@ -261,137 +261,161 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     // NOTE: args.benchmark.app_config resets SegmentationLimits if max_segment_length is set
     args.benchmark.max_segment_length = None;
 
-    run_with_metric_collection("OUTPUT_PATH", || {
-        info_span!("reth-block", block_number = args.block_number).in_scope(
-            || -> eyre::Result<()> {
-                // Run host execution for comparison
-                if !args.skip_comparison {
-                    let block_hash = info_span!("host.execute", group = program_name).in_scope(
-                        || -> eyre::Result<_> {
-                            let executor = ClientExecutor;
-                            // Create a child span to get the group label propagated
-                            let header = info_span!("client.execute")
-                                .in_scope(|| executor.execute(client_input.clone()))?;
-                            let block_hash =
-                                info_span!("header.hash_slow").in_scope(|| header.hash_slow());
-                            Ok(block_hash)
-                        },
-                    )?;
-                    println!("block_hash (execute-host): {}", ToHexExt::encode_hex(&block_hash));
-                }
-
-                // For ExecuteHost mode, only do host execution
-                if matches!(args.mode, BenchMode::ExecuteHost) {
-                    return Ok(());
-                }
-
-                // Execute for benchmarking:
-                if !args.skip_comparison {
-                    let pvs = info_span!("sdk.execute", group = program_name)
-                        .in_scope(|| sdk.execute(elf.clone(), stdin.clone()))?;
-                    let block_hash = pvs;
-                    println!("block_hash (execute): {}", ToHexExt::encode_hex(&block_hash));
-                }
-
-                match args.mode {
-                    BenchMode::Execute => {}
-                    BenchMode::ExecuteMetered => {
-                        let engine = DefaultStarkEngine::new(app_config.app_fri_params.fri_params);
-                        let (vm, _) = VirtualMachine::new_with_keygen(
-                            engine,
-                            SdkVmBuilder,
-                            app_config.app_vm_config,
-                        )?;
-                        let executor_idx_to_air_idx = vm.executor_idx_to_air_idx();
-                        let interpreter =
-                            vm.executor().metered_instance(&exe, &executor_idx_to_air_idx)?;
-                        let metered_ctx = vm.build_metered_ctx(&exe);
-                        let (segments, _) =
-                            info_span!("interpreter.execute_metered", group = program_name)
-                                .in_scope(|| interpreter.execute_metered(stdin, metered_ctx))?;
-                        println!("Number of segments: {}", segments.len());
+    run_with_metric_collection("OUTPUT_PATH", || -> eyre::Result<()> {
+        tokio::task::block_in_place(|| {
+            let span = info_span!("reth-block", block_number = args.block_number);
+            tokio::runtime::Handle::current().block_on(
+                async {
+                    // Run host execution for comparison
+                    if !args.skip_comparison {
+                        let block_hash = info_span!("host.execute", group = program_name)
+                            .in_scope(|| -> eyre::Result<_> {
+                                let executor = ClientExecutor;
+                                // Create a child span to get the group label propagated
+                                let header = info_span!("client.execute")
+                                    .in_scope(|| executor.execute(client_input.clone()))?;
+                                let block_hash =
+                                    info_span!("header.hash_slow").in_scope(|| header.hash_slow());
+                                Ok(block_hash)
+                            })?;
+                        println!(
+                            "block_hash (execute-host): {}",
+                            ToHexExt::encode_hex(&block_hash)
+                        );
                     }
-                    BenchMode::ProveApp => {
-                        let mut prover = sdk.app_prover(elf)?.with_program_name(program_name);
-                        let (_, app_vk) = sdk.app_keygen();
-                        let proof = prover.prove(stdin)?;
-                        verify_app_proof(&app_vk, &proof)?;
-                    }
-                    BenchMode::ProveStark => {
-                        let mut prover = sdk.prover(elf)?.with_program_name(program_name);
-                        let proof = prover.prove(stdin)?;
-                        let block_hash = proof
-                            .user_public_values
-                            .iter()
-                            .map(|pv| pv.as_canonical_u32() as u8)
-                            .collect::<Vec<u8>>();
-                        println!("block_hash (prove_stark): {}", ToHexExt::encode_hex(&block_hash));
 
-                        if let Some(state) = prover.app_prover.instance().state() {
-                            info!("state instret: {}", state.instret());
+                    // For ExecuteHost mode, only do host execution
+                    if matches!(args.mode, BenchMode::ExecuteHost) {
+                        return Ok(());
+                    }
+
+                    // Execute for benchmarking:
+                    if !args.skip_comparison {
+                        let pvs = info_span!("sdk.execute", group = program_name)
+                            .in_scope(|| sdk.execute(elf.clone(), stdin.clone()))?;
+                        let block_hash = pvs;
+                        println!("block_hash (execute): {}", ToHexExt::encode_hex(&block_hash));
+                    }
+
+                    match args.mode {
+                        BenchMode::Execute => {}
+                        BenchMode::ExecuteMetered => {
+                            let engine =
+                                DefaultStarkEngine::new(app_config.app_fri_params.fri_params);
+                            let (vm, _) = VirtualMachine::new_with_keygen(
+                                engine,
+                                SdkVmBuilder,
+                                app_config.app_vm_config,
+                            )?;
+                            let executor_idx_to_air_idx = vm.executor_idx_to_air_idx();
+                            let interpreter =
+                                vm.executor().metered_instance(&exe, &executor_idx_to_air_idx)?;
+                            let metered_ctx = vm.build_metered_ctx(&exe);
+                            let (segments, _) =
+                                info_span!("interpreter.execute_metered", group = program_name)
+                                    .in_scope(|| interpreter.execute_metered(stdin, metered_ctx))?;
+                            println!("Number of segments: {}", segments.len());
+                        }
+                        BenchMode::ProveApp => {
+                            let (app_pk, app_vk) = sdk.app_keygen();
+                            let max_concurrency = env::var("MAX_CONCURRENCY")
+                                .unwrap_or_else(|_| "1".to_string())
+                                .parse()
+                                .unwrap_or(1);
+                            let prover = AsyncAppProver::<DefaultStarkEngine, _>::new(
+                                SdkVmBuilder,
+                                app_pk.app_vm_pk.clone(),
+                                exe.clone(),
+                                app_pk.leaf_verifier_program_commit(),
+                                max_concurrency,
+                            )?
+                            .with_program_name(program_name);
+                            let proof = prover.prove(stdin).await?;
+                            verify_app_proof(&app_vk, &proof)?;
+                        }
+                        BenchMode::ProveStark => {
+                            let mut prover = sdk.prover(elf)?.with_program_name(program_name);
+                            let proof = prover.prove(stdin)?;
+                            let block_hash = proof
+                                .user_public_values
+                                .iter()
+                                .map(|pv| pv.as_canonical_u32() as u8)
+                                .collect::<Vec<u8>>();
+                            println!(
+                                "block_hash (prove_stark): {}",
+                                ToHexExt::encode_hex(&block_hash)
+                            );
+
+                            if let Some(state) = prover.app_prover.instance().state() {
+                                info!("state instret: {}", state.instret());
+                                if let Some(output_dir) = args.output_dir.as_ref() {
+                                    fs::write(
+                                        output_dir.join("num_instret"),
+                                        state.instret().to_string(),
+                                    )?;
+                                    info!("wrote state instret to {}", output_dir.display());
+                                }
+                            }
+
                             if let Some(output_dir) = args.output_dir.as_ref() {
-                                fs::write(
-                                    output_dir.join("num_instret"),
-                                    state.instret().to_string(),
-                                )?;
-                                info!("wrote state instret to {}", output_dir.display());
+                                let versioned_proof = VersionedVmStarkProof::new(proof)?;
+                                let json = serde_json::to_vec_pretty(&versioned_proof)?;
+                                fs::write(output_dir.join("proof.json"), json)?;
+                                println!("wrote proof json to {}", output_dir.display());
                             }
                         }
+                        #[cfg(feature = "evm-verify")]
+                        BenchMode::ProveEvm => {
+                            let mut prover = sdk.evm_prover(elf)?.with_program_name(program_name);
+                            let halo2_pk = sdk.halo2_pk();
+                            tracing::info!(
+                                "halo2_outer_k: {}",
+                                halo2_pk.verifier.pinning.metadata.config_params.k
+                            );
+                            tracing::info!(
+                                "halo2_wrapper_k: {}",
+                                halo2_pk.wrapper.pinning.metadata.config_params.k
+                            );
+                            let proof = prover.prove_evm(stdin)?;
+                            let block_hash = &proof.user_public_values;
+                            println!(
+                                "block_hash (prove_evm): {}",
+                                ToHexExt::encode_hex(block_hash)
+                            );
+                        }
+                        BenchMode::GenerateFixtures => {
+                            let mut prover = sdk.prover(elf)?.with_program_name(program_name);
+                            let app_proof = prover.app_prover.prove(stdin)?;
+                            let leaf_proofs = prover.agg_prover.generate_leaf_proofs(&app_proof)?;
+                            let fixture_path = args.fixtures_path.unwrap();
 
-                        if let Some(output_dir) = args.output_dir.as_ref() {
-                            let versioned_proof = VersionedVmStarkProof::new(proof)?;
-                            let json = serde_json::to_vec_pretty(&versioned_proof)?;
-                            fs::write(output_dir.join("proof.json"), json)?;
-                            println!("wrote proof json to {}", output_dir.display());
+                            let mut app_proof_path = fixture_path.clone();
+                            app_proof_path.push("app_proof.bitcode");
+                            fs::write(app_proof_path, bitcode::serialize(&app_proof)?)?;
+
+                            let mut leaf_proofs_path = fixture_path.clone();
+                            leaf_proofs_path.push("leaf_proofs.bitcode");
+                            fs::write(leaf_proofs_path, bitcode::serialize(&leaf_proofs)?)?;
+
+                            let mut app_pk_path = fixture_path.clone();
+                            app_pk_path.push("app_pk.bitcode");
+                            fs::write(app_pk_path, bitcode::serialize(sdk.app_pk())?)?;
+
+                            let mut agg_pk_path = fixture_path.clone();
+                            agg_pk_path.push("agg_pk.bitcode");
+                            fs::write(agg_pk_path, bitcode::serialize(sdk.agg_pk())?)?;
+                        }
+                        _ => {
+                            // This case is handled earlier and should not reach here
+                            unreachable!();
                         }
                     }
-                    #[cfg(feature = "evm-verify")]
-                    BenchMode::ProveEvm => {
-                        let mut prover = sdk.evm_prover(elf)?.with_program_name(program_name);
-                        let halo2_pk = sdk.halo2_pk();
-                        tracing::info!(
-                            "halo2_outer_k: {}",
-                            halo2_pk.verifier.pinning.metadata.config_params.k
-                        );
-                        tracing::info!(
-                            "halo2_wrapper_k: {}",
-                            halo2_pk.wrapper.pinning.metadata.config_params.k
-                        );
-                        let proof = prover.prove_evm(stdin)?;
-                        let block_hash = &proof.user_public_values;
-                        println!("block_hash (prove_evm): {}", ToHexExt::encode_hex(block_hash));
-                    }
-                    BenchMode::GenerateFixtures => {
-                        let mut prover = sdk.prover(elf)?.with_program_name(program_name);
-                        let app_proof = prover.app_prover.prove(stdin)?;
-                        let leaf_proofs = prover.agg_prover.generate_leaf_proofs(&app_proof)?;
-                        let fixture_path = args.fixtures_path.unwrap();
 
-                        let mut app_proof_path = fixture_path.clone();
-                        app_proof_path.push("app_proof.bitcode");
-                        fs::write(app_proof_path, bitcode::serialize(&app_proof)?)?;
-
-                        let mut leaf_proofs_path = fixture_path.clone();
-                        leaf_proofs_path.push("leaf_proofs.bitcode");
-                        fs::write(leaf_proofs_path, bitcode::serialize(&leaf_proofs)?)?;
-
-                        let mut app_pk_path = fixture_path.clone();
-                        app_pk_path.push("app_pk.bitcode");
-                        fs::write(app_pk_path, bitcode::serialize(sdk.app_pk())?)?;
-
-                        let mut agg_pk_path = fixture_path.clone();
-                        agg_pk_path.push("agg_pk.bitcode");
-                        fs::write(agg_pk_path, bitcode::serialize(sdk.agg_pk())?)?;
-                    }
-                    _ => {
-                        // This case is handled earlier and should not reach here
-                        unreachable!();
-                    }
+                    Ok(())
                 }
-
-                Ok(())
-            },
-        )
+                .instrument(span),
+            )
+        })
     })?;
     Ok(())
 }

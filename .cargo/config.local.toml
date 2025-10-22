@@ -7,12 +7,13 @@ openvm-stark-backend = { path = "../openvm-org/stark-backend/crates/stark-backen
 openvm-stark-sdk = { path = "../openvm-org/stark-backend/crates/stark-sdk" }
 openvm-cuda-builder = { path = "../openvm-org/stark-backend/crates/cuda-builder" }
 openvm-cuda-common = { path = "../openvm-org/stark-backend/crates/cuda-common" }
-openvm-cuda-backend = { path = "../openvm-org/stark-backend/crates/cuda-backend " }
+openvm-cuda-backend = { path = "../openvm-org/stark-backend/crates/cuda-backend" }
 
 [patch."https://github.com/openvm-org/openvm.git"]
 openvm-benchmarks-prove = { path = "../openvm-org/openvm/benchmarks/prove" }
 # OpenVM
 openvm-sdk = { path = "../openvm-org/openvm/crates/sdk" }
+openvm-continuations = { path = "../openvm-org/openvm/crates/continuations" }
 cargo-openvm = { path = "../openvm-org/openvm/crates/cli" }
 openvm-mod-circuit-builder = { path = "../openvm-org/openvm/crates/circuits/mod-builder" }
 openvm-poseidon2-air = { path = "../openvm-org/openvm/crates/circuits/poseidon2-air" }
