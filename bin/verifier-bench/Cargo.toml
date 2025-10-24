@@ -24,6 +24,7 @@ workspace = true
 default = ["metrics"]
 metrics = ["openvm-circuit/metrics"]
 tco = ["openvm-sdk/tco"]
+aot = ["openvm-sdk/aot"]
 evm-prove = ["openvm-sdk/evm-prove"]
 evm-verify = ["evm-prove", "openvm-sdk/evm-verify"]
 jemalloc = ["openvm-sdk/jemalloc"]
