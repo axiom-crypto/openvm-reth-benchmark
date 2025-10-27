@@ -4505,6 +4505,10 @@ dependencies = [
 ]
 
 [[patch.unused]]
+name = "p256"
+version = "0.13.2"
+
+[[patch.unused]]
 name = "cargo-openvm"
 version = "1.4.1-rc.2"
 
@@ -4635,10 +4639,6 @@ version = "1.4.1-rc.2"
 [[patch.unused]]
 name = "openvm-transpiler"
 version = "1.4.1-rc.2"
-
-[[patch.unused]]
-name = "p256"
-version = "0.13.2"
 
 [[patch.unused]]
 name = "p256"
