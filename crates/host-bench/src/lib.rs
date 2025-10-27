@@ -321,6 +321,8 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             info_span!("interpreter.execute_metered", group = program_name)
                                 .in_scope(|| interpreter.execute_metered(stdin, metered_ctx))?;
                         println!("Number of segments: {}", segments.len());
+
+                        std::mem::forget(segments);
                     }
                     BenchMode::ProveApp => {
                         let mut prover = sdk.app_prover(elf)?.with_program_name(program_name);
