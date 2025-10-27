@@ -23,7 +23,7 @@ fi
 cd ../..
 
 PROFILE="release"
-FEATURES="metrics,jemalloc,tco,unprotected"
+FEATURES="metrics,jemalloc,aot,unprotected"
 BLOCK_NUMBER=23100006
 # switch to +nightly-2025-08-19 if using tco
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
