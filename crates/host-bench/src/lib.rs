@@ -305,7 +305,19 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                 }
 
                 match args.mode {
-                    BenchMode::Execute => {}
+                    BenchMode::Execute => {
+                        let engine = DefaultStarkEngine::new(app_config.app_fri_params.fri_params);
+                        let (vm, _) = VirtualMachine::new_with_keygen(
+                            engine,
+                            SdkVmBuilder,
+                            app_config.app_vm_config,
+                        )?;
+                        let interpreter =
+                            vm.executor().instance(&exe)?;
+                        let (segments, _) =
+                            info_span!("interpreter.execute_pure", group = program_name)
+                                .in_scope(|| interpreter.execute(stdin, None))?;
+                    }
                     BenchMode::ExecuteMetered => {
                         let engine = DefaultStarkEngine::new(app_config.app_fri_params.fri_params);
                         let (vm, _) = VirtualMachine::new_with_keygen(
