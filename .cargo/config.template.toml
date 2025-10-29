@@ -56,7 +56,6 @@ openvm-rv32im-guest = { git = "ssh://git@github.com/openvm-org/openvm.git", rev 
 # Guest Libs
 k256 = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
 p256 = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
-ruint = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
 openvm-keccak256 = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
 openvm-sha2 = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }
 openvm-pairing = { git = "ssh://git@github.com/openvm-org/openvm.git", rev = "$OPENVM_REV" }

@@ -59,7 +59,6 @@
 # # Guest Libs
 # k256 = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "main" }
 # p256 = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "main" }
-# ruint = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "main" }
 # openvm-keccak256 = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "main" }
 # openvm-sha2 = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "main" }
 # openvm-pairing = { git = "ssh://git@github.com/openvm-org/openvm.git", branch = "main" }
