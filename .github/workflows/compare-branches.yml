@@ -1,0 +1,145 @@
+name: "Compare Branches"
+run-name: "Compare Branches: ${{ inputs.base_ref }} vs ${{ inputs.target_ref }} (block ${{ inputs.block_number }})"
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "Base branch/ref to compare (defaults to main)"
+        required: false
+        type: string
+        default: main
+      target_ref:
+        description: "Target branch/ref to compare"
+        required: true
+        type: string
+      benchmark_mode:
+        type: choice
+        required: false
+        description: Running mode
+        options:
+          - execute-host
+          - execute
+          - execute-metered
+          - prove-app
+          - prove-stark
+          - prove-evm
+        default: prove-stark
+      block_number:
+        type: number
+        required: false
+        description: Block number to run the benchmark on
+        default: 23100006
+      host_flamegraph:
+        description: "Run target profiling benchmark for host flamegraph"
+        type: boolean
+        required: false
+        default: false
+      guest_flamegraph:
+        description: "Run target profiling benchmark for circuit flamegraphs"
+        type: boolean
+        required: false
+        default: false
+      instance_family:
+        description: "Instance family to use for benchmark"
+        type: string
+        required: false
+        default: g6e.8xlarge
+
+jobs:
+  run-base-benchmark:
+    name: "Run Base Benchmark (${{ inputs.base_ref }})"
+    uses: ./.github/workflows/reth-benchmark.yml
+    with:
+      ref: ${{ inputs.base_ref }}
+      mode: ${{ inputs.benchmark_mode }}
+      block_number: ${{ fromJSON(inputs.block_number || '23100006') }}
+      instance_family: ${{ inputs.instance_family }}
+      profiling: none
+    secrets: inherit
+
+  run-target-benchmark:
+    name: "Run Target Benchmark (${{ inputs.target_ref }})"
+    uses: ./.github/workflows/reth-benchmark.yml
+    with:
+      ref: ${{ inputs.target_ref }}
+      mode: ${{ inputs.benchmark_mode }}
+      block_number: ${{ fromJSON(inputs.block_number || '23100006') }}
+      instance_family: ${{ inputs.instance_family }}
+      profiling: none
+    secrets: inherit
+
+  target-host-flamegraph:
+    name: "Target Host Perf Flamegraph"
+    uses: ./.github/workflows/reth-benchmark.yml
+    if: ${{ inputs.host_flamegraph }}
+    with:
+      ref: ${{ inputs.target_ref }}
+      mode: ${{ inputs.benchmark_mode }}
+      block_number: ${{ fromJSON(inputs.block_number || '23100006') }}
+      instance_family: ${{ inputs.instance_family }}
+      profiling: host
+    secrets: inherit
+
+  target-guest-flamegraph:
+    name: "Target Guest Circuit Flamegraphs"
+    uses: ./.github/workflows/reth-benchmark.yml
+    if: ${{ inputs.guest_flamegraph }}
+    with:
+      ref: ${{ inputs.target_ref }}
+      mode: ${{ inputs.benchmark_mode }}
+      block_number: ${{ fromJSON(inputs.block_number || '23100006') }}
+      instance_family: ${{ inputs.instance_family }}
+      profiling: guest
+    secrets: inherit
+
+  compare-results:
+    needs:
+      - run-base-benchmark
+      - run-target-benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download base benchmark results
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.run-base-benchmark.outputs.metric_name }}
+          path: ${{ needs.run-base-benchmark.outputs.metric_name }}
+
+      - name: Download target benchmark results
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.run-target-benchmark.outputs.metric_name }}
+          path: ${{ needs.run-target-benchmark.outputs.metric_name }}
+
+      - name: Get openvm REV
+        id: get-openvm-rev
+        run: |
+          RESULT=$(cargo metadata --format-version=1 | jq -r '.packages[] | select(.name=="openvm-sdk") | .source | split("#") | .[1]')
+          echo "result=${RESULT}" >> "$GITHUB_OUTPUT"
+
+      - name: Install openvm-prof
+        run: |
+          cargo install --git https://github.com/openvm-org/openvm.git --rev ${{ steps.get-openvm-rev.outputs.result }} --profile=dev --force openvm-prof
+
+      - name: Compare metrics
+        run: |
+          ls
+          BASE_NAME=${{ needs.run-base-benchmark.outputs.metric_name }}
+          BASE_JSON=$BASE_NAME/metrics.json
+          TARGET_NAME=${{ needs.run-target-benchmark.outputs.metric_name }}
+          TARGET_JSON=$TARGET_NAME/metrics.json
+
+          openvm-prof --json-paths $TARGET_JSON --prev-json-paths $BASE_JSON
+          MD_PATH=${TARGET_JSON%.json}.md
+          # Inspired by https://github.com/rustls/rustls/blob/7159373401f253cbaacd276634508e0798a8849f/.github/workflows/icount-bench.yml#L37
+          cat $MD_PATH >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Workflow Inputs" >> $GITHUB_STEP_SUMMARY
+          echo "Base Ref: ${{ inputs.base_ref }}" >> $GITHUB_STEP_SUMMARY
+          echo "Target Ref: ${{ inputs.target_ref }}" >> $GITHUB_STEP_SUMMARY
+          echo "Instance Family: ${{ inputs.instance_family }}" >> $GITHUB_STEP_SUMMARY
+          echo "Benchmark Mode: ${{ inputs.benchmark_mode }}" >> $GITHUB_STEP_SUMMARY
+          echo "Block Number: ${{ inputs.block_number }}" >> $GITHUB_STEP_SUMMARY
