@@ -30,6 +30,8 @@ tracing = { version = "0.1", features = [
     "max_level_off",
     "release_max_level_off",
 ] }
+# TEMPORARY: remove when updating reth
+serde = "=1.0.219"
 
 [features]
 default = ["kzg-intrinsics"]
