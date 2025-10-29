@@ -32,6 +32,7 @@ pub use reth_primitives;
 use serde_json::json;
 use std::{fs, path::PathBuf};
 use tracing::{info, info_span};
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 mod cli;
 use cli::ProviderArgs;
@@ -150,6 +151,13 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info");
     }
+
+    // Initialize tracing subscriber to write to stderr with immediate flushing
+    // This ensures logs are visible even if the program panics
+    let _ = tracing_subscriber::registry()
+        .with(fmt::layer().with_writer(std::io::stderr))
+        .with(EnvFilter::from_default_env())
+        .try_init();
 
     // Parse the command line arguments.
     let mut args = args;
