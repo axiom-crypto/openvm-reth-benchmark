@@ -298,10 +298,12 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
 
                 // Execute for benchmarking:
                 if !args.skip_comparison {
+                    /*
                     let pvs = info_span!("sdk.execute", group = program_name)
                         .in_scope(|| sdk.execute(elf.clone(), stdin.clone()))?;
                     let block_hash = pvs;
                     println!("block_hash (execute): {}", ToHexExt::encode_hex(&block_hash));
+                    */
                 }
 
                 match args.mode {
