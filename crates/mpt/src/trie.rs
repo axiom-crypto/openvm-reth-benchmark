@@ -2,8 +2,8 @@ use std::{cell::RefCell, mem::MaybeUninit};
 
 use alloy_rlp::Encodable;
 use bumpalo::Bump;
-use bytes::{Buf, BytesMut};
-use revm_primitives::{hex, keccak256, Bytes, B256};
+use bytes::Buf;
+use revm_primitives::{hex, keccak256, B256};
 use smallvec::SmallVec;
 
 use crate::{
@@ -899,20 +899,20 @@ impl<'a> Mpt<'a> {
 
     /// Returns list of every node's payload in the trie.
     #[cfg(feature = "host")]
-    pub fn payloads(&self) -> Vec<Bytes> {
+    pub fn payloads(&self) -> Vec<revm_primitives::Bytes> {
         let mut res = Vec::new();
         self.payloads_internal(self.root_id, &mut res);
         res
     }
 
     #[cfg(feature = "host")]
-    fn payloads_internal(&self, node_id: NodeId, payloads: &mut Vec<Bytes>) {
+    fn payloads_internal(&self, node_id: NodeId, payloads: &mut Vec<revm_primitives::Bytes>) {
         let payload_length = self.payload_length(node_id);
         let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
-        let mut buffer = BytesMut::with_capacity(rlp_length);
+        let mut buffer = bytes::BytesMut::with_capacity(rlp_length);
         self.encode_with_payload_len(node_id, payload_length, &mut buffer);
-        let bytes = Bytes::copy_from_slice(buffer.as_ref());
-        payloads.push(bytes);
+        let buffer_bytes = revm_primitives::Bytes::copy_from_slice(buffer.as_ref());
+        payloads.push(buffer_bytes);
 
         match &self.nodes[node_id as usize] {
             NodeData::Branch(nodes) => {

@@ -13,8 +13,6 @@ use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus}
 use reth_evm::execute::{BasicBlockExecutor, Executor};
 use reth_evm_ethereum::EthEvmConfig;
 use reth_execution_types::ExecutionOutcome;
-#[allow(unused_imports)]
-pub use reth_primitives;
 use reth_primitives::Header;
 use reth_primitives_traits::block::Block as _;
 use reth_revm::db::CacheDB;
@@ -23,12 +21,6 @@ use crate::io::{ClientExecutorInput, ClientExecutorInputWithState};
 
 /// Chain ID for Ethereum Mainnet.
 pub const CHAIN_ID_ETH_MAINNET: u64 = 0x1;
-
-/// Chain ID for OP Mainnnet.
-pub const CHAIN_ID_OP_MAINNET: u64 = 0xa;
-
-/// Chain ID for Linea Mainnet.
-pub const CHAIN_ID_LINEA_MAINNET: u64 = 0xe708;
 
 /// An executor that executes a block inside a zkVM.
 #[derive(Debug, Clone, Default)]

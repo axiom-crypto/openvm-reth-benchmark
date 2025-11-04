@@ -33,8 +33,6 @@ use serde_json::json;
 use std::{fs, path::PathBuf};
 use tracing::{info, info_span};
 
-mod execute;
-
 mod cli;
 use cli::ProviderArgs;
 
