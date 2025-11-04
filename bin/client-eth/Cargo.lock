@@ -2237,7 +2237,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-client-eth"
-version = "0.0.0"
+version = "0.3.0"
 dependencies = [
  "log",
  "openvm",
@@ -2250,7 +2250,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-client-executor"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -2367,7 +2367,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-mpt"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "alloy-rlp",
  "bumpalo",
@@ -2438,7 +2438,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-primitives"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "alloy-hardforks",
  "alloy-rpc-types",

@@ -1,7 +1,8 @@
 [workspace]
 [package]
 name = "openvm-client-eth"
-description = ""
+description = "OpenVM Reth Guest Program"
+version = "0.3.0"
 edition = "2021"
 
 [dependencies]
