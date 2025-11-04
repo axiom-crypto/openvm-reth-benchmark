@@ -1,3 +1,4 @@
+pub mod error;
 /// Client program input data types.
 pub mod io;
 #[macro_use]
@@ -17,7 +18,10 @@ use reth_primitives::Header;
 use reth_primitives_traits::block::Block as _;
 use reth_revm::db::CacheDB;
 
-use crate::io::{ClientExecutorInput, ClientExecutorInputWithState};
+use crate::{
+    error::ClientExecutionError,
+    io::{ClientExecutorInput, ClientExecutorInputWithState},
+};
 
 /// Chain ID for Ethereum Mainnet.
 pub const CHAIN_ID_ETH_MAINNET: u64 = 0x1;
@@ -38,7 +42,7 @@ impl ClientExecutor {
         &self,
         chain_variant: ChainVariant,
         pre_input: ClientExecutorInput,
-    ) -> eyre::Result<Header> {
+    ) -> Result<Header, ClientExecutionError> {
         let mut input = ClientExecutorInputWithState::build(pre_input)?;
 
         // Install OpenVM crypto optimizations
@@ -58,9 +62,9 @@ impl ClientExecutor {
             ChainVariant::Mainnet => mainnet(),
             ChainVariant::Dev => dev(),
         });
-        let current_block = profile!("recover senders", {
-            input.input.current_block.clone().try_into_recovered()
-        })?;
+        let current_block =
+            profile!("recover senders", { input.input.current_block.clone().try_into_recovered() })
+                .map_err(|err| ClientExecutionError::BlockSenderRecoveryError(err.into()))?;
 
         // validate the block pre-execution
         profile!("validate block pre-execution", {
@@ -68,12 +72,14 @@ impl ClientExecutor {
 
             consensus
                 .validate_header(current_block.sealed_header())
-                .expect("failed to validate header");
+                .map_err(ClientExecutionError::InvalidHeader)?;
 
             consensus
                 .validate_block_pre_execution(&current_block)
-                .expect("failed to validate block pre-execution");
-        });
+                .map_err(ClientExecutionError::InvalidBlockPreExecution)?;
+
+            Ok::<(), ClientExecutionError>(())
+        })?;
 
         let block_executor = BasicBlockExecutor::new(EthEvmConfig::new(spec.clone()), cache_db);
         let executor_output = profile!("execute", { block_executor.execute(&current_block) })?;
@@ -86,7 +92,8 @@ impl ClientExecutor {
                 &executor_output.receipts,
                 &executor_output.requests,
             )
-        })?;
+        })
+        .map_err(ClientExecutionError::InvalidBlockPostExecution)?;
 
         // Accumulate the logs bloom.
         let mut logs_bloom = Bloom::default();
@@ -108,16 +115,15 @@ impl ClientExecutor {
 
         // Verify the state root.
         let state_root = profile!("compute state root", {
-            input.state.update_from_bundle_state(&executor_outcome.bundle).unwrap();
-            input.state.state_trie.hash()
-        });
+            input.state.update_from_bundle_state(&executor_outcome.bundle)?;
+            Ok::<_, ClientExecutionError>(input.state.state_trie.hash())
+        })?;
 
         if state_root != input.input.current_block.state_root {
-            println!(
-                "state root = {state_root}, expected = {expected}",
-                expected = input.input.current_block.state_root,
-            );
-            eyre::bail!("mismatched state root");
+            return Err(ClientExecutionError::StateRootMismatch {
+                actual: state_root,
+                expected: input.input.current_block.state_root,
+            });
         }
 
         // Derive the block header.

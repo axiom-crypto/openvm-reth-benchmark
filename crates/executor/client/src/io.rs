@@ -1,7 +1,7 @@
 use std::iter::once;
 
+use crate::error::ClientExecutionError;
 use bumpalo::Bump;
-use eyre::{bail, Result};
 use itertools::Itertools;
 use openvm_mpt::{EthereumState, EthereumStateBytes, Mpt};
 use reth_evm::execute::ProviderError;
@@ -46,7 +46,7 @@ pub struct ClientExecutorInputWithState {
 
 impl ClientExecutorInputWithState {
     /// Parses `input.parent_state_bytes` into `EthereumState` and verifies state and storage roots.
-    pub fn build(input: ClientExecutorInput) -> Result<Self> {
+    pub fn build(input: ClientExecutorInput) -> Result<Self, ClientExecutionError> {
         let input = Box::leak(Box::new(input));
         let bump = Box::leak(Box::new(Bump::with_capacity(BUMP_AREA_SIZE)));
 
@@ -54,7 +54,10 @@ impl ClientExecutorInputWithState {
             let (state_num_nodes, state_bytes) = &input.parent_state_bytes.state_trie;
             let state_trie = Mpt::decode_trie(bump, &mut state_bytes.as_ref(), *state_num_nodes)?;
             if state_trie.hash() != input.ancestor_headers[0].state_root {
-                bail!("state root mismatch");
+                return Err(ClientExecutionError::ParentStateRootMismatch {
+                    actual: state_trie.hash(),
+                    expected: input.ancestor_headers[0].state_root,
+                });
             }
 
             let mut storage_tries = HashMap::with_capacity_and_hasher(
@@ -72,7 +75,11 @@ impl ClientExecutorInputWithState {
                 let storage_trie =
                     Mpt::decode_trie(bump, &mut storage_trie_bytes.as_ref(), *num_nodes)?;
                 if storage_trie.hash() != expected_storage_root {
-                    bail!("storage root mismatch");
+                    return Err(ClientExecutionError::ParentStorageRootMismatch {
+                        hashed_account: *hashed_address,
+                        actual: storage_trie.hash(),
+                        expected: expected_storage_root,
+                    });
                 }
 
                 storage_tries.insert(*hashed_address, storage_trie);
@@ -93,7 +100,7 @@ impl ClientExecutorInputWithState {
     }
 
     /// Creates a [`WitnessDb`].
-    pub fn witness_db(&self) -> Result<WitnessDb<'_>> {
+    pub fn witness_db(&self) -> Result<WitnessDb<'_>, ClientExecutionError> {
         <Self as WitnessInput>::witness_db(self)
     }
 }
@@ -152,7 +159,7 @@ pub trait WitnessInput {
     /// implementing this trait causes a zkVM run to cost over 5M cycles more. To avoid this, define
     /// a method inside the type that calls this trait method instead.
     #[inline(always)]
-    fn witness_db(&self) -> Result<WitnessDb<'_>> {
+    fn witness_db(&self) -> Result<WitnessDb<'_>, ClientExecutionError> {
         let state = self.state();
 
         let bytecode_by_hash =
@@ -163,11 +170,18 @@ pub trait WitnessInput {
             HashMap::with_capacity_and_hasher(self.headers_len(), DefaultHashBuilder::default());
         for (child_header, parent_header) in self.headers().tuple_windows() {
             if parent_header.number != child_header.number - 1 {
-                eyre::bail!("non-consecutive blocks");
+                return Err(ClientExecutionError::NonConsecutiveBlockHeaders {
+                    parent_block_number: parent_header.number,
+                    child_block_number: child_header.number,
+                });
             }
 
             if parent_header.hash_slow() != child_header.parent_hash {
-                eyre::bail!("parent hash mismatch");
+                return Err(ClientExecutionError::ParentBlockHashMismatch {
+                    parent_block_number: parent_header.number,
+                    expected: parent_header.hash_slow(),
+                    actual: child_header.parent_hash,
+                });
             }
 
             block_hashes.insert(parent_header.number, child_header.parent_hash);

@@ -4790,7 +4790,6 @@ dependencies = [
  "alloy-consensus",
  "alloy-primitives 1.3.1",
  "bumpalo",
- "eyre",
  "itertools 0.14.0",
  "openvm-mpt",
  "openvm-primitives",
@@ -4809,6 +4808,7 @@ dependencies = [
  "revm-primitives 20.2.1",
  "serde",
  "serde_with",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
