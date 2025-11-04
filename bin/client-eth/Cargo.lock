@@ -280,7 +280,7 @@ dependencies = [
  "alloy-rlp",
  "alloy-serde",
  "alloy-sol-types",
- "itertools 0.14.0",
+ "itertools 0.13.0",
  "serde",
  "serde_json",
  "serde_with",
@@ -2244,7 +2244,7 @@ dependencies = [
  "openvm-algebra-guest",
  "openvm-client-executor",
  "openvm-ecc-guest",
- "openvm-kzg 0.2.0-alpha",
+ "openvm-kzg",
  "tracing",
 ]
 
@@ -2262,7 +2262,7 @@ dependencies = [
  "openvm-algebra-guest",
  "openvm-ecc-guest",
  "openvm-keccak256",
- "openvm-kzg 0.1.0-alpha",
+ "openvm-kzg",
  "openvm-mpt",
  "openvm-pairing",
  "openvm-primitives",
@@ -2339,22 +2339,6 @@ version = "1.4.1"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
 dependencies = [
  "openvm-platform",
-]
-
-[[package]]
-name = "openvm-kzg"
-version = "0.1.0-alpha"
-source = "git+https://github.com/axiom-crypto/openvm-kzg.git?branch=val%2Fopenvm-main#062f68a81aa2edeaf56d65413e4b9e6e73d101f4"
-dependencies = [
- "bls12_381",
- "hex",
- "hex-literal 1.0.0",
- "openvm-algebra-guest",
- "openvm-ecc-guest",
- "openvm-pairing",
- "serde",
- "serde-big-array",
- "spin 0.10.0",
 ]
 
 [[package]]
