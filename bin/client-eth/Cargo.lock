@@ -2241,7 +2241,9 @@ version = "0.0.0"
 dependencies = [
  "log",
  "openvm",
+ "openvm-algebra-guest",
  "openvm-client-executor",
+ "openvm-ecc-guest",
  "openvm-kzg 0.2.0-alpha",
  "tracing",
 ]

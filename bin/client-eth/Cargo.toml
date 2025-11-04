@@ -12,13 +12,8 @@ openvm-client-executor = { path = "../../crates/executor/client" }
 openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "main", features = [
     "std",
 ] }
-# openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-# openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-# openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-# openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", branch = "main", features = [
-#     "bn254",
-#     "bls12_381",
-# ] }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
 
 openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", branch = "openvm-main", default-features = false }
 
