@@ -29,6 +29,17 @@ impl EthereumState {
         }
     }
 
+    pub fn from_tries(
+        state_trie: Mpt<'static>,
+        storage_tries: impl IntoIterator<Item = (B256, Mpt<'static>)>,
+    ) -> Self {
+        Self {
+            state_trie,
+            storage_tries: storage_tries.into_iter().collect(),
+            bump: Box::leak(Box::new(Bump::new())),
+        }
+    }
+
     pub fn update_from_bundle_state(&mut self, bundle_state: &BundleState) -> Result<(), Error> {
         for (address, account) in &bundle_state.state {
             let hashed_address = keccak256(address);

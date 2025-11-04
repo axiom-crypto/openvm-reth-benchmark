@@ -175,6 +175,7 @@ fn test_index_trie() -> Result<(), Error> {
     Ok(())
 }
 
+#[cfg(feature = "host")]
 #[test]
 fn test_serde_index_trie() -> Result<(), Error> {
     const N: usize = 512;
@@ -201,6 +202,7 @@ fn test_serde_index_trie() -> Result<(), Error> {
     Ok(())
 }
 
+#[cfg(feature = "host")]
 #[test]
 fn test_serde_keccak_trie() -> Result<(), Error> {
     const N: usize = 512;

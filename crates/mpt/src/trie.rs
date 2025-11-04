@@ -2,8 +2,8 @@ use std::{cell::RefCell, mem::MaybeUninit};
 
 use alloy_rlp::Encodable;
 use bumpalo::Bump;
-use bytes::Buf;
-use revm_primitives::{keccak256, B256};
+use bytes::{Buf, BytesMut};
+use revm_primitives::{hex, keccak256, Bytes, B256};
 use smallvec::SmallVec;
 
 use crate::{
@@ -27,7 +27,7 @@ const VALUE_RLP_BUFFER_CAPACITY: usize = 200;
 /// In a default MPT, `nodes[0]` starts as `Null`, but the root may later be changed to a
 /// non-null node (e.g. `Digest`) for convenience. `NULL_NODE_ID` is still used by the decoder
 /// as the canonical "no node" identifier.
-const NULL_NODE_ID: NodeId = 0;
+pub(crate) const NULL_NODE_ID: NodeId = 0;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -146,7 +146,7 @@ impl<'a> Mpt<'a> {
         num_nodes: usize,
     ) -> Result<Self, Error> {
         if bytes == &[alloy_rlp::EMPTY_STRING_CODE, 0, 0, 0] {
-            return Ok(Self::new(bump))
+            return Ok(Self::new(bump));
         }
 
         // A growth factor applied to the node vector's capacity during deserialization.
@@ -342,7 +342,7 @@ impl<'a> Mpt<'a> {
     }
 }
 
-const NULL_NODE_REF_SLICE: &[u8] = &[alloy_rlp::EMPTY_STRING_CODE];
+pub(crate) const NULL_NODE_REF_SLICE: &[u8] = &[alloy_rlp::EMPTY_STRING_CODE];
 
 impl<'a> Mpt<'a> {
     #[inline]
@@ -896,15 +896,44 @@ impl<'a> Mpt<'a> {
         };
         Ok(node_id)
     }
+
+    /// Returns list of every node's payload in the trie.
+    #[cfg(feature = "host")]
+    pub fn payloads(&self) -> Vec<Bytes> {
+        let mut res = Vec::new();
+        self.payloads_internal(self.root_id, &mut res);
+        res
+    }
+
+    #[cfg(feature = "host")]
+    fn payloads_internal(&self, node_id: NodeId, payloads: &mut Vec<Bytes>) {
+        let payload_length = self.payload_length(node_id);
+        let rlp_length = payload_length + alloy_rlp::length_of_length(payload_length);
+        let mut buffer = BytesMut::with_capacity(rlp_length);
+        self.encode_with_payload_len(node_id, payload_length, &mut buffer);
+        let bytes = Bytes::copy_from_slice(buffer.as_ref());
+        payloads.push(bytes);
+
+        match &self.nodes[node_id as usize] {
+            NodeData::Branch(nodes) => {
+                for child_id in nodes.iter().filter(|c| c.is_some()) {
+                    let child_id = child_id.unwrap();
+                    self.payloads_internal(child_id, payloads);
+                }
+            }
+            NodeData::Extension(_, ext_id) => {
+                self.payloads_internal(*ext_id, payloads);
+            }
+            _ => {}
+        }
+    }
 }
 
 impl Mpt<'_> {
-    #[cfg(test)]
     pub fn print_trie(&self) {
         self.print_trie_internal(self.root_id, 0);
     }
 
-    #[cfg(test)]
     fn print_trie_internal(&self, node_id: NodeId, depth: usize) {
         let indent = "  ".repeat(depth);
         match &self.nodes[node_id as usize] {
@@ -915,23 +944,16 @@ impl Mpt<'_> {
                 println!("{}Branch", indent);
                 for (i, child) in children.iter().enumerate() {
                     if let Some(child_id) = child {
-                        println!("{}  [{}]:", indent, i);
+                        println!("{}  [{}]:", indent, hex::encode([i as u8]));
                         self.print_trie_internal(*child_id, depth + 2);
                     }
                 }
             }
             NodeData::Leaf(path, value) => {
-                let path_nibs = prefix_to_nibs(path);
-                println!(
-                    "{}Leaf path={:?} value_len={}",
-                    indent,
-                    path_nibs.as_slice(),
-                    value.len()
-                );
+                println!("{}Leaf path={} value_len={}", indent, hex::encode(path), value.len());
             }
             NodeData::Extension(path, child_id) => {
-                let path_nibs = prefix_to_nibs(path);
-                println!("{}Extension path={:?}", indent, path_nibs.as_slice());
+                println!("{}Extension path={}", indent, hex::encode(path));
                 self.print_trie_internal(*child_id, depth + 1);
             }
             NodeData::Digest(digest) => {
