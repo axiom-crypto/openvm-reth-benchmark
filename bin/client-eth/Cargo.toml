@@ -23,11 +23,10 @@ openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", branch = "m
     "bls12_381",
 ] }
 k256 = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-
-# TODO: not sure why it's needed but otherwise linking fails
+# p256 is included in the standard OpenVM config (openvm.toml), and this import is needed for the linker
 p256 = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
 
-openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", branch = "val/openvm-main", default-features = false }
+openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", branch = "openvm-main", default-features = false }
 
 # Statically turns off logging
 log = { version = "0.4", features = ["max_level_off", "release_max_level_off"] }
@@ -37,11 +36,8 @@ tracing = { version = "0.1", features = [
 ] }
 
 [features]
-default = ["kzg-intrinsics"]
+default = []
 heap-embedded-alloc = ["openvm/heap-embedded-alloc"]
-kzg-intrinsics = [
-    "revm-precompile/openvm-kzg-intrinsics",
-] # uses OpenVM BLS12-381 intrinsic functions
 
 [patch.crates-io]
 revm = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
