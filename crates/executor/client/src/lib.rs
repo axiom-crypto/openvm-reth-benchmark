@@ -7,7 +7,7 @@ use std::{fmt::Debug, sync::Arc};
 
 use alloy_consensus::TxReceipt;
 use alloy_primitives::Bloom;
-use openvm_primitives::chain_spec::mainnet;
+use openvm_primitives::chain_spec::{dev, mainnet};
 use reth_consensus::{Consensus, HeaderValidator};
 use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus};
 use reth_evm::execute::{BasicBlockExecutor, Executor};
@@ -34,19 +34,19 @@ pub const CHAIN_ID_LINEA_MAINNET: u64 = 0xe708;
 #[derive(Debug, Clone, Default)]
 pub struct ClientExecutor;
 
-/// Implementation for Ethereum-specific execution/validation logic.
-#[derive(Debug)]
-pub struct EthereumVariant;
-
 /// EVM chain variants that implement different execution/validation rules.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ChainVariant {
-    /// Ethereum networks.
-    Ethereum,
+    Mainnet,
+    Dev,
 }
 
 impl ClientExecutor {
-    pub fn execute(&self, pre_input: ClientExecutorInput) -> eyre::Result<Header> {
+    pub fn execute(
+        &self,
+        chain_variant: ChainVariant,
+        pre_input: ClientExecutorInput,
+    ) -> eyre::Result<Header> {
         let mut input = ClientExecutorInputWithState::build(pre_input)?;
 
         // Install OpenVM crypto optimizations
@@ -62,7 +62,10 @@ impl ClientExecutor {
         let cache_db = CacheDB::new(&witness_db);
 
         // Execute the block.
-        let spec = Arc::new(mainnet());
+        let spec = Arc::new(match chain_variant {
+            ChainVariant::Mainnet => mainnet(),
+            ChainVariant::Dev => dev(),
+        });
         let current_block = profile!("recover senders", {
             input.input.current_block.clone().try_into_recovered()
         })?;

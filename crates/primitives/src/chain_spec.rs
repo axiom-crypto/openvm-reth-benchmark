@@ -1,5 +1,6 @@
 use reth_chainspec::{
     BaseFeeParams, BaseFeeParamsKind, Chain, ChainHardforks, ChainSpec, DepositContract,
+    DEV_HARDFORKS,
 };
 use revm_primitives::{address, b256, U256};
 
@@ -27,4 +28,19 @@ pub fn mainnet() -> ChainSpec {
     };
     spec.genesis.config.dao_fork_support = true;
     spec
+}
+
+/// Returns the [ChainSpec] for Reth's dev testnet.
+pub fn dev() -> ChainSpec {
+    // taken from:
+    // https://github.com/paradigmxyz/reth/blob/c228fe15808c3acbf18dc3af1a03ef5cbdcda07a/crates/chainspec/src/spec.rs#L108-L125
+    ChainSpec {
+        chain: Chain::dev(),
+        genesis: Default::default(),
+        paris_block_and_final_difficulty: Some((0, U256::from(0))),
+        hardforks: DEV_HARDFORKS.clone(),
+        base_fee_params: BaseFeeParamsKind::Constant(BaseFeeParams::ethereum()),
+        deposit_contract: None, // TODO: do we even have?
+        ..Default::default()
+    }
 }
