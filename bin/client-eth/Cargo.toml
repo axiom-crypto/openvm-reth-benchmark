@@ -7,24 +7,18 @@ edition = "2021"
 [dependencies]
 # workspace
 openvm-client-executor = { path = "../../crates/executor/client" }
-revm-precompile = { version = "21.0.0", default-features = false, features = [
-    "openvm",
-] }
 
 # openvm
 openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "main", features = [
     "std",
 ] }
-openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", branch = "main", features = [
-    "bn254",
-    "bls12_381",
-] }
-k256 = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-# p256 is included in the standard OpenVM config (openvm.toml), and this import is needed for the linker
-p256 = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
+# openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
+# openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
+# openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
+# openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", branch = "main", features = [
+#     "bn254",
+#     "bls12_381",
+# ] }
 
 openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", branch = "openvm-main", default-features = false }
 
@@ -38,30 +32,6 @@ tracing = { version = "0.1", features = [
 [features]
 default = []
 heap-embedded-alloc = ["openvm/heap-embedded-alloc"]
-
-[patch.crates-io]
-revm = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
-revm-primitives = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
-revm-interpreter = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
-revm-precompile = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
-revm-database = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
-revm-database-interface = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
-revm-state = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
-revm-bytecode = { git = "https://github.com/axiom-crypto/revm", branch = "v75-openvm" }
-k256 = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-p256 = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-# k256 = { path = "../../../openvm-org/openvm/guest-libs/k256" }
-# p256 = { path = "../../../openvm-org/openvm/guest-libs/p256" }
-
-# Local Patching:
-# revm = { path = "../../../revm/crates/revm" }
-# revm-primitives = { path = "../../../revm/crates/primitives" }
-# revm-interpreter = { path = "../../../revm/crates/interpreter" }
-# revm-precompile = { path = "../../../revm/crates/precompile" }
-# revm-database = { path = "../../../revm/crates/database" }
-# revm-database-interface = { path = "../../../revm/crates/database/interface" }
-# revm-state = { path = "../../../revm/crates/state" }
-# revm-bytecode = { path = "../../../revm/crates/bytecode" }
 
 [profile.release]
 panic = "abort"

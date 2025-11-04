@@ -8,14 +8,16 @@ use alloy_consensus::crypto::{
     RecoveryError,
 };
 use alloy_primitives::Address;
-use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
 use openvm_ecc_guest::{
     algebra::IntMod,
     weierstrass::{IntrinsicCurve, WeierstrassPoint},
     AffinePoint,
 };
+use openvm_k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
 use openvm_keccak256::keccak256;
 use openvm_kzg::{Bytes32, Bytes48, KzgProof};
+#[allow(unused_imports)]
+use openvm_p256; // ensure this is linked in for the standard OpenVM config
 use openvm_pairing::{
     bn254::{Bn254, Fp, Fp2, G1Affine, G2Affine, Scalar},
     PairingCheck,
@@ -30,28 +32,26 @@ use std::{sync::Arc, vec::Vec};
 const FQ_LEN: usize = 32;
 const G1_LEN: usize = 64;
 const G2_LEN: usize = 128;
+/// SCALAR_LEN specifies the number of bytes needed to represent an Fr element.
+/// This is an element in the scalar field of BN254.
+const SCALAR_LEN: usize = 32;
 
 /// OpenVM k256 backend for Alloy crypto operations (transaction validation)
 #[derive(Debug, Default)]
-struct OpenVMK256Provider;
+struct OpenVmK256Provider;
 
-impl CryptoProvider for OpenVMK256Provider {
+impl CryptoProvider for OpenVmK256Provider {
     fn recover_signer_unchecked(
         &self,
         sig: &[u8; 65],
         msg: &[u8; 32],
     ) -> Result<Address, RecoveryError> {
         // Extract components: sig[0..32]=r, sig[32..64]=s, sig[64]=recovery_id
-        let mut sig_bytes = [0u8; 64];
-        sig_bytes[..32].copy_from_slice(&sig[0..32]);
-        sig_bytes[32..64].copy_from_slice(&sig[32..64]);
-        let recovery_id = sig[64];
-
         // Parse signature using OpenVM k256
-        let mut signature = Signature::from_slice(&sig_bytes).map_err(|_| RecoveryError::new())?;
+        let mut signature = Signature::from_slice(&sig[..64]).map_err(|_| RecoveryError::new())?;
 
         // Normalize signature if needed
-        let mut recid = recovery_id;
+        let mut recid = sig[64];
         if let Some(sig_normalized) = signature.normalize_s() {
             signature = sig_normalized;
             recid ^= 1;
@@ -86,8 +86,6 @@ struct OpenVMCrypto;
 impl Crypto for OpenVMCrypto {
     /// Custom SHA-256 implementation with openvm optimization
     fn sha256(&self, input: &[u8]) -> [u8; 32] {
-        #[cfg(target_os = "zkvm")]
-        openvm::io::println("OPENVM: sha256 precompile called");
         openvm_sha2::sha256(input)
     }
 
@@ -106,7 +104,7 @@ impl Crypto for OpenVMCrypto {
         scalar_bytes: &[u8],
     ) -> Result<[u8; 64], PrecompileError> {
         let p = read_g1_point(point_bytes)?;
-        let s = Scalar::from_le_bytes_unchecked(scalar_bytes);
+        let s = read_scalar(scalar_bytes);
         let result = Bn254::msm(&[s], &[p]);
         Ok(encode_g1_point(result))
     }
@@ -116,27 +114,25 @@ impl Crypto for OpenVMCrypto {
         if pairs.is_empty() {
             return Ok(true);
         }
+        let mut g1_points = Vec::with_capacity(pairs.len());
+        let mut g2_points = Vec::with_capacity(pairs.len());
 
-        let mut prepared_pairs = Vec::with_capacity(pairs.len());
         for (g1_bytes, g2_bytes) in pairs {
             let g1 = read_g1_point(g1_bytes)?;
             let g2 = read_g2_point(g2_bytes)?;
-            prepared_pairs.push((g1, g2));
+
+            let (g1_x, g1_y) = g1.into_coords();
+            let g1 = AffinePoint::new(g1_x, g1_y);
+
+            let (g2_x, g2_y) = g2.into_coords();
+            let g2 = AffinePoint::new(g2_x, g2_y);
+
+            g1_points.push(g1);
+            g2_points.push(g2);
         }
 
-        let (g1_points, g2_points): (Vec<_>, Vec<_>) = prepared_pairs
-            .into_iter()
-            .map(|(g1, g2)| {
-                let (g1_x, g1_y) = g1.into_coords();
-                let g1_affine = AffinePoint::new(g1_x, g1_y);
-
-                let (g2_x, g2_y) = g2.into_coords();
-                let g2_affine = AffinePoint::new(g2_x, g2_y);
-                (g1_affine, g2_affine)
-            })
-            .unzip();
-
-        Ok(Bn254::pairing_check(&g1_points, &g2_points).is_ok())
+        let pairing_result = Bn254::pairing_check(&g1_points, &g2_points).is_ok();
+        Ok(pairing_result)
     }
 
     /// Custom secp256k1 ECDSA signature recovery with openvm optimization
@@ -208,7 +204,7 @@ impl Crypto for OpenVMCrypto {
 /// Install OpenVM crypto implementations globally
 pub(crate) fn install_openvm_crypto() -> Result<bool, Box<dyn std::error::Error>> {
     // Install OpenVM k256 provider for Alloy (transaction validation)
-    install_default_provider(Arc::new(OpenVMK256Provider::default()))?;
+    install_default_provider(Arc::new(OpenVmK256Provider::default()))?;
 
     // Install OpenVM crypto for REVM precompiles
     let installed = install_crypto(OpenVMCrypto::default());
@@ -220,7 +216,11 @@ pub(crate) fn install_openvm_crypto() -> Result<bool, Box<dyn std::error::Error>
 
 #[inline]
 fn read_fq(input: &[u8]) -> Result<Fp, PrecompileError> {
-    Fp::from_be_bytes(input).ok_or(PrecompileError::Bn254FieldPointNotAMember)
+    if input.len() < FQ_LEN {
+        Err(PrecompileError::Bn254FieldPointNotAMember)
+    } else {
+        Fp::from_be_bytes(&input[..FQ_LEN]).ok_or(PrecompileError::Bn254FieldPointNotAMember)
+    }
 }
 
 #[inline]
@@ -261,4 +261,22 @@ fn encode_g1_point(point: G1Affine) -> [u8; G1_LEN] {
         output[i + FQ_LEN] = y_bytes[FQ_LEN - 1 - i];
     }
     output
+}
+
+/// Reads a scalar from the input slice
+///
+/// Note: The scalar does not need to be canonical.
+///
+/// # Panics
+///
+/// If `input.len()` is not equal to [`SCALAR_LEN`].
+#[inline]
+fn read_scalar(input: &[u8]) -> Scalar {
+    assert_eq!(
+        input.len(),
+        SCALAR_LEN,
+        "unexpected scalar length. got {}, expected {SCALAR_LEN}",
+        input.len()
+    );
+    Scalar::from_be_bytes_unchecked(input)
 }
