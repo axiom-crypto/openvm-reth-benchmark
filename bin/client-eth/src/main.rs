@@ -1,5 +1,5 @@
 use openvm::io::{println, read, reveal_bytes32};
-use openvm_client_executor::{io::ClientExecutorInput, ClientExecutor};
+use openvm_client_executor::{io::ClientExecutorInput, ChainVariant, ClientExecutor};
 
 openvm::init!();
 
