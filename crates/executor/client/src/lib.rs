@@ -2,8 +2,6 @@
 pub mod io;
 #[macro_use]
 mod utils;
-#[cfg(target_os = "zkvm")]
-mod crypto;
 
 use std::{fmt::Debug, sync::Arc};
 
@@ -52,10 +50,11 @@ impl ClientExecutor {
         let mut input = ClientExecutorInputWithState::build(pre_input)?;
 
         // Install OpenVM crypto optimizations
-        #[cfg(target_os = "zkvm")]
+        #[cfg(feature = "openvm")]
         {
             println!("Installing OpenVM crypto optimizations");
-            crypto::install_openvm_crypto().expect("failed to install OpenVM crypto provider");
+            openvm_revm_crypto::install_openvm_crypto()
+                .expect("failed to install OpenVM crypto provider");
         }
 
         // Initialize the witnessed database with verified storage proofs.

@@ -4792,17 +4792,9 @@ dependencies = [
  "bumpalo",
  "eyre",
  "itertools 0.14.0",
- "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "openvm",
- "openvm-algebra-guest",
- "openvm-ecc-guest",
- "openvm-keccak256",
- "openvm-kzg",
  "openvm-mpt",
- "openvm-pairing",
  "openvm-primitives",
- "openvm-sha2",
- "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm-revm-crypto",
  "reth-consensus",
  "reth-ethereum-consensus",
  "reth-ethereum-primitives",
@@ -4814,7 +4806,6 @@ dependencies = [
  "reth-revm",
  "reth-trie",
  "revm 29.0.1",
- "revm-precompile 27.0.0",
  "revm-primitives 20.2.1",
  "serde",
  "serde_with",
@@ -5487,6 +5478,26 @@ dependencies = [
  "openvm-native-recursion",
  "openvm-sdk",
  "openvm-stark-sdk",
+]
+
+[[package]]
+name = "openvm-revm-crypto"
+version = "0.3.0"
+dependencies = [
+ "alloy-consensus",
+ "alloy-primitives 1.3.1",
+ "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm",
+ "openvm-algebra-guest",
+ "openvm-ecc-guest",
+ "openvm-keccak256",
+ "openvm-kzg",
+ "openvm-pairing",
+ "openvm-sha2",
+ "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "revm 29.0.1",
+ "revm-precompile 27.0.0",
+ "revm-primitives 20.2.1",
 ]
 
 [[package]]
@@ -7703,7 +7714,6 @@ dependencies = [
  "ark-serialize 0.5.0",
  "arrayref",
  "aurora-engine-modexp",
- "c-kzg",
  "cfg-if",
  "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "p256 0.13.2 (registry+https://github.com/rust-lang/crates.io-index)",

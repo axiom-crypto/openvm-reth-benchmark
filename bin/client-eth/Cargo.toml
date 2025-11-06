@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 # workspace
-openvm-client-executor = { path = "../../crates/executor/client" }
+openvm-client-executor = { path = "../../crates/executor/client", features = ["openvm"] }
 
 # openvm
 openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "main", features = [
@@ -15,8 +15,6 @@ openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "main", fe
 ] }
 openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
 openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
-
-openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", branch = "openvm-main", default-features = false }
 
 # Statically turns off logging
 log = { version = "0.4", features = ["max_level_off", "release_max_level_off"] }
