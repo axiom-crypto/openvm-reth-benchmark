@@ -1,8 +1,6 @@
 pub mod error;
 /// Client program input data types.
 pub mod io;
-#[macro_use]
-mod utils;
 
 use std::{fmt::Debug, sync::Arc};
 
@@ -62,12 +60,16 @@ impl ClientExecutor {
             ChainVariant::Mainnet => mainnet(),
             ChainVariant::Dev => dev(),
         });
-        let current_block =
-            profile!("recover senders", { input.input.current_block.clone().try_into_recovered() })
-                .map_err(|err| ClientExecutionError::BlockSenderRecoveryError(err.into()))?;
+        // Recover senders
+        let current_block = input
+            .input
+            .current_block
+            .clone()
+            .try_into_recovered()
+            .map_err(|err| ClientExecutionError::BlockSenderRecoveryError(err.into()))?;
 
         // validate the block pre-execution
-        profile!("validate block pre-execution", {
+        {
             let consensus = EthBeaconConsensus::new(spec.clone());
 
             consensus
@@ -77,30 +79,24 @@ impl ClientExecutor {
             consensus
                 .validate_block_pre_execution(&current_block)
                 .map_err(ClientExecutionError::InvalidBlockPreExecution)?;
-
-            Ok::<(), ClientExecutionError>(())
-        })?;
+        };
 
         let block_executor = BasicBlockExecutor::new(EthEvmConfig::new(spec.clone()), cache_db);
-        let executor_output = profile!("execute", { block_executor.execute(&current_block) })?;
+        let executor_output = block_executor.execute(&current_block)?;
 
         // Validate the block post execution.
-        profile!("validate block post-execution", {
-            validate_block_post_execution(
-                &current_block,
-                &spec,
-                &executor_output.receipts,
-                &executor_output.requests,
-            )
-        })
+        validate_block_post_execution(
+            &current_block,
+            &spec,
+            &executor_output.receipts,
+            &executor_output.requests,
+        )
         .map_err(ClientExecutionError::InvalidBlockPostExecution)?;
 
         // Accumulate the logs bloom.
         let mut logs_bloom = Bloom::default();
-        profile!("accrue logs bloom", {
-            executor_output.receipts.iter().for_each(|r| {
-                logs_bloom.accrue_bloom(&r.bloom());
-            })
+        executor_output.receipts.iter().for_each(|r| {
+            logs_bloom.accrue_bloom(&r.bloom());
         });
 
         // Convert the output to an execution outcome.
@@ -114,10 +110,10 @@ impl ClientExecutor {
         drop(witness_db);
 
         // Verify the state root.
-        let state_root = profile!("compute state root", {
+        let state_root = {
             input.state.update_from_bundle_state(&executor_outcome.bundle)?;
-            Ok::<_, ClientExecutionError>(input.state.state_trie.hash())
-        })?;
+            input.state.state_trie.hash()
+        };
 
         if state_root != input.input.current_block.state_root {
             return Err(ClientExecutionError::StateRootMismatch {
