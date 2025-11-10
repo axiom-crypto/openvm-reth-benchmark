@@ -7,8 +7,8 @@ use alloy_rlp::PayloadView;
 use bytes::{BufMut, BytesMut};
 use revm_primitives::{Bytes, HashMap, B256};
 
-/// [`MptResolver`] resolves an MPT from a hash -> payload where each node's payload is mapped to
-/// its keccak hash.
+/// [`MptResolver`] resolves an MPT from a from a given mapping of `keccak(payload) -> payload` of
+/// all MPT nodes.
 #[derive(Debug)]
 pub struct MptResolver {
     node_store: HashMap<B256, Bytes>,
@@ -16,11 +16,7 @@ pub struct MptResolver {
 
 impl FromIterator<(B256, Bytes)> for MptResolver {
     fn from_iter<T: IntoIterator<Item = (B256, Bytes)>>(iter: T) -> Self {
-        let mut node_store = HashMap::default();
-        for (k, v) in iter {
-            node_store.insert(k, v);
-        }
-        MptResolver { node_store }
+        Self { node_store: HashMap::from_iter(iter) }
     }
 }
 
