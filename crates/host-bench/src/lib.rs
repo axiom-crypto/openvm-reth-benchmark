@@ -335,8 +335,6 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             info_span!("interpreter.execute_metered", group = program_name)
                                 .in_scope(|| interpreter.execute_metered(stdin, metered_ctx))?;
                         println!("Number of segments: {}", segments.len());
-
-                        std::mem::forget(segments);
                     }
                     BenchMode::ProveApp => {
                         let mut prover = sdk.app_prover(elf)?.with_program_name(program_name);
@@ -345,32 +343,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                         verify_app_proof(&app_vk, &proof)?;
                     }
                     BenchMode::ProveStark => {
-                        let mut prover = sdk.prover(elf)?.with_program_name(program_name);
-                        let proof = prover.prove(stdin)?;
-                        let block_hash = proof
-                            .user_public_values
-                            .iter()
-                            .map(|pv| pv.as_canonical_u32() as u8)
-                            .collect::<Vec<u8>>();
-                        println!("block_hash (prove_stark): {}", ToHexExt::encode_hex(&block_hash));
-
-                        if let Some(state) = prover.app_prover.instance().state() {
-                            info!("state instret: {}", state.instret());
-                            if let Some(output_dir) = args.output_dir.as_ref() {
-                                fs::write(
-                                    output_dir.join("num_instret"),
-                                    state.instret().to_string(),
-                                )?;
-                                info!("wrote state instret to {}", output_dir.display());
-                            }
-                        }
-
-                        if let Some(output_dir) = args.output_dir.as_ref() {
-                            let versioned_proof = VersionedVmStarkProof::new(proof)?;
-                            let json = serde_json::to_vec_pretty(&versioned_proof)?;
-                            fs::write(output_dir.join("proof.json"), json)?;
-                            println!("wrote proof json to {}", output_dir.display());
-                        }
+                        
                     }
                     #[cfg(feature = "evm-verify")]
                     BenchMode::ProveEvm => {
