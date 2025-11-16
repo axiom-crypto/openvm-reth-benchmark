@@ -1,16 +1,59 @@
 #!/bin/bash
 
-USE_CUDA=false
-if [ "$1" == "cuda" ]; then
-    USE_CUDA=true
-fi
+set -euo pipefail
 
-set -e
+MODE="execute-metered" # can be execute-host, execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
+BLOCK_NUMBER=23800838
+USE_CUDA=false
+
+usage() {
+    cat <<'EOF'
+Usage: ./run.sh [cuda] [--mode MODE] [--block-number BLOCK]
+
+Options:
+  cuda                 Enable CUDA features for the build and benchmark run.
+  --mode MODE          Override the benchmark mode (default: execute-metered).
+  --block-number BLOCK Override the block number to execute (default: 23800838).
+  -h, --help           Show this message.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        cuda)
+            USE_CUDA=true
+            shift
+            ;;
+        --mode)
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --mode requires a value" >&2
+                exit 1
+            fi
+            MODE="$2"
+            shift 2
+            ;;
+        --block-number)
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --block-number requires a value" >&2
+                exit 1
+            fi
+            BLOCK_NUMBER="$2"
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Unknown argument: $1" >&2
+            usage >&2
+            exit 1
+            ;;
+    esac
+done
 
 mkdir -p rpc-cache
 source .env
-MODE=execute-metered # can be execute-host, execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
-
 cd bin/client-eth
 cargo openvm build
 mkdir -p ../host/elf
@@ -24,7 +67,6 @@ cd ../..
 
 PROFILE="release"
 FEATURES="metrics,jemalloc,aot,unprotected"
-BLOCK_NUMBER=23800838
 # switch to +nightly-2025-08-19 if using tco
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
 BIN_NAME="openvm-reth-benchmark-bin"

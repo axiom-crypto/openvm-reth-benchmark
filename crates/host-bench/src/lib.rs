@@ -314,12 +314,19 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             SdkVmBuilder,
                             app_config.app_vm_config,
                         )?;
-                        let interpreter =
+                        let aot_instance =
                             vm.executor().instance(&exe)?;
 
                         let _ =
+                            info_span!("aot.execute_pure", group = program_name)
+                                .in_scope(|| aot_instance.execute(stdin.clone(), None))?;
+
+                        let interpreter_instance 
+                            = vm.executor().interpreter_instance(&exe)?;
+
+                        let _ = 
                             info_span!("interpreter.execute_pure", group = program_name)
-                                .in_scope(|| interpreter.execute(stdin, None))?;
+                                .in_scope(|| interpreter_instance.execute(stdin.clone(), None))?;
                     }
                     BenchMode::ExecuteMetered => {
                         let engine = DefaultStarkEngine::new(app_config.app_fri_params.fri_params);
@@ -329,13 +336,23 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             app_config.app_vm_config,
                         )?;
                         let executor_idx_to_air_idx = vm.executor_idx_to_air_idx();
-                        let interpreter =
+                        let aot_instance =
                             vm.executor().metered_instance(&exe, &executor_idx_to_air_idx)?;
                         let metered_ctx = vm.build_metered_ctx(&exe);
-                        let (segments, _) =
+                        let (aot_segments, _) =
+                            info_span!("aot.execute_metered", group = program_name)
+                                .in_scope(|| aot_instance.execute_metered(stdin.clone(), metered_ctx.clone()))?;
+
+                        let interpreter_instance = 
+                            vm.executor().metered_interpreter_instance(&exe, &executor_idx_to_air_idx)?;
+
+                        let (interpreter_segments, _) =
                             info_span!("interpreter.execute_metered", group = program_name)
-                                .in_scope(|| interpreter.execute_metered(stdin, metered_ctx))?;
-                        println!("Number of segments: {}", segments.len());
+                                .in_scope(|| interpreter_instance.execute_metered(stdin.clone(), metered_ctx.clone()))?;
+                        
+                        println!("Number of segments: {}", aot_segments.len());
+
+                        assert_eq!(aot_segments.len(), interpreter_segments.len());
                     }
                     BenchMode::ProveApp => {
                         let mut prover = sdk.app_prover(elf)?.with_program_name(program_name);
