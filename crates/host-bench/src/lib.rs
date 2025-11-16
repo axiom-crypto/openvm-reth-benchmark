@@ -316,6 +316,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                         )?;
                         let interpreter =
                             vm.executor().instance(&exe)?;
+
                         let _ =
                             info_span!("interpreter.execute_pure", group = program_name)
                                 .in_scope(|| interpreter.execute(stdin, None))?;

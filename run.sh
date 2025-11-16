@@ -9,7 +9,7 @@ set -e
 
 mkdir -p rpc-cache
 source .env
-MODE=execute # can be execute-host, execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
+MODE=execute-metered # can be execute-host, execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
 
 cd bin/client-eth
 cargo openvm build
@@ -24,7 +24,7 @@ cd ../..
 
 PROFILE="release"
 FEATURES="metrics,jemalloc,aot,unprotected"
-BLOCK_NUMBER=23100006
+BLOCK_NUMBER=23800838
 # switch to +nightly-2025-08-19 if using tco
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
 BIN_NAME="openvm-reth-benchmark-bin"
@@ -56,7 +56,7 @@ exit 1
 ;;
 esac
 export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:10000,muzzy_decay_ms:10000,abort_conf:true"
-RUSTFLAGS=$RUSTFLAGS cargo $TOOLCHAIN build --bin $BIN_NAME --profile=$PROFILE --no-default-features --features=$FEATURES
+RUSTFLAGS=$RUSTFLAGS cargo $TOOLCHAIN build --bin $BIN_NAME --profile=$PROFILE --no-default-features --features=$FEATURES 
 PARAMS_DIR="$HOME/.openvm/params/"
 
 # Use target/debug if profile is dev
