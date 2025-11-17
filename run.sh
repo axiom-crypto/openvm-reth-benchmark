@@ -12,7 +12,7 @@ source .env
 MODE=generate-vm-vkey # can be execute-host, execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
 
 cd bin/client-eth
-cargo openvm build
+# cargo openvm build
 mkdir -p ../host/elf
 SRC="target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth"
 DEST="../host/elf/openvm-client-eth"
