@@ -34,6 +34,7 @@ alloy-transport.workspace = true
 reth-primitives.workspace = true
 
 # openvm
+verify-stark = { workspace = true }
 openvm = { workspace = true }
 openvm-build = { workspace = true }
 openvm-transpiler = { workspace = true }

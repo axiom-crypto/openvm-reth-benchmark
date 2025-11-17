@@ -26,12 +26,15 @@ use openvm_sdk::{
     types::VersionedVmStarkProof,
     DefaultStarkEngine, Sdk, StdIn,
 };
-use openvm_stark_sdk::engine::StarkFriEngine;
+use openvm_stark_sdk::{
+    engine::StarkFriEngine, openvm_stark_backend::p3_field::FieldAlgebra, p3_baby_bear::BabyBear,
+};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 pub use reth_primitives;
 use serde_json::json;
 use std::{fs, path::PathBuf};
 use tracing::{info, info_span};
+use verify_stark::vk::VmStarkVerifyingKey;
 
 mod cli;
 use cli::ProviderArgs;
@@ -52,6 +55,7 @@ pub enum BenchMode {
     /// Generate a full end-to-end halo2 proof for EVM verifier.
     #[cfg(feature = "evm-verify")]
     ProveEvm,
+    GenerateVmVkey,
     /// Generate input file only.
     MakeInput,
     /// Generate fixtures file for futher benchmarking.
@@ -68,6 +72,7 @@ impl std::fmt::Display for BenchMode {
             Self::ProveStark => write!(f, "prove_stark"),
             #[cfg(feature = "evm-verify")]
             Self::ProveEvm => write!(f, "prove_evm"),
+            Self::GenerateVmVkey => write!(f, "generate_vm_vkey"),
             Self::MakeInput => write!(f, "make_input"),
             Self::GenerateFixtures => write!(f, "generate_fixtures"),
         }
@@ -356,6 +361,29 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             fs::write(output_dir.join("proof.json"), json)?;
                             println!("wrote proof json to {}", output_dir.display());
                         }
+                    }
+                    BenchMode::GenerateVmVkey => {
+                        let (_, agg_vk) = sdk.agg_keygen()?;
+                        let app_commit = sdk.app_prover(exe)?.app_commit();
+                        let vk = VmStarkVerifyingKey {
+                            leaf_fri_params: agg_vk.leaf_fri_params,
+                            leaf_vk: agg_vk.leaf_vk,
+                            internal_fri_params: agg_vk.internal_fri_params,
+                            internal_vk: agg_vk.internal_vk,
+                            internal_verifier_program_commit: agg_vk
+                                .internal_verifier_program_commit,
+                            expected_app_exe_commit: app_commit
+                                .app_exe_commit
+                                .to_u32_digest()
+                                .map(BabyBear::from_canonical_u32)
+                                .into(),
+                            expected_app_vm_commit: app_commit
+                                .app_vm_commit
+                                .to_u32_digest()
+                                .map(BabyBear::from_canonical_u32)
+                                .into(),
+                        };
+                        verify_stark::vk::write_vk_to_file("reth.vm.vk", &vk)?;
                     }
                     #[cfg(feature = "evm-verify")]
                     BenchMode::ProveEvm => {
