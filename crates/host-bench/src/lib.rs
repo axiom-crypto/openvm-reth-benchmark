@@ -314,6 +314,15 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             SdkVmBuilder,
                             app_config.app_vm_config,
                         )?;
+
+                        // seeing the ecc + keccak times
+                        {
+                            let interpreter_instance 
+                            = vm.executor().interpreter_instance(&exe)?;
+
+                            interpreter_instance.execute(stdin.clone(), None)?;
+                        }
+
                         let aot_instance =
                             vm.executor().instance(&exe)?;
 
@@ -339,6 +348,15 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                         let aot_instance =
                             vm.executor().metered_instance(&exe, &executor_idx_to_air_idx)?;
                         let metered_ctx = vm.build_metered_ctx(&exe);
+
+                        // seeing the ecc + keccak times
+                        {
+                            let interpreter_instance 
+                            = vm.executor().interpreter_instance(&exe)?;
+
+                            interpreter_instance.execute(stdin.clone(), None)?;
+                        }
+
                         let (aot_segments, _) =
                             info_span!("aot.execute_metered", group = program_name)
                                 .in_scope(|| aot_instance.execute_metered(stdin.clone(), metered_ctx.clone()))?;
