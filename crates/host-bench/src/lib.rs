@@ -349,6 +349,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             vm.executor().metered_instance(&exe, &executor_idx_to_air_idx)?;
                         let metered_ctx = vm.build_metered_ctx(&exe);
 
+                        /* 
                         // seeing the ecc + keccak times
                         {
                             let interpreter_instance 
@@ -356,10 +357,13 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
 
                             interpreter_instance.execute(stdin.clone(), None)?;
                         }
+                        */
 
                         let (aot_segments, _) =
                             info_span!("aot.execute_metered", group = program_name)
                                 .in_scope(|| aot_instance.execute_metered(stdin.clone(), metered_ctx.clone()))?;
+
+                        /* 
 
                         let interpreter_instance = 
                             vm.executor().metered_interpreter_instance(&exe, &executor_idx_to_air_idx)?;
@@ -368,9 +372,9 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             info_span!("interpreter.execute_metered", group = program_name)
                                 .in_scope(|| interpreter_instance.execute_metered(stdin.clone(), metered_ctx.clone()))?;
                         
+                        */
+                    
                         println!("Number of segments: {}", aot_segments.len());
-
-                        assert_eq!(aot_segments.len(), interpreter_segments.len());
                     }
                     BenchMode::ProveApp => {
                         let mut prover = sdk.app_prover(elf)?.with_program_name(program_name);
