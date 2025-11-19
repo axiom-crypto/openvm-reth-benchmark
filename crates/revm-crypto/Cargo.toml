@@ -21,7 +21,7 @@ alloy-consensus = { workspace = true, features = ["crypto-backend"] }
 # OpenVM dependencies for optimized crypto (only needed when running in zkvm)
 openvm-ecc-guest = { workspace = true }
 openvm-sha2 = { workspace = true }
-openvm-pairing = { workspace = true, features = ["bn254"] }
+openvm-pairing = { workspace = true, features = ["bn254", "bls12_381"] }
 openvm-k256 = { workspace = true }
 openvm-p256 = { workspace = true }
 openvm-kzg = { workspace = true, features = ["use-intrinsics"] }
