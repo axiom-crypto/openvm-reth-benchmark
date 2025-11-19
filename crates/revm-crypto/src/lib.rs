@@ -152,7 +152,6 @@ impl Crypto for OpenVmCrypto {
         a: BlsG1Point,
         b: BlsG1Point,
     ) -> Result<[u8; BLS_G1_LEN], PrecompileError> {
-        println!("bls12_381_g1_add");
         let p1 = read_bls_g1_point(&a)?;
         let p2 = read_bls_g1_point(&b)?;
         let sum = p1 + p2;
@@ -164,7 +163,6 @@ impl Crypto for OpenVmCrypto {
         &self,
         pairs: &mut dyn Iterator<Item = Result<BlsG1PointScalar, PrecompileError>>,
     ) -> Result<[u8; BLS_G1_LEN], PrecompileError> {
-        println!("bls12_381_g1_msm");
         let mut scalars = Vec::new();
         let mut points = Vec::new();
 
@@ -188,7 +186,6 @@ impl Crypto for OpenVmCrypto {
         a: BlsG2Point,
         b: BlsG2Point,
     ) -> Result<[u8; BLS_G2_LEN], PrecompileError> {
-        println!("bls12_381_g2_add");
         let p1 = read_bls_g2_point(&a)?;
         let p2 = read_bls_g2_point(&b)?;
         let sum = p1 + p2;
@@ -200,7 +197,6 @@ impl Crypto for OpenVmCrypto {
         &self,
         pairs: &mut dyn Iterator<Item = Result<BlsG2PointScalar, PrecompileError>>,
     ) -> Result<[u8; BLS_G2_LEN], PrecompileError> {
-        println!("bls12_381_g2_msm");
         let mut scalars = Vec::new();
         let mut points = Vec::new();
 
@@ -224,7 +220,6 @@ impl Crypto for OpenVmCrypto {
         &self,
         pairs: &[(BlsG1Point, BlsG2Point)],
     ) -> Result<bool, PrecompileError> {
-        println!("bls12_381_pairing_check");
         if pairs.is_empty() {
             return Ok(true);
         }
