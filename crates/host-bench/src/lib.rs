@@ -339,16 +339,16 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             .collect::<Vec<u8>>();
                         println!("block_hash (prove_stark): {}", ToHexExt::encode_hex(&block_hash));
 
-                        if let Some(state) = prover.app_prover.instance().state() {
-                            info!("state instret: {}", state.instret());
-                            if let Some(output_dir) = args.output_dir.as_ref() {
-                                fs::write(
-                                    output_dir.join("num_instret"),
-                                    state.instret().to_string(),
-                                )?;
-                                info!("wrote state instret to {}", output_dir.display());
-                            }
-                        }
+                        // if let Some(state) = prover.app_prover.instance().state() {
+                        //     info!("state instret: {}", state.instret());
+                        //     if let Some(output_dir) = args.output_dir.as_ref() {
+                        //         fs::write(
+                        //             output_dir.join("num_instret"),
+                        //             state.instret().to_string(),
+                        //         )?;
+                        //         info!("wrote state instret to {}", output_dir.display());
+                        //     }
+                        // }
 
                         if let Some(output_dir) = args.output_dir.as_ref() {
                             let versioned_proof = VersionedVmStarkProof::new(proof)?;
