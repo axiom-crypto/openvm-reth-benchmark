@@ -24,7 +24,7 @@ openvm-sha2 = { workspace = true }
 openvm-pairing = { workspace = true, features = ["bn254"] }
 openvm-k256 = { workspace = true }
 openvm-p256 = { workspace = true }
-openvm-kzg = { workspace = true }
+openvm-kzg = { workspace = true, features = ["use-intrinsics"] }
 openvm = { workspace = true, features = ["std"] }
 openvm-algebra-guest = { workspace = true }
 openvm-keccak256 = { workspace = true }
