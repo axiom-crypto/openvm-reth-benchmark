@@ -51,7 +51,7 @@ else
     exit 1
 fi
 
-cd openvm-reth-benchmark/bin/host
+cd bin/host
 # The binary has a static include_bytes! but doesn't really need this ELF for proof input generation:
 mkdir -p elf
 touch elf/openvm-client-eth
