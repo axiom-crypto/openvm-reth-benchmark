@@ -1,5 +1,5 @@
-#![cfg_attr(feature = "tco", allow(incomplete_features))]
-#![cfg_attr(feature = "tco", feature(explicit_tail_calls))]
+#![cfg_attr(feature = "aot", allow(incomplete_features))]
+#![cfg_attr(feature = "aot", feature(explicit_tail_calls))]
 use alloy_primitives::hex::ToHexExt;
 use alloy_provider::RootProvider;
 use alloy_rpc_client::RpcClient;

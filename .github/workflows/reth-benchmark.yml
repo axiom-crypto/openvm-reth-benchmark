@@ -253,7 +253,7 @@ jobs:
       - name: Set build args
         id: set-build-args
         run: |
-          FEATURES="metrics,tco,unprotected,${{ inputs.memory_allocator || github.event.inputs.memory_allocator || 'jemalloc' }}"
+          FEATURES="metrics,aot,unprotected,${{ inputs.memory_allocator || github.event.inputs.memory_allocator || 'jemalloc' }}"
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
             FEATURES="${FEATURES},perf-metrics"
           fi
