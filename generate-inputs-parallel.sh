@@ -6,7 +6,7 @@ set -euo pipefail
 #   ./generate-inputs-parallel.sh --range 23000000 23000999
 #   ./generate-inputs-parallel.sh --list 23009666,23009672,23002575
 
-if [[ -z "$RPC_URLS" ]]; then
+if [[ ! -v RPC_URLS ]]; then
     echo "Error: RPC_URLS is empty. Please input your RPC URLs."
     exit 1
 fi
