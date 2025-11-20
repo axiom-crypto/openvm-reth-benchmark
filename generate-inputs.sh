@@ -51,9 +51,6 @@ expand_ranges() {
 # Expand block ranges
 EXPANDED_BLOCKS=($(expand_ranges "$BLOCK_NUMBERS"))
 
-INPUTS_DIR="$(pwd)/inputs"
-RPC_CACHE="$(pwd)/rpc-cache"
-
 cd openvm-reth-benchmark/bin/host
 # The binary has a static include_bytes! but doesn't really need this ELF for proof input generation:
 mkdir -p elf
