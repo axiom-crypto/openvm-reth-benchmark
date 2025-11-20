@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source .env
 # Usage: ./generate-inputs-parallel.sh [--range START END] [--list BLOCK1,BLOCK2,...]
 # Examples:
 #   ./generate-inputs-parallel.sh --range 23000000 23000999
