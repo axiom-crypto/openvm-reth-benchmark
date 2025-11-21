@@ -315,13 +315,13 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             app_config.app_vm_config,
                         )?;
 
-                        // seeing the ecc + keccak times
-                        {
-                            let interpreter_instance 
-                            = vm.executor().interpreter_instance(&exe)?;
+                        // // seeing the ecc + keccak times
+                        // {
+                        //     let interpreter_instance 
+                        //     = vm.executor().interpreter_instance(&exe)?;
 
-                            interpreter_instance.execute(stdin.clone(), None)?;
-                        }
+                        //     interpreter_instance.execute(stdin.clone(), None)?;
+                        // }
 
                         let aot_instance =
                             vm.executor().instance(&exe)?;
@@ -330,12 +330,12 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             info_span!("aot.execute_pure", group = program_name)
                                 .in_scope(|| aot_instance.execute(stdin.clone(), None))?;
 
-                        let interpreter_instance 
-                            = vm.executor().interpreter_instance(&exe)?;
+                        // let interpreter_instance 
+                        //     = vm.executor().interpreter_instance(&exe)?;
 
-                        let _ = 
-                            info_span!("interpreter.execute_pure", group = program_name)
-                                .in_scope(|| interpreter_instance.execute(stdin.clone(), None))?;
+                        // let _ = 
+                        //     info_span!("interpreter.execute_pure", group = program_name)
+                        //         .in_scope(|| interpreter_instance.execute(stdin.clone(), None))?;
                     }
                     BenchMode::ExecuteMetered => {
                         let engine = DefaultStarkEngine::new(app_config.app_fri_params.fri_params);
@@ -363,7 +363,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             info_span!("aot.execute_metered", group = program_name)
                                 .in_scope(|| aot_instance.execute_metered(stdin.clone(), metered_ctx.clone()))?;
 
-                        /* 
+                        println!("Number of aot_segments: {}", aot_segments.len());
 
                         let interpreter_instance = 
                             vm.executor().metered_interpreter_instance(&exe, &executor_idx_to_air_idx)?;
@@ -371,10 +371,10 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                         let (interpreter_segments, _) =
                             info_span!("interpreter.execute_metered", group = program_name)
                                 .in_scope(|| interpreter_instance.execute_metered(stdin.clone(), metered_ctx.clone()))?;
+
+                        println!("Number of interpreter_segments: {}", interpreter_segments.len());
+        
                         
-                        */
-                    
-                        println!("Number of segments: {}", aot_segments.len());
                     }
                     BenchMode::ProveApp => {
                         let mut prover = sdk.app_prover(elf)?.with_program_name(program_name);

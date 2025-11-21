@@ -3,7 +3,7 @@
 set -euo pipefail
 
 MODE="execute-metered" # can be execute-host, execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
-BLOCK_NUMBER=23800838
+BLOCK_NUMBER=23800774
 USE_CUDA=false
 
 usage() {
