@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-# Toolchains: stable for cargo-openvm, nightly for tco build
+# Toolchains: stable for cargo-openvm, nightly for aot build
 ENV CARGO_HOME="/root/.cargo" \
     RUSTUP_HOME="/root/.rustup" \
     PATH="/root/.cargo/bin:${PATH}"
@@ -39,7 +39,7 @@ RUN cargo openvm build --no-transpile --profile=release \
 # Build host binary
 WORKDIR /app
 ENV JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:10000,muzzy_decay_ms:10000,abort_conf:true"
-ARG FEATURES="metrics,jemalloc,tco,unprotected,cuda"
+ARG FEATURES="metrics,jemalloc,aot,unprotected,cuda"
 ARG PROFILE="release"
 ENV CUDA_ARCH="89"
 RUN cargo +nightly-2025-08-19 build --bin openvm-reth-benchmark-bin --profile=${PROFILE} --no-default-features --features=${FEATURES}
@@ -77,5 +77,3 @@ ENV PATH="/opt/venv/bin:${PATH}" \
 
 EXPOSE 8000
 ENTRYPOINT ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-
