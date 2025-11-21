@@ -48,7 +48,7 @@ openvm-native-recursion = { workspace = true }
 openvm-native-compiler = { workspace = true }
 openvm-benchmarks-prove = { workspace = true, features = ["parallel"] }
 openvm-stark-sdk = { workspace = true }
-openvm-sdk = { workspace = true }
+openvm-sdk = { workspace = true, features = ["aot"] }
 derive_more.workspace = true
 toml.workspace = true
 
@@ -59,6 +59,7 @@ halo2-axiom = { version = "0.5.0", default-features = false, optional = true }
 default = ["mimalloc", "metrics"]
 metrics = ["openvm-benchmarks-prove/metrics"]
 tco = ["openvm-sdk/tco"]
+aot = ["openvm-sdk/aot"]
 evm-prove = ["openvm-sdk/evm-prove", "halo2-axiom"]
 evm-verify = ["evm-prove", "openvm-sdk/evm-verify", "halo2-axiom"]
 perf-metrics = ["openvm-sdk/perf-metrics", "openvm-benchmarks-prove/perf-metrics"]
