@@ -11,6 +11,7 @@ use openvm_circuit::{
     openvm_stark_sdk::{
         bench::run_with_metric_collection, openvm_stark_backend::p3_field::PrimeField32,
     },
+    system::memory::online::LinearMemory,
 };
 use openvm_client_executor::{
     io::ClientExecutorInput, ChainVariant, ClientExecutor, CHAIN_ID_ETH_MAINNET,
@@ -332,23 +333,46 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             .in_scope(|| interpreter.execute_metered(stdin.clone(), metered_ctx))?;
                     println!("Number of segments: {}", segments.len());
 
-                    let mut state = Some(vm.create_initial_state(&exe, stdin));
-                    let mut preflight_interpreter = vm.preflight_interpreter(&exe).unwrap();
+                    let mut pure_state = Some(vm.create_initial_state(&exe, stdin.clone()));
+                    let mut preflight_state = Some(vm.create_initial_state(&exe, stdin));
+                    let pure_interpreter = vm.executor().instance(&exe)?;
+                    let mut preflight_interpreter = vm.preflight_interpreter(&exe)?;
                     for (seg_idx, segment) in segments.into_iter().enumerate() {
                         let _segment_span =
                             info_span!("prove_segment", segment = seg_idx).entered();
-                        let Segment { num_insns, trace_heights, instret_start } = segment;
-                        let from_state = Option::take(&mut state).unwrap();
-                        vm.transport_init_memory_to_device(&from_state.memory);
-                        let PreflightExecutionOutput { system_records, record_arenas, to_state } =
-                            vm.execute_preflight(
-                                &mut preflight_interpreter,
-                                from_state,
-                                Some(num_insns),
-                                &trace_heights,
-                            )?;
-                        state = Some(to_state);
+                        let Segment { num_insns, trace_heights, instret_start: _ } = segment;
+                        let state1 = Option::take(&mut pure_state).unwrap();
+                        let state1 =
+                            pure_interpreter.execute_from_state(state1, Some(num_insns))?;
+                        let state2 = Option::take(&mut preflight_state).unwrap();
+                        vm.transport_init_memory_to_device(&state2.memory);
+                        let PreflightExecutionOutput {
+                            system_records: _,
+                            record_arenas: _,
+                            to_state: state2,
+                        } = vm.execute_preflight(
+                            &mut preflight_interpreter,
+                            state2,
+                            Some(num_insns),
+                            &trace_heights,
+                        )?;
 
+                        assert_eq!(
+                            state1.pc(),
+                            state2.pc(),
+                            "pure and preflight pc mismatch in segment_idx={seg_idx}"
+                        );
+                        let memory1 = &state1.memory.memory.mem;
+                        let memory2 = &state2.memory.memory.mem;
+                        assert_eq!(memory1.len(), memory2.len());
+                        for (addr_sp, (mem1, mem2)) in memory1.iter().zip(memory2.iter()).enumerate() {
+                            for (i,(b1, b2)) in mem1.as_slice().iter().zip(mem2.as_slice().iter()).enumerate() {
+                                assert_eq!(*b1, *b2, "memory mismatch at address space {addr_sp}, byte {i}: pure ({b1}) != preflight ({b2})");
+                            }
+                        }
+
+                        pure_state = Some(state1);
+                        preflight_state = Some(state2);
                         // let mut ctx = vm.generate_proving_ctx(system_records,
                         // record_arenas)?; let proof =
                         // vm.engine.prove(vm.pk(), ctx);
