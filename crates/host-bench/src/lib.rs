@@ -7,7 +7,7 @@ use alloy_transport::layers::RetryBackoffLayer;
 use clap::Parser;
 use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_circuit::{
-    arch::*,
+    arch::{execution_mode::Segment, *},
     openvm_stark_sdk::{
         bench::run_with_metric_collection, openvm_stark_backend::p3_field::PrimeField32,
     },
@@ -272,128 +272,152 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     // NOTE: args.benchmark.app_config resets SegmentationLimits if max_segment_length is set
     args.benchmark.max_segment_length = None;
 
-    run_with_metric_collection("OUTPUT_PATH", || {
-        info_span!("reth-block", block_number = args.block_number).in_scope(
-            || -> eyre::Result<()> {
-                // Run host execution for comparison
-                if !args.skip_comparison {
-                    let block_hash = info_span!("host.execute", group = program_name).in_scope(
-                        || -> eyre::Result<_> {
-                            let executor = ClientExecutor;
-                            // Create a child span to get the group label propagated
-                            let header = info_span!("client.execute").in_scope(|| {
-                                executor.execute(ChainVariant::Mainnet, client_input.clone())
-                            })?;
-                            let block_hash =
-                                info_span!("header.hash_slow").in_scope(|| header.hash_slow());
-                            Ok(block_hash)
-                        },
+    // run_with_metric_collection("OUTPUT_PATH", || {
+    info_span!("reth-block", block_number = args.block_number).in_scope(
+        || -> eyre::Result<()> {
+            // Run host execution for comparison
+            if !args.skip_comparison {
+                let block_hash = info_span!("host.execute", group = program_name).in_scope(
+                    || -> eyre::Result<_> {
+                        let executor = ClientExecutor;
+                        // Create a child span to get the group label propagated
+                        let header = info_span!("client.execute").in_scope(|| {
+                            executor.execute(ChainVariant::Mainnet, client_input.clone())
+                        })?;
+                        let block_hash =
+                            info_span!("header.hash_slow").in_scope(|| header.hash_slow());
+                        Ok(block_hash)
+                    },
+                )?;
+                println!("block_hash (execute-host): {}", ToHexExt::encode_hex(&block_hash));
+            }
+
+            // For ExecuteHost mode, only do host execution
+            if matches!(args.mode, BenchMode::ExecuteHost) {
+                return Ok(());
+            }
+
+            // Execute for benchmarking:
+            if !args.skip_comparison {
+                let pvs = info_span!("sdk.execute", group = program_name)
+                    .in_scope(|| sdk.execute(elf.clone(), stdin.clone()))?;
+                let block_hash = pvs;
+                println!("block_hash (execute): {}", ToHexExt::encode_hex(&block_hash));
+            }
+
+            match args.mode {
+                BenchMode::Execute => {}
+                BenchMode::ExecuteMetered => {
+                    let engine = DefaultStarkEngine::new(app_config.app_fri_params.fri_params);
+                    let (mut vm, _) = VirtualMachine::new_with_keygen(
+                        engine,
+                        SdkVmBuilder,
+                        app_config.app_vm_config,
                     )?;
-                    println!("block_hash (execute-host): {}", ToHexExt::encode_hex(&block_hash));
-                }
+                    let executor_idx_to_air_idx = vm.executor_idx_to_air_idx();
+                    let interpreter =
+                        vm.executor().metered_instance(&exe, &executor_idx_to_air_idx)?;
+                    let metered_ctx = vm.build_metered_ctx(&exe);
 
-                // For ExecuteHost mode, only do host execution
-                if matches!(args.mode, BenchMode::ExecuteHost) {
-                    return Ok(());
-                }
+                    let (segments, _) =
+                        info_span!("interpreter.execute_metered", group = program_name)
+                            .in_scope(|| interpreter.execute_metered(stdin.clone(), metered_ctx))?;
+                    println!("Number of segments: {}", segments.len());
 
-                // Execute for benchmarking:
-                if !args.skip_comparison {
-                    let pvs = info_span!("sdk.execute", group = program_name)
-                        .in_scope(|| sdk.execute(elf.clone(), stdin.clone()))?;
-                    let block_hash = pvs;
-                    println!("block_hash (execute): {}", ToHexExt::encode_hex(&block_hash));
-                }
+                    let mut state = Some(vm.create_initial_state(&exe, stdin));
+                    let mut preflight_interpreter = vm.preflight_interpreter(&exe).unwrap();
+                    for (seg_idx, segment) in segments.into_iter().enumerate() {
+                        let _segment_span =
+                            info_span!("prove_segment", segment = seg_idx).entered();
+                        let Segment { num_insns, trace_heights, instret_start } = segment;
+                        let from_state = Option::take(&mut state).unwrap();
+                        vm.transport_init_memory_to_device(&from_state.memory);
+                        let PreflightExecutionOutput { system_records, record_arenas, to_state } =
+                            vm.execute_preflight(
+                                &mut preflight_interpreter,
+                                from_state,
+                                Some(num_insns),
+                                &trace_heights,
+                            )?;
+                        state = Some(to_state);
 
-                match args.mode {
-                    BenchMode::Execute => {}
-                    BenchMode::ExecuteMetered => {
-                        let engine = DefaultStarkEngine::new(app_config.app_fri_params.fri_params);
-                        let (vm, _) = VirtualMachine::new_with_keygen(
-                            engine,
-                            SdkVmBuilder,
-                            app_config.app_vm_config,
-                        )?;
-                        let executor_idx_to_air_idx = vm.executor_idx_to_air_idx();
-                        let interpreter =
-                            vm.executor().metered_instance(&exe, &executor_idx_to_air_idx)?;
-                        let metered_ctx = vm.build_metered_ctx(&exe);
-                        let (segments, _) =
-                            info_span!("interpreter.execute_metered", group = program_name)
-                                .in_scope(|| interpreter.execute_metered(stdin, metered_ctx))?;
-                        println!("Number of segments: {}", segments.len());
-                    }
-                    BenchMode::ProveApp => {
-                        let mut prover = sdk.app_prover(elf)?.with_program_name(program_name);
-                        let (_, app_vk) = sdk.app_keygen();
-                        let proof = prover.prove(stdin)?;
-                        verify_app_proof(&app_vk, &proof)?;
-                    }
-                    BenchMode::ProveStark => {
-                        let mut prover = sdk.prover(elf)?.with_program_name(program_name);
-                        let proof = prover.prove(stdin)?;
-                        let block_hash = proof
-                            .user_public_values
-                            .iter()
-                            .map(|pv| pv.as_canonical_u32() as u8)
-                            .collect::<Vec<u8>>();
-                        println!("block_hash (prove_stark): {}", ToHexExt::encode_hex(&block_hash));
-
-                        if let Some(output_dir) = args.output_dir.as_ref() {
-                            let versioned_proof = VersionedVmStarkProof::new(proof)?;
-                            let json = serde_json::to_vec_pretty(&versioned_proof)?;
-                            fs::write(output_dir.join("proof.json"), json)?;
-                            println!("wrote proof json to {}", output_dir.display());
-                        }
-                    }
-                    #[cfg(feature = "evm-verify")]
-                    BenchMode::ProveEvm => {
-                        let mut prover = sdk.evm_prover(elf)?.with_program_name(program_name);
-                        let halo2_pk = sdk.halo2_pk();
-                        tracing::info!(
-                            "halo2_outer_k: {}",
-                            halo2_pk.verifier.pinning.metadata.config_params.k
-                        );
-                        tracing::info!(
-                            "halo2_wrapper_k: {}",
-                            halo2_pk.wrapper.pinning.metadata.config_params.k
-                        );
-                        let proof = prover.prove_evm(stdin)?;
-                        let block_hash = &proof.user_public_values;
-                        println!("block_hash (prove_evm): {}", ToHexExt::encode_hex(block_hash));
-                    }
-                    BenchMode::GenerateFixtures => {
-                        let mut prover = sdk.prover(elf)?.with_program_name(program_name);
-                        let app_proof = prover.app_prover.prove(stdin)?;
-                        let leaf_proofs = prover.agg_prover.generate_leaf_proofs(&app_proof)?;
-                        let fixture_path = args.fixtures_path.unwrap();
-
-                        let mut app_proof_path = fixture_path.clone();
-                        app_proof_path.push("app_proof.bitcode");
-                        fs::write(app_proof_path, bitcode::serialize(&app_proof)?)?;
-
-                        let mut leaf_proofs_path = fixture_path.clone();
-                        leaf_proofs_path.push("leaf_proofs.bitcode");
-                        fs::write(leaf_proofs_path, bitcode::serialize(&leaf_proofs)?)?;
-
-                        let mut app_pk_path = fixture_path.clone();
-                        app_pk_path.push("app_pk.bitcode");
-                        fs::write(app_pk_path, bitcode::serialize(sdk.app_pk())?)?;
-
-                        let mut agg_pk_path = fixture_path.clone();
-                        agg_pk_path.push("agg_pk.bitcode");
-                        fs::write(agg_pk_path, bitcode::serialize(sdk.agg_pk())?)?;
-                    }
-                    _ => {
-                        // This case is handled earlier and should not reach here
-                        unreachable!();
+                        // let mut ctx = vm.generate_proving_ctx(system_records,
+                        // record_arenas)?; let proof =
+                        // vm.engine.prove(vm.pk(), ctx);
+                        // proofs.push(proof);
                     }
                 }
+                BenchMode::ProveApp => {
+                    let mut prover = sdk.app_prover(elf)?.with_program_name(program_name);
+                    let (_, app_vk) = sdk.app_keygen();
+                    let proof = prover.prove(stdin)?;
+                    verify_app_proof(&app_vk, &proof)?;
+                }
+                BenchMode::ProveStark => {
+                    let mut prover = sdk.prover(elf)?.with_program_name(program_name);
+                    let proof = prover.prove(stdin)?;
+                    let block_hash = proof
+                        .user_public_values
+                        .iter()
+                        .map(|pv| pv.as_canonical_u32() as u8)
+                        .collect::<Vec<u8>>();
+                    println!("block_hash (prove_stark): {}", ToHexExt::encode_hex(&block_hash));
 
-                Ok(())
-            },
-        )
-    })?;
+                    if let Some(output_dir) = args.output_dir.as_ref() {
+                        let versioned_proof = VersionedVmStarkProof::new(proof)?;
+                        let json = serde_json::to_vec_pretty(&versioned_proof)?;
+                        fs::write(output_dir.join("proof.json"), json)?;
+                        println!("wrote proof json to {}", output_dir.display());
+                    }
+                }
+                #[cfg(feature = "evm-verify")]
+                BenchMode::ProveEvm => {
+                    let mut prover = sdk.evm_prover(elf)?.with_program_name(program_name);
+                    let halo2_pk = sdk.halo2_pk();
+                    tracing::info!(
+                        "halo2_outer_k: {}",
+                        halo2_pk.verifier.pinning.metadata.config_params.k
+                    );
+                    tracing::info!(
+                        "halo2_wrapper_k: {}",
+                        halo2_pk.wrapper.pinning.metadata.config_params.k
+                    );
+                    let proof = prover.prove_evm(stdin)?;
+                    let block_hash = &proof.user_public_values;
+                    println!("block_hash (prove_evm): {}", ToHexExt::encode_hex(block_hash));
+                }
+                BenchMode::GenerateFixtures => {
+                    let mut prover = sdk.prover(elf)?.with_program_name(program_name);
+                    let app_proof = prover.app_prover.prove(stdin)?;
+                    let leaf_proofs = prover.agg_prover.generate_leaf_proofs(&app_proof)?;
+                    let fixture_path = args.fixtures_path.unwrap();
+
+                    let mut app_proof_path = fixture_path.clone();
+                    app_proof_path.push("app_proof.bitcode");
+                    fs::write(app_proof_path, bitcode::serialize(&app_proof)?)?;
+
+                    let mut leaf_proofs_path = fixture_path.clone();
+                    leaf_proofs_path.push("leaf_proofs.bitcode");
+                    fs::write(leaf_proofs_path, bitcode::serialize(&leaf_proofs)?)?;
+
+                    let mut app_pk_path = fixture_path.clone();
+                    app_pk_path.push("app_pk.bitcode");
+                    fs::write(app_pk_path, bitcode::serialize(sdk.app_pk())?)?;
+
+                    let mut agg_pk_path = fixture_path.clone();
+                    agg_pk_path.push("agg_pk.bitcode");
+                    fs::write(agg_pk_path, bitcode::serialize(sdk.agg_pk())?)?;
+                }
+                _ => {
+                    // This case is handled earlier and should not reach here
+                    unreachable!();
+                }
+            }
+
+            Ok(())
+        },
+    )?;
+    // })?;
     Ok(())
 }
 

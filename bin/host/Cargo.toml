@@ -33,3 +33,4 @@ cuda = [
     "dep:openvm-cuda-backend",
 ]
 unprotected = ["openvm-reth-benchmark/unprotected"]
+basic-memory = ["openvm-reth-benchmark/basic-memory"]

@@ -9,7 +9,7 @@ set -e
 
 mkdir -p rpc-cache
 source .env
-MODE=execute # can be execute-host, execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
+MODE=execute-metered # can be execute-host, execute, execute-metered, prove-app, prove-stark, or prove-evm (needs "evm-verify" feature)
 
 cd bin/client-eth
 cargo openvm build
@@ -22,9 +22,9 @@ if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
 fi
 cd ../..
 
-PROFILE="release"
-FEATURES="metrics,jemalloc,tco,unprotected"
-BLOCK_NUMBER=23830238
+PROFILE="profiling"
+FEATURES="metrics,jemalloc,basic-memory"
+BLOCK_NUMBER=23900549
 # switch to +nightly-2025-08-19 if using tco
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
 BIN_NAME="openvm-reth-benchmark-bin"
@@ -66,7 +66,7 @@ else
     TARGET_DIR="$PROFILE"
 fi
 
-RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics.json" VPMM_PAGES=$VPMM_PAGES VPMM_PAGE_SIZE=$VPMM_PAGE_SIZE ./target/$TARGET_DIR/$BIN_NAME \
+CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=true RUST_BACKTRACE=full RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics.json" VPMM_PAGES=$VPMM_PAGES VPMM_PAGE_SIZE=$VPMM_PAGE_SIZE ./target/$TARGET_DIR/$BIN_NAME \
 --kzg-params-dir $PARAMS_DIR \
 --mode $MODE \
 --block-number $BLOCK_NUMBER \
