@@ -253,12 +253,11 @@ jobs:
       - name: Set build args
         id: set-build-args
         run: |
-          FEATURES="metrics,tco,unprotected,${{ inputs.memory_allocator || github.event.inputs.memory_allocator || 'jemalloc' }}"
+          FEATURES="metrics,unprotected,${{ inputs.memory_allocator || github.event.inputs.memory_allocator || 'jemalloc' }},nightly-features"
           if [[ "${{ inputs.profiling || github.event.inputs.profiling }}" == "guest" ]]; then
             FEATURES="${FEATURES},perf-metrics"
           fi
           if [[ ! "${{ inputs.instance_family || github.event.inputs.instance_family }}" =~ ^g ]]; then
-            FEATURES="${FEATURES},nightly-features"
             JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:-1,muzzy_decay_ms:-1,abort_conf:true"
           else
             FEATURES="${FEATURES},cuda"
@@ -271,10 +270,11 @@ jobs:
           case $arch in
             arm64|aarch64)
               RUSTFLAGS="-Ctarget-cpu=native"
+              FEATURES="${FEATURES},tco"
               ;;
             x86_64|amd64)
               RUSTFLAGS="-Ctarget-cpu=native"
-              FEATURES="${FEATURES},halo2-asm"
+              FEATURES="${FEATURES},aot,halo2-asm"
               ;;
             *)
               echo "Unsupported architecture: $arch"

@@ -39,8 +39,8 @@ on:
         type: number
         required: false
         default: 23100006
-  schedule:
-    - cron: "0 */12 * * *" # Run every 12 hours
+  #schedule:
+  #  - cron: "0 */12 * * *" # Run every 12 hours
   workflow_call:
     inputs:
       STARK_BACKEND_REV:
