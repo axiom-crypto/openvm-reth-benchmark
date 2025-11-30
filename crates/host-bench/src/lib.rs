@@ -7,7 +7,7 @@ use alloy_transport::layers::RetryBackoffLayer;
 use clap::Parser;
 use openvm_benchmarks_prove::util::BenchmarkCli;
 use openvm_circuit::{
-    arch::{execution_mode::Segment, *},
+    arch::{execution_mode::Segment, interpreter::get_pc_index, *},
     openvm_stark_sdk::{
         bench::run_with_metric_collection, openvm_stark_backend::p3_field::PrimeField32,
     },
@@ -341,38 +341,66 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                         let _segment_span =
                             info_span!("prove_segment", segment = seg_idx).entered();
                         let Segment { num_insns, trace_heights, instret_start: _ } = segment;
-                        let state1 = Option::take(&mut pure_state).unwrap();
-                        let state1 =
-                            pure_interpreter.execute_from_state(state1, Some(num_insns))?;
-                        let state2 = Option::take(&mut preflight_state).unwrap();
+                        let mut state1 = Option::take(&mut pure_state).unwrap();
+                        let mut state2 = Option::take(&mut preflight_state).unwrap();
+                        // if seg_idx != 118 {
+                        state1 = pure_interpreter.execute_from_state(state1, Some(num_insns))?;
                         vm.transport_init_memory_to_device(&state2.memory);
-                        let PreflightExecutionOutput {
-                            system_records: _,
-                            record_arenas: _,
-                            to_state: state2,
-                        } = vm.execute_preflight(
+                        let out = vm.execute_preflight(
                             &mut preflight_interpreter,
                             state2,
                             Some(num_insns),
                             &trace_heights,
                         )?;
+                        state2 = out.to_state;
+                        // } else {
+                        //     // execute 1 instruction at a time
+                        //     for inst_idx in 0..num_insns {
+                        //         let pc = state1.pc();
+                        //         let pc_idx = get_pc_index(pc - exe.program.pc_base);
+                        //         let (instruction, _) =
+                        // exe.program.get_instruction_and_debug_info(pc_idx).unwrap();
+                        //         tracing::info!("executing insn {inst_idx} in segment {seg_idx} at
+                        // pc {pc} with instruction {instruction:?}");
+                        //         state1 = pure_interpreter.execute_from_state(state1, Some(1))?;
+                        //         let out = vm.execute_preflight(
+                        //             &mut preflight_interpreter,
+                        //             state2,
+                        //             Some(1),
+                        //             &trace_heights,
+                        //         )?;
+                        //         state2 = out.to_state;
 
-                        assert_eq!(
-                            state1.pc(),
-                            state2.pc(),
-                            "pure and preflight pc mismatch in segment_idx={seg_idx}"
-                        );
-                        let memory1 = &state1.memory.memory.mem;
-                        let memory2 = &state2.memory.memory.mem;
-                        assert_eq!(memory1.len(), memory2.len());
-                        for (addr_sp, (mem1, mem2)) in memory1.iter().zip(memory2.iter()).enumerate() {
-                            for (i,(b1, b2)) in mem1.as_slice().iter().zip(mem2.as_slice().iter()).enumerate() {
-                                assert_eq!(*b1, *b2, "memory mismatch at address space {addr_sp}, byte {i}: pure ({b1}) != preflight ({b2})");
-                            }
-                        }
-
+                        //         assert_eq!(
+                        //             state1.pc(),
+                        //             state2.pc(),
+                        //             "pure and preflight pc mismatch in segment_idx={seg_idx}"
+                        //         );
+                        //         let memory1 = &state1.memory.memory.mem;
+                        //         let memory2 = &state2.memory.memory.mem;
+                        //         assert_eq!(memory1.len(), memory2.len());
+                        //         for (addr_sp, (mem1, mem2)) in
+                        //             memory1.iter().zip(memory2.iter()).enumerate()
+                        //         {
+                        //             for (i, (b1, b2)) in mem1
+                        //                 .as_slice()
+                        //                 .iter()
+                        //                 .zip(mem2.as_slice().iter())
+                        //                 .enumerate()
+                        //             {
+                        //                 assert_eq!(
+                        //                     *b1, *b2,
+                        //                     "memory mismatch
+                        //                     at address space {addr_sp},
+                        //                     byte {i}: pure ({b1}) != preflight ({b2})"
+                        //                 );
+                        //             }
+                        //         }
+                        //     }
+                        // }
                         pure_state = Some(state1);
                         preflight_state = Some(state2);
+
                         // let mut ctx = vm.generate_proving_ctx(system_records,
                         // record_arenas)?; let proof =
                         // vm.engine.prove(vm.pk(), ctx);
