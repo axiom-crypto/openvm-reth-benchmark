@@ -61,36 +61,34 @@ openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false
 openvm-mpt = { path = "./crates/mpt" }
 openvm-revm-crypto = { path = "./crates/revm-crypto" }
 
-# reth
-reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-primitives-traits = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-codecs = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-evm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-revm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-storage-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-trie = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-trie-common = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-chainspec = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-execution-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-execution-types = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-db = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-errors = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-ethereum-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false }
-reth-ethereum-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", default-features = false, features = [
+# reth - from specific commit with revm 33 (same as lighter-reth)
+reth-primitives = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-primitives-traits = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-codecs = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-consensus = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-evm = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-revm = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-storage-errors = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-trie = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-trie-common = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-chainspec = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-execution-errors = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-execution-types = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-db = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-errors = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-ethereum-consensus = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false }
+reth-ethereum-primitives = { git = "https://github.com/paradigmxyz/reth", rev = "3a9dbdc840a5af0decc00a0e16de2f135fb4f522", default-features = false, features = [
     "serde",
     "serde-bincode-compat",
 ] }
 
-# revm
-revm = { version = "31.0.2", features = ["serde"], default-features = false }
-revm-primitives = { version = "21.0.2", features = [
-    "serde",
-], default-features = false }
-revm-interpreter = { version = "29.0.1", default-features = false }
-revm-precompile = { version = "27.0.0", default-features = false }
+# revm - version 33 (matches reth commit)
+revm = { version = "33", features = ["serde"], default-features = false }
+revm-primitives = { version = "18", features = ["serde"], default-features = false }
+revm-interpreter = { version = "18", default-features = false }
+revm-precompile = { version = "22", default-features = false }
 
 # alloy
 alloy-primitives = { version = "1.4.1", default-features = false }

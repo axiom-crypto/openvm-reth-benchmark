@@ -33,7 +33,7 @@ async fn test_e2e_ethereum() {
     let client_input = host_executor.execute(block_number).await.expect("failed to execute host");
 
     // Setup the client executor.
-    let client_executor = ClientExecutor;
+    let client_executor = ClientExecutor::new();
 
     // Test serialization/deserialization round-trip
     let bincode_config = standard();
@@ -42,10 +42,10 @@ async fn test_e2e_ethereum() {
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
 
     // Execute the client with the original input
-    client_executor.execute(ChainVariant::Mainnet, client_input).expect("failed to execute client");
+    client_executor.execute_ethereum(ChainVariant::Mainnet, client_input).expect("failed to execute client");
 
     // Execute the client with the deserialized input to test round-trip
     client_executor
-        .execute(ChainVariant::Mainnet, deserialized_input)
+        .execute_ethereum(ChainVariant::Mainnet, deserialized_input)
         .expect("failed to execute client with deserialized input");
 }

@@ -279,10 +279,10 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                 if !args.skip_comparison {
                     let block_hash = info_span!("host.execute", group = program_name).in_scope(
                         || -> eyre::Result<_> {
-                            let executor = ClientExecutor;
+                            let executor = ClientExecutor::new();
                             // Create a child span to get the group label propagated
                             let header = info_span!("client.execute").in_scope(|| {
-                                executor.execute(ChainVariant::Mainnet, client_input.clone())
+                                executor.execute_ethereum(ChainVariant::Mainnet, client_input.clone())
                             })?;
                             let block_hash =
                                 info_span!("header.hash_slow").in_scope(|| header.hash_slow());

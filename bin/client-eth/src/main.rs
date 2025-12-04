@@ -10,8 +10,8 @@ pub fn main() {
     println("finished reading input");
 
     // Execute the block (crypto is installed inside executor).
-    let executor = ClientExecutor;
-    let header = executor.execute(ChainVariant::Mainnet, input).expect("failed to execute client");
+    let executor = ClientExecutor::new();
+    let header = executor.execute_ethereum(ChainVariant::Mainnet, input).expect("failed to execute client");
     let block_hash = header.hash_slow();
 
     // Reveal the block hash.
