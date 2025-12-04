@@ -124,6 +124,50 @@ impl ChainExecutorConfig for EthereumConfig {
     }
 }
 
+/// Placeholder configuration for LighterEVM chains.
+///
+/// This struct demonstrates how to implement `ChainExecutorConfig` for custom chains.
+/// LighterEVM has specific requirements:
+///
+/// - **Extra Witness**: Needs `CoreStateWitness` for READ_CORE precompile access
+/// - **Custom Validation**: ZK-proved, so no consensus validation needed
+/// - **State Root**: May be stored in header extra data field
+/// - **Custom Transactions**: Supports Priority TX (0x7E) with native token minting
+///
+/// # Example Implementation (to be completed in lighter-reth)
+///
+/// ```ignore
+/// use lighter_reth::core::CoreStateWitness;
+/// use lighter_reth::evm::LighterEvmConfig;
+///
+/// impl ChainExecutorConfig for LighterConfig {
+///     type ExtraWitness = CoreStateWitness;
+///     type EvmConfig = LighterEvmConfig;
+///
+///     fn evm_config(chain_spec: Arc<ChainSpec>) -> Self::EvmConfig {
+///         LighterEvmConfig::new(chain_spec)
+///     }
+///
+///     // No validation needed - ZK proves correctness
+///     fn validate_block_pre_execution(_block: &RecoveredBlock<Block>, _chain_spec: &ChainSpec)
+///         -> Result<(), ClientExecutionError> { Ok(()) }
+///
+///     fn validate_block_post_execution(_block: &RecoveredBlock<Block>, _chain_spec: &ChainSpec,
+///         _result: &BlockExecutionResult<Receipt>) -> Result<(), ClientExecutionError> { Ok(()) }
+///
+///     // State root stored in header extra data
+///     fn expected_state_root(block: &Block) -> B256 {
+///         B256::from_slice(&block.header.extra_data[..32])
+///     }
+/// }
+/// ```
+#[derive(Debug, Clone, Default)]
+pub struct LighterConfig;
+
+// NOTE: LighterConfig implementation will be completed in lighter-reth crate
+// once LighterEvmConfig and CoreStateWitness are available.
+// For now, this serves as documentation and a marker type.
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -171,5 +215,64 @@ mod tests {
     fn test_recover_block_empty() {
         let block = Block::default();
         assert!(EthereumConfig::recover_block(block).is_ok());
+    }
+
+    #[test]
+    fn test_expected_state_root_from_block() {
+        // EthereumConfig reads state root directly from block.state_root
+        let block: Block = Block::default();
+        assert_eq!(EthereumConfig::expected_state_root(&block), block.state_root);
+    }
+
+    #[test]
+    fn test_custom_config_with_extra_witness() {
+        // Test that a config with non-unit ExtraWitness can be defined
+        #[derive(Debug, Clone, Default)]
+        struct CustomWitness {
+            data: Vec<u8>,
+        }
+
+        #[derive(Debug, Clone, Default)]
+        struct CustomConfig;
+
+        impl ChainExecutorConfig for CustomConfig {
+            type ExtraWitness = CustomWitness;
+            type EvmConfig = EthEvmConfig;
+            fn evm_config(chain_spec: Arc<ChainSpec>) -> Self::EvmConfig {
+                EthEvmConfig::new(chain_spec)
+            }
+        }
+
+        let witness: <CustomConfig as ChainExecutorConfig>::ExtraWitness = CustomWitness {
+            data: vec![1, 2, 3],
+        };
+        assert_eq!(witness.data.len(), 3);
+    }
+
+    #[test]
+    fn test_custom_state_root_override() {
+        // Test a config that always returns a fixed state root
+        #[derive(Debug, Clone, Default)]
+        struct FixedStateRootConfig;
+
+        impl ChainExecutorConfig for FixedStateRootConfig {
+            type ExtraWitness = ();
+            type EvmConfig = EthEvmConfig;
+
+            fn evm_config(chain_spec: Arc<ChainSpec>) -> Self::EvmConfig {
+                EthEvmConfig::new(chain_spec)
+            }
+
+            fn expected_state_root(_block: &Block) -> B256 {
+                // Custom chains might derive state root differently
+                B256::repeat_byte(0xFF)
+            }
+        }
+
+        let block: Block = Block::default();
+        assert_eq!(
+            FixedStateRootConfig::expected_state_root(&block),
+            B256::repeat_byte(0xFF)
+        );
     }
 }

@@ -20,7 +20,7 @@ use crate::{
     io::{ClientExecutorInput, ClientExecutorInputWithState},
 };
 
-pub use chain::{ChainExecutorConfig, EthereumConfig};
+pub use chain::{ChainExecutorConfig, EthereumConfig, LighterConfig};
 
 /// Chain ID for Ethereum Mainnet.
 pub const CHAIN_ID_ETH_MAINNET: u64 = 0x1;
