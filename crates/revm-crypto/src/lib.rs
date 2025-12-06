@@ -116,7 +116,7 @@ impl Crypto for OpenVmCrypto {
     ) -> Result<[u8; 64], PrecompileError> {
         let p = read_bn_g1_point(point_bytes)?;
         let s = read_bn_scalar(scalar_bytes);
-        let result = Bn254::msm(&[s], &[p]);
+        let result = Bn254::msm::<true>(&[s], &[p]);
         Ok(encode_bn_g1_point(result))
     }
 
@@ -176,7 +176,7 @@ impl Crypto for OpenVmCrypto {
             return Ok([0u8; BLS_G1_LEN]);
         }
 
-        let result = Bls12_381::msm(&scalars, &points);
+        let result = Bls12_381::msm::<true>(&scalars, &points);
         Ok(encode_bls_g1_point(&result))
     }
 

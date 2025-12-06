@@ -12,11 +12,11 @@ openvm-client-executor = { path = "../../crates/executor/client", features = [
 ] }
 
 # openvm
-openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/ec-mul-bench", features = [
+openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/ec-mul-chip", features = [
     "std",
 ] }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/ec-mul-bench" }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/ec-mul-bench" }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/ec-mul-chip" }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/ec-mul-chip" }
 
 # Statically turns off logging
 log = { version = "0.4", features = ["max_level_off", "release_max_level_off"] }
