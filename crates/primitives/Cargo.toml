@@ -24,5 +24,6 @@ revm-precompile.workspace = true
 revm-primitives.workspace = true
 
 # alloy
+alloy-eips.workspace = true
 alloy-hardforks.workspace = true
 alloy-rpc-types.workspace = true

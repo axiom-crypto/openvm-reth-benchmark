@@ -1,3 +1,5 @@
+use alloy_eips::{eip7840::BlobParams, eip7892::BlobScheduleBlobParams};
+use alloy_hardforks::mainnet::{MAINNET_BPO1_TIMESTAMP, MAINNET_BPO2_TIMESTAMP};
 use reth_chainspec::{
     BaseFeeParams, BaseFeeParamsKind, Chain, ChainHardforks, ChainSpec, DepositContract,
     DEV_HARDFORKS,
@@ -24,7 +26,10 @@ pub fn mainnet() -> ChainSpec {
         base_fee_params: BaseFeeParamsKind::Constant(BaseFeeParams::ethereum()),
         prune_delete_limit: 20000,
         genesis_header: Default::default(),
-        blob_params: Default::default(),
+        blob_params: BlobScheduleBlobParams::default().with_scheduled([
+            (MAINNET_BPO1_TIMESTAMP, BlobParams::bpo1()),
+            (MAINNET_BPO2_TIMESTAMP, BlobParams::bpo2()),
+        ]),
     };
     spec.genesis.config.dao_fork_support = true;
     spec
