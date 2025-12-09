@@ -35,9 +35,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-consensus"
-version = "1.0.42"
+version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3abecb92ba478a285fbf5689100dbafe4003ded4a09bf4b5ef62cca87cd4f79e"
+checksum = "2e318e25fb719e747a7e8db1654170fc185024f3ed5b10f86c08d448a912f6e2"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -46,6 +46,7 @@ dependencies = [
  "alloy-trie",
  "alloy-tx-macros",
  "auto_impl",
+ "borsh",
  "c-kzg",
  "derive_more",
  "either",
@@ -61,9 +62,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-consensus-any"
-version = "1.0.42"
+version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e864d4f11d1fb8d3ac2fd8f3a15f1ee46d55ec6d116b342ed1b2cb737f25894"
+checksum = "364380a845193a317bcb7a5398fc86cdb66c47ebe010771dde05f6869bf9e64a"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -88,23 +89,25 @@ dependencies = [
 
 [[package]]
 name = "alloy-eip2930"
-version = "0.2.1"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b82752a889170df67bbb36d42ca63c531eb16274f0d7299ae2a680facba17bd"
+checksum = "9441120fa82df73e8959ae0e4ab8ade03de2aaae61be313fbf5746277847ce25"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
+ "borsh",
  "serde",
 ]
 
 [[package]]
 name = "alloy-eip7702"
-version = "0.6.1"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d4769c6ffddca380b0070d71c8b7f30bed375543fe76bb2f74ec0acf4b7cd16"
+checksum = "2919c5a56a1007492da313e7a3b6d45ef5edc5d33416fdec63c0d7a2702a0d20"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
+ "borsh",
  "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde_with",
@@ -113,9 +116,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-eips"
-version = "1.0.42"
+version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07d9a64522a0db6ebcc4ff9c904e329e77dd737c2c25d30f1bdc32ca6c6ce334"
+checksum = "a4c4d7c5839d9f3a467900c625416b24328450c65702eb3d8caff8813e4d1d33"
 dependencies = [
  "alloy-eip2124",
  "alloy-eip2930",
@@ -124,6 +127,7 @@ dependencies = [
  "alloy-rlp",
  "alloy-serde",
  "auto_impl",
+ "borsh",
  "c-kzg",
  "derive_more",
  "either",
@@ -166,9 +170,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-hardforks"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e29d7eacf42f89c21d7f089916d0bdb4f36139a31698790e8837d2dbbd4b2c3"
+checksum = "2d9a33550fc21fd77a3f8b63e99969d17660eec8dcc50a95a80f7c9964f7680b"
 dependencies = [
  "alloy-chains",
  "alloy-eip2124",
@@ -179,9 +183,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-network-primitives"
-version = "1.0.42"
+version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "219dccd2cf753a43bd9b0fbb7771a16927ffdb56e43e3a15755bef1a74d614aa"
+checksum = "abd29ace62872083e30929cd9b282d82723196d196db589f3ceda67edcc05552"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -242,9 +246,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-rpc-types"
-version = "1.0.42"
+version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe106e50522980bc9e7cc9016f445531edf1a53e0fdba904c833b98c6fdff3f0"
+checksum = "39cf1398cb33aacb139a960fa3d8cf8b1202079f320e77e952a0b95967bf7a9f"
 dependencies = [
  "alloy-primitives",
  "alloy-rpc-types-eth",
@@ -268,9 +272,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-rpc-types-eth"
-version = "1.0.42"
+version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0185f68a0f8391ab996d335a887087d7ccdbc97952efab3516f6307d456ba2cd"
+checksum = "9eae0c7c40da20684548cbc8577b6b7447f7bf4ddbac363df95e3da220e41e72"
 dependencies = [
  "alloy-consensus",
  "alloy-consensus-any",
@@ -289,9 +293,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-serde"
-version = "1.0.42"
+version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "596cfa360922ba9af901cc7370c68640e4f72adb6df0ab064de32f21fec498d7"
+checksum = "c0df1987ed0ff2d0159d76b52e7ddfc4e4fbddacc54d2fbee765e0d14d7c01b5"
 dependencies = [
  "alloy-primitives",
  "serde",
@@ -374,9 +378,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-tx-macros"
-version = "1.0.42"
+version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab54221eccefa254ce9f65b079c097b1796e48c21c7ce358230f8988d75392fb"
+checksum = "333544408503f42d7d3792bfc0f7218b643d968a03d2c0ed383ae558fb4a76d0"
 dependencies = [
  "darling 0.21.3",
  "proc-macro2",
@@ -824,6 +828,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "borsh"
+version = "1.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d1da5ab77c1437701eeff7c88d968729e7766172279eab0676857b3d63af7a6f"
+dependencies = [
+ "borsh-derive",
+ "cfg_aliases",
+]
+
+[[package]]
+name = "borsh-derive"
+version = "1.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0686c856aa6aac0c4498f936d7d6a02df690f614c03e4d906d1018062b5c5e2c"
+dependencies = [
+ "once_cell",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.103",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -887,6 +914,12 @@ name = "cfg-if"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9555578bc9e57714c812a1f84e4fc5b4d21fcb063490c624de019f7464c91268"
+
+[[package]]
+name = "cfg_aliases"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
 name = "chrono"
@@ -1504,9 +1537,8 @@ dependencies = [
 
 [[package]]
 name = "halo2curves-axiom"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd8309e4638b4f1bcf6613d72265a84074d26034c35edc5d605b5688e580b8b8"
+version = "0.7.2"
+source = "git+https://github.com/axiom-crypto/halo2curves.git?tag=v0.7.2#3a65a710e27fe03711f6fb4fc0c4469ae351974a"
 dependencies = [
  "blake2b_simd",
  "digest 0.10.7",
@@ -1865,7 +1897,7 @@ dependencies = [
 [[package]]
 name = "k256"
 version = "0.13.4"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -2184,8 +2216,8 @@ dependencies = [
 
 [[package]]
 name = "openvm"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "bytemuck",
  "getrandom 0.2.16",
@@ -2199,8 +2231,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-algebra-complex-macros"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2209,8 +2241,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-algebra-guest"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "halo2curves-axiom",
  "num-bigint",
@@ -2225,8 +2257,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-algebra-moduli-macros"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "num-bigint",
  "num-prime",
@@ -2278,7 +2310,7 @@ dependencies = [
 [[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2287,8 +2319,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-ecc-guest"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -2306,8 +2338,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-ecc-sw-macros"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2316,8 +2348,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-keccak256"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "openvm-keccak256-guest",
  "tiny-keccak",
@@ -2325,8 +2357,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-keccak256-guest"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "openvm-platform",
 ]
@@ -2349,8 +2381,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-macros-common"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "syn 2.0.103",
 ]
@@ -2372,8 +2404,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-pairing"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "group",
  "hex-literal 0.4.1",
@@ -2396,8 +2428,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-pairing-guest"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "hex-literal 0.4.1",
  "itertools 0.14.0",
@@ -2416,8 +2448,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-platform"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "critical-section",
  "embedded-alloc",
@@ -2467,8 +2499,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-rv32im-guest"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "openvm-custom-insn",
  "p3-field",
@@ -2477,8 +2509,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-sha2"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "openvm-sha256-guest",
  "sha2",
@@ -2486,8 +2518,8 @@ dependencies = [
 
 [[package]]
 name = "openvm-sha256-guest"
-version = "1.4.1"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+version = "1.4.2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "openvm-platform",
 ]
@@ -2507,7 +2539,7 @@ dependencies = [
 [[package]]
 name = "p256"
 version = "0.13.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#c2e376e6059c8bbf206736cf01d04cda43dfc42d"
+source = "git+https://github.com/openvm-org/openvm.git?branch=main#645460f1e327fdc4962e0205999270585d58acd4"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
