@@ -44,11 +44,15 @@ class Job:
         pid: int,
         popen: subprocess.Popen,
         job_dir: Path,
+        stdout_path: Path,
+        stderr_path: Path,
         mode: str,
     ):
         self.pid = pid
         self.popen = popen
         self.job_dir = job_dir
+        self.stdout_path = stdout_path
+        self.stderr_path = stderr_path
         self.mode = mode
 
 
@@ -111,7 +115,7 @@ async def start_proof(req: StartProofRequest):
     except FileNotFoundError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    JOBS[proof_uuid] = Job(proc.pid, proc, job_dir, mode)
+    JOBS[proof_uuid] = Job(proc.pid, proc, job_dir, stdout_path, stderr_path, mode)
 
     return JSONResponse(
         status_code=202,
@@ -143,11 +147,20 @@ async def get_proof_state(proof_uuid: str):
             e2e_latency_ms = int(f.read())
 
     state_instret_path = j.job_dir / "num_instret"
-    if os.path.exists(state_instret_path):
-        with open(state_instret_path, "r") as f:
-            num_instret = int(f.read())
+    if state_instret_path.exists():
+        num_instret = int(state_instret_path.read_text())
     else:
         num_instret = 0
+        metrics_path = j.job_dir / "metrics.json"
+        if metrics_path.exists():
+            with metrics_path.open("r", errors="ignore") as f:
+                for line in f:
+                    if '"metric": "execute_metered_insns"' in line:
+                        v = next(f, "")
+                        if '"value"' in v:
+                            digits = "".join(ch for ch in v if ch.isdigit())
+                            num_instret = int(digits) if digits else 0
+                        break
 
     return JSONResponse(
         status_code=200,
