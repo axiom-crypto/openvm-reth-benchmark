@@ -3,10 +3,13 @@
 Analyzes precompile calls in Ethereum blocks using debug_traceBlockByNumber.
 
 Usage:
-    python3 precompile_analyzer.py <block_number>                    # Analyze single block
-    python3 precompile_analyzer.py <block_number> --rpc <url>        # Use custom RPC endpoint
-    python3 precompile_analyzer.py <block_number> -v                 # Verbose output
-    python3 precompile_analyzer.py --check                           # Check if RPC is working
+    python3 precompile_analyzer.py <block_number>
+    python3 precompile_analyzer.py <block_number> --rpc <url>
+    python3 precompile_analyzer.py <block_number> -v
+    python3 precompile_analyzer.py <block_number> --top-k 10
+    python3 precompile_analyzer.py <block_number> --filter bn254_add
+    python3 precompile_analyzer.py <block_number> --filter bn254_add,bn254_mul
+    python3 precompile_analyzer.py --check
 """
 
 import argparse
@@ -15,42 +18,53 @@ import sys
 import urllib.request
 
 DEFAULT_RPC_URL = "http://localhost:8545"
+DEFAULT_TOP_K = 5
 
 # Precompile addresses
 PRECOMPILES = {
     # Frontier
-    "0x0000000000000000000000000000000000000001": "ecRecover",
-    "0x0000000000000000000000000000000000000002": "SHA2-256",
-    "0x0000000000000000000000000000000000000003": "RIPEMD-160",
+    "0x0000000000000000000000000000000000000001": "ecrecover",
+    "0x0000000000000000000000000000000000000002": "sha256",
+    "0x0000000000000000000000000000000000000003": "ripemd160",
     "0x0000000000000000000000000000000000000004": "identity",
     # Byzantium
     "0x0000000000000000000000000000000000000005": "modexp",
-    "0x0000000000000000000000000000000000000006": "ecAdd",
-    "0x0000000000000000000000000000000000000007": "ecMul",
-    "0x0000000000000000000000000000000000000008": "ecPairing",
+    "0x0000000000000000000000000000000000000006": "bn254_add",
+    "0x0000000000000000000000000000000000000007": "bn254_mul",
+    "0x0000000000000000000000000000000000000008": "bn254_pairing",
     # Istanbul
     "0x0000000000000000000000000000000000000009": "blake2f",
     # Cancun
-    "0x000000000000000000000000000000000000000a": "KZG point evaluation",
+    "0x000000000000000000000000000000000000000a": "kzg_point_eval",
     # Prague
-    "0x000000000000000000000000000000000000000b": "BLS12-381 G1 add",
-    "0x000000000000000000000000000000000000000c": "BLS12-381 G1 msm",
-    "0x000000000000000000000000000000000000000d": "BLS12-381 G2 add",
-    "0x000000000000000000000000000000000000000e": "BLS12-381 G2 msm",
-    "0x000000000000000000000000000000000000000f": "BLS12-381 pairing",
-    "0x0000000000000000000000000000000000000010": "BLS12-381 map Fp to G1",
-    "0x0000000000000000000000000000000000000011": "BLS12-381 map Fp2 to G2",
+    "0x000000000000000000000000000000000000000b": "bls12_g1_add",
+    "0x000000000000000000000000000000000000000c": "bls12_g1_msm",
+    "0x000000000000000000000000000000000000000d": "bls12_g2_add",
+    "0x000000000000000000000000000000000000000e": "bls12_g2_msm",
+    "0x000000000000000000000000000000000000000f": "bls12_pairing",
+    "0x0000000000000000000000000000000000000010": "bls12_map_fp_to_g1",
+    "0x0000000000000000000000000000000000000011": "bls12_map_fp2_to_g2",
     # Osaka (RIP-7212)
-    "0x0000000000000000000000000000000000000100": "P256 verify",
+    "0x0000000000000000000000000000000000000100": "p256_verify",
 }
 
+# Case-insensitive lookup for filtering
+PRECOMPILE_NAMES = {name.lower(): name for name in PRECOMPILES.values()}
+
 # Table column widths
+COL_RANK = 4
+COL_TX = 66
+COL_CALLS = 6
 COL_PRECOMPILE = 22
-COL_CALLS = 8
 
 # Table formatting
-TABLE_HEADER = f"| {'Precompile':<{COL_PRECOMPILE}} | {'Calls':>{COL_CALLS}} |"
-TABLE_SEP = f"|{'-' * (COL_PRECOMPILE + 2)}|{'-' * (COL_CALLS + 2)}|"
+SUMMARY_HEADER = f"| {'Precompile':<{COL_PRECOMPILE}} | {'Calls':>{COL_CALLS}} |"
+SUMMARY_SEP = f"|{'-' * (COL_PRECOMPILE + 2)}|{'-' * (COL_CALLS + 2)}|"
+
+TX_HEADER = (
+    f"| {'Rank':>{COL_RANK}} | {'Transaction':<{COL_TX}} | {'Calls':>{COL_CALLS}} |"
+)
+TX_SEP = f"|{'-' * (COL_RANK + 2)}|{'-' * (COL_TX + 2)}|{'-' * (COL_CALLS + 2)}|"
 
 
 def rpc_call(url: str, method: str, params: list) -> dict:
@@ -70,14 +84,15 @@ def rpc_call(url: str, method: str, params: list) -> dict:
         return json.loads(response.read().decode())
 
 
-def process_call(call: dict, counts: dict[str, int]) -> None:
-    """Process a single call and its subcalls, counting precompile calls."""
+def process_call_for_tx(call: dict, counts: dict[str, int]) -> None:
+    """Process a single call and its subcalls, counting precompile calls for a tx."""
     to_addr = call.get("to", "").lower()
     if to_addr in PRECOMPILES:
-        counts[PRECOMPILES[to_addr]] += 1
+        name = PRECOMPILES[to_addr]
+        counts[name] = counts.get(name, 0) + 1
 
     for subcall in call.get("calls", []):
-        process_call(subcall, counts)
+        process_call_for_tx(subcall, counts)
 
 
 def count_call_frames(call: dict) -> int:
@@ -88,21 +103,8 @@ def count_call_frames(call: dict) -> int:
     return n
 
 
-def count_precompile_calls(trace: list) -> dict[str, int]:
-    """Count precompile calls from debug_traceBlockByNumber result."""
-    counts: dict[str, int] = {name: 0 for name in PRECOMPILES.values()}
-
-    for tx_trace in trace:
-        if "result" in tx_trace:
-            process_call(tx_trace["result"], counts)
-
-    return counts
-
-
-def analyze_block(
-    rpc_url: str, block_number: int, verbose: bool = False
-) -> dict[str, int]:
-    """Analyze a single block and return precompile counts."""
+def analyze_block(rpc_url: str, block_number: int, verbose: bool = False) -> list:
+    """Analyze a single block and return per-transaction precompile counts."""
     block_hex = hex(block_number)
     tracer_config = {"tracer": "callTracer"}
 
@@ -120,7 +122,17 @@ def analyze_block(
                 total_calls += count_call_frames(tx["result"])
         print(f"  Transactions: {len(trace)}, Call frames: {total_calls}")
 
-    return count_precompile_calls(trace)
+    # Build per-transaction stats
+    tx_stats = []
+    for tx_trace in trace:
+        tx_hash = tx_trace.get("txHash", "unknown")
+        counts: dict[str, int] = {}
+        if "result" in tx_trace:
+            process_call_for_tx(tx_trace["result"], counts)
+        if counts:
+            tx_stats.append((tx_hash, counts))
+
+    return tx_stats
 
 
 def check_rpc(rpc_url: str) -> bool:
@@ -155,21 +167,97 @@ def check_rpc(rpc_url: str) -> bool:
         return False
 
 
-def print_counts(counts: dict[str, int], block_number: int) -> None:
-    """Print precompile counts in a table."""
-    total = sum(counts.values())
+def normalize_precompile_name(name: str) -> str | None:
+    """Normalize precompile name (case-insensitive). Returns None if invalid."""
+    return PRECOMPILE_NAMES.get(name.lower())
 
-    print(f"\n## Block {block_number}\n")
 
-    print(TABLE_HEADER)
-    print(TABLE_SEP)
+def parse_filter(filter_arg: str) -> list[str]:
+    """Parse comma-separated filter argument and normalize names."""
+    names = []
+    for part in filter_arg.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        normalized = normalize_precompile_name(part)
+        if normalized is None:
+            valid = ", ".join(sorted(PRECOMPILES.values()))
+            raise ValueError(f"Invalid precompile name: {part}\nValid names: {valid}")
+        names.append(normalized)
+    return names
 
-    for name, count in sorted(counts.items(), key=lambda x: -x[1]):
+
+def filter_tx_stats(
+    tx_stats: list, filter_names: list[str]
+) -> list[tuple[str, dict[str, int]]]:
+    """Filter transaction stats to only include specified precompiles."""
+    if not filter_names:
+        return tx_stats
+
+    filtered = []
+    for tx_hash, counts in tx_stats:
+        filtered_counts = {k: v for k, v in counts.items() if k in filter_names}
+        if filtered_counts:
+            filtered.append((tx_hash, filtered_counts))
+    return filtered
+
+
+def print_summary(
+    tx_stats: list, block_number: int, filter_names: list[str] | None
+) -> None:
+    """Print block-level precompile summary."""
+    # Aggregate counts across all transactions
+    totals: dict[str, int] = {}
+    for _, counts in tx_stats:
+        for name, count in counts.items():
+            if filter_names and name not in filter_names:
+                continue
+            totals[name] = totals.get(name, 0) + count
+
+    total = sum(totals.values())
+
+    if filter_names:
+        filter_str = ", ".join(filter_names)
+        print(f"## Block {block_number} Summary (filtered: {filter_str})\n")
+    else:
+        print(f"## Block {block_number} Summary\n")
+
+    print(SUMMARY_HEADER)
+    print(SUMMARY_SEP)
+
+    for name, count in sorted(totals.items(), key=lambda x: -x[1]):
         if count > 0:
             print(f"| {name:<{COL_PRECOMPILE}} | {count:>{COL_CALLS}} |")
 
-    print(TABLE_SEP)
+    print(SUMMARY_SEP)
     print(f"| {'Total':<{COL_PRECOMPILE}} | {total:>{COL_CALLS}} |")
+
+
+def print_top_transactions(
+    tx_stats: list, top_k: int, filter_names: list[str] | None
+) -> None:
+    """Print top transactions by precompile calls."""
+    if filter_names:
+        # Filter and sort by matching precompiles
+        filtered = filter_tx_stats(tx_stats, filter_names)
+        sorted_stats = sorted(filtered, key=lambda x: -sum(x[1].values()))
+        top = sorted_stats[:top_k]
+
+        filter_str = ", ".join(filter_names)
+        print(f"\n## Top {len(top)} Transactions using {filter_str}\n")
+    else:
+        # Sort by total precompile calls
+        sorted_stats = sorted(tx_stats, key=lambda x: -sum(x[1].values()))
+        top = sorted_stats[:top_k]
+
+        print(f"\n## Top {len(top)} Transactions by Precompile Calls\n")
+
+    print(TX_HEADER)
+    print(TX_SEP)
+
+    for rank, (tx_hash, counts) in enumerate(top, 1):
+        total = sum(counts.values())
+        print(f"| {rank:>{COL_RANK}} | {tx_hash:<{COL_TX}} | {total:>{COL_CALLS}} |")
 
 
 def main():
@@ -178,10 +266,13 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s 21000000                          Analyze block 21000000
+  %(prog)s 21000000                              Analyze block 21000000
   %(prog)s 21000000 --rpc http://localhost:8545
-  %(prog)s 21000000 -v                       Verbose output
-  %(prog)s --check                           Check if RPC supports trace method
+  %(prog)s 21000000 -v                           Verbose output
+  %(prog)s 21000000 --top-k 10                   Show top 10 transactions
+  %(prog)s 21000000 --filter ecrecover           Filter by precompile
+  %(prog)s 21000000 --filter bn254_add,bn254_mul Filter by multiple precompiles
+  %(prog)s --check                               Check if RPC supports trace method
         """,
     )
     parser.add_argument(
@@ -207,6 +298,19 @@ Examples:
         action="store_true",
         help="Print debug information about the trace response",
     )
+    parser.add_argument(
+        "--top-k",
+        "-k",
+        type=int,
+        default=DEFAULT_TOP_K,
+        help=f"Number of top transactions to show (default: {DEFAULT_TOP_K})",
+    )
+    parser.add_argument(
+        "--filter",
+        "-f",
+        type=str,
+        help="Filter by precompile name(s), comma-separated (e.g., bn254_add,bn254_mul)",
+    )
 
     args = parser.parse_args()
 
@@ -217,12 +321,27 @@ Examples:
     if args.block is None:
         parser.error("block number is required (or use --check)")
 
+    # Parse and validate filter if provided
+    filter_names = None
+    if args.filter:
+        try:
+            filter_names = parse_filter(args.filter)
+        except ValueError as e:
+            parser.error(str(e))
+
     print("\n# PRECOMPILE ANALYZER\n")
     print(f"**Block:** {args.block}\n")
 
     try:
-        counts = analyze_block(args.rpc, args.block, args.verbose)
-        print_counts(counts, args.block)
+        tx_stats = analyze_block(args.rpc, args.block, args.verbose)
+
+        if not tx_stats:
+            print("No precompile calls found in this block.")
+            sys.exit(0)
+
+        print_summary(tx_stats, args.block, filter_names)
+        print_top_transactions(tx_stats, args.top_k, filter_names)
+
     except urllib.error.URLError as e:
         print(f"\nError: {e}")
         sys.exit(1)
