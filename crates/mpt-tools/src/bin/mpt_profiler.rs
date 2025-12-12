@@ -27,7 +27,7 @@ fn main() {
 
     // Get block number from environment
     let block_number = env::var("BLOCK")
-        .unwrap_or_else(|_| "23100006".to_string())
+        .unwrap_or_else(|_| "23992138".to_string())
         .parse::<u64>()
         .unwrap_or_else(|_| panic!("Invalid BLOCK number"));
 
@@ -152,7 +152,7 @@ fn print_usage() {
     println!("  operation    Operation to profile (default: all)");
     println!();
     println!("Environment:");
-    println!("  BLOCK        Block number for data file (default: 23100006)");
+    println!("  BLOCK        Block number for data file (default: 23992138)");
     println!();
     println!("Operations:");
     println!("  all          Complete workflow (default)");

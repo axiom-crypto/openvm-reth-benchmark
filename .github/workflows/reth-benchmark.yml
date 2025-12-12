@@ -17,7 +17,7 @@ on:
         type: number
         required: false
         description: Block number to run the benchmark on
-        default: 23100006
+        default: 23992138
       app_log_blowup:
         type: number
         required: false
@@ -101,7 +101,7 @@ on:
         type: number
         required: false
         description: Block number to run the benchmark on
-        default: 23100006
+        default: 23992138
       app_log_blowup:
         type: number
         required: false

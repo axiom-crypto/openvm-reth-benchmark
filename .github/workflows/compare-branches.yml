@@ -29,7 +29,7 @@ on:
         type: number
         required: false
         description: Block number to run the benchmark on
-        default: 23100006
+        default: 23992138
       host_flamegraph:
         description: "Run target profiling benchmark for host flamegraph"
         type: boolean
@@ -53,7 +53,7 @@ jobs:
     with:
       ref: ${{ inputs.base_ref }}
       mode: ${{ inputs.benchmark_mode }}
-      block_number: ${{ fromJSON(inputs.block_number || '23100006') }}
+      block_number: ${{ fromJSON(inputs.block_number || '23992138') }}
       instance_family: ${{ inputs.instance_family }}
       profiling: none
     secrets: inherit
@@ -64,7 +64,7 @@ jobs:
     with:
       ref: ${{ inputs.target_ref }}
       mode: ${{ inputs.benchmark_mode }}
-      block_number: ${{ fromJSON(inputs.block_number || '23100006') }}
+      block_number: ${{ fromJSON(inputs.block_number || '23992138') }}
       instance_family: ${{ inputs.instance_family }}
       profiling: none
     secrets: inherit
@@ -76,7 +76,7 @@ jobs:
     with:
       ref: ${{ inputs.target_ref }}
       mode: ${{ inputs.benchmark_mode }}
-      block_number: ${{ fromJSON(inputs.block_number || '23100006') }}
+      block_number: ${{ fromJSON(inputs.block_number || '23992138') }}
       instance_family: ${{ inputs.instance_family }}
       profiling: host
     secrets: inherit
@@ -88,7 +88,7 @@ jobs:
     with:
       ref: ${{ inputs.target_ref }}
       mode: ${{ inputs.benchmark_mode }}
-      block_number: ${{ fromJSON(inputs.block_number || '23100006') }}
+      block_number: ${{ fromJSON(inputs.block_number || '23992138') }}
       instance_family: ${{ inputs.instance_family }}
       profiling: guest
     secrets: inherit
