@@ -3,14 +3,15 @@
 Fetches data from ethproofs.org API and analyzes proving times.
 
 Finds:
-- Block with maximum gas used
-- Proving time statistics across all proofs: MAX, MEDIAN, AVG, MIN
+- Top K blocks with maximum gas used
+- Top K blocks by proving time statistics: MAX median, MAX avg, MAX max, MAX min
 
 Usage:
     python3 ethproofs_analyzer.py                         # Fetch 1 page (100 blocks)
     python3 ethproofs_analyzer.py --pages 5               # Fetch 5 pages (500 blocks)
     python3 ethproofs_analyzer.py --pages 10 --size 50    # Fetch 10 pages of 50 blocks each
     python3 ethproofs_analyzer.py --file data.json        # Load from file
+    python3 ethproofs_analyzer.py --top-k 5               # Show top 5 blocks per metric
 """
 
 import argparse
@@ -20,6 +21,40 @@ import urllib.parse
 import urllib.request
 
 API_URL = "https://ethproofs.org/api/blocks"
+
+# Table column widths
+COL_RANK = 4
+COL_BLOCK = 10
+COL_GAS = 14
+COL_TXS = 5
+COL_TIME = 13
+COL_TIMESTAMP = 19
+
+# Table separators
+TIME_TABLE_SEP = f"|{'-' * (COL_RANK + 2)}|{'-' * (COL_BLOCK + 2)}|{'-' * (COL_TIME + 2)}|{'-' * (COL_GAS + 2)}|{'-' * (COL_TXS + 2)}|"
+
+
+def fmt_timestamp(ts: str | None) -> str:
+    """Format timestamp without timezone."""
+    if ts and len(ts) > 19:
+        return ts[:19]  # Keep only YYYY-MM-DD HH:MM:SS
+    return ts or "N/A"
+
+
+def fmt_time(ms: float) -> str:
+    """Format milliseconds as seconds."""
+    return f"{ms / 1000:.2f}s"
+
+
+def fmt_gas(gas: int | None) -> str:
+    """Format gas with commas."""
+    return f"{gas:,}" if gas else "N/A"
+
+
+def time_table_header(label: str) -> str:
+    """Generate header row for proving time tables."""
+    col = f"Time ({label})"
+    return f"| {'Rank':>{COL_RANK}} | {'Block':<{COL_BLOCK}} | {col:<{COL_TIME}} | {'Gas':>{COL_GAS}} | {'Txs':>{COL_TXS}} |"
 
 
 def fetch_blocks(
@@ -74,7 +109,7 @@ def load_from_file(filepath: str) -> dict:
         return json.load(f)
 
 
-def analyze_blocks(data: dict) -> None:
+def analyze_blocks(data: dict, top_k: int = 1, metric: str = "all") -> None:
     """Analyze blocks to find max gas used and proving time statistics."""
     rows = data.get("rows", [])
 
@@ -82,9 +117,8 @@ def analyze_blocks(data: dict) -> None:
         print("No blocks found in the response.")
         return
 
-    # Track max gas
-    max_gas_block = None
-    max_gas_used = -1
+    # Track blocks with gas for sorting
+    blocks_with_gas_list = []
     blocks_with_gas = 0
 
     # For each block, calculate stats across its provers
@@ -96,9 +130,7 @@ def analyze_blocks(data: dict) -> None:
 
         if gas_used is not None:
             blocks_with_gas += 1
-            if gas_used > max_gas_used:
-                max_gas_used = gas_used
-                max_gas_block = block
+            blocks_with_gas_list.append((block, gas_used))
 
         proving_times = [
             p.get("proving_time") for p in proofs if p.get("proving_time") is not None
@@ -120,61 +152,92 @@ def analyze_blocks(data: dict) -> None:
                 (block, block_median, block_avg, block_max, block_min, proving_times)
             )
 
-    # Find blocks with extreme values
-    if block_stats:
-        max_median_entry = max(block_stats, key=lambda x: x[1])
-        max_avg_entry = max(block_stats, key=lambda x: x[2])
-        max_max_entry = max(block_stats, key=lambda x: x[3])
-        max_min_entry = max(block_stats, key=lambda x: x[4])
+    # Sort and get top K for each metric
+    top_gas = sorted(blocks_with_gas_list, key=lambda x: x[1], reverse=True)[:top_k]
+    top_median = sorted(block_stats, key=lambda x: x[1], reverse=True)[:top_k]
+    top_avg = sorted(block_stats, key=lambda x: x[2], reverse=True)[:top_k]
+    top_max = sorted(block_stats, key=lambda x: x[3], reverse=True)[:top_k]
+    top_min = sorted(block_stats, key=lambda x: x[4], reverse=True)[:top_k]
 
     total_proofs = sum(len(entry[5]) for entry in block_stats)
-
-    def fmt_time(ms):
-        return f"{ms:,.0f}ms ({ms / 1000:.1f}s)"
-
-    def fmt_gas(gas):
-        return f"{gas:,}" if gas else "N/A"
 
     print(
         f"Fetched {len(rows):,} blocks ({blocks_with_gas:,} with gas, {total_proofs:,} proofs)\n"
     )
 
     # Max gas section
-    print("## Max Gas Used\n")
-    if max_gas_block:
-        b = max_gas_block
-        print(f"| {'Block':<10} | {'Gas':>14} | {'Txs':>5} | {'Timestamp':<26} |")
-        print(f"|{'-' * 12}|{'-' * 16}|{'-' * 7}|{'-' * 28}|")
-        print(
-            f"| {b.get('block_number'):<10} | {fmt_gas(max_gas_used):>14} | {b.get('transaction_count'):>5} | {b.get('timestamp'):<26} |"
-        )
-    else:
-        print("No blocks with gas data found")
+    if metric in ("all", "gas"):
+        print(f"## Top {top_k} by Gas Used\n")
+        if top_gas:
+            print(
+                f"| {'Rank':>{COL_RANK}} | {'Block':<{COL_BLOCK}} | {'Gas':>{COL_GAS}} | {'Txs':>{COL_TXS}} | {'Timestamp':<{COL_TIMESTAMP}} |"
+            )
+            print(
+                f"|{'-' * (COL_RANK + 2)}|{'-' * (COL_BLOCK + 2)}|{'-' * (COL_GAS + 2)}|{'-' * (COL_TXS + 2)}|{'-' * (COL_TIMESTAMP + 2)}|"
+            )
+            for rank, (block, gas) in enumerate(top_gas, 1):
+                print(
+                    f"| {rank:>{COL_RANK}} | {block.get('block_number'):<{COL_BLOCK}} | {fmt_gas(gas):>{COL_GAS}} | {block.get('transaction_count'):>{COL_TXS}} | {fmt_timestamp(block.get('timestamp')):<{COL_TIMESTAMP}} |"
+                )
+        else:
+            print("No blocks with gas data found")
 
-    # Proving time section
-    if block_stats:
-        print("\n## Proving Time (per-block stats → max across blocks)\n")
-        print(
-            f"| {'Metric':<12} | {'Block':<10} | {'Time':<18} | {'Gas':>14} | {'Txs':>5} |"
-        )
-        print(f"|{'-' * 14}|{'-' * 12}|{'-' * 20}|{'-' * 16}|{'-' * 7}|")
+    # Proving time sections
+    if not block_stats and metric in ("all", "max", "median", "avg", "min"):
+        print("\nNo proofs with proving time data found")
+        return
 
-        stats = [
-            ("MAX median", max_median_entry[0], max_median_entry[1]),
-            ("MAX avg", max_avg_entry[0], max_avg_entry[2]),
-            ("MAX max", max_max_entry[0], max_max_entry[3]),
-            ("MAX min", max_min_entry[0], max_min_entry[4]),
-        ]
-
-        for label, block, time_ms in stats:
+    if metric in ("all", "max"):
+        print(f"\n## Top {top_k} by MAX Proving Time\n")
+        print(time_table_header("Max"))
+        print(TIME_TABLE_SEP)
+        for rank, entry in enumerate(top_max, 1):
+            block, _, _, time_ms, _, _ = entry
             bn = block.get("block_number")
             gas = block.get("gas_used")
             txs = block.get("transaction_count") or "N/A"
             print(
-                f"| {label:<12} | {bn:<10} | {fmt_time(time_ms):<18} | {fmt_gas(gas):>14} | {txs:>5} |"
+                f"| {rank:>{COL_RANK}} | {bn:<{COL_BLOCK}} | {fmt_time(time_ms):<{COL_TIME}} | {fmt_gas(gas):>{COL_GAS}} | {txs:>{COL_TXS}} |"
             )
-    else:
-        print("\nNo proofs with proving time data found")
+
+    if metric in ("all", "median"):
+        print(f"\n## Top {top_k} by MEDIAN Proving Time\n")
+        print(time_table_header("Median"))
+        print(TIME_TABLE_SEP)
+        for rank, entry in enumerate(top_median, 1):
+            block, time_ms, _, _, _, _ = entry
+            bn = block.get("block_number")
+            gas = block.get("gas_used")
+            txs = block.get("transaction_count") or "N/A"
+            print(
+                f"| {rank:>{COL_RANK}} | {bn:<{COL_BLOCK}} | {fmt_time(time_ms):<{COL_TIME}} | {fmt_gas(gas):>{COL_GAS}} | {txs:>{COL_TXS}} |"
+            )
+
+    if metric in ("all", "avg"):
+        print(f"\n## Top {top_k} by AVG Proving Time\n")
+        print(time_table_header("Avg"))
+        print(TIME_TABLE_SEP)
+        for rank, entry in enumerate(top_avg, 1):
+            block, _, time_ms, _, _, _ = entry
+            bn = block.get("block_number")
+            gas = block.get("gas_used")
+            txs = block.get("transaction_count") or "N/A"
+            print(
+                f"| {rank:>{COL_RANK}} | {bn:<{COL_BLOCK}} | {fmt_time(time_ms):<{COL_TIME}} | {fmt_gas(gas):>{COL_GAS}} | {txs:>{COL_TXS}} |"
+            )
+
+    if metric in ("all", "min"):
+        print(f"\n## Top {top_k} by MIN Proving Time\n")
+        print(time_table_header("Min"))
+        print(TIME_TABLE_SEP)
+        for rank, entry in enumerate(top_min, 1):
+            block, _, _, _, time_ms, _ = entry
+            bn = block.get("block_number")
+            gas = block.get("gas_used")
+            txs = block.get("transaction_count") or "N/A"
+            print(
+                f"| {rank:>{COL_RANK}} | {bn:<{COL_BLOCK}} | {fmt_time(time_ms):<{COL_TIME}} | {fmt_gas(gas):>{COL_GAS}} | {txs:>{COL_TXS}} |"
+            )
 
 
 def main():
@@ -214,6 +277,20 @@ Examples:
         choices=["multi", "single"],
         help="Machine type filter (default: multi)",
     )
+    parser.add_argument(
+        "--top-k",
+        "-k",
+        type=int,
+        default=1,
+        help="Number of top blocks to show per metric (default: 1)",
+    )
+    parser.add_argument(
+        "--metric",
+        type=str,
+        default="all",
+        choices=["all", "gas", "max", "median", "avg", "min"],
+        help="Which metric to show (default: all)",
+    )
 
     args = parser.parse_args()
 
@@ -223,7 +300,7 @@ Examples:
         print(f"**Source:** {args.file}\n")
         try:
             data = load_from_file(args.file)
-            analyze_blocks(data)
+            analyze_blocks(data, top_k=args.top_k, metric=args.metric)
         except FileNotFoundError:
             print(f"Error: File not found: {args.file}")
             sys.exit(1)
@@ -243,7 +320,7 @@ Examples:
                 machine_type=args.machine_type,
             )
             print()
-            analyze_blocks(data)
+            analyze_blocks(data, top_k=args.top_k, metric=args.metric)
         except urllib.error.URLError as e:
             print(f"\nError: {e}")
             print("Try: python3 ethproofs_analyzer.py --file data.json")
