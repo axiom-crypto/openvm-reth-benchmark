@@ -2,16 +2,18 @@
 """
 Fetches data from ethproofs.org API and analyzes proving times.
 
-Finds:
-- Top K blocks with maximum gas used
-- Top K blocks by proving time statistics: MAX median, MAX avg, MAX max, MAX min
+Finds top K blocks by:
+- Gas used
+- Proving time (max, median, avg, min across provers)
 
 Usage:
-    python3 ethproofs_analyzer.py                         # Fetch 1 page (100 blocks)
+    python3 ethproofs_analyzer.py                         # Fetch 1 page (100 blocks), show all metrics
     python3 ethproofs_analyzer.py --pages 5               # Fetch 5 pages (500 blocks)
     python3 ethproofs_analyzer.py --pages 10 --size 50    # Fetch 10 pages of 50 blocks each
     python3 ethproofs_analyzer.py --file data.json        # Load from file
     python3 ethproofs_analyzer.py --top-k 5               # Show top 5 blocks per metric
+    python3 ethproofs_analyzer.py --metric median         # Show only median proving time
+    python3 ethproofs_analyzer.py --metric gas            # Show only gas used
 """
 
 import argparse
@@ -30,7 +32,9 @@ COL_TXS = 5
 COL_TIME = 13
 COL_TIMESTAMP = 19
 
-# Table separators
+# Table headers and separators
+GAS_TABLE_HEADER = f"| {'Rank':>{COL_RANK}} | {'Block':<{COL_BLOCK}} | {'Gas':>{COL_GAS}} | {'Txs':>{COL_TXS}} | {'Timestamp':<{COL_TIMESTAMP}} |"
+GAS_TABLE_SEP = f"|{'-' * (COL_RANK + 2)}|{'-' * (COL_BLOCK + 2)}|{'-' * (COL_GAS + 2)}|{'-' * (COL_TXS + 2)}|{'-' * (COL_TIMESTAMP + 2)}|"
 TIME_TABLE_SEP = f"|{'-' * (COL_RANK + 2)}|{'-' * (COL_BLOCK + 2)}|{'-' * (COL_TIME + 2)}|{'-' * (COL_GAS + 2)}|{'-' * (COL_TXS + 2)}|"
 
 
@@ -169,12 +173,8 @@ def analyze_blocks(data: dict, top_k: int = 1, metric: str = "all") -> None:
     if metric in ("all", "gas"):
         print(f"## Top {top_k} by Gas Used\n")
         if top_gas:
-            print(
-                f"| {'Rank':>{COL_RANK}} | {'Block':<{COL_BLOCK}} | {'Gas':>{COL_GAS}} | {'Txs':>{COL_TXS}} | {'Timestamp':<{COL_TIMESTAMP}} |"
-            )
-            print(
-                f"|{'-' * (COL_RANK + 2)}|{'-' * (COL_BLOCK + 2)}|{'-' * (COL_GAS + 2)}|{'-' * (COL_TXS + 2)}|{'-' * (COL_TIMESTAMP + 2)}|"
-            )
+            print(GAS_TABLE_HEADER)
+            print(GAS_TABLE_SEP)
             for rank, (block, gas) in enumerate(top_gas, 1):
                 print(
                     f"| {rank:>{COL_RANK}} | {block.get('block_number'):<{COL_BLOCK}} | {fmt_gas(gas):>{COL_GAS}} | {block.get('transaction_count'):>{COL_TXS}} | {fmt_timestamp(block.get('timestamp')):<{COL_TIMESTAMP}} |"
@@ -242,14 +242,17 @@ def analyze_blocks(data: dict, top_k: int = 1, metric: str = "all") -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Analyze ethproofs.org block data to find max gas used and max median proving time",
+        description="Analyze ethproofs.org block data to find top blocks by gas used and proving time",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s                         Fetch 1 page (100 blocks)
+  %(prog)s                         Fetch 1 page (100 blocks), show all metrics
   %(prog)s --pages 5               Fetch 5 pages (500 blocks)
   %(prog)s --pages 10 --size 50    Fetch 10 pages of 50 blocks each
   %(prog)s --file data.json        Load from local JSON file
+  %(prog)s --top-k 10              Show top 10 blocks per metric
+  %(prog)s --metric median         Show only median proving time
+  %(prog)s --metric gas            Show only gas used
         """,
     )
     parser.add_argument(
