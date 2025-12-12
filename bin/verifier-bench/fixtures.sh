@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BLOCK_NUMBER=${BLOCK_NUMBER:-23100006}
+BLOCK_NUMBER=${BLOCK_NUMBER:-23992138}
 APP_LOG_BLOWUP=${APP_LOG_BLOWUP:-1}
 LEAF_LOG_BLOWUP=${LEAF_LOG_BLOWUP:-1}
 S3_FOLDER="s3://axiom-public-data-sandbox-us-east-1/benchmark/github/fixtures/reth-app${APP_LOG_BLOWUP}-leaf${LEAF_LOG_BLOWUP}-${BLOCK_NUMBER}"

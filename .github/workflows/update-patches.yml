@@ -38,7 +38,7 @@ on:
         description: "Block number to run the benchmark on"
         type: number
         required: false
-        default: 23100006
+        default: 23992138
   #schedule:
   #  - cron: "0 */12 * * *" # Run every 12 hours
   workflow_call:
@@ -80,7 +80,7 @@ on:
         type: number
         required: false
         description: "Block number to run the benchmark on"
-        default: 23100006
+        default: 23992138
       # https://github.com/actions/runner/discussions/1884
       manual_call:
         description: "To distinguish workflow_call from workflow_dispatch"
@@ -233,7 +233,7 @@ jobs:
       instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'g6e.8xlarge' }}
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
-      block_number: ${{ fromJSON(inputs.benchmark_block_number || github.event.inputs.benchmark_block_number || '23100006') }}
+      block_number: ${{ fromJSON(inputs.benchmark_block_number || github.event.inputs.benchmark_block_number || '23992138') }}
       profiling: none
     secrets: inherit
 
@@ -246,7 +246,7 @@ jobs:
       instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
-      block_number: ${{ fromJSON(inputs.benchmark_block_number || github.event.inputs.benchmark_block_number || '23100006') }}
+      block_number: ${{ fromJSON(inputs.benchmark_block_number || github.event.inputs.benchmark_block_number || '23992138') }}
       profiling: host
     secrets: inherit
 
@@ -259,7 +259,7 @@ jobs:
       instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'm8g.24xlarge' }}
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
-      block_number: ${{ fromJSON(inputs.benchmark_block_number || github.event.inputs.benchmark_block_number || '23100006') }}
+      block_number: ${{ fromJSON(inputs.benchmark_block_number || github.event.inputs.benchmark_block_number || '23992138') }}
       profiling: guest
     secrets: inherit
 

@@ -10,7 +10,7 @@ use url::Url;
 #[tokio::test(flavor = "multi_thread")]
 async fn test_e2e_ethereum() {
     let env_var_key = "RPC_1";
-    let block_number = 23100006;
+    let block_number = 23992138;
 
     // Initialize the environment variables.
     dotenv::dotenv().ok();

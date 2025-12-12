@@ -11,8 +11,8 @@ use std::{fs, hint::black_box, sync::Arc};
 
 fn benchmark_mpt_operations(c: &mut Criterion) {
     // Load the benchmark data file (this is not counted in benchmark timing)
-    // Check for BLOCK environment variable, default to 23100006
-    let block_number = std::env::var("BLOCK").unwrap_or_else(|_| "23100006".to_string());
+    // Check for BLOCK environment variable, default to 23992138
+    let block_number = std::env::var("BLOCK").unwrap_or_else(|_| "23992138".to_string());
 
     let input_file = format!("{}.bin", block_number);
 

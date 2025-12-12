@@ -12,7 +12,7 @@ fn print_usage() {
     println!("       BLOCK=18884864 cargo run --bin generate_benchmark_data");
     println!();
     println!("Environment:");
-    println!("  BLOCK    Block number to fetch (default: 23100006)");
+    println!("  BLOCK    Block number to fetch (default: 23992138)");
     println!("  RPC_1    Ethereum RPC endpoint (required)");
     println!();
     println!("Output: <block_number>.bin");
@@ -30,7 +30,7 @@ async fn main() -> eyre::Result<()> {
 
     // Get block number from environment
     let block_number = env::var("BLOCK")
-        .unwrap_or_else(|_| "23100006".to_string())
+        .unwrap_or_else(|_| "23992138".to_string())
         .parse::<u64>()
         .unwrap_or_else(|_| panic!("Invalid BLOCK number"));
 

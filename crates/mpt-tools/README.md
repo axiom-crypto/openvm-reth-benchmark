@@ -9,7 +9,7 @@ This crate provides development tools for profiling and benchmarking Merkle Patr
 ### Data Generation
 
 ```bash
-cargo run --bin generate_benchmark_data                    # Default block 23100006
+cargo run --bin generate_benchmark_data                    # Default block 23992138
 BLOCK=18884864 cargo run --bin generate_benchmark_data     # Custom block
 ```
 
@@ -24,14 +24,14 @@ BLOCK=18884864 cargo run --bin mpt_profiler update
 ### Performance Benchmarking
 
 ```bash
-cargo bench                                                 # Default block 23100006
+cargo bench                                                 # Default block 23992138
 BLOCK=18884864 cargo bench                                  # Custom block
 ```
 
 ## Workflow
 
 ```bash
-cargo run --bin generate_benchmark_data                     # Generate data (23100006.bin)
+cargo run --bin generate_benchmark_data                     # Generate data (23992138.bin)
 cargo run --bin mpt_profiler                                # Profile memory
 cargo bench                                                 # Benchmark performance
 ```
