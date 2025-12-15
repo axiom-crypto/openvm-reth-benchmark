@@ -151,7 +151,7 @@ cd "$WORKDIR"
 
 PROFILE="release"
 FEATURES="metrics,jemalloc,unprotected,nightly-features"
-BLOCK_NUMBER=23830238
+BLOCK_NUMBER=23992138
 # switch to +nightly-2025-08-19 if using tco
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
 BIN_NAME="openvm-reth-benchmark-bin"
