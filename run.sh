@@ -150,7 +150,7 @@ fi
 cd "$WORKDIR"
 
 PROFILE="release"
-FEATURES="metrics,jemalloc,unprotected,nightly-features"
+FEATURES="metrics,jemalloc,unprotected"
 BLOCK_NUMBER=23992138
 # switch to +nightly-2025-08-19 if using tco
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
