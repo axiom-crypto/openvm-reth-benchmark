@@ -1904,11 +1904,11 @@ dependencies = [
  "ff",
  "hex-literal 0.4.1",
  "num-bigint",
- "openvm 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-algebra-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-algebra-moduli-macros 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-ecc-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-ecc-sw-macros 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
+ "openvm",
+ "openvm-algebra-guest",
+ "openvm-algebra-moduli-macros",
+ "openvm-ecc-guest",
+ "openvm-ecc-sw-macros",
  "serde",
 ]
 
@@ -2162,18 +2162,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nums"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf3c74f925fb8cfc49a8022f2afce48a0683b70f9e439885594e84c5edbf5b01"
-dependencies = [
- "num-bigint",
- "num-integer",
- "num-traits",
- "rand 0.8.5",
-]
-
-[[package]]
 name = "nybbles"
 version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2220,25 +2208,12 @@ version = "1.4.2"
 source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
 dependencies = [
  "bytemuck",
- "num-bigint",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-platform 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-rv32im-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "serde",
-]
-
-[[package]]
-name = "openvm"
-version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#77adf7e5cbdf209a2b9f85e1b561c957037c2af7"
-dependencies = [
- "bytemuck",
  "getrandom 0.2.16",
  "getrandom 0.3.3",
  "num-bigint",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "openvm-platform 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "openvm-rv32im-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm-custom-insn",
+ "openvm-platform",
+ "openvm-rv32im-guest",
  "serde",
 ]
 
@@ -2247,17 +2222,7 @@ name = "openvm-algebra-complex-macros"
 version = "1.4.2"
 source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
 dependencies = [
- "openvm-macros-common 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "quote",
- "syn 2.0.103",
-]
-
-[[package]]
-name = "openvm-algebra-complex-macros"
-version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#77adf7e5cbdf209a2b9f85e1b561c957037c2af7"
-dependencies = [
- "openvm-macros-common 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm-macros-common",
  "quote",
  "syn 2.0.103",
 ]
@@ -2270,25 +2235,10 @@ dependencies = [
  "halo2curves-axiom",
  "num-bigint",
  "once_cell",
- "openvm-algebra-complex-macros 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-algebra-moduli-macros 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-rv32im-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "serde-big-array",
- "strum_macros 0.26.4",
-]
-
-[[package]]
-name = "openvm-algebra-guest"
-version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#77adf7e5cbdf209a2b9f85e1b561c957037c2af7"
-dependencies = [
- "num-bigint",
- "once_cell",
- "openvm-algebra-complex-macros 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "openvm-algebra-moduli-macros 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "openvm-rv32im-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm-algebra-complex-macros",
+ "openvm-algebra-moduli-macros",
+ "openvm-custom-insn",
+ "openvm-rv32im-guest",
  "serde-big-array",
  "strum_macros 0.26.4",
 ]
@@ -2300,19 +2250,7 @@ source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-pa
 dependencies = [
  "num-bigint",
  "num-prime",
- "openvm-macros-common 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "quote",
- "syn 2.0.103",
-]
-
-[[package]]
-name = "openvm-algebra-moduli-macros"
-version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#77adf7e5cbdf209a2b9f85e1b561c957037c2af7"
-dependencies = [
- "num-bigint",
- "num-prime",
- "openvm-macros-common 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm-macros-common",
  "quote",
  "syn 2.0.103",
 ]
@@ -2322,10 +2260,10 @@ name = "openvm-client-eth"
 version = "0.3.0"
 dependencies = [
  "log",
- "openvm 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "openvm-algebra-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm",
+ "openvm-algebra-guest",
  "openvm-client-executor",
- "openvm-ecc-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm-ecc-guest",
  "tracing",
 ]
 
@@ -2368,16 +2306,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-custom-insn"
-version = "0.1.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#77adf7e5cbdf209a2b9f85e1b561c957037c2af7"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.103",
-]
-
-[[package]]
 name = "openvm-ecc-guest"
 version = "1.4.2"
 source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
@@ -2387,29 +2315,11 @@ dependencies = [
  "group",
  "halo2curves-axiom",
  "once_cell",
- "openvm 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-algebra-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-ecc-sw-macros 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-rv32im-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "serde",
- "strum_macros 0.26.4",
-]
-
-[[package]]
-name = "openvm-ecc-guest"
-version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#77adf7e5cbdf209a2b9f85e1b561c957037c2af7"
-dependencies = [
- "ecdsa",
- "elliptic-curve",
- "group",
- "once_cell",
- "openvm 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "openvm-algebra-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "openvm-ecc-sw-macros 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "openvm-rv32im-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm",
+ "openvm-algebra-guest",
+ "openvm-custom-insn",
+ "openvm-ecc-sw-macros",
+ "openvm-rv32im-guest",
  "serde",
  "strum_macros 0.26.4",
 ]
@@ -2419,17 +2329,7 @@ name = "openvm-ecc-sw-macros"
 version = "1.4.2"
 source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
 dependencies = [
- "openvm-macros-common 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "quote",
- "syn 2.0.103",
-]
-
-[[package]]
-name = "openvm-ecc-sw-macros"
-version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#77adf7e5cbdf209a2b9f85e1b561c957037c2af7"
-dependencies = [
- "openvm-macros-common 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm-macros-common",
  "quote",
  "syn 2.0.103",
 ]
@@ -2448,7 +2348,7 @@ name = "openvm-keccak256-guest"
 version = "1.4.2"
 source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
 dependencies = [
- "openvm-platform 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
+ "openvm-platform",
 ]
 
 [[package]]
@@ -2459,8 +2359,8 @@ dependencies = [
  "bls12_381",
  "hex",
  "hex-literal 1.0.0",
- "openvm-algebra-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-ecc-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
+ "openvm-algebra-guest",
+ "openvm-ecc-guest",
  "openvm-pairing",
  "serde",
  "serde-big-array",
@@ -2471,14 +2371,6 @@ dependencies = [
 name = "openvm-macros-common"
 version = "1.4.2"
 source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
-dependencies = [
- "syn 2.0.103",
-]
-
-[[package]]
-name = "openvm-macros-common"
-version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#77adf7e5cbdf209a2b9f85e1b561c957037c2af7"
 dependencies = [
  "syn 2.0.103",
 ]
@@ -2508,16 +2400,16 @@ dependencies = [
  "itertools 0.14.0",
  "num-bigint",
  "num-traits",
- "openvm 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-algebra-complex-macros 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-algebra-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-algebra-moduli-macros 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-ecc-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-ecc-sw-macros 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
+ "openvm",
+ "openvm-algebra-complex-macros",
+ "openvm-algebra-guest",
+ "openvm-algebra-moduli-macros",
+ "openvm-custom-insn",
+ "openvm-ecc-guest",
+ "openvm-ecc-sw-macros",
  "openvm-pairing-guest",
- "openvm-platform 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-rv32im-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
+ "openvm-platform",
+ "openvm-rv32im-guest",
  "serde",
 ]
 
@@ -2531,11 +2423,11 @@ dependencies = [
  "lazy_static",
  "num-bigint",
  "num-traits",
- "openvm 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-algebra-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-algebra-moduli-macros 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-ecc-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
+ "openvm",
+ "openvm-algebra-guest",
+ "openvm-algebra-moduli-macros",
+ "openvm-custom-insn",
+ "openvm-ecc-guest",
  "serde",
  "strum_macros 0.26.4",
 ]
@@ -2545,21 +2437,11 @@ name = "openvm-platform"
 version = "1.4.2"
 source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
 dependencies = [
- "libm",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-rv32im-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
-]
-
-[[package]]
-name = "openvm-platform"
-version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#77adf7e5cbdf209a2b9f85e1b561c957037c2af7"
-dependencies = [
  "critical-section",
  "embedded-alloc",
  "libm",
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "openvm-rv32im-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
+ "openvm-custom-insn",
+ "openvm-rv32im-guest",
 ]
 
 [[package]]
@@ -2589,9 +2471,9 @@ dependencies = [
  "alloy-consensus",
  "alloy-primitives",
  "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-algebra-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-ecc-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
+ "openvm",
+ "openvm-algebra-guest",
+ "openvm-ecc-guest",
  "openvm-keccak256",
  "openvm-kzg",
  "openvm-pairing",
@@ -2607,18 +2489,8 @@ name = "openvm-rv32im-guest"
 version = "1.4.2"
 source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
 dependencies = [
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "p3-field 0.4.0",
- "strum_macros 0.26.4",
-]
-
-[[package]]
-name = "openvm-rv32im-guest"
-version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=main#77adf7e5cbdf209a2b9f85e1b561c957037c2af7"
-dependencies = [
- "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "p3-field 0.1.0",
+ "openvm-custom-insn",
+ "p3-field",
  "strum_macros 0.26.4",
 ]
 
@@ -2636,7 +2508,7 @@ name = "openvm-sha256-guest"
 version = "1.4.2"
 source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
 dependencies = [
- "openvm-platform 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
+ "openvm-platform",
 ]
 
 [[package]]
@@ -2661,29 +2533,12 @@ dependencies = [
  "ff",
  "hex-literal 0.4.1",
  "num-bigint",
- "openvm 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-algebra-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-algebra-moduli-macros 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-ecc-guest 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
- "openvm-ecc-sw-macros 1.4.2 (git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params)",
+ "openvm",
+ "openvm-algebra-guest",
+ "openvm-algebra-moduli-macros",
+ "openvm-ecc-guest",
+ "openvm-ecc-sw-macros",
  "serde",
-]
-
-[[package]]
-name = "p3-field"
-version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=539bbc84085efb609f4f62cb03cf49588388abdb#539bbc84085efb609f4f62cb03cf49588388abdb"
-dependencies = [
- "itertools 0.14.0",
- "num-bigint",
- "num-integer",
- "num-traits",
- "nums",
- "p3-maybe-rayon 0.1.0",
- "p3-util 0.1.0",
- "rand 0.8.5",
- "serde",
- "tracing",
 ]
 
 [[package]]
@@ -2693,8 +2548,8 @@ source = "git+https://github.com/Plonky3/Plonky3.git?rev=1eed8e6#1eed8e6dd4ef6d2
 dependencies = [
  "itertools 0.14.0",
  "num-bigint",
- "p3-maybe-rayon 0.4.0",
- "p3-util 0.4.0",
+ "p3-maybe-rayon",
+ "p3-util",
  "paste",
  "rand 0.9.1",
  "serde",
@@ -2703,21 +2558,8 @@ dependencies = [
 
 [[package]]
 name = "p3-maybe-rayon"
-version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=539bbc84085efb609f4f62cb03cf49588388abdb#539bbc84085efb609f4f62cb03cf49588388abdb"
-
-[[package]]
-name = "p3-maybe-rayon"
 version = "0.4.0"
 source = "git+https://github.com/Plonky3/Plonky3.git?rev=1eed8e6#1eed8e6dd4ef6d29868dd5c25e525b49c07ec5ad"
-
-[[package]]
-name = "p3-util"
-version = "0.1.0"
-source = "git+https://github.com/Plonky3/Plonky3.git?rev=539bbc84085efb609f4f62cb03cf49588388abdb#539bbc84085efb609f4f62cb03cf49588388abdb"
-dependencies = [
- "serde",
-]
 
 [[package]]
 name = "p3-util"
