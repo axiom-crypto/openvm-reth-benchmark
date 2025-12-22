@@ -65,7 +65,6 @@ evm-verify = ["evm-prove", "openvm-sdk/evm-verify", "halo2-axiom"]
 perf-metrics = ["openvm-sdk/perf-metrics", "openvm-benchmarks-prove/perf-metrics"]
 mimalloc = ["openvm-benchmarks-prove/mimalloc"]
 jemalloc = ["openvm-benchmarks-prove/jemalloc"]
-nightly-features = ["openvm-benchmarks-prove/nightly-features"]
 # x86 only:
 halo2-asm = ["halo2-axiom?/asm"]
 cuda = [

@@ -26,7 +26,6 @@ tco = ["openvm-reth-benchmark/tco"]
 aot = ["openvm-reth-benchmark/aot"]
 mimalloc = ["openvm-reth-benchmark/mimalloc"]
 jemalloc = ["openvm-reth-benchmark/jemalloc"]
-nightly-features = ["openvm-reth-benchmark/nightly-features"]
 halo2-asm = ["openvm-reth-benchmark/halo2-asm"]
 cuda = [
     "openvm-reth-benchmark/cuda",
