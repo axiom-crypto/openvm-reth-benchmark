@@ -4045,7 +4045,7 @@ dependencies = [
 [[package]]
 name = "k256"
 version = "0.13.4"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -4817,7 +4817,7 @@ checksum = "d05e27ee213611ffe7d6348b942e8f942b37114c00cc03cec254295a4a17852e"
 [[package]]
 name = "openvm"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "bytemuck",
  "num-bigint",
@@ -4830,7 +4830,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-circuit"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "blstrs",
  "cfg-if",
@@ -4863,7 +4863,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-complex-macros"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -4873,7 +4873,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-guest"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "halo2curves-axiom 0.7.2",
  "num-bigint",
@@ -4889,7 +4889,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-moduli-macros"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "num-bigint",
  "num-prime",
@@ -4901,7 +4901,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-transpiler"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-algebra-guest",
  "openvm-instructions",
@@ -4915,7 +4915,7 @@ dependencies = [
 [[package]]
 name = "openvm-benchmarks-prove"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "clap",
  "derive_more 1.0.0",
@@ -4942,7 +4942,7 @@ dependencies = [
 [[package]]
 name = "openvm-benchmarks-utils"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "cargo_metadata",
  "clap",
@@ -4957,7 +4957,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-circuit"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -4983,7 +4983,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-guest"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-platform",
  "strum_macros 0.26.4",
@@ -4992,7 +4992,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-transpiler"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-bigint-guest",
  "openvm-instructions",
@@ -5007,7 +5007,7 @@ dependencies = [
 [[package]]
 name = "openvm-build"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "cargo_metadata",
  "eyre",
@@ -5019,7 +5019,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "abi_stable",
  "backtrace",
@@ -5062,7 +5062,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-derive"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "itertools 0.14.0",
  "proc-macro2",
@@ -5073,7 +5073,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "derive-new 0.6.0",
  "itertools 0.14.0",
@@ -5091,7 +5091,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives-derive"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "itertools 0.14.0",
  "quote",
@@ -5129,7 +5129,7 @@ dependencies = [
 [[package]]
 name = "openvm-continuations"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "derivative",
  "openvm-circuit",
@@ -5200,7 +5200,7 @@ dependencies = [
 [[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5210,7 +5210,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-circuit"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "blstrs",
  "cfg-if",
@@ -5243,7 +5243,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-guest"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -5262,7 +5262,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-sw-macros"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -5272,7 +5272,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-transpiler"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-ecc-guest",
  "openvm-instructions",
@@ -5317,7 +5317,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "backtrace",
  "derive-new 0.6.0",
@@ -5334,7 +5334,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions-derive"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "quote",
  "syn 2.0.102",
@@ -5343,7 +5343,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-keccak256-guest",
  "tiny-keccak",
@@ -5352,7 +5352,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-circuit"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -5380,7 +5380,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-guest"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-platform",
 ]
@@ -5388,7 +5388,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-transpiler"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -5418,7 +5418,7 @@ dependencies = [
 [[package]]
 name = "openvm-macros-common"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "syn 2.0.102",
 ]
@@ -5426,7 +5426,7 @@ dependencies = [
 [[package]]
 name = "openvm-mod-circuit-builder"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "cuda-runtime-sys",
  "itertools 0.14.0",
@@ -5494,7 +5494,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-circuit"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -5525,7 +5525,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-compiler"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "backtrace",
  "itertools 0.14.0",
@@ -5549,7 +5549,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-compiler-derive"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "quote",
  "syn 2.0.102",
@@ -5558,7 +5558,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-recursion"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "cfg-if",
  "itertools 0.14.0",
@@ -5587,7 +5587,7 @@ dependencies = [
 [[package]]
 name = "openvm-native-transpiler"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-instructions",
  "openvm-transpiler",
@@ -5597,7 +5597,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "group 0.13.0",
  "hex-literal 0.4.1",
@@ -5620,7 +5620,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-circuit"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -5651,7 +5651,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-guest"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "blstrs",
  "halo2curves-axiom 0.7.2",
@@ -5672,7 +5672,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-transpiler"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-instructions",
  "openvm-pairing-guest",
@@ -5685,7 +5685,7 @@ dependencies = [
 [[package]]
 name = "openvm-platform"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "libm",
  "openvm-custom-insn",
@@ -5695,7 +5695,7 @@ dependencies = [
 [[package]]
 name = "openvm-poseidon2-air"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "derivative",
  "lazy_static",
@@ -5838,7 +5838,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32-adapters"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "derive-new 0.6.0",
  "itertools 0.14.0",
@@ -5855,7 +5855,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-circuit"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -5882,7 +5882,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-guest"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-custom-insn",
  "p3-field",
@@ -5892,7 +5892,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-transpiler"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -5908,7 +5908,7 @@ dependencies = [
 [[package]]
 name = "openvm-sdk"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "alloy-sol-types",
  "bitcode",
@@ -5968,7 +5968,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha2"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-sha256-guest",
  "sha2 0.10.9",
@@ -5977,7 +5977,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-air"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-circuit-primitives",
  "openvm-stark-backend",
@@ -5988,7 +5988,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-circuit"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -6014,7 +6014,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-guest"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-platform",
 ]
@@ -6022,7 +6022,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-transpiler"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -6104,7 +6104,7 @@ dependencies = [
 [[package]]
 name = "openvm-transpiler"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "elf",
  "eyre",
@@ -6146,7 +6146,7 @@ dependencies = [
 [[package]]
 name = "p256"
 version = "0.13.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#560b4a62accc26ccce9ec4fb6dcdefaaf72cacb2"
+source = "git+https://github.com/openvm-org/openvm.git?branch=feat%2Fprovable-params#bb3a7cd46b3256ad2f2f603b7bb02b8c18c51d4b"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
