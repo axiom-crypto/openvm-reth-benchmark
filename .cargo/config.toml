@@ -1,3 +1,12 @@
+[net]
+git-fetch-with-cli = true
+
+[patch."https://github.com/openvm-org/stark-backend.git"]
+openvm-stark-backend = { git = "ssh://git@github.com/openvm-org/stark-backend.git", branch = "feat/soundcalc-analysis" }
+openvm-stark-sdk = { git = "ssh://git@github.com/openvm-org/stark-backend.git", branch = "feat/soundcalc-analysis" }
+openvm-cuda-builder = { git = "ssh://git@github.com/openvm-org/stark-backend.git", branch = "feat/soundcalc-analysis" }
+openvm-cuda-common = { git = "ssh://git@github.com/openvm-org/stark-backend.git", branch = "feat/soundcalc-analysis" }
+openvm-cuda-backend = { git = "ssh://git@github.com/openvm-org/stark-backend.git", branch = "feat/soundcalc-analysis" }
 # # Copy to config.toml for local patches
 # [net]
 # git-fetch-with-cli = true

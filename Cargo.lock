@@ -5244,7 +5244,7 @@ dependencies = [
 [[package]]
 name = "openvm-cuda-backend"
 version = "1.2.2"
-source = "git+https://github.com/openvm-org/stark-backend.git?tag=v1.2.2#972f5dbecb6ab3ff7e3e978e9087235ad17c1de9"
+source = "git+ssh://git@github.com/openvm-org/stark-backend.git?branch=feat%2Fsoundcalc-analysis#8fc5f7355cf64cfb1a75e7583b598458b3aa3d5c"
 dependencies = [
  "bincode 2.0.1",
  "bincode_derive",
@@ -5276,7 +5276,7 @@ dependencies = [
 [[package]]
 name = "openvm-cuda-builder"
 version = "1.2.2"
-source = "git+https://github.com/openvm-org/stark-backend.git?tag=v1.2.2#972f5dbecb6ab3ff7e3e978e9087235ad17c1de9"
+source = "git+ssh://git@github.com/openvm-org/stark-backend.git?branch=feat%2Fsoundcalc-analysis#8fc5f7355cf64cfb1a75e7583b598458b3aa3d5c"
 dependencies = [
  "cc",
  "glob",
@@ -5285,7 +5285,7 @@ dependencies = [
 [[package]]
 name = "openvm-cuda-common"
 version = "1.2.2"
-source = "git+https://github.com/openvm-org/stark-backend.git?tag=v1.2.2#972f5dbecb6ab3ff7e3e978e9087235ad17c1de9"
+source = "git+ssh://git@github.com/openvm-org/stark-backend.git?branch=feat%2Fsoundcalc-analysis#8fc5f7355cf64cfb1a75e7583b598458b3aa3d5c"
 dependencies = [
  "bytesize",
  "ctor",
@@ -6135,7 +6135,7 @@ dependencies = [
 [[package]]
 name = "openvm-stark-backend"
 version = "1.2.2"
-source = "git+https://github.com/openvm-org/stark-backend.git?tag=v1.2.2#972f5dbecb6ab3ff7e3e978e9087235ad17c1de9"
+source = "git+ssh://git@github.com/openvm-org/stark-backend.git?branch=feat%2Fsoundcalc-analysis#8fc5f7355cf64cfb1a75e7583b598458b3aa3d5c"
 dependencies = [
  "bitcode",
  "cfg-if",
@@ -6165,7 +6165,7 @@ dependencies = [
 [[package]]
 name = "openvm-stark-sdk"
 version = "1.2.2"
-source = "git+https://github.com/openvm-org/stark-backend.git?tag=v1.2.2#972f5dbecb6ab3ff7e3e978e9087235ad17c1de9"
+source = "git+ssh://git@github.com/openvm-org/stark-backend.git?branch=feat%2Fsoundcalc-analysis#8fc5f7355cf64cfb1a75e7583b598458b3aa3d5c"
 dependencies = [
  "dashmap",
  "derivative",
