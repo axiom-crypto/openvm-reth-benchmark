@@ -68,7 +68,7 @@ layout = { Native = { size = 4 } }
 
 [app_vm_config.io]
 
-[app_vm_config.keccak]
+[app_vm_config.new_keccak]
 
 [app_vm_config.sha256]
 
@@ -169,4 +169,3 @@ proof_of_work_bits = 16
 [agg_config.compiler_options]
 word_size = 8
 enable_cycle_tracker = false
-

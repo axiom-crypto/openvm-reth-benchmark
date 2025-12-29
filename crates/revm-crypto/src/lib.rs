@@ -7,15 +7,15 @@ use alloy_consensus::crypto::{
     backend::{install_default_provider, CryptoProvider},
     RecoveryError,
 };
-use alloy_primitives::Address;
+use alloy_primitives::{keccak256, Address};
 use openvm_ecc_guest::{
     algebra::IntMod,
     weierstrass::{IntrinsicCurve, WeierstrassPoint},
     AffinePoint, Group,
 };
 use openvm_k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
-use openvm_new_keccak256::keccak256;
 use openvm_kzg::{Bytes32, Bytes48, KzgProof};
+use openvm_new_keccak256 as _;
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm_p256; // ensure this is linked in for the standard OpenVM config
 use openvm_pairing::{
