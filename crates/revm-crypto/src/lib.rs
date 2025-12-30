@@ -15,7 +15,7 @@ use openvm_ecc_guest::{
 };
 use openvm_k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
 use openvm_kzg::{Bytes32, Bytes48, KzgProof};
-use openvm_new_keccak256 as _;
+use openvm_new_keccak256_guest as _;
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm_p256; // ensure this is linked in for the standard OpenVM config
 use openvm_pairing::{

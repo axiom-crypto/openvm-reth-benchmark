@@ -1897,7 +1897,7 @@ dependencies = [
 [[package]]
 name = "k256"
 version = "0.13.4"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -2217,7 +2217,7 @@ dependencies = [
 [[package]]
 name = "openvm"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "bytemuck",
  "getrandom 0.2.16",
@@ -2232,7 +2232,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-complex-macros"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2242,7 +2242,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-guest"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "halo2curves-axiom",
  "num-bigint",
@@ -2258,7 +2258,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-moduli-macros"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "num-bigint",
  "num-prime",
@@ -2310,7 +2310,7 @@ dependencies = [
 [[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2320,7 +2320,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-guest"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -2339,7 +2339,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-sw-macros"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2365,7 +2365,7 @@ dependencies = [
 [[package]]
 name = "openvm-macros-common"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "syn 2.0.103",
 ]
@@ -2386,18 +2386,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-new-keccak256"
-version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
-dependencies = [
- "openvm-new-keccak256-guest",
- "tiny-keccak",
-]
-
-[[package]]
 name = "openvm-new-keccak256-guest"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "openvm-platform",
 ]
@@ -2405,7 +2396,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "group",
  "hex-literal 0.4.1",
@@ -2429,7 +2420,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-guest"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "hex-literal 0.4.1",
  "itertools 0.14.0",
@@ -2449,7 +2440,7 @@ dependencies = [
 [[package]]
 name = "openvm-platform"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "critical-section",
  "embedded-alloc",
@@ -2489,7 +2480,7 @@ dependencies = [
  "openvm-algebra-guest",
  "openvm-ecc-guest",
  "openvm-kzg",
- "openvm-new-keccak256",
+ "openvm-new-keccak256-guest",
  "openvm-pairing",
  "openvm-sha2",
  "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak)",
@@ -2501,7 +2492,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-guest"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "openvm-custom-insn",
  "p3-field",
@@ -2511,7 +2502,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha2"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "openvm-sha256-guest",
  "sha2",
@@ -2520,7 +2511,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-guest"
 version = "1.4.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "openvm-platform",
 ]
@@ -2540,7 +2531,7 @@ dependencies = [
 [[package]]
 name = "p256"
 version = "0.13.2"
-source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#c46480672752201a0cc34bfe7414171649847fbe"
+source = "git+https://github.com/openvm-org/openvm.git?branch=develop-new-keccak#1278264246df92f5f745d3f897a1be395c48e5ee"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
