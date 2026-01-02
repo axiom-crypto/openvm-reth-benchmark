@@ -202,7 +202,7 @@ BIN=./target/$TARGET_DIR/$BIN_NAME
 BIN_ARGS="--kzg-params-dir $PARAMS_DIR --mode $MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
 --app-log-blowup 1 --leaf-log-blowup 1 --internal-log-blowup 2 --root-log-blowup 3 \
 --max-segment-length $MAX_SEGMENT_LENGTH --segment-max-cells $SEGMENT_MAX_CELLS --num-children-leaf 1 --num-children-internal 3"
-export RUST_LOG="info,p3_=warn" VPMM_PAGES=$VPMM_PAGES VPMM_PAGE_SIZE=$VPMM_PAGE_SIZE
+export VPMM_PAGES=$VPMM_PAGES VPMM_PAGE_SIZE=$VPMM_PAGE_SIZE
 
 if [ "$USE_NSYS" = "true" ]; then
     NSYS_OUTPUT="reth.nsys-rep"
@@ -215,6 +215,6 @@ elif [ "$USE_NCU" = "true" ]; then
     sudo env PATH=$PATH ncu --target-processes all --kernel-name "$ncu_kernel" -f -o "$NCU_OUTPUT" \
         --launch-skip "${launch_skip:-0}" --launch-count "${launch_count:-4}" --set full $BIN $BIN_ARGS
 else
-    export OUTPUT_PATH="metrics.json"
+    export RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics.json"
     $BIN $BIN_ARGS
 fi
