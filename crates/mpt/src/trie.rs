@@ -552,6 +552,12 @@ impl<'a> Mpt<'a> {
         id
     }
 
+    /// Sets the root node ID. Used for testing to construct tries with specific structure.
+    #[inline]
+    pub(crate) fn set_root_id(&mut self, root_id: NodeId) {
+        self.root_id = root_id;
+    }
+
     #[inline]
     fn invalidate_ref_cache(&mut self, node_id: NodeId) {
         self.cached_references[node_id as usize].borrow_mut().take();
