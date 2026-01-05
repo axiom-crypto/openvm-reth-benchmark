@@ -1,13 +1,17 @@
 use bumpalo::Bump;
 use reth_trie::AccountProof;
 use revm_primitives::{keccak256, Address, HashMap, B256};
+use smallvec::SmallVec;
 
 use crate::{
-    hp::{prefix_to_nibs, to_encoded_path},
+    hp::{encoded_path_nibble_count, encoded_path_strip_prefix, prefix_to_nibs, to_encoded_path},
     node::{NodeData, NodeId},
     owned::MptOwned,
     Error, EthereumState,
 };
+
+/// Nibble sequence type for key traversal.
+type Nibbles = SmallVec<[u8; 64]>;
 
 /// Parses proof bytes into a vector of tries.
 fn parse_proof(proof: &[impl AsRef<[u8]>]) -> Result<Vec<MptOwned>, Error> {
@@ -160,6 +164,136 @@ fn node_from_digest(digest: B256) -> MptOwned {
     }
 }
 
+/// Represents an unresolvable orphan in the trie.
+/// When a deletion would cause branch collapse but the sibling is unresolved,
+/// we need to fetch additional proofs for a key with this prefix.
+#[derive(Debug, Clone)]
+pub struct UnresolvableOrphan {
+    /// The address of the account (for storage orphans).
+    pub address: Address,
+    /// The nibble prefix of the unresolved sibling.
+    pub prefix: Vec<u8>,
+}
+
+/// Detects storage slots whose deletion would fail due to unresolved siblings.
+///
+/// For each deleted storage slot (value goes from non-zero to zero), this function
+/// checks if the deletion would cause a branch collapse with an unresolved sibling.
+/// Returns the nibble prefixes of any unresolvable siblings.
+///
+/// # Arguments
+/// * `trie` - The storage trie built from proofs
+/// * `deleted_keys` - Storage keys (not hashed) that will be deleted
+fn detect_storage_orphans(trie: &MptOwned, deleted_keys: &[B256]) -> Vec<Vec<u8>> {
+    let mut orphan_prefixes = Vec::new();
+
+    for key in deleted_keys {
+        let hashed_key = keccak256(key);
+        let key_nibs = to_nibbles(hashed_key.as_slice());
+
+        if let Some(prefix) = find_unresolvable_sibling(trie, trie.root_id(), &key_nibs, &[]) {
+            orphan_prefixes.push(prefix);
+        }
+    }
+
+    orphan_prefixes
+}
+
+/// Converts a byte slice to nibbles.
+fn to_nibbles(bytes: &[u8]) -> Nibbles {
+    let mut result = SmallVec::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        result.push(byte >> 4);
+        result.push(byte & 0x0f);
+    }
+    result
+}
+
+/// Traverses the trie following the key path and checks if deleting this key
+/// would cause a branch collapse with an unresolved sibling.
+///
+/// Returns Some(prefix) if an unresolvable sibling is found, None otherwise.
+fn find_unresolvable_sibling(
+    trie: &MptOwned,
+    node_id: NodeId,
+    remaining_key: &[u8],
+    current_prefix: &[u8],
+) -> Option<Vec<u8>> {
+    let node = trie.get_node(node_id)?;
+
+    match node {
+        NodeData::Null => None,
+
+        NodeData::Leaf(path, _) => {
+            // If we reach a leaf that matches, deletion happens here.
+            // No branch collapse at this point.
+            let path_nibs_count = encoded_path_nibble_count(path);
+            if path_nibs_count == remaining_key.len() {
+                // Exact match - deletion at leaf level, no collapse issue
+                None
+            } else {
+                None
+            }
+        }
+
+        NodeData::Branch(children) => {
+            if remaining_key.is_empty() {
+                // Key ends at branch - no collapse
+                return None;
+            }
+
+            let nibble = remaining_key[0] as usize;
+            let child_id = children[nibble]?;
+
+            // Count how many children this branch has
+            let child_count = children.iter().filter(|c| c.is_some()).count();
+
+            if child_count == 2 {
+                // After deleting one child, branch would collapse.
+                // Find the sibling (the other child).
+                for (i, child) in children.iter().enumerate() {
+                    if i != nibble {
+                        if let Some(sibling_id) = child {
+                            // Check if sibling is unresolved
+                            if let Some(NodeData::Digest(_)) = trie.get_node(*sibling_id) {
+                                // Sibling is unresolved! Build the prefix.
+                                let mut prefix = current_prefix.to_vec();
+                                prefix.push(i as u8);
+                                return Some(prefix);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Continue traversing
+            let mut new_prefix = current_prefix.to_vec();
+            new_prefix.push(nibble as u8);
+            find_unresolvable_sibling(trie, child_id, &remaining_key[1..], &new_prefix)
+        }
+
+        NodeData::Extension(path, child_id) => {
+            // Strip the extension path from the remaining key
+            if let Some(tail) = encoded_path_strip_prefix(path, remaining_key) {
+                let path_len = encoded_path_nibble_count(path);
+                let mut new_prefix = current_prefix.to_vec();
+                new_prefix.extend_from_slice(&remaining_key[..path_len]);
+                find_unresolvable_sibling(trie, *child_id, tail, &new_prefix)
+            } else {
+                // Key doesn't match extension path - key not in trie
+                None
+            }
+        }
+
+        NodeData::Digest(_) => {
+            // We hit an unresolved node while traversing.
+            // This means the witness is incomplete for this key.
+            // Return the current prefix as needing resolution.
+            Some(current_prefix.to_vec())
+        }
+    }
+}
+
 fn build_storage_trie(proof: &AccountProof, fini_proofs: &AccountProof) -> Result<MptOwned, Error> {
     if proof.storage_proofs.is_empty() {
         return Ok(node_from_digest(proof.storage_root));
@@ -181,6 +315,83 @@ fn build_storage_trie(proof: &AccountProof, fini_proofs: &AccountProof) -> Resul
     Ok(resolve_nodes(&storage_root_node, &storage_nodes))
 }
 
+/// Result of building tries from proofs, including any unresolvable orphans.
+#[derive(Debug)]
+pub struct TransitionResult {
+    /// The built Ethereum state.
+    pub state: EthereumState,
+    /// Unresolvable orphans that need additional proofs.
+    pub orphans: Vec<UnresolvableOrphan>,
+}
+
+/// Storage deletions for an account.
+#[derive(Debug, Clone, Default)]
+pub struct StorageDeletions {
+    /// Storage keys (not hashed) that will be deleted (value goes from non-zero to zero).
+    pub deleted_keys: Vec<B256>,
+}
+
+/// Builds tries from proofs and detects any unresolvable orphans.
+///
+/// This is the main entry point for witness generation with orphan detection.
+/// If orphans are returned, the caller should:
+/// 1. Find storage keys whose hashes start with the orphan prefixes
+/// 2. Fetch additional proofs for those keys
+/// 3. Retry with the additional proofs
+pub fn transition_proofs_to_tries_with_deletions(
+    state_root: B256,
+    parent_proofs: &HashMap<Address, AccountProof>,
+    proofs: &HashMap<Address, AccountProof>,
+    deletions: &HashMap<Address, StorageDeletions>,
+) -> Result<TransitionResult, Error> {
+    let bump = Box::leak(Box::new(Bump::new()));
+
+    if parent_proofs.is_empty() {
+        return Ok(TransitionResult {
+            state: EthereumState {
+                state_trie: node_from_digest(state_root).into_inner(),
+                storage_tries: HashMap::default(),
+                bump,
+            },
+            orphans: vec![],
+        });
+    }
+
+    let mut storage_tries = HashMap::default();
+    let mut state_nodes = HashMap::default();
+    let mut state_root_node = MptOwned::default();
+    let mut all_orphans = Vec::new();
+
+    for (address, proof) in parent_proofs {
+        if let Some(root) = process_proof(&proof.proof, &mut state_nodes)? {
+            state_root_node = root;
+        }
+
+        let fini_proofs = proofs.get(address).unwrap();
+        add_orphaned_leafs(address, &fini_proofs.proof, &mut state_nodes)?;
+
+        let storage_trie = build_storage_trie(proof, fini_proofs)?;
+
+        // Check for orphans if there are deletions for this account
+        if let Some(account_deletions) = deletions.get(address) {
+            let orphan_prefixes =
+                detect_storage_orphans(&storage_trie, &account_deletions.deleted_keys);
+            for prefix in orphan_prefixes {
+                all_orphans.push(UnresolvableOrphan { address: *address, prefix });
+            }
+        }
+
+        storage_tries.insert(B256::from(keccak256(address)), storage_trie.into_inner());
+    }
+
+    let state_trie = resolve_nodes(&state_root_node, &state_nodes);
+    Ok(TransitionResult {
+        state: EthereumState { state_trie: state_trie.into_inner(), storage_tries, bump },
+        orphans: all_orphans,
+    })
+}
+
+/// Original function for backwards compatibility (without orphan detection).
 pub fn transition_proofs_to_tries(
     state_root: B256,
     parent_proofs: &HashMap<Address, AccountProof>,

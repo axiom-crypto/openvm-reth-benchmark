@@ -553,6 +553,7 @@ impl<'a> Mpt<'a> {
     }
 
     /// Sets the root node ID. Used for testing to construct tries with specific structure.
+    #[cfg(test)]
     #[inline]
     pub(crate) fn set_root_id(&mut self, root_id: NodeId) {
         self.root_id = root_id;
