@@ -14,6 +14,8 @@ eyre.workspace = true
 url.workspace = true
 tokio.workspace = true
 tracing.workspace = true
+rayon.workspace = true
+serde.workspace = true
 
 # workspace
 openvm-rpc-db.workspace = true
