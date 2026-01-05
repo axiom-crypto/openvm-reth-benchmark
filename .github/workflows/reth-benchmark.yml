@@ -526,7 +526,7 @@ jobs:
 
       - name: Generate markdown
         run: |
-          openvm-prof --json-paths ${METRIC_PATH}/metrics.json --output-json $BENCHER_METRIC_PATH
+          openvm-prof --json-paths ${METRIC_PATH}/metrics.json
           MD_PATH=${METRIC_PATH}/metrics.md
           echo "MD_PATH=${MD_PATH}" >> $GITHUB_ENV
 
