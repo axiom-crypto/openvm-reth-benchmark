@@ -8,7 +8,8 @@ use alloy_provider::{network::Ethereum, Provider};
 use eyre::{eyre, Ok};
 use openvm_client_executor::io::ClientExecutorInput;
 use openvm_mpt::from_proof::{
-    transition_proofs_to_tries_with_deletions, StateOrphan, StorageDeletions, StorageOrphan,
+    detect_orphans_in_proofs, transition_proofs_to_tries_with_deletions, StateOrphan,
+    StorageDeletions, StorageOrphan,
 };
 use openvm_primitives::{account_proof::eip1186_proof_to_account_proof, AccountProof};
 use openvm_rpc_db::RpcDb;
@@ -287,8 +288,9 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
         storage_deletions: &HashMap<Address, StorageDeletions>,
         deleted_accounts: &[Address],
     ) -> eyre::Result<openvm_mpt::EthereumState> {
+        // Use detect_orphans_in_proofs in the retry loop to avoid leaking memory
         for iteration in 0..self.orphan_config.max_retries {
-            let result = transition_proofs_to_tries_with_deletions(
+            let orphans = detect_orphans_in_proofs(
                 state_root,
                 before_proofs,
                 after_proofs,
@@ -296,21 +298,29 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
                 deleted_accounts,
             )?;
 
-            if result.storage_orphans.is_empty() && result.state_orphans.is_empty() {
+            if orphans.is_empty() {
+                // No orphans - build the final state (this allocates the bump)
+                let result = transition_proofs_to_tries_with_deletions(
+                    state_root,
+                    before_proofs,
+                    after_proofs,
+                    storage_deletions,
+                    deleted_accounts,
+                )?;
                 return Ok(result.state);
             }
 
             tracing::info!(
                 iteration,
-                storage_orphan_count = result.storage_orphans.len(),
-                state_orphan_count = result.state_orphans.len(),
+                storage_orphan_count = orphans.storage_orphans.len(),
+                state_orphan_count = orphans.state_orphans.len(),
                 "detected unresolvable orphans, fetching additional proofs"
             );
 
             // Resolve storage orphans by fetching additional proofs
             // Group orphans by address to batch proof fetching
             let mut orphans_by_address: HashMap<Address, Vec<B256>> = HashMap::default();
-            for orphan in &result.storage_orphans {
+            for orphan in &orphans.storage_orphans {
                 let storage_key = self.resolve_storage_orphan_prefix(block_hash, orphan).await?;
 
                 tracing::debug!(
@@ -343,7 +353,7 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
             }
 
             // Resolve state orphans by fetching additional account proofs
-            for orphan in &result.state_orphans {
+            for orphan in &orphans.state_orphans {
                 let address = self.resolve_state_orphan_prefix(block_hash, orphan).await?;
 
                 tracing::debug!(

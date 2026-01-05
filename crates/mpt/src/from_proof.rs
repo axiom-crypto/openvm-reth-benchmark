@@ -368,13 +368,77 @@ pub struct StorageDeletions {
     pub deleted_keys: Vec<B256>,
 }
 
+/// Result of orphan detection without building the final state.
+#[derive(Debug)]
+pub struct OrphanDetectionResult {
+    /// Unresolvable storage orphans that need additional proofs.
+    pub storage_orphans: Vec<StorageOrphan>,
+    /// Unresolvable state trie orphans that need additional proofs.
+    pub state_orphans: Vec<StateOrphan>,
+}
+
+impl OrphanDetectionResult {
+    /// Returns true if there are no orphans.
+    pub fn is_empty(&self) -> bool {
+        self.storage_orphans.is_empty() && self.state_orphans.is_empty()
+    }
+}
+
+/// Detects orphans in proofs without building the final state.
+///
+/// Use this in a retry loop to detect orphans without leaking memory.
+/// Once orphans are resolved, call `transition_proofs_to_tries_with_deletions`
+/// to build the final state.
+pub fn detect_orphans_in_proofs(
+    state_root: B256,
+    parent_proofs: &HashMap<Address, AccountProof>,
+    proofs: &HashMap<Address, AccountProof>,
+    storage_deletions: &HashMap<Address, StorageDeletions>,
+    deleted_accounts: &[Address],
+) -> Result<OrphanDetectionResult, Error> {
+    if parent_proofs.is_empty() {
+        return Ok(OrphanDetectionResult { storage_orphans: vec![], state_orphans: vec![] });
+    }
+
+    let mut storage_orphans = Vec::new();
+    let mut state_nodes = HashMap::default();
+    let mut state_root_node = MptOwned::default();
+
+    for (address, proof) in parent_proofs {
+        if let Some(root) = process_proof(&proof.proof, &mut state_nodes)? {
+            state_root_node = root;
+        }
+
+        let fini_proofs = proofs.get(address).unwrap();
+        add_orphaned_leafs(address, &fini_proofs.proof, &mut state_nodes)?;
+
+        let storage_trie = build_storage_trie(proof, fini_proofs)?;
+
+        // Check for storage orphans if there are deletions for this account
+        if let Some(account_deletions) = storage_deletions.get(address) {
+            let orphan_prefixes =
+                detect_storage_orphans(&storage_trie, &account_deletions.deleted_keys);
+            for prefix in orphan_prefixes {
+                storage_orphans.push(StorageOrphan { address: *address, prefix });
+            }
+        }
+    }
+
+    let state_trie = resolve_nodes(&state_root_node, &state_nodes);
+
+    // Check for state trie orphans from deleted accounts
+    let state_orphan_prefixes = detect_state_orphans(&state_trie, deleted_accounts);
+    let state_orphans: Vec<StateOrphan> =
+        state_orphan_prefixes.into_iter().map(|prefix| StateOrphan { prefix }).collect();
+
+    Ok(OrphanDetectionResult { storage_orphans, state_orphans })
+}
+
 /// Builds tries from proofs and detects any unresolvable orphans.
 ///
-/// This is the main entry point for witness generation with orphan detection.
-/// If orphans are returned, the caller should:
-/// 1. Find keys/addresses whose hashes start with the orphan prefixes
-/// 2. Fetch additional proofs for those keys
-/// 3. Retry with the additional proofs
+/// This allocates memory for the final state. For retry loops, use
+/// `detect_orphans_in_proofs` first to avoid memory leaks, then call
+/// this once orphans are resolved.
 pub fn transition_proofs_to_tries_with_deletions(
     state_root: B256,
     parent_proofs: &HashMap<Address, AccountProof>,
