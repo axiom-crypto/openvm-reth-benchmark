@@ -92,8 +92,6 @@ on:
         required: true
       RPC_URL_1:
         required: true
-      BENCHER_API_TOKEN:
-        required: true
     outputs:
       metric_name:
         description: "Name of the metric"
