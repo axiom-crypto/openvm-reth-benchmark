@@ -23,6 +23,7 @@ use openvm_pairing::{
     bn254::{self as bn, Bn254},
     PairingCheck,
 };
+use openvm_sha2::{Digest, Sha256};
 use revm::{
     install_crypto,
     precompile::{
@@ -97,7 +98,9 @@ struct OpenVmCrypto;
 impl Crypto for OpenVmCrypto {
     /// Custom SHA-256 implementation with openvm optimization
     fn sha256(&self, input: &[u8]) -> [u8; 32] {
-        openvm_sha2::sha256(input)
+        let mut hasher = Sha256::new();
+        hasher.update(input);
+        hasher.finalize().into()
     }
 
     /// Custom BN254 G1 addition with openvm optimization
