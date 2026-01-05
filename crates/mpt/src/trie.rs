@@ -764,10 +764,13 @@ impl<'a> Mpt<'a> {
                             let new_path = to_encoded_path_with_bump(self.bump, &new_nibs, false);
                             NodeData::Extension(new_path, child_child_id)
                         }
-                        NodeData::Branch(_) | NodeData::Digest(_) => {
+                        NodeData::Branch(_) => {
                             let ext_nibs: SmallVec<[u8; 1]> = SmallVec::from_slice(&[index as u8]);
                             let new_path = to_encoded_path_with_bump(self.bump, &ext_nibs, false);
                             NodeData::Extension(new_path, child_id)
+                        }
+                        NodeData::Digest(digest) => {
+                            return Err(Error::NodeNotResolved(B256::from_slice(digest)));
                         }
                         NodeData::Null => unreachable!(),
                     };
@@ -822,9 +825,11 @@ impl<'a> Mpt<'a> {
                         let new_path = to_encoded_path_with_bump(self.bump, &combined_nibs, false);
                         NodeData::Extension(new_path, *grandchild_id)
                     }
-                    // for a branch or digest, the extension is still correct
-                    NodeData::Branch(_) | NodeData::Digest(_) => {
-                        NodeData::Extension(prefix, child_id)
+                    // for a branch, the extension is still correct
+                    NodeData::Branch(_) => NodeData::Extension(prefix, child_id),
+                    // for a digest, we don't know the node type so we can't safely canonicalize
+                    NodeData::Digest(digest) => {
+                        return Err(Error::NodeNotResolved(B256::from_slice(digest)));
                     }
                 };
                 self.nodes[node_id as usize] = new_node_data;
