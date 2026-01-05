@@ -4,7 +4,10 @@ use revm_primitives::{keccak256, Address, HashMap, B256};
 use smallvec::SmallVec;
 
 use crate::{
-    hp::{encoded_path_nibble_count, encoded_path_strip_prefix, prefix_to_nibs, to_encoded_path},
+    hp::{
+        encoded_path_eq_nibs, encoded_path_nibble_count, encoded_path_strip_prefix, prefix_to_nibs,
+        to_encoded_path,
+    },
     node::{NodeData, NodeId},
     owned::MptOwned,
     Error, EthereumState,
@@ -164,15 +167,47 @@ fn node_from_digest(digest: B256) -> MptOwned {
     }
 }
 
-/// Represents an unresolvable orphan in the trie.
-/// When a deletion would cause branch collapse but the sibling is unresolved,
-/// we need to fetch additional proofs for a key with this prefix.
+/// Represents an unresolvable orphan in the storage trie.
+/// When a storage deletion would cause branch collapse but the sibling is unresolved,
+/// we need to fetch additional proofs for a storage key with this prefix.
 #[derive(Debug, Clone)]
-pub struct UnresolvableOrphan {
-    /// The address of the account (for storage orphans).
+pub struct StorageOrphan {
+    /// The address of the account whose storage trie has the orphan.
     pub address: Address,
     /// The nibble prefix of the unresolved sibling.
     pub prefix: Vec<u8>,
+}
+
+/// Represents an unresolvable orphan in the state trie.
+/// When an account deletion would cause branch collapse but the sibling is unresolved,
+/// we need to fetch additional proofs for an account with this hash prefix.
+#[derive(Debug, Clone)]
+pub struct StateOrphan {
+    /// The nibble prefix of the unresolved sibling in the state trie.
+    pub prefix: Vec<u8>,
+}
+
+/// Detects accounts whose deletion would fail due to unresolved siblings in the state trie.
+///
+/// For each deleted account address, this function checks if the deletion would cause
+/// a branch collapse with an unresolved sibling.
+///
+/// # Arguments
+/// * `trie` - The state trie built from proofs
+/// * `deleted_addresses` - Account addresses that will be deleted
+fn detect_state_orphans(trie: &MptOwned, deleted_addresses: &[Address]) -> Vec<Vec<u8>> {
+    let mut orphan_prefixes = Vec::new();
+
+    for address in deleted_addresses {
+        let hashed_address = keccak256(address);
+        let key_nibs = to_nibbles(hashed_address.as_slice());
+
+        if let Some(prefix) = find_unresolvable_sibling(trie, trie.root_id(), &key_nibs, &[]) {
+            orphan_prefixes.push(prefix);
+        }
+    }
+
+    orphan_prefixes
 }
 
 /// Detects storage slots whose deletion would fail due to unresolved siblings.
@@ -227,11 +262,11 @@ fn find_unresolvable_sibling(
         NodeData::Leaf(path, _) => {
             // If we reach a leaf that matches, deletion happens here.
             // No branch collapse at this point.
-            let path_nibs_count = encoded_path_nibble_count(path);
-            if path_nibs_count == remaining_key.len() {
+            if encoded_path_eq_nibs(path, remaining_key) {
                 // Exact match - deletion at leaf level, no collapse issue
                 None
             } else {
+                // Key doesn't match leaf path - key not in trie
                 None
             }
         }
@@ -320,8 +355,10 @@ fn build_storage_trie(proof: &AccountProof, fini_proofs: &AccountProof) -> Resul
 pub struct TransitionResult {
     /// The built Ethereum state.
     pub state: EthereumState,
-    /// Unresolvable orphans that need additional proofs.
-    pub orphans: Vec<UnresolvableOrphan>,
+    /// Unresolvable storage orphans that need additional proofs.
+    pub storage_orphans: Vec<StorageOrphan>,
+    /// Unresolvable state trie orphans that need additional proofs.
+    pub state_orphans: Vec<StateOrphan>,
 }
 
 /// Storage deletions for an account.
@@ -335,14 +372,15 @@ pub struct StorageDeletions {
 ///
 /// This is the main entry point for witness generation with orphan detection.
 /// If orphans are returned, the caller should:
-/// 1. Find storage keys whose hashes start with the orphan prefixes
+/// 1. Find keys/addresses whose hashes start with the orphan prefixes
 /// 2. Fetch additional proofs for those keys
 /// 3. Retry with the additional proofs
 pub fn transition_proofs_to_tries_with_deletions(
     state_root: B256,
     parent_proofs: &HashMap<Address, AccountProof>,
     proofs: &HashMap<Address, AccountProof>,
-    deletions: &HashMap<Address, StorageDeletions>,
+    storage_deletions: &HashMap<Address, StorageDeletions>,
+    deleted_accounts: &[Address],
 ) -> Result<TransitionResult, Error> {
     let bump = Box::leak(Box::new(Bump::new()));
 
@@ -353,14 +391,15 @@ pub fn transition_proofs_to_tries_with_deletions(
                 storage_tries: HashMap::default(),
                 bump,
             },
-            orphans: vec![],
+            storage_orphans: vec![],
+            state_orphans: vec![],
         });
     }
 
     let mut storage_tries = HashMap::default();
     let mut state_nodes = HashMap::default();
     let mut state_root_node = MptOwned::default();
-    let mut all_orphans = Vec::new();
+    let mut all_storage_orphans = Vec::new();
 
     for (address, proof) in parent_proofs {
         if let Some(root) = process_proof(&proof.proof, &mut state_nodes)? {
@@ -372,12 +411,12 @@ pub fn transition_proofs_to_tries_with_deletions(
 
         let storage_trie = build_storage_trie(proof, fini_proofs)?;
 
-        // Check for orphans if there are deletions for this account
-        if let Some(account_deletions) = deletions.get(address) {
+        // Check for storage orphans if there are deletions for this account
+        if let Some(account_deletions) = storage_deletions.get(address) {
             let orphan_prefixes =
                 detect_storage_orphans(&storage_trie, &account_deletions.deleted_keys);
             for prefix in orphan_prefixes {
-                all_orphans.push(UnresolvableOrphan { address: *address, prefix });
+                all_storage_orphans.push(StorageOrphan { address: *address, prefix });
             }
         }
 
@@ -385,9 +424,16 @@ pub fn transition_proofs_to_tries_with_deletions(
     }
 
     let state_trie = resolve_nodes(&state_root_node, &state_nodes);
+
+    // Check for state trie orphans from deleted accounts
+    let state_orphan_prefixes = detect_state_orphans(&state_trie, deleted_accounts);
+    let all_state_orphans: Vec<StateOrphan> =
+        state_orphan_prefixes.into_iter().map(|prefix| StateOrphan { prefix }).collect();
+
     Ok(TransitionResult {
         state: EthereumState { state_trie: state_trie.into_inner(), storage_tries, bump },
-        orphans: all_orphans,
+        storage_orphans: all_storage_orphans,
+        state_orphans: all_state_orphans,
     })
 }
 
