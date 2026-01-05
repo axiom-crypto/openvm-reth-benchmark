@@ -91,6 +91,9 @@ pub(crate) async fn get_next_storage_key<P: Provider>(
 ///
 /// This is used to find an account whose keccak256(address) starts with the given prefix,
 /// which is needed to fetch additional proofs for state trie orphan resolution.
+///
+/// Note: This requires the node to have preimage storage enabled. If the node doesn't
+/// store address preimages, this will fail.
 pub(crate) async fn get_next_account<P: Provider>(
     provider: &P,
     block_hash: B256,
@@ -100,7 +103,9 @@ pub(crate) async fn get_next_account<P: Provider>(
 
     // Pack nibbles into bytes, right-padded with zeros
     let start_key = B256::right_padding_from(&pack_nibbles(prefix));
-    let params = (block_hash, 0u64, start_key, 1u64);
+    // Params: (blockNrOrHash, start, maxResults, nocode, nostorage, incompletes)
+    // We request 1 result, skip code/storage, and don't need incompletes
+    let params = (block_hash, start_key, 1u64, true, true, false);
 
     let response: AccountRangeQueryResponse = provider
         .client()
@@ -108,15 +113,20 @@ pub(crate) async fn get_next_account<P: Provider>(
         .await
         .map_err(|e| eyre!("debug_accountRange failed: {e}"))?;
 
-    let (_, entry) = response
+    let (hashed_address, entry) = response
         .accounts
         .into_iter()
         .next()
         .ok_or_else(|| eyre!("No account returned from debug_accountRange"))?;
 
-    let address = entry
-        .address
-        .ok_or_else(|| eyre!("Address is missing from debug_accountRange response"))?;
+    // Try to get the address preimage from the response
+    let address = entry.address.ok_or_else(|| {
+        eyre!(
+            "Address preimage missing from debug_accountRange response for hash {hashed_address}. \
+             The node may not have preimage storage enabled. State orphan resolution requires \
+             a node with --preimage flag or equivalent."
+        )
+    })?;
 
     // Perform simple sanity check
     let hash = keccak256(address);
