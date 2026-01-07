@@ -1000,6 +1000,8 @@ pub(crate) mod owned {
     }
 
     impl MptOwned {
+        /// Decodes an MPT node from RLP, creating a new leaked bump arena.
+        /// Use `decode_from_proof_rlp_with_bump` for a non-leaking variant.
         pub(crate) fn decode_from_proof_rlp(bytes: &mut &[u8]) -> Result<Self, Error> {
             let bump = Box::leak(Box::new(Bump::new()));
             let bytes = bump.alloc_slice_copy(bytes);
@@ -1008,8 +1010,37 @@ pub(crate) mod owned {
             Ok(Self { inner })
         }
 
+        /// Decodes an MPT node from RLP using an external bump arena.
+        /// The bump must outlive the returned MptOwned.
+        pub(crate) fn decode_from_proof_rlp_with_bump(
+            bump: &'static Bump,
+            bytes: &mut &[u8],
+        ) -> Result<Self, Error> {
+            let bytes = bump.alloc_slice_copy(bytes);
+            let mut bytes = unsafe { std::mem::transmute::<&[u8], &'static [u8]>(bytes) };
+            let inner = Mpt::decode_from_proof_rlp(bump, &mut bytes)?;
+            Ok(Self { inner })
+        }
+
+        /// Creates a new MptOwned using an external bump arena.
+        /// The bump must outlive the returned MptOwned.
+        pub(crate) fn with_bump(bump: &'static Bump) -> Self {
+            Self { inner: Mpt::new(bump) }
+        }
+
+        /// Creates a copy of a trie using a new leaked bump.
         pub(crate) fn from_trie(other: &Mpt<'_>) -> Self {
-            let mut trie = Self::default();
+            let trie = Self::default();
+            Self::from_trie_internal(trie, other)
+        }
+
+        /// Creates a copy of a trie using an external bump.
+        pub(crate) fn from_trie_with_bump(bump: &'static Bump, other: &Mpt<'_>) -> Self {
+            let trie = Self::with_bump(bump);
+            Self::from_trie_internal(trie, other)
+        }
+
+        fn from_trie_internal(mut trie: Self, other: &Mpt<'_>) -> Self {
             for (i, node) in other.nodes.iter().enumerate() {
                 if i < trie.inner.nodes.len() {
                     trie.set_node(i as NodeId, node);
