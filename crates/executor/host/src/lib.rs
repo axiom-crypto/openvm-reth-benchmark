@@ -196,7 +196,7 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
 
             let keys: Vec<B256> = used_keys
                 .iter()
-                .map(|key| B256::from(*key))
+                .map(|key| B256::from(key.to_be_bytes::<32>()))
                 .chain(modified_keys.clone())
                 .collect::<BTreeSet<_>>()
                 .into_iter()

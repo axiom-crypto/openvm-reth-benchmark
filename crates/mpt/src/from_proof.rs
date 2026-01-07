@@ -24,12 +24,37 @@ fn parse_proof(proof: &[impl AsRef<[u8]>]) -> Result<Vec<MptOwned>, Error> {
         .collect::<Result<Vec<_>, _>>()
 }
 
+/// Parses proof bytes into a vector of tries using a shared bump.
+fn parse_proof_with_bump(
+    bump: &'static Bump,
+    proof: &[impl AsRef<[u8]>],
+) -> Result<Vec<MptOwned>, Error> {
+    proof
+        .iter()
+        .map(|bytes| MptOwned::decode_from_proof_rlp_with_bump(bump, &mut bytes.as_ref()))
+        .collect::<Result<Vec<_>, _>>()
+}
+
 /// Processes a proof by parsing it into a vector of tries and adding them to the given node store.
 fn process_proof(
     proof: &[impl AsRef<[u8]>],
     node_store: &mut HashMap<B256, MptOwned>,
 ) -> Result<Option<MptOwned>, Error> {
     let proof_nodes = parse_proof(proof)?;
+    let root_node = proof_nodes.first().cloned();
+    for node in proof_nodes {
+        node_store.insert(node.hash(), node);
+    }
+    Ok(root_node)
+}
+
+/// Processes a proof using a shared bump.
+fn process_proof_with_bump(
+    bump: &'static Bump,
+    proof: &[impl AsRef<[u8]>],
+    node_store: &mut HashMap<B256, MptOwned>,
+) -> Result<Option<MptOwned>, Error> {
+    let proof_nodes = parse_proof_with_bump(bump, proof)?;
     let root_node = proof_nodes.first().cloned();
     for node in proof_nodes {
         node_store.insert(node.hash(), node);
@@ -47,6 +72,24 @@ fn add_orphaned_leafs(
         let proof_nodes = parse_proof(proof)?;
         if is_not_included(keccak256(key).as_slice(), &proof_nodes)? {
             for node in shorten_node_path(proof_nodes.last().unwrap()) {
+                node_store.insert(node.hash(), node);
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Adds all the leaf nodes of non-inclusion proofs using a shared bump.
+fn add_orphaned_leafs_with_bump(
+    bump: &'static Bump,
+    key: impl AsRef<[u8]>,
+    proof: &[impl AsRef<[u8]>],
+    node_store: &mut HashMap<B256, MptOwned>,
+) -> Result<(), Error> {
+    if !proof.is_empty() {
+        let proof_nodes = parse_proof_with_bump(bump, proof)?;
+        if is_not_included_with_bump(bump, keccak256(key).as_slice(), &proof_nodes)? {
+            for node in shorten_node_path_with_bump(bump, proof_nodes.last().unwrap()) {
                 node_store.insert(node.hash(), node);
             }
         }
@@ -87,9 +130,49 @@ fn shorten_node_path(node: &MptOwned) -> Vec<MptOwned> {
     res
 }
 
+/// Returns a list of all possible nodes using a shared bump.
+fn shorten_node_path_with_bump(bump: &'static Bump, node: &MptOwned) -> Vec<MptOwned> {
+    let mut res = Vec::new();
+    let (prefix, is_leaf, value, child_id) = match node.get_node(node.root_id()).unwrap() {
+        NodeData::Leaf(prefix, value) => (*prefix, true, Some(*value), None),
+        NodeData::Extension(prefix, child_id) => (*prefix, false, None, Some(*child_id)),
+        _ => return res,
+    };
+
+    let nibs = prefix_to_nibs(prefix);
+
+    for i in 0..=nibs.len() {
+        let shortened_nibs = &nibs[i..];
+        let path = to_encoded_path(shortened_nibs, is_leaf);
+        let new_node = if is_leaf {
+            let mut new_node = MptOwned::with_bump(bump);
+            let value = value.unwrap();
+            new_node.set_node(new_node.root_id(), &NodeData::Leaf(&path, value));
+            new_node
+        } else {
+            let mut new_node = MptOwned::from_trie_with_bump(bump, node.inner());
+            let child_id = child_id.unwrap();
+            new_node.set_node(new_node.root_id(), &NodeData::Extension(&path, child_id));
+            new_node
+        };
+        res.push(new_node);
+    }
+    res
+}
+
 fn is_not_included(key: &[u8], proof_nodes: &[MptOwned]) -> Result<bool, Error> {
     let proof_trie = mpt_from_proof(proof_nodes)?;
     // For valid proofs, the get must not fail
+    let value = proof_trie.get(key)?;
+    Ok(value.is_none())
+}
+
+fn is_not_included_with_bump(
+    bump: &'static Bump,
+    key: &[u8],
+    proof_nodes: &[MptOwned],
+) -> Result<bool, Error> {
+    let proof_trie = mpt_from_proof_with_bump(bump, proof_nodes)?;
     let value = proof_trie.get(key)?;
     Ok(value.is_none())
 }
@@ -107,8 +190,40 @@ fn mpt_from_proof(proof_nodes: &[MptOwned]) -> Result<MptOwned, Error> {
     Ok(resolve_nodes(root_node, &node_store))
 }
 
+fn mpt_from_proof_with_bump(
+    bump: &'static Bump,
+    proof_nodes: &[MptOwned],
+) -> Result<MptOwned, Error> {
+    if proof_nodes.is_empty() {
+        return Ok(MptOwned::with_bump(bump));
+    }
+
+    let node_store: HashMap<B256, MptOwned> =
+        proof_nodes.iter().map(|node| (node.hash(), node.clone())).collect();
+
+    let root_node = proof_nodes.first().unwrap();
+
+    Ok(resolve_nodes_with_bump(bump, root_node, &node_store))
+}
+
 fn resolve_nodes(root: &MptOwned, node_store: &HashMap<B256, MptOwned>) -> MptOwned {
     let mut new_trie = MptOwned::default();
+
+    let root_id = resolve_nodes_internal(root, root.root_id(), node_store, &mut new_trie);
+    new_trie.set_root_id(root_id);
+
+    // The root hash must not change after resolution
+    debug_assert_eq!(root.hash(), new_trie.hash());
+
+    new_trie
+}
+
+fn resolve_nodes_with_bump(
+    bump: &'static Bump,
+    root: &MptOwned,
+    node_store: &HashMap<B256, MptOwned>,
+) -> MptOwned {
+    let mut new_trie = MptOwned::with_bump(bump);
 
     let root_id = resolve_nodes_internal(root, root.root_id(), node_store, &mut new_trie);
     new_trie.set_root_id(root_id);
@@ -161,6 +276,17 @@ fn node_from_digest(digest: B256) -> MptOwned {
         reth_trie::EMPTY_ROOT_HASH | B256::ZERO => MptOwned::default(),
         _ => {
             let mut trie = MptOwned::default();
+            trie.set_node(trie.root_id(), &NodeData::Digest(digest.as_slice()));
+            trie
+        }
+    }
+}
+
+fn node_from_digest_with_bump(bump: &'static Bump, digest: B256) -> MptOwned {
+    match digest {
+        reth_trie::EMPTY_ROOT_HASH | B256::ZERO => MptOwned::with_bump(bump),
+        _ => {
+            let mut trie = MptOwned::with_bump(bump);
             trie.set_node(trie.root_id(), &NodeData::Digest(digest.as_slice()));
             trie
         }
@@ -350,6 +476,37 @@ fn build_storage_trie(proof: &AccountProof, fini_proofs: &AccountProof) -> Resul
     Ok(resolve_nodes(&storage_root_node, &storage_nodes))
 }
 
+fn build_storage_trie_with_bump(
+    bump: &'static Bump,
+    proof: &AccountProof,
+    fini_proofs: &AccountProof,
+) -> Result<MptOwned, Error> {
+    if proof.storage_proofs.is_empty() {
+        return Ok(node_from_digest_with_bump(bump, proof.storage_root));
+    }
+
+    let mut storage_nodes = HashMap::default();
+    let mut storage_root_node = MptOwned::with_bump(bump);
+
+    for storage_proof in &proof.storage_proofs {
+        if let Some(root) = process_proof_with_bump(bump, &storage_proof.proof, &mut storage_nodes)?
+        {
+            storage_root_node = root;
+        }
+    }
+
+    for storage_proof in &fini_proofs.storage_proofs {
+        add_orphaned_leafs_with_bump(
+            bump,
+            storage_proof.key.0,
+            &storage_proof.proof,
+            &mut storage_nodes,
+        )?;
+    }
+
+    Ok(resolve_nodes_with_bump(bump, &storage_root_node, &storage_nodes))
+}
+
 /// Result of building tries from proofs, including any unresolvable orphans.
 #[derive(Debug)]
 pub struct TransitionResult {
@@ -386,11 +543,14 @@ impl OrphanDetectionResult {
 
 /// Detects orphans in proofs without building the final state.
 ///
-/// Use this in a retry loop to detect orphans without leaking memory.
-/// Once orphans are resolved, call `transition_proofs_to_tries_with_deletions`
-/// to build the final state.
+/// This function uses a single shared bump arena to minimize memory leakage.
+/// While one bump per call is still leaked (required for `'static` lifetime),
+/// this is bounded and much better than leaking one bump per proof node.
+///
+/// Use this in a retry loop to detect orphans, then call
+/// `transition_proofs_to_tries_with_deletions` once orphans are resolved.
 pub fn detect_orphans_in_proofs(
-    state_root: B256,
+    _state_root: B256,
     parent_proofs: &HashMap<Address, AccountProof>,
     proofs: &HashMap<Address, AccountProof>,
     storage_deletions: &HashMap<Address, StorageDeletions>,
@@ -400,19 +560,24 @@ pub fn detect_orphans_in_proofs(
         return Ok(OrphanDetectionResult { storage_orphans: vec![], state_orphans: vec![] });
     }
 
+    // Use a single shared bump for all allocations in this function.
+    // This leaks one bump per call, but that's bounded and much better than
+    // leaking one per proof node.
+    let bump: &'static Bump = Box::leak(Box::new(Bump::new()));
+
     let mut storage_orphans = Vec::new();
     let mut state_nodes = HashMap::default();
-    let mut state_root_node = MptOwned::default();
+    let mut state_root_node = MptOwned::with_bump(bump);
 
     for (address, proof) in parent_proofs {
-        if let Some(root) = process_proof(&proof.proof, &mut state_nodes)? {
+        if let Some(root) = process_proof_with_bump(bump, &proof.proof, &mut state_nodes)? {
             state_root_node = root;
         }
 
         let fini_proofs = proofs.get(address).unwrap();
-        add_orphaned_leafs(address, &fini_proofs.proof, &mut state_nodes)?;
+        add_orphaned_leafs_with_bump(bump, address, &fini_proofs.proof, &mut state_nodes)?;
 
-        let storage_trie = build_storage_trie(proof, fini_proofs)?;
+        let storage_trie = build_storage_trie_with_bump(bump, proof, fini_proofs)?;
 
         // Check for storage orphans if there are deletions for this account
         if let Some(account_deletions) = storage_deletions.get(address) {
@@ -424,7 +589,7 @@ pub fn detect_orphans_in_proofs(
         }
     }
 
-    let state_trie = resolve_nodes(&state_root_node, &state_nodes);
+    let state_trie = resolve_nodes_with_bump(bump, &state_root_node, &state_nodes);
 
     // Check for state trie orphans from deleted accounts
     let state_orphan_prefixes = detect_state_orphans(&state_trie, deleted_accounts);
@@ -535,4 +700,208 @@ pub fn transition_proofs_to_tries(
 
     let state_trie = resolve_nodes(&state_root_node, &state_nodes);
     Ok(EthereumState { state_trie: state_trie.into_inner(), storage_tries, bump })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::node::NodeData;
+    use smallvec::SmallVec;
+
+    /// Creates a simple branch node with two children at the given nibble positions.
+    fn create_branch_with_two_children(
+        trie: &mut MptOwned,
+        nibble1: usize,
+        child1: NodeId,
+        nibble2: usize,
+        child2: NodeId,
+    ) -> NodeId {
+        let mut children: [Option<NodeId>; 16] = Default::default();
+        children[nibble1] = Some(child1);
+        children[nibble2] = Some(child2);
+        trie.add_node(&NodeData::Branch(children))
+    }
+
+    #[test]
+    fn test_no_orphan_when_branch_has_resolved_sibling() {
+        // Create a trie with a branch node that has two resolved children (leaves)
+        let mut trie = MptOwned::default();
+
+        // Create two leaf nodes
+        let leaf1_path = to_encoded_path(&[0, 1, 2, 3], true);
+        let leaf1_id = trie.add_node(&NodeData::Leaf(&leaf1_path, &[1, 2, 3]));
+
+        let leaf2_path = to_encoded_path(&[0, 1, 2, 4], true);
+        let leaf2_id = trie.add_node(&NodeData::Leaf(&leaf2_path, &[4, 5, 6]));
+
+        // Create branch with both children
+        let branch_id = create_branch_with_two_children(&mut trie, 0, leaf1_id, 1, leaf2_id);
+        trie.set_root_id(branch_id);
+
+        // Build a key that would lead to nibble 0 child
+        // Since both siblings are resolved, there should be no orphan
+        let deleted_keys = vec![B256::ZERO]; // Key doesn't matter for this structure test
+        let orphans = detect_storage_orphans(&trie, &deleted_keys);
+
+        // No orphan because sibling is resolved (leaf, not digest)
+        assert!(orphans.is_empty());
+    }
+
+    #[test]
+    fn test_orphan_when_branch_has_unresolved_sibling() {
+        // Create a trie with a branch node where one child is a digest
+        let mut trie = MptOwned::default();
+
+        // Create a leaf for one child
+        let leaf_path = to_encoded_path(&[0, 1, 2, 3], true);
+        let leaf_id = trie.add_node(&NodeData::Leaf(&leaf_path, &[1, 2, 3]));
+
+        // Create a digest for the sibling
+        let digest_hash = B256::repeat_byte(0xab);
+        let digest_id = trie.add_node(&NodeData::Digest(digest_hash.as_slice()));
+
+        // Create branch with leaf at nibble 5 and digest at nibble 7
+        let branch_id = create_branch_with_two_children(&mut trie, 5, leaf_id, 7, digest_id);
+        trie.set_root_id(branch_id);
+
+        // Create a key whose hash starts with nibble 5 (to delete the leaf)
+        // We need to find a key whose keccak256 starts with 0x5...
+        // For testing, we'll just verify the orphan detection logic by
+        // calling find_unresolvable_sibling directly with a key starting with nibble 5
+        let mut key_nibs: Nibbles = SmallVec::new();
+        key_nibs.push(5);
+        for b in &leaf_path[1..] {
+            key_nibs.push(b >> 4);
+            key_nibs.push(b & 0x0f);
+        }
+
+        let result = find_unresolvable_sibling(&trie, trie.root_id(), &key_nibs, &[]);
+
+        // Should find orphan at nibble 7 (the sibling digest)
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), vec![7u8]);
+    }
+
+    #[test]
+    fn test_no_orphan_when_branch_has_more_than_two_children() {
+        // Create a trie with a branch node that has three children
+        let mut trie = MptOwned::default();
+
+        // Create three leaf nodes
+        let leaf1_path = to_encoded_path(&[1, 2, 3], true);
+        let leaf1_id = trie.add_node(&NodeData::Leaf(&leaf1_path, &[1]));
+
+        let leaf2_path = to_encoded_path(&[1, 2, 4], true);
+        let leaf2_id = trie.add_node(&NodeData::Leaf(&leaf2_path, &[2]));
+
+        // Third child is a digest (unresolved)
+        let digest_hash = B256::repeat_byte(0xcd);
+        let digest_id = trie.add_node(&NodeData::Digest(digest_hash.as_slice()));
+
+        // Create branch with three children
+        let mut children: [Option<NodeId>; 16] = Default::default();
+        children[2] = Some(leaf1_id);
+        children[5] = Some(leaf2_id);
+        children[9] = Some(digest_id);
+        let branch_id = trie.add_node(&NodeData::Branch(children));
+        trie.set_root_id(branch_id);
+
+        // Try to delete the key at nibble 2
+        let key_nibs: Nibbles = [2u8].iter().copied().collect();
+        let result = find_unresolvable_sibling(&trie, trie.root_id(), &key_nibs, &[]);
+
+        // No orphan because branch has 3 children, so deleting one won't collapse it
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_orphan_with_extension_prefix() {
+        // Create a trie: Extension(0x12) -> Branch(nibbles 3 and 5)
+        // where nibble 5 child is a digest
+        let mut trie = MptOwned::default();
+
+        // Create leaf for nibble 3 path
+        let leaf_path = to_encoded_path(&[4, 5, 6], true);
+        let leaf_id = trie.add_node(&NodeData::Leaf(&leaf_path, &[1, 2, 3]));
+
+        // Create digest for nibble 5
+        let digest_hash = B256::repeat_byte(0xef);
+        let digest_id = trie.add_node(&NodeData::Digest(digest_hash.as_slice()));
+
+        // Create branch
+        let branch_id = create_branch_with_two_children(&mut trie, 3, leaf_id, 5, digest_id);
+
+        // Create extension pointing to branch
+        let ext_path = to_encoded_path(&[1, 2], false);
+        let ext_id = trie.add_node(&NodeData::Extension(&ext_path, branch_id));
+        trie.set_root_id(ext_id);
+
+        // Key that traverses extension and goes to nibble 3 (the leaf)
+        let key_nibs: Nibbles = [1, 2, 3, 4, 5, 6].iter().copied().collect();
+        let result = find_unresolvable_sibling(&trie, trie.root_id(), &key_nibs, &[]);
+
+        // Should find orphan at nibble path [1, 2, 5] (extension path + sibling nibble)
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), vec![1, 2, 5]);
+    }
+
+    #[test]
+    fn test_no_orphan_when_key_not_in_trie() {
+        // Create a simple trie with a leaf
+        let mut trie = MptOwned::default();
+        let leaf_path = to_encoded_path(&[1, 2, 3, 4], true);
+        let leaf_id = trie.add_node(&NodeData::Leaf(&leaf_path, &[1, 2, 3]));
+        trie.set_root_id(leaf_id);
+
+        // Try to delete a key that doesn't exist
+        let key_nibs: Nibbles = [5, 6, 7, 8].iter().copied().collect();
+        let result = find_unresolvable_sibling(&trie, trie.root_id(), &key_nibs, &[]);
+
+        // No orphan because key doesn't exist in trie
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_orphan_when_traversing_hits_digest() {
+        // Create a trie where the path to the key goes through a digest
+        let mut trie = MptOwned::default();
+
+        // Root is a digest (completely unresolved)
+        let digest_hash = B256::repeat_byte(0x11);
+        let digest_id = trie.add_node(&NodeData::Digest(digest_hash.as_slice()));
+        trie.set_root_id(digest_id);
+
+        // Any key traversal should report the root as unresolvable
+        let key_nibs: Nibbles = [1, 2, 3, 4].iter().copied().collect();
+        let result = find_unresolvable_sibling(&trie, trie.root_id(), &key_nibs, &[]);
+
+        // Orphan at empty prefix (the root itself)
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), Vec::<u8>::new());
+    }
+
+    #[test]
+    fn test_to_nibbles() {
+        assert_eq!(to_nibbles(&[0xab, 0xcd]).as_slice(), &[0xa, 0xb, 0xc, 0xd]);
+        assert_eq!(to_nibbles(&[0x12]).as_slice(), &[0x1, 0x2]);
+        assert!(to_nibbles(&[]).is_empty());
+        assert_eq!(to_nibbles(&[0x00]).as_slice(), &[0x0, 0x0]);
+        assert_eq!(to_nibbles(&[0xff]).as_slice(), &[0xf, 0xf]);
+    }
+
+    #[test]
+    fn test_detect_storage_orphans_empty() {
+        let trie = MptOwned::default();
+        let deleted_keys: Vec<B256> = vec![];
+        let orphans = detect_storage_orphans(&trie, &deleted_keys);
+        assert!(orphans.is_empty());
+    }
+
+    #[test]
+    fn test_detect_state_orphans_empty() {
+        let trie = MptOwned::default();
+        let deleted_addresses: Vec<Address> = vec![];
+        let orphans = detect_state_orphans(&trie, &deleted_addresses);
+        assert!(orphans.is_empty());
+    }
 }

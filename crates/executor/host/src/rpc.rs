@@ -148,3 +148,95 @@ fn unpack_nibbles(bytes: &[u8]) -> Vec<u8> {
     }
     nibbles
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_storage_range_response_parsing() {
+        // Test parsing a valid response with storage entry
+        let json = r#"{
+            "storage": {
+                "0x0000000000000000000000000000000000000000000000000000000000000001": {
+                    "key": "0x0000000000000000000000000000000000000000000000000000000000000005",
+                    "value": "0x64"
+                }
+            },
+            "nextKey": null
+        }"#;
+
+        let response: StorageRangeQueryResponse = serde_json::from_str(json).unwrap();
+        assert_eq!(response.storage.len(), 1);
+        assert!(response.next_key.is_none());
+
+        let (_, entry) = response.storage.into_iter().next().unwrap();
+        assert!(entry.key.is_some());
+        assert_eq!(entry.value, alloy_primitives::U256::from(100));
+    }
+
+    #[test]
+    fn test_storage_range_response_without_preimage() {
+        // Test parsing a response without storage key preimage
+        let json = r#"{
+            "storage": {
+                "0x0000000000000000000000000000000000000000000000000000000000000001": {
+                    "key": null,
+                    "value": "0x64"
+                }
+            }
+        }"#;
+
+        let response: StorageRangeQueryResponse = serde_json::from_str(json).unwrap();
+        let (_, entry) = response.storage.into_iter().next().unwrap();
+        assert!(entry.key.is_none());
+    }
+
+    #[test]
+    fn test_account_range_response_parsing() {
+        // Test parsing a valid response with account entry
+        let json = r#"{
+            "accounts": {
+                "0x0000000000000000000000000000000000000000000000000000000000000001": {
+                    "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+                    "balance": "0x1234",
+                    "nonce": 42,
+                    "codeHash": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+                }
+            },
+            "next": null
+        }"#;
+
+        let response: AccountRangeQueryResponse = serde_json::from_str(json).unwrap();
+        assert_eq!(response.accounts.len(), 1);
+        assert!(response.next.is_none());
+
+        let (_, entry) = response.accounts.into_iter().next().unwrap();
+        assert!(entry.address.is_some());
+        assert_eq!(entry.nonce, 42);
+    }
+
+    #[test]
+    fn test_account_range_response_without_preimage() {
+        // Test parsing a response without address preimage (common case)
+        let json = r#"{
+            "accounts": {
+                "0x0000000000000000000000000000000000000000000000000000000000000001": {
+                    "balance": "0x1234",
+                    "nonce": 42
+                }
+            }
+        }"#;
+
+        let response: AccountRangeQueryResponse = serde_json::from_str(json).unwrap();
+        let (_, entry) = response.accounts.into_iter().next().unwrap();
+        assert!(entry.address.is_none());
+    }
+
+    #[test]
+    fn test_unpack_nibbles() {
+        assert_eq!(unpack_nibbles(&[0xab, 0xcd]), vec![0x0a, 0x0b, 0x0c, 0x0d]);
+        assert_eq!(unpack_nibbles(&[0x12]), vec![0x01, 0x02]);
+        assert_eq!(unpack_nibbles(&[]), Vec::<u8>::new());
+    }
+}
