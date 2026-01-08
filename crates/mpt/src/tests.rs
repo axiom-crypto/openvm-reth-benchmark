@@ -1,6 +1,6 @@
-use revm_primitives::{b256, keccak256};
+use revm_primitives::{b256, keccak256, B256};
 
-use crate::{Error, Mpt};
+use crate::{node::NodeData, Error, Mpt};
 
 trait RlpBytes {
     /// Returns the RLP-encoding.
@@ -227,4 +227,60 @@ fn test_serde_keccak_trie() -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+/// Test that deleting a key that would cause branch collapse fails if sibling is unresolved Digest.
+/// This tests the soundness fix: we must not assume an unresolved Digest is a Branch node.
+#[test]
+fn test_delete_with_unresolved_sibling_errors() {
+    use crate::hp::to_encoded_path_with_bump;
+
+    let bump = bumpalo::Bump::new();
+    let mut trie = Mpt::new(&bump);
+
+    // Create a fake 32-byte digest (simulating hash of an unknown node)
+    let fake_digest: &[u8] = bump.alloc_slice_copy(&[0xABu8; 32]);
+
+    // Build structure: Branch -> [Leaf at index 0, Digest at index 1]
+    // When we delete the Leaf, the Branch should collapse, but we don't know
+    // what the Digest represents, so we should error.
+    //
+    // Key 0x00 = nibbles [0, 0]:
+    //   - First nibble 0 goes to branch child index 0 (the leaf)
+    //   - Remaining nibble [0] must match leaf's path
+    // So leaf path should be nibble [0].
+
+    // Create a leaf node for index 0 with path [0] (to match second nibble of key 0x00)
+    let leaf_path = to_encoded_path_with_bump(&bump, &[0], true);
+    let leaf_id = trie.add_node(NodeData::Leaf(leaf_path, b"value"), None);
+
+    // Create a digest node for index 1 (simulating unresolved sibling)
+    let digest_id = trie.add_node(NodeData::Digest(fake_digest), None);
+
+    // Create a branch with these two children
+    let mut children: [Option<u32>; 16] = Default::default();
+    children[0] = Some(leaf_id);
+    children[1] = Some(digest_id);
+    let branch_id = trie.add_node(NodeData::Branch(children), None);
+
+    // Set the root to the branch
+    trie.set_root_id(branch_id);
+
+    // Now try to delete the key 0x00 (nibbles [0, 0])
+    // This should:
+    //   1. Go to branch child 0 (the leaf)
+    //   2. Match leaf path [0] with remaining nibbles [0]
+    //   3. Delete the leaf
+    //   4. Trigger branch collapse since only one child (digest at index 1) remains
+    //   5. Fail because we don't know what the Digest represents
+    let result = trie.delete(&[0x00]);
+
+    // Should return NodeNotResolved error
+    match result {
+        Err(Error::NodeNotResolved(hash)) => {
+            assert_eq!(hash, B256::from_slice(fake_digest));
+        }
+        Ok(_) => panic!("Expected NodeNotResolved error, but delete succeeded"),
+        Err(e) => panic!("Expected NodeNotResolved error, got: {e:?}"),
+    }
 }
