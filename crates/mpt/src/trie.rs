@@ -650,55 +650,61 @@ impl<'a> Mpt<'a> {
                 }
             }
             NodeData::Leaf(prefix, old_value) => {
-                let self_nibs = prefix_to_nibs(prefix);
-                let common_len = lcp(&self_nibs, key_nibs);
-
-                if common_len == self_nibs.len() && common_len == key_nibs.len() {
-                    // if self_nibs == key_nibs, update the value if it is different
+                if encoded_path_eq_nibs(prefix, key_nibs) {
+                    // update the value if it is different
                     if old_value == value {
                         return Ok(false);
                     }
                     self.nodes[node_id as usize] = NodeData::Leaf(prefix, value);
                     true
-                } else if common_len == self_nibs.len() || common_len == key_nibs.len() {
-                    return Err(Error::ValueInBranch);
                 } else {
-                    // otherwise, create a branch with two children
-                    let split_point = common_len + 1;
-                    let mut children: [Option<NodeId>; 16] = Default::default();
+                    let self_nibs = prefix_to_nibs(prefix);
+                    let common_len = lcp(&self_nibs, key_nibs);
 
-                    let leaf1_path =
-                        to_encoded_path_with_bump(self.bump, &self_nibs[split_point..], true);
-                    let leaf1_id = self.add_node(NodeData::Leaf(leaf1_path, old_value), None);
-
-                    let leaf2_path =
-                        to_encoded_path_with_bump(self.bump, &key_nibs[split_point..], true);
-                    let leaf2_id = self.add_node(NodeData::Leaf(leaf2_path, value), None);
-
-                    children[self_nibs[common_len] as usize] = Some(leaf1_id);
-                    children[key_nibs[common_len] as usize] = Some(leaf2_id);
-
-                    let new_node_data = if common_len > 0 {
-                        let branch_id = self.add_node(NodeData::Branch(children), None);
-                        let ext_path_slice =
-                            to_encoded_path_with_bump(self.bump, &self_nibs[..common_len], false);
-                        NodeData::Extension(ext_path_slice, branch_id)
+                    if common_len == self_nibs.len() || common_len == key_nibs.len() {
+                        return Err(Error::ValueInBranch);
                     } else {
-                        NodeData::Branch(children)
-                    };
-                    self.nodes[node_id as usize] = new_node_data;
-                    true
+                        // otherwise, create a branch with two children
+                        let split_point = common_len + 1;
+                        let mut children: [Option<NodeId>; 16] = Default::default();
+
+                        let leaf1_path =
+                            to_encoded_path_with_bump(self.bump, &self_nibs[split_point..], true);
+                        let leaf1_id = self.add_node(NodeData::Leaf(leaf1_path, old_value), None);
+
+                        let leaf2_path =
+                            to_encoded_path_with_bump(self.bump, &key_nibs[split_point..], true);
+                        let leaf2_id = self.add_node(NodeData::Leaf(leaf2_path, value), None);
+
+                        children[self_nibs[common_len] as usize] = Some(leaf1_id);
+                        children[key_nibs[common_len] as usize] = Some(leaf2_id);
+
+                        let new_node_data = if common_len > 0 {
+                            let branch_id = self.add_node(NodeData::Branch(children), None);
+                            let ext_path_slice = to_encoded_path_with_bump(
+                                self.bump,
+                                &self_nibs[..common_len],
+                                false,
+                            );
+                            NodeData::Extension(ext_path_slice, branch_id)
+                        } else {
+                            NodeData::Branch(children)
+                        };
+                        self.nodes[node_id as usize] = new_node_data;
+                        true
+                    }
                 }
             }
             NodeData::Extension(prefix, child_id) => {
-                let self_nibs = prefix_to_nibs(prefix);
-                let common_len = lcp(&self_nibs, key_nibs);
-
-                if common_len == self_nibs.len() {
-                    self.insert_internal(child_id, &key_nibs[common_len..], value)?
-                } else if common_len == key_nibs.len() {
-                    return Err(Error::ValueInBranch);
+                if let Some(tail) = encoded_path_strip_prefix(prefix, key_nibs) {
+                    self.insert_internal(child_id, tail, value)?
                 } else {
+                    let self_nibs = prefix_to_nibs(prefix);
+                    let common_len = lcp(&self_nibs, key_nibs);
+
+                    if common_len == key_nibs.len() {
+                        return Err(Error::ValueInBranch);
+                    }
                     let split_point = common_len + 1;
                     let mut children: [Option<NodeId>; 16] = Default::default();
 
@@ -811,25 +817,24 @@ impl<'a> Mpt<'a> {
                 true
             }
             NodeData::Leaf(prefix, _) => {
-                let leaf_nibs = prefix_to_nibs(prefix);
-                if leaf_nibs.as_slice() != key_nibs {
+                if !encoded_path_eq_nibs(prefix, key_nibs) {
                     return Ok(false);
                 }
                 self.nodes[node_id as usize] = NodeData::Null;
                 true
             }
             NodeData::Extension(prefix, child_id) => {
-                let self_nibs = prefix_to_nibs(prefix);
-                if let Some(tail) = key_nibs.strip_prefix(self_nibs.as_slice()) {
-                    if !self.delete_internal(child_id, tail)? {
-                        return Ok(false);
-                    }
-                } else {
-                    return Ok(false);
+                let tail = match encoded_path_strip_prefix(prefix, key_nibs) {
+                    Some(tail) => tail,
+                    None => return Ok(false),
                 };
+                if !self.delete_internal(child_id, tail)? {
+                    return Ok(false);
+                }
 
                 // an extension can only point to a branch or a digest; since it's sub trie was
                 // modified, we need to make sure that this property still holds
+                let self_nibs = prefix_to_nibs(prefix);
                 let child_node_data = &self.nodes[child_id as usize];
                 let new_node_data = match child_node_data {
                     // if the child is empty, remove the extension
