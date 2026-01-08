@@ -1,4 +1,7 @@
-use std::{cell::RefCell, mem::MaybeUninit};
+use std::{
+    cell::{Cell, RefCell},
+    mem::MaybeUninit,
+};
 
 use alloy_rlp::Encodable;
 use bumpalo::Bump;
@@ -57,7 +60,7 @@ pub struct Mpt<'a> {
     nodes: Vec<NodeData<'a>>,
 
     /// Cache. Hashing/encoding often needs "what would this node look like in its parent"
-    cached_references: Vec<RefCell<Option<NodeRef<'a>>>>,
+    cached_references: Vec<Cell<Option<NodeRef<'a>>>>,
 
     /// Scratch buffer used only for RLP encoding when a node's full RLP exceeds 32 bytes and we
     /// need to compute its keccak hash. Keeping it here avoids repeated allocations.
@@ -80,7 +83,7 @@ impl<'a> Mpt<'a> {
         let mut nodes = Vec::with_capacity(capacity);
         let mut cached_references = Vec::with_capacity(capacity);
         nodes.push(NodeData::Null);
-        cached_references.push(RefCell::new(None));
+        cached_references.push(Cell::new(None));
 
         Self {
             nodes,
@@ -419,10 +422,16 @@ impl<'a> Mpt<'a> {
 
     #[inline]
     fn reference_encode(&self, node_id: NodeId, out: &mut dyn alloy_rlp::BufMut) {
-        match self.cached_references[node_id as usize]
-            .borrow_mut()
-            .get_or_insert_with(|| self.calc_reference(node_id))
-        {
+        let cached = self.cached_references[node_id as usize].get();
+        let node_ref = match cached {
+            Some(node_ref) => node_ref,
+            None => {
+                let node_ref = self.calc_reference(node_id);
+                self.cached_references[node_id as usize].set(Some(node_ref));
+                node_ref
+            }
+        };
+        match node_ref {
             // if the reference is an RLP-encoded byte slice, copy it directly
             NodeRef::Bytes(bytes) => out.put_slice(bytes),
             // if the reference is a digest, RLP-encode it with its fixed known length
@@ -455,10 +464,16 @@ impl<'a> Mpt<'a> {
     /// Returns the length of the encoded [NodeRef] of this node.
     #[inline]
     fn reference_length(&self, node_id: NodeId) -> usize {
-        match self.cached_references[node_id as usize]
-            .borrow_mut()
-            .get_or_insert_with(|| self.calc_reference(node_id))
-        {
+        let cached = self.cached_references[node_id as usize].get();
+        let node_ref = match cached {
+            Some(node_ref) => node_ref,
+            None => {
+                let node_ref = self.calc_reference(node_id);
+                self.cached_references[node_id as usize].set(Some(node_ref));
+                node_ref
+            }
+        };
+        match node_ref {
             NodeRef::Bytes(bytes) => bytes.len(),
             NodeRef::Digest(_) => 1 + 32,
         }
@@ -472,13 +487,21 @@ impl<'a> Mpt<'a> {
     pub fn hash(&self) -> B256 {
         match self.nodes[self.root_id as usize] {
             NodeData::Null => reth_trie::EMPTY_ROOT_HASH,
-            _ => match self.cached_references[self.root_id as usize]
-                .borrow_mut()
-                .get_or_insert_with(|| self.calc_reference(self.root_id))
-            {
-                NodeRef::Digest(digest) => B256::from_slice(digest),
-                NodeRef::Bytes(bytes) => keccak256(bytes),
-            },
+            _ => {
+                let cached = self.cached_references[self.root_id as usize].get();
+                let node_ref = match cached {
+                    Some(node_ref) => node_ref,
+                    None => {
+                        let node_ref = self.calc_reference(self.root_id);
+                        self.cached_references[self.root_id as usize].set(Some(node_ref));
+                        node_ref
+                    }
+                };
+                match node_ref {
+                    NodeRef::Digest(digest) => B256::from_slice(digest),
+                    NodeRef::Bytes(bytes) => keccak256(bytes),
+                }
+            }
         }
     }
 
@@ -548,7 +571,7 @@ impl<'a> Mpt<'a> {
     pub(crate) fn add_node(&mut self, data: NodeData<'a>, node_ref: Option<NodeRef<'a>>) -> NodeId {
         let id = self.nodes.len() as NodeId;
         self.nodes.push(data);
-        self.cached_references.push(RefCell::new(node_ref));
+        self.cached_references.push(Cell::new(node_ref));
         id
     }
 
@@ -560,7 +583,7 @@ impl<'a> Mpt<'a> {
 
     #[inline]
     fn invalidate_ref_cache(&mut self, node_id: NodeId) {
-        self.cached_references[node_id as usize].borrow_mut().take();
+        self.cached_references[node_id as usize].set(None);
     }
 
     #[inline]
