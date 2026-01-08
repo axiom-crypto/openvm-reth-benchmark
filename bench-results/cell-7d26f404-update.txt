@@ -1,0 +1,5 @@
+Loaded benchmark data: 21495189 bytes
+update only             time:   [7.5010 ms 7.5483 ms 7.5926 ms]
+                        change: [−13.088% −4.3001% +1.1863%] (p = 0.61 > 0.05)
+                        No change in performance detected.
+
