@@ -32,3 +32,7 @@ workspace = true
 [features]
 default = []
 host = []
+# INSECURE: Assumes Digest nodes are Branches during deletion.
+# Only use with trusted witness sources (e.g., eth_getProof from trusted node).
+# This is a soundness bug with untrusted witnesses - see docs/mpt-orphan-issue.md
+trusted-node = []

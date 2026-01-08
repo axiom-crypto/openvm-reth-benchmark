@@ -775,8 +775,17 @@ impl<'a> Mpt<'a> {
                             let new_path = to_encoded_path_with_bump(self.bump, &ext_nibs, false);
                             NodeData::Extension(new_path, child_id)
                         }
+                        #[cfg(not(feature = "trusted-node"))]
                         NodeData::Digest(digest) => {
                             return Err(Error::NodeNotResolved(B256::from_slice(digest)));
+                        }
+                        // INSECURE: With trusted-node feature, assume Digest is Branch.
+                        // This is unsound with malicious witnesses!
+                        #[cfg(feature = "trusted-node")]
+                        NodeData::Digest(_) => {
+                            let ext_nibs: SmallVec<[u8; 1]> = SmallVec::from_slice(&[index as u8]);
+                            let new_path = to_encoded_path_with_bump(self.bump, &ext_nibs, false);
+                            NodeData::Extension(new_path, child_id)
                         }
                         NodeData::Null => unreachable!(),
                     };
@@ -834,9 +843,14 @@ impl<'a> Mpt<'a> {
                     // for a branch, the extension is still correct
                     NodeData::Branch(_) => NodeData::Extension(prefix, child_id),
                     // for a digest, we don't know the node type so we can't safely canonicalize
+                    #[cfg(not(feature = "trusted-node"))]
                     NodeData::Digest(digest) => {
                         return Err(Error::NodeNotResolved(B256::from_slice(digest)));
                     }
+                    // INSECURE: With trusted-node feature, assume Digest is Branch.
+                    // This is unsound with malicious witnesses!
+                    #[cfg(feature = "trusted-node")]
+                    NodeData::Digest(_) => NodeData::Extension(prefix, child_id),
                 };
                 self.nodes[node_id as usize] = new_node_data;
                 true

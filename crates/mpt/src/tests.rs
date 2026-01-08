@@ -231,7 +231,9 @@ fn test_serde_keccak_trie() -> Result<(), Error> {
 
 /// Test that deleting a key that would cause branch collapse fails if sibling is unresolved Digest.
 /// This tests the soundness fix: we must not assume an unresolved Digest is a Branch node.
+/// With trusted-node feature, this assumption is allowed (for benchmarking with trusted witnesses).
 #[test]
+#[cfg(not(feature = "trusted-node"))]
 fn test_delete_with_unresolved_sibling_errors() {
     use crate::hp::to_encoded_path_with_bump;
 
