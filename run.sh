@@ -6,7 +6,11 @@
 #   --mode <MODE>   Set the proving mode (default: prove-app)
 #                   Valid modes: prove-app, prove-stark
 #   --cuda          Force CUDA acceleration (auto-detected if nvidia-smi available)
-#
+#   --nsys          Run with nsys profiling
+#   --block <N>     Set the block number to prove (default: 23992138)
+#   --ncu <KERNEL>  Run with ncu profiling for specified kernel
+#   --launch-skip N Skip N kernel launches (for ncu)
+#   --launch-count N Profile N kernel launches (for ncu)
 # Examples:
 #   ./run.sh                          # Run with defaults
 #   ./run.sh --mode prove-stark       # Run in prove-stark mode
@@ -98,22 +102,19 @@ fi
 MODE_OVERRIDE=""
 USE_CUDA=false
 CUDA_REASON=""
+USE_NSYS=false
+USE_NCU=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --mode)
-            MODE_OVERRIDE="$2"
-            shift 2
-            ;;
-        --cuda)
-            USE_CUDA=true
-            CUDA_REASON="requested via script argument"
-            shift
-            ;;
-        *)
-            echo "Unknown argument: $1"
-            exit 1
-            ;;
+        --mode) MODE_OVERRIDE="$2"; shift 2 ;;
+        --block) BLOCK_NUMBER_OVERRIDE="$2"; shift 2 ;;
+        --cuda) USE_CUDA=true; CUDA_REASON="requested via --cuda"; shift ;;
+        --nsys) USE_NSYS=true; USE_CUDA=true; CUDA_REASON="requested via --nsys"; shift ;;
+        --ncu) USE_NCU=true; USE_CUDA=true; CUDA_REASON="requested via --ncu"; ncu_kernel="$2"; shift 2 ;;
+        --launch-skip) launch_skip="$2"; shift 2 ;;
+        --launch-count) launch_count="$2"; shift 2 ;;
+        *) echo "Unknown argument: $1"; exit 1 ;;
     esac
 done
 
@@ -126,8 +127,10 @@ if [ "$USE_CUDA" = "true" ]; then
     echo "Using CUDA acceleration ($CUDA_REASON)."
 fi
 
-if [ "$NVIDIA_SMI_READY" = "true" ]; then
+if [ "$NVIDIA_SMI_READY" = "true" ] && [ "$USE_NSYS" = "false" ]; then
     start_gpu_monitor "$GPU_MONITOR_INTERVAL"
+elif [ "$USE_NSYS" = "true" ]; then
+    echo "GPU memory monitoring disabled for nsys profiling."
 else
     echo "nvidia-smi not detected; GPU memory monitoring disabled."
 fi
@@ -151,7 +154,7 @@ cd "$WORKDIR"
 
 PROFILE="release"
 FEATURES="metrics,jemalloc,unprotected,nightly-features"
-BLOCK_NUMBER=23992138
+BLOCK_NUMBER="${BLOCK_NUMBER_OVERRIDE:-23992138}"
 # switch to +nightly-2025-08-19 if using tco
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
 BIN_NAME="openvm-reth-benchmark-bin"
@@ -182,7 +185,9 @@ echo "Unsupported architecture: $arch"
 exit 1
 ;;
 esac
-export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:10000,muzzy_decay_ms:10000,abort_conf:true"
+if [ "$USE_NSYS" = "false" ]; then
+    export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,dirty_decay_ms:10000,muzzy_decay_ms:10000,abort_conf:true"
+fi
 RUSTFLAGS=$RUSTFLAGS cargo $TOOLCHAIN build --bin $BIN_NAME --profile=$PROFILE --no-default-features --features=$FEATURES
 PARAMS_DIR="$HOME/.openvm/params/"
 
@@ -193,17 +198,23 @@ else
     TARGET_DIR="$PROFILE"
 fi
 
-RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics.json" VPMM_PAGES=$VPMM_PAGES VPMM_PAGE_SIZE=$VPMM_PAGE_SIZE ./target/$TARGET_DIR/$BIN_NAME \
---kzg-params-dir $PARAMS_DIR \
---mode $MODE \
---block-number $BLOCK_NUMBER \
---rpc-url $RPC_1 \
---cache-dir rpc-cache \
---app-log-blowup 1 \
---leaf-log-blowup 1 \
---internal-log-blowup 2 \
---root-log-blowup 3 \
---max-segment-length $MAX_SEGMENT_LENGTH \
---segment-max-cells $SEGMENT_MAX_CELLS \
---num-children-leaf 1 \
---num-children-internal 3
+BIN=./target/$TARGET_DIR/$BIN_NAME
+BIN_ARGS="--kzg-params-dir $PARAMS_DIR --mode $MODE --block-number $BLOCK_NUMBER --rpc-url $RPC_1 --cache-dir rpc-cache \
+--app-log-blowup 1 --leaf-log-blowup 1 --internal-log-blowup 2 --root-log-blowup 3 \
+--max-segment-length $MAX_SEGMENT_LENGTH --segment-max-cells $SEGMENT_MAX_CELLS --num-children-leaf 1 --num-children-internal 3"
+export VPMM_PAGES=$VPMM_PAGES VPMM_PAGE_SIZE=$VPMM_PAGE_SIZE
+
+if [ "$USE_NSYS" = "true" ]; then
+    NSYS_OUTPUT="reth.nsys-rep"
+    nsys profile --trace=cuda --force-overwrite=true -o "$NSYS_OUTPUT" $BIN $BIN_ARGS
+    nsys stats --report cuda_gpu_kern_sum "$NSYS_OUTPUT"
+    nsys stats --report cuda_gpu_mem_time_sum "$NSYS_OUTPUT"
+    nsys stats --report cuda_gpu_mem_size_sum "$NSYS_OUTPUT"
+elif [ "$USE_NCU" = "true" ]; then
+    NCU_OUTPUT="reth-${ncu_kernel}.ncu-rep"
+    sudo env PATH=$PATH ncu --target-processes all --kernel-name "$ncu_kernel" -f -o "$NCU_OUTPUT" \
+        --launch-skip "${launch_skip:-0}" --launch-count "${launch_count:-4}" --set full $BIN $BIN_ARGS
+else
+    export RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics.json"
+    $BIN $BIN_ARGS
+fi
