@@ -4,10 +4,7 @@ use revm_primitives::{keccak256, Address, HashMap, B256};
 use smallvec::SmallVec;
 
 use crate::{
-    hp::{
-        encoded_path_eq_nibs, encoded_path_nibble_count, encoded_path_strip_prefix, prefix_to_nibs,
-        to_encoded_path,
-    },
+    hp::{encoded_path_eq_nibs, encoded_path_strip_prefix, prefix_to_nibs, to_encoded_path},
     node::{NodeData, NodeId},
     owned::MptOwned,
     Error, EthereumState,
@@ -328,7 +325,7 @@ fn detect_state_orphans(trie: &MptOwned, deleted_addresses: &[Address]) -> Vec<V
         let hashed_address = keccak256(address);
         let key_nibs = to_nibbles(hashed_address.as_slice());
 
-        if let Some(prefix) = find_unresolvable_sibling(trie, trie.root_id(), &key_nibs, &[]) {
+        if let Some(prefix) = find_orphan_on_delete(trie, &key_nibs) {
             orphan_prefixes.push(prefix);
         }
     }
@@ -352,7 +349,7 @@ fn detect_storage_orphans(trie: &MptOwned, deleted_keys: &[B256]) -> Vec<Vec<u8>
         let hashed_key = keccak256(key);
         let key_nibs = to_nibbles(hashed_key.as_slice());
 
-        if let Some(prefix) = find_unresolvable_sibling(trie, trie.root_id(), &key_nibs, &[]) {
+        if let Some(prefix) = find_orphan_on_delete(trie, &key_nibs) {
             orphan_prefixes.push(prefix);
         }
     }
@@ -370,87 +367,112 @@ fn to_nibbles(bytes: &[u8]) -> Nibbles {
     result
 }
 
-/// Traverses the trie following the key path and checks if deleting this key
-/// would cause a branch collapse with an unresolved sibling.
-///
-/// Returns Some(prefix) if an unresolvable sibling is found, None otherwise.
-fn find_unresolvable_sibling(
+/// Result of a delete probe used for orphan detection.
+enum DeleteProbe {
+    NotFound,
+    Deleted { removed: bool },
+    Orphan(Vec<u8>),
+}
+
+/// Traverses the trie following the key path and checks whether deleting this key
+/// would require resolving an orphan.
+fn find_orphan_on_delete(trie: &MptOwned, key_nibs: &[u8]) -> Option<Vec<u8>> {
+    let mut prefix = Vec::new();
+    match probe_delete_for_orphan(trie, trie.root_id(), key_nibs, &mut prefix) {
+        DeleteProbe::Orphan(prefix) => Some(prefix),
+        _ => None,
+    }
+}
+
+fn probe_delete_for_orphan(
     trie: &MptOwned,
     node_id: NodeId,
     remaining_key: &[u8],
-    current_prefix: &[u8],
-) -> Option<Vec<u8>> {
-    let node = trie.get_node(node_id)?;
+    prefix: &mut Vec<u8>,
+) -> DeleteProbe {
+    let node = match trie.get_node(node_id) {
+        Some(node) => node,
+        None => return DeleteProbe::NotFound,
+    };
 
     match node {
-        NodeData::Null => None,
-
+        NodeData::Null => DeleteProbe::NotFound,
+        NodeData::Digest(_) => DeleteProbe::Orphan(prefix.clone()),
         NodeData::Leaf(path, _) => {
-            // If we reach a leaf that matches, deletion happens here.
-            // No branch collapse at this point.
             if encoded_path_eq_nibs(path, remaining_key) {
-                // Exact match - deletion at leaf level, no collapse issue
-                None
+                DeleteProbe::Deleted { removed: true }
             } else {
-                // Key doesn't match leaf path - key not in trie
-                None
+                DeleteProbe::NotFound
             }
         }
-
+        NodeData::Extension(path, child_id) => {
+            if let Some(tail) = encoded_path_strip_prefix(path, remaining_key) {
+                let path_nibs = prefix_to_nibs(path);
+                let prefix_len = prefix.len();
+                prefix.extend_from_slice(&path_nibs);
+                let res = probe_delete_for_orphan(trie, *child_id, tail, prefix);
+                prefix.truncate(prefix_len);
+                match res {
+                    DeleteProbe::Deleted { removed } => DeleteProbe::Deleted { removed },
+                    other => other,
+                }
+            } else {
+                DeleteProbe::NotFound
+            }
+        }
         NodeData::Branch(children) => {
             if remaining_key.is_empty() {
-                // Key ends at branch - no collapse
-                return None;
+                return DeleteProbe::NotFound;
             }
 
             let nibble = remaining_key[0] as usize;
-            let child_id = children[nibble]?;
+            let child_id = match children[nibble] {
+                Some(id) => id,
+                None => return DeleteProbe::NotFound,
+            };
 
-            // Count how many children this branch has
-            let child_count = children.iter().filter(|c| c.is_some()).count();
+            prefix.push(nibble as u8);
+            let res = probe_delete_for_orphan(trie, child_id, &remaining_key[1..], prefix);
+            prefix.pop();
 
-            if child_count == 2 {
-                // After deleting one child, branch would collapse.
-                // Find the sibling (the other child).
-                for (i, child) in children.iter().enumerate() {
-                    if i != nibble {
-                        if let Some(sibling_id) = child {
-                            // Check if sibling is unresolved
-                            if let Some(NodeData::Digest(_)) = trie.get_node(*sibling_id) {
-                                // Sibling is unresolved! Build the prefix.
-                                let mut prefix = current_prefix.to_vec();
-                                prefix.push(i as u8);
-                                return Some(prefix);
+            match res {
+                DeleteProbe::Orphan(prefix) => DeleteProbe::Orphan(prefix),
+                DeleteProbe::NotFound => DeleteProbe::NotFound,
+                DeleteProbe::Deleted { removed: child_removed } => {
+                    if !child_removed {
+                        return DeleteProbe::Deleted { removed: false };
+                    }
+
+                    let mut remaining_count = 0;
+                    let mut remaining_child: Option<(usize, NodeId)> = None;
+                    for (i, child) in children.iter().enumerate() {
+                        if i == nibble {
+                            continue;
+                        }
+                        if let Some(id) = child {
+                            remaining_count += 1;
+                            if remaining_child.is_none() {
+                                remaining_child = Some((i, *id));
                             }
                         }
                     }
+
+                    if remaining_count == 0 {
+                        return DeleteProbe::Deleted { removed: true };
+                    }
+
+                    if remaining_count == 1 {
+                        let (sibling_index, sibling_id) = remaining_child.unwrap();
+                        if let Some(NodeData::Digest(_)) = trie.get_node(sibling_id) {
+                            let mut orphan_prefix = prefix.clone();
+                            orphan_prefix.push(sibling_index as u8);
+                            return DeleteProbe::Orphan(orphan_prefix);
+                        }
+                    }
+
+                    DeleteProbe::Deleted { removed: false }
                 }
             }
-
-            // Continue traversing
-            let mut new_prefix = current_prefix.to_vec();
-            new_prefix.push(nibble as u8);
-            find_unresolvable_sibling(trie, child_id, &remaining_key[1..], &new_prefix)
-        }
-
-        NodeData::Extension(path, child_id) => {
-            // Strip the extension path from the remaining key
-            if let Some(tail) = encoded_path_strip_prefix(path, remaining_key) {
-                let path_len = encoded_path_nibble_count(path);
-                let mut new_prefix = current_prefix.to_vec();
-                new_prefix.extend_from_slice(&remaining_key[..path_len]);
-                find_unresolvable_sibling(trie, *child_id, tail, &new_prefix)
-            } else {
-                // Key doesn't match extension path - key not in trie
-                None
-            }
-        }
-
-        NodeData::Digest(_) => {
-            // We hit an unresolved node while traversing.
-            // This means the witness is incomplete for this key.
-            // Return the current prefix as needing resolution.
-            Some(current_prefix.to_vec())
         }
     }
 }
@@ -739,12 +761,14 @@ mod tests {
         trie.set_root_id(branch_id);
 
         // Build a key that would lead to nibble 0 child
-        // Since both siblings are resolved, there should be no orphan
-        let deleted_keys = vec![B256::ZERO]; // Key doesn't matter for this structure test
-        let orphans = detect_storage_orphans(&trie, &deleted_keys);
+        let leaf1_nibs = prefix_to_nibs(&leaf1_path);
+        let mut key_nibs: Nibbles = SmallVec::new();
+        key_nibs.push(0);
+        key_nibs.extend_from_slice(&leaf1_nibs);
+        let orphans = find_orphan_on_delete(&trie, &key_nibs);
 
         // No orphan because sibling is resolved (leaf, not digest)
-        assert!(orphans.is_empty());
+        assert!(orphans.is_none());
     }
 
     #[test]
@@ -767,15 +791,13 @@ mod tests {
         // Create a key whose hash starts with nibble 5 (to delete the leaf)
         // We need to find a key whose keccak256 starts with 0x5...
         // For testing, we'll just verify the orphan detection logic by
-        // calling find_unresolvable_sibling directly with a key starting with nibble 5
+        // calling find_orphan_on_delete directly with a key starting with nibble 5
+        let leaf_nibs = prefix_to_nibs(&leaf_path);
         let mut key_nibs: Nibbles = SmallVec::new();
         key_nibs.push(5);
-        for b in &leaf_path[1..] {
-            key_nibs.push(b >> 4);
-            key_nibs.push(b & 0x0f);
-        }
+        key_nibs.extend_from_slice(&leaf_nibs);
 
-        let result = find_unresolvable_sibling(&trie, trie.root_id(), &key_nibs, &[]);
+        let result = find_orphan_on_delete(&trie, &key_nibs);
 
         // Should find orphan at nibble 7 (the sibling digest)
         assert!(result.is_some());
@@ -807,8 +829,11 @@ mod tests {
         trie.set_root_id(branch_id);
 
         // Try to delete the key at nibble 2
-        let key_nibs: Nibbles = [2u8].iter().copied().collect();
-        let result = find_unresolvable_sibling(&trie, trie.root_id(), &key_nibs, &[]);
+        let leaf1_nibs = prefix_to_nibs(&leaf1_path);
+        let mut key_nibs: Nibbles = SmallVec::new();
+        key_nibs.push(2);
+        key_nibs.extend_from_slice(&leaf1_nibs);
+        let result = find_orphan_on_delete(&trie, &key_nibs);
 
         // No orphan because branch has 3 children, so deleting one won't collapse it
         assert!(result.is_none());
@@ -838,7 +863,7 @@ mod tests {
 
         // Key that traverses extension and goes to nibble 3 (the leaf)
         let key_nibs: Nibbles = [1, 2, 3, 4, 5, 6].iter().copied().collect();
-        let result = find_unresolvable_sibling(&trie, trie.root_id(), &key_nibs, &[]);
+        let result = find_orphan_on_delete(&trie, &key_nibs);
 
         // Should find orphan at nibble path [1, 2, 5] (extension path + sibling nibble)
         assert!(result.is_some());
@@ -855,7 +880,7 @@ mod tests {
 
         // Try to delete a key that doesn't exist
         let key_nibs: Nibbles = [5, 6, 7, 8].iter().copied().collect();
-        let result = find_unresolvable_sibling(&trie, trie.root_id(), &key_nibs, &[]);
+        let result = find_orphan_on_delete(&trie, &key_nibs);
 
         // No orphan because key doesn't exist in trie
         assert!(result.is_none());
@@ -873,7 +898,7 @@ mod tests {
 
         // Any key traversal should report the root as unresolvable
         let key_nibs: Nibbles = [1, 2, 3, 4].iter().copied().collect();
-        let result = find_unresolvable_sibling(&trie, trie.root_id(), &key_nibs, &[]);
+        let result = find_orphan_on_delete(&trie, &key_nibs);
 
         // Orphan at empty prefix (the root itself)
         assert!(result.is_some());

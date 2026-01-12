@@ -69,7 +69,7 @@ impl EthereumState {
                 };
                 self.state_trie.insert_rlp(hashed_address.as_slice(), state_account)?;
             } else {
-                self.state_trie.delete(hashed_address.as_slice()).unwrap();
+                self.state_trie.delete(hashed_address.as_slice())?;
                 self.storage_tries.remove(&hashed_address);
             }
         }

@@ -5,11 +5,11 @@ use revm_primitives::HashMap;
 use alloy_consensus::{TxEnvelope, TxReceipt};
 use alloy_primitives::{Address, Bloom};
 use alloy_provider::{network::Ethereum, Provider};
-use eyre::{eyre, Ok};
+use eyre::eyre;
 use openvm_client_executor::io::ClientExecutorInput;
 use openvm_mpt::from_proof::{
-    detect_orphans_in_proofs, transition_proofs_to_tries_with_deletions, StateOrphan,
-    StorageDeletions, StorageOrphan,
+    detect_orphans_in_proofs, transition_proofs_to_tries_with_deletions, StorageDeletions,
+    StateOrphan, StorageOrphan,
 };
 use openvm_primitives::{account_proof::eip1186_proof_to_account_proof, AccountProof};
 use openvm_rpc_db::RpcDb;
@@ -217,12 +217,15 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
             after_storage_proofs.insert(*address, eip1186_proof_to_account_proof(storage_proof));
         }
 
-        // Build tries with orphan detection and resolution
+        // Build tries with orphan detection and resolution.
+        // Pass the parent tx count so debug_storageRangeAt queries the parent final state.
         let state = self
             .build_tries_with_orphan_resolution(
                 previous_block.state_root,
                 previous_block.hash_slow(),
                 block_number - 1,
+                block_number,
+                previous_block.body.transactions.len(),
                 &mut before_storage_proofs,
                 &mut after_storage_proofs,
                 &storage_deletions,
@@ -282,7 +285,9 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
         &self,
         state_root: B256,
         block_hash: B256,
-        block_number: u64,
+        before_block_number: u64,
+        after_block_number: u64,
+        tx_count: usize,
         before_proofs: &mut HashMap<Address, AccountProof>,
         after_proofs: &mut HashMap<Address, AccountProof>,
         storage_deletions: &HashMap<Address, StorageDeletions>,
@@ -317,12 +322,21 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
                 "detected unresolvable orphans, fetching additional proofs"
             );
 
+            let mut known_keys_by_address: HashMap<Address, BTreeSet<B256>> = HashMap::default();
+            for (address, proof) in before_proofs.iter() {
+                let mut keys = BTreeSet::new();
+                for storage_proof in &proof.storage_proofs {
+                    keys.insert(storage_proof.key);
+                }
+                known_keys_by_address.insert(*address, keys);
+            }
+
             // Resolve storage orphans by fetching additional proofs
             // Group orphans by address to batch proof fetching
             let mut orphans_by_address: HashMap<Address, Vec<B256>> = HashMap::default();
             for orphan in &orphans.storage_orphans {
-                let storage_key = self.resolve_storage_orphan_prefix(block_hash, orphan).await?;
-
+                let storage_key =
+                    self.resolve_storage_orphan_prefix(block_hash, tx_count, orphan).await?;
                 tracing::debug!(
                     address = %orphan.address,
                     prefix = ?orphan.prefix,
@@ -330,55 +344,81 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
                     "resolved storage orphan prefix to storage key"
                 );
 
-                orphans_by_address.entry(orphan.address).or_default().push(storage_key);
+                let known_keys = known_keys_by_address.entry(orphan.address).or_default();
+                if known_keys.insert(storage_key) {
+                    orphans_by_address.entry(orphan.address).or_default().push(storage_key);
+                }
+            }
+
+            let mut known_state_accounts: BTreeSet<Address> =
+                before_proofs.keys().copied().collect();
+            let mut state_accounts = BTreeSet::new();
+            for orphan in &orphans.state_orphans {
+                let address = self.resolve_state_orphan_prefix(block_hash, orphan).await?;
+                tracing::debug!(
+                    prefix = ?orphan.prefix,
+                    %address,
+                    "resolved state orphan prefix to account"
+                );
+                if known_state_accounts.insert(address) {
+                    state_accounts.insert(address);
+                }
+            }
+
+            if orphans_by_address.is_empty() && state_accounts.is_empty() {
+                return Err(eyre!(
+                    "failed to resolve orphans after {} iterations: no new keys found (storage={}, state={})",
+                    iteration + 1,
+                    orphans.storage_orphans.len(),
+                    orphans.state_orphans.len()
+                ));
             }
 
             // Fetch additional storage proofs and merge them
             for (address, extra_keys) in orphans_by_address {
                 // Fetch current keys plus new keys
-                let account_proof = before_proofs.get(&address).unwrap();
-                let mut all_keys: Vec<B256> =
-                    account_proof.storage_proofs.iter().map(|p| p.key).collect();
-                all_keys.extend(extra_keys);
+                let mut all_keys = BTreeSet::new();
+                if let Some(account_proof) = before_proofs.get(&address) {
+                    for proof in &account_proof.storage_proofs {
+                        all_keys.insert(proof.key);
+                    }
+                }
+                for key in extra_keys {
+                    all_keys.insert(key);
+                }
+                let all_keys: Vec<B256> = all_keys.into_iter().collect();
 
-                // Re-fetch the full proof with all keys
+                // Re-fetch the full proof with all keys (before and after state)
+                let proof = self
+                    .provider
+                    .get_proof(address, all_keys.clone())
+                    .block_id(before_block_number.into())
+                    .await?;
+                before_proofs.insert(address, eip1186_proof_to_account_proof(proof));
+
                 let proof = self
                     .provider
                     .get_proof(address, all_keys)
-                    .block_id(block_number.into())
+                    .block_id(after_block_number.into())
                     .await?;
-
-                // Replace the account proof with the new one
-                before_proofs.insert(address, eip1186_proof_to_account_proof(proof));
+                after_proofs.insert(address, eip1186_proof_to_account_proof(proof));
             }
 
-            // Resolve state orphans by fetching additional account proofs
-            for orphan in &orphans.state_orphans {
-                let address = self.resolve_state_orphan_prefix(block_hash, orphan).await?;
+            // Fetch additional account proofs for state orphans (before and after state)
+            for address in state_accounts {
+                let proof = self
+                    .provider
+                    .get_proof(address, vec![])
+                    .block_id(before_block_number.into())
+                    .await?;
+                before_proofs.insert(address, eip1186_proof_to_account_proof(proof));
 
-                tracing::debug!(
-                    prefix = ?orphan.prefix,
-                    %address,
-                    "resolved state orphan prefix to address"
-                );
-
-                // Fetch proof for this address if we don't already have it
-                if let std::collections::hash_map::Entry::Vacant(e) = before_proofs.entry(address) {
-                    let proof = self
-                        .provider
-                        .get_proof(address, vec![])
-                        .block_id(block_number.into())
-                        .await?;
-                    e.insert(eip1186_proof_to_account_proof(proof));
-
-                    // Also fetch after proof
-                    let after_proof = self
-                        .provider
-                        .get_proof(address, vec![])
-                        .block_id((block_number + 1).into())
-                        .await?;
-                    after_proofs.insert(address, eip1186_proof_to_account_proof(after_proof));
-                }
+                let proof = self
+                    .provider
+                    .get_proof(address, vec![])
+                    .block_id(after_block_number.into())
+                    .await?;
+                after_proofs.insert(address, eip1186_proof_to_account_proof(proof));
             }
         }
 
@@ -394,6 +434,7 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
     async fn resolve_storage_orphan_prefix(
         &self,
         block_hash: B256,
+        tx_count: usize,
         orphan: &StorageOrphan,
     ) -> eyre::Result<B256> {
         // Try preimage lookup first
@@ -408,12 +449,11 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
         }
 
         // Fall back to debug_storageRangeAt
-        rpc::get_next_storage_key(&self.provider, block_hash, orphan.address, &orphan.prefix).await
+        // Use tx_count as txIndex to query state after all transactions (final block state)
+        rpc::get_next_storage_key(&self.provider, block_hash, tx_count, orphan.address, &orphan.prefix).await
     }
 
     /// Resolves a state orphan prefix to an account address.
-    ///
-    /// Uses debug_accountRange to find an account whose keccak256 hash starts with the prefix.
     async fn resolve_state_orphan_prefix(
         &self,
         block_hash: B256,
@@ -421,6 +461,7 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
     ) -> eyre::Result<Address> {
         rpc::get_next_account(&self.provider, block_hash, &orphan.prefix).await
     }
+
 }
 
 fn into_primitive_block(block: alloy_rpc_types::Block) -> Block {

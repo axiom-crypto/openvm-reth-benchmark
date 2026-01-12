@@ -272,7 +272,8 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     // NOTE: args.benchmark.app_config resets SegmentationLimits if max_segment_length is set
     args.benchmark.max_segment_length = None;
 
-    run_with_metric_collection("OUTPUT_PATH", || {
+    /* run_with_metric_collection("OUTPUT_PATH", || */
+    {
         info_span!("reth-block", block_number = args.block_number).in_scope(
             || -> eyre::Result<()> {
                 // Run host execution for comparison
@@ -392,8 +393,8 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
 
                 Ok(())
             },
-        )
-    })?;
+        )?;
+    } // })?;
     Ok(())
 }
 
