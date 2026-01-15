@@ -23,7 +23,6 @@ use openvm_pairing::{
     bn254::{self as bn, Bn254},
     PairingCheck,
 };
-use openvm_sha2::{Digest, Sha256};
 use revm::{
     install_crypto,
     precompile::{
@@ -84,7 +83,7 @@ impl CryptoProvider for OpenVmK256Provider {
         encoded_pubkey[32..].copy_from_slice(&WeierstrassPoint::y(public_key).to_be_bytes());
 
         // Hash to get Ethereum address
-        let pubkey_hash = keccak256(&encoded_pubkey);
+        let pubkey_hash = keccak256(encoded_pubkey);
         let address_bytes = &pubkey_hash[12..32]; // Last 20 bytes
 
         Ok(Address::from_slice(address_bytes))
@@ -98,9 +97,10 @@ struct OpenVmCrypto;
 impl Crypto for OpenVmCrypto {
     /// Custom SHA-256 implementation with openvm optimization
     fn sha256(&self, input: &[u8]) -> [u8; 32] {
-        let mut hasher = Sha256::new();
-        hasher.update(input);
-        hasher.finalize().into()
+        openvm_sha2::sha256(input)
+        // let mut hasher = Sha256::new();
+        // hasher.update(input);
+        // hasher.finalize().into()
     }
 
     /// Custom BN254 G1 addition with openvm optimization
@@ -272,7 +272,7 @@ impl Crypto for OpenVmCrypto {
         encoded_pubkey[..32].copy_from_slice(&WeierstrassPoint::x(public_key).to_be_bytes());
         encoded_pubkey[32..].copy_from_slice(&WeierstrassPoint::y(public_key).to_be_bytes());
 
-        let pubkey_hash = keccak256(&encoded_pubkey);
+        let pubkey_hash = keccak256(encoded_pubkey);
         let mut address = [0u8; 32];
         address[12..].copy_from_slice(&pubkey_hash[12..]);
 

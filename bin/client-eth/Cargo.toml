@@ -10,11 +10,11 @@ edition = "2021"
 openvm-client-executor = { path = "../../crates/executor/client", features = ["openvm"] }
 
 # openvm
-openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-new-keccak", features = [
+openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-keccakf-split", features = [
     "std",
 ] }
-openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-new-keccak" }
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "develop-new-keccak" }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-keccakf-split" }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-keccakf-split" }
 
 # Statically turns off logging
 log = { version = "0.4", features = ["max_level_off", "release_max_level_off"] }
