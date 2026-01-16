@@ -7,14 +7,14 @@ use alloy_consensus::crypto::{
     backend::{install_default_provider, CryptoProvider},
     RecoveryError,
 };
-use alloy_primitives::Address;
+use alloy_primitives::{keccak256, Address};
 use openvm_ecc_guest::{
     algebra::IntMod,
     weierstrass::{IntrinsicCurve, WeierstrassPoint},
     AffinePoint, Group,
 };
 use openvm_k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
-use openvm_keccak256::keccak256;
+use openvm_keccak256_guest as _;
 use openvm_kzg::{Bytes32, Bytes48, KzgProof};
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use openvm_p256; // ensure this is linked in for the standard OpenVM config
@@ -83,7 +83,7 @@ impl CryptoProvider for OpenVmK256Provider {
         encoded_pubkey[32..].copy_from_slice(&WeierstrassPoint::y(public_key).to_be_bytes());
 
         // Hash to get Ethereum address
-        let pubkey_hash = keccak256(&encoded_pubkey);
+        let pubkey_hash = keccak256(encoded_pubkey);
         let address_bytes = &pubkey_hash[12..32]; // Last 20 bytes
 
         Ok(Address::from_slice(address_bytes))
@@ -98,6 +98,9 @@ impl Crypto for OpenVmCrypto {
     /// Custom SHA-256 implementation with openvm optimization
     fn sha256(&self, input: &[u8]) -> [u8; 32] {
         openvm_sha2::sha256(input)
+        // let mut hasher = Sha256::new();
+        // hasher.update(input);
+        // hasher.finalize().into()
     }
 
     /// Custom BN254 G1 addition with openvm optimization
@@ -269,7 +272,7 @@ impl Crypto for OpenVmCrypto {
         encoded_pubkey[..32].copy_from_slice(&WeierstrassPoint::x(public_key).to_be_bytes());
         encoded_pubkey[32..].copy_from_slice(&WeierstrassPoint::y(public_key).to_be_bytes());
 
-        let pubkey_hash = keccak256(&encoded_pubkey);
+        let pubkey_hash = keccak256(encoded_pubkey);
         let mut address = [0u8; 32];
         address[12..].copy_from_slice(&pubkey_hash[12..]);
 
