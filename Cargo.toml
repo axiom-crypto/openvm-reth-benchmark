@@ -145,7 +145,7 @@ openvm-native-compiler = { git = "https://github.com/openvm-org/openvm.git", bra
 openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-keccakf-split", default-features = false }
 openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-keccakf-split", default-features = false }
 openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-keccakf-split", default-features = false }
-openvm-new-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-keccakf-split", default-features = false }
+openvm-keccak256-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-keccakf-split", default-features = false }
 openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-keccakf-split", default-features = false, features = [
     "bn254",
     "bls12_381",

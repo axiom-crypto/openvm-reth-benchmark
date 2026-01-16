@@ -68,7 +68,7 @@ layout = { Native = { size = 4 } }
 
 [app_vm_config.io]
 
-[app_vm_config.new_keccak]
+[app_vm_config.keccak]
 
 [app_vm_config.sha256]
 

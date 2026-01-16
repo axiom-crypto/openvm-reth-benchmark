@@ -27,7 +27,7 @@ openvm-p256 = { workspace = true }
 openvm-kzg = { workspace = true, features = ["use-intrinsics"] }
 openvm = { workspace = true, features = ["std"] }
 openvm-algebra-guest = { workspace = true }
-openvm-new-keccak256-guest = { workspace = true }
+openvm-keccak256-guest = { workspace = true }
 
 revm-precompile = { workspace = true }
 
