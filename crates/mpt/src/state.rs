@@ -6,10 +6,20 @@ use revm_primitives::{keccak256, map::DefaultHashBuilder, HashMap, B256};
 use crate::{Error, Mpt};
 
 /// Serialized Ethereum state.
+///
+/// Each trie is serialized with:
+/// - `num_nodes`: Number of nodes in the pre-state trie (for validation)
+/// - `final_num_nodes`: Number of nodes after block execution (for capacity pre-allocation)
+/// - `bytes`: The serialized trie data
+///
+/// Using `final_num_nodes` for capacity allocation eliminates the need for growth factors
+/// and prevents reallocation during state updates.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct EthereumStateBytes {
-    pub state_trie: (usize, bytes::Bytes),
-    pub storage_tries: Vec<(B256, usize, bytes::Bytes)>,
+    /// (num_nodes, final_num_nodes, bytes) for the state trie
+    pub state_trie: (usize, usize, bytes::Bytes),
+    /// Vec of (address_hash, num_nodes, final_num_nodes, bytes) for storage tries
+    pub storage_tries: Vec<(B256, usize, usize, bytes::Bytes)>,
 }
 
 #[derive(Debug, Clone)]
@@ -77,21 +87,43 @@ impl EthereumState {
         Ok(())
     }
 
+    /// Encodes the state to bytes, using the provided post-execution state to determine
+    /// final node counts for optimal capacity pre-allocation.
+    ///
+    /// The `final_state` should be a clone of this state after applying `update_from_bundle_state`.
+    /// This allows the guest to pre-allocate exact capacity, avoiding the 1.5x growth factor.
     #[cfg(feature = "host")]
-    pub fn encode_to_state_bytes(&self) -> EthereumStateBytes {
+    pub fn encode_to_state_bytes_with_final(
+        &self,
+        final_state: &EthereumState,
+    ) -> EthereumStateBytes {
         let state_num_nodes = self.state_trie.num_nodes();
+        let final_state_num_nodes = final_state.state_trie.num_nodes();
         let state_bytes = bytes::Bytes::from(self.state_trie.encode_trie());
+
         let mut storage_bytes: Vec<_> = self
             .storage_tries
             .iter()
-            .map(|(addr, trie)| (*addr, trie.num_nodes(), bytes::Bytes::from(trie.encode_trie())))
+            .map(|(addr, trie)| {
+                // Use 0 for destroyed tries - triggers fallback 1.5x growth factor
+                let final_num_nodes =
+                    final_state.storage_tries.get(addr).map(|t| t.num_nodes()).unwrap_or(0);
+                (*addr, trie.num_nodes(), final_num_nodes, bytes::Bytes::from(trie.encode_trie()))
+            })
             .collect();
-        storage_bytes.sort_by_key(|(addr, _, _)| *addr);
+        storage_bytes.sort_by_key(|(addr, _, _, _)| *addr);
 
         EthereumStateBytes {
-            state_trie: (state_num_nodes, state_bytes),
+            state_trie: (state_num_nodes, final_state_num_nodes, state_bytes),
             storage_tries: storage_bytes,
         }
+    }
+
+    /// Encodes the state to bytes without final node counts (uses pre-state counts as fallback).
+    /// Prefer `encode_to_state_bytes_with_final` when post-execution state is available.
+    #[cfg(feature = "host")]
+    pub fn encode_to_state_bytes(&self) -> EthereumStateBytes {
+        self.encode_to_state_bytes_with_final(self)
     }
 }
 

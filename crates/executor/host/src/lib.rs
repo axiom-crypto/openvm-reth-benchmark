@@ -150,6 +150,12 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
             &after_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
         )?;
 
+        // Pre-execute to get final node counts for optimal capacity allocation.
+        // This allows the guest to pre-allocate exact capacity without growth factors.
+        tracing::info!("computing final node counts via pre-execution");
+        let mut final_state = state.clone();
+        final_state.update_from_bundle_state(&executor_outcome.bundle)?;
+
         // Skip state root verification for now.
         // It works with Alchemy but for some reason not with Quicknode.
         // It is checked on the client (guest) side and works with all providers.
@@ -187,7 +193,7 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
             ancestor_headers.push(block.header.into());
         }
 
-        let state_bytes = state.encode_to_state_bytes();
+        let state_bytes = state.encode_to_state_bytes_with_final(&final_state);
 
         // Create the client input.
         let client_input = ClientExecutorInput {
