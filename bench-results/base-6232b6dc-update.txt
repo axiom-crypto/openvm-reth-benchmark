@@ -1,5 +1,0 @@
-Loaded benchmark data: 21495189 bytes
-update only             time:   [9.9980 ms 10.137 ms 10.425 ms]
-                        change: [+2.8750% +5.3087% +7.4839%] (p = 0.00 < 0.05)
-                        Performance has regressed.
-

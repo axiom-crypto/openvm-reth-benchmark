@@ -1,5 +1,0 @@
-Loaded benchmark data: 21495189 bytes
-state root only         time:   [3.0221 ms 3.1008 ms 3.1921 ms]
-                        change: [−9.8130% −3.8312% +0.3609%] (p = 0.20 > 0.05)
-                        No change in performance detected.
-

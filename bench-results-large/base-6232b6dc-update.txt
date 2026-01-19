@@ -1,5 +1,0 @@
-Loaded benchmark data: 21495189 bytes
-update only             time:   [9.8427 ms 9.9209 ms 9.9855 ms]
-                        change: [+0.9716% +1.9797% +3.0173%] (p = 0.00 < 0.05)
-                        Change within noise threshold.
-
