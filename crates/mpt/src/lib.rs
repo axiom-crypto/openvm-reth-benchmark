@@ -1,6 +1,9 @@
 mod trie;
 pub use trie::*;
 
+#[doc(hidden)]
+pub const _CACHE_BUST: u8 = 1;
+
 mod state;
 pub use state::*;
 
