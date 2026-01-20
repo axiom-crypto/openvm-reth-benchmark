@@ -1,6 +1,6 @@
 use bumpalo::Bump;
 use reth_trie::AccountProof;
-use revm_primitives::{keccak256, Address, HashMap, B256};
+use revm_primitives::{keccak256, map::DefaultHashBuilder, Address, HashMap, B256};
 
 use crate::{
     hp::{prefix_to_nibs, to_encoded_path},
@@ -23,6 +23,9 @@ fn process_proof(
     node_store: &mut HashMap<B256, MptOwned>,
 ) -> Result<Option<MptOwned>, Error> {
     let proof_nodes = parse_proof(proof)?;
+    if !proof_nodes.is_empty() {
+        node_store.reserve(proof_nodes.len());
+    }
     let root_node = proof_nodes.first().cloned();
     for node in proof_nodes {
         node_store.insert(node.hash(), node);
@@ -196,8 +199,10 @@ pub fn transition_proofs_to_tries(
         });
     }
 
-    let mut storage_tries = HashMap::default();
-    let mut state_nodes = HashMap::default();
+    let mut storage_tries =
+        HashMap::with_capacity_and_hasher(parent_proofs.len(), DefaultHashBuilder::default());
+    let mut state_nodes =
+        HashMap::with_capacity_and_hasher(parent_proofs.len(), DefaultHashBuilder::default());
     let mut state_root_node = MptOwned::default();
 
     for (address, proof) in parent_proofs {

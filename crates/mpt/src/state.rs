@@ -41,6 +41,8 @@ impl EthereumState {
     }
 
     pub fn update_from_bundle_state(&mut self, bundle_state: &BundleState) -> Result<(), Error> {
+        self.storage_tries.reserve(bundle_state.state.len());
+
         for (address, account) in &bundle_state.state {
             let hashed_address = keccak256(address);
 
