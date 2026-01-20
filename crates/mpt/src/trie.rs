@@ -770,14 +770,24 @@ impl<'a> Mpt<'a> {
                     return Err(Error::ValueInBranch);
                 }
 
-                let mut remaining_iter = children.iter().enumerate().filter(|(_, n)| n.is_some());
+                let mut first: Option<(usize, NodeId)> = None;
+                let mut has_second = false;
+                for (idx, child_id) in children.iter().enumerate() {
+                    if let Some(child_id) = child_id {
+                        if first.is_none() {
+                            first = Some((idx, *child_id));
+                        } else {
+                            has_second = true;
+                            break;
+                        }
+                    }
+                }
 
                 // there will always be at least one remaining node
-                let (index, child_id) = remaining_iter.next().unwrap();
-                let child_id = child_id.unwrap();
+                let (index, child_id) = first.unwrap();
 
                 // if there is only exactly one node left, we need to convert the branch
-                if remaining_iter.next().is_none() {
+                if !has_second {
                     let child_node_data = self.nodes[child_id as usize].clone();
 
                     let new_node_data = match child_node_data {
