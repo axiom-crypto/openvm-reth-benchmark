@@ -174,7 +174,13 @@ fn build_storage_trie(proof: &AccountProof, fini_proofs: &AccountProof) -> Resul
         }
     }
 
+    // Process AFTER proofs: add ALL nodes from the proof (not just the last one)
+    // These nodes might contain expanded versions of Digest siblings from the BEFORE state
+    // which are needed for branch collapse operations during deletions.
     for storage_proof in &fini_proofs.storage_proofs {
+        // Add all intermediate nodes from the AFTER proof
+        process_proof(&storage_proof.proof, &mut storage_nodes)?;
+        // Also add shortened leaf paths for non-inclusion proofs
         add_orphaned_leafs(storage_proof.key.0, &storage_proof.proof, &mut storage_nodes)?;
     }
 
@@ -206,6 +212,10 @@ pub fn transition_proofs_to_tries(
         }
 
         let fini_proofs = proofs.get(address).unwrap();
+        // Process AFTER state proof: add ALL nodes (not just the last one)
+        // These nodes might contain expanded versions of Digest siblings from the BEFORE state
+        process_proof(&fini_proofs.proof, &mut state_nodes)?;
+        // Also add shortened leaf paths for non-inclusion proofs
         add_orphaned_leafs(address, &fini_proofs.proof, &mut state_nodes)?;
 
         let storage_trie = build_storage_trie(proof, fini_proofs)?;
@@ -214,4 +224,85 @@ pub fn transition_proofs_to_tries(
 
     let state_trie = resolve_nodes(&state_root_node, &state_nodes);
     Ok(EthereumState { state_trie: state_trie.into_inner(), storage_tries, bump })
+}
+
+/// Information about an unresolved digest node in a trie.
+#[derive(Debug, Clone)]
+pub struct UnresolvedDigest {
+    /// The hash of the unresolved digest node.
+    pub digest: B256,
+    /// The nibble path prefix to this digest in the trie.
+    pub prefix: Vec<u8>,
+    /// For storage tries: the keccak256(address). None for state trie.
+    pub address_hash: Option<B256>,
+}
+
+/// Scan an EthereumState for any unresolved Digest nodes.
+/// Returns a list of all unresolved digests with their path prefixes.
+/// Host-only: requires scanning internal trie structure.
+#[cfg(feature = "host")]
+pub fn find_unresolved_digests(state: &EthereumState) -> Vec<UnresolvedDigest> {
+    let mut results = Vec::new();
+
+    // Scan state trie
+    scan_trie_for_digests(&state.state_trie, &[], None, &mut results);
+
+    // Scan storage tries
+    for (address_hash, storage_trie) in &state.storage_tries {
+        scan_trie_for_digests(storage_trie, &[], Some(*address_hash), &mut results);
+    }
+
+    results
+}
+
+#[cfg(feature = "host")]
+fn scan_trie_for_digests(
+    trie: &crate::Mpt<'_>,
+    prefix: &[u8],
+    address_hash: Option<B256>,
+    results: &mut Vec<UnresolvedDigest>,
+) {
+    scan_node_for_digests(trie, trie.root_id(), prefix, address_hash, results);
+}
+
+#[cfg(feature = "host")]
+fn scan_node_for_digests(
+    trie: &crate::Mpt<'_>,
+    node_id: NodeId,
+    prefix: &[u8],
+    address_hash: Option<B256>,
+    results: &mut Vec<UnresolvedDigest>,
+) {
+    use crate::hp::prefix_to_nibs;
+
+    let Some(node) = trie.get_node(node_id) else {
+        return;
+    };
+
+    match node {
+        NodeData::Null => {}
+        NodeData::Leaf(_, _) => {}
+        NodeData::Branch(children) => {
+            for (nibble, child_id) in children.iter().enumerate() {
+                if let Some(child_id) = child_id {
+                    let mut child_prefix = prefix.to_vec();
+                    child_prefix.push(nibble as u8);
+                    scan_node_for_digests(trie, *child_id, &child_prefix, address_hash, results);
+                }
+            }
+        }
+        NodeData::Extension(path, child_id) => {
+            let path_nibbles = prefix_to_nibs(path);
+            let mut child_prefix = prefix.to_vec();
+            child_prefix.extend_from_slice(&path_nibbles);
+            scan_node_for_digests(trie, *child_id, &child_prefix, address_hash, results);
+        }
+        NodeData::Digest(digest) => {
+            results.push(UnresolvedDigest {
+                digest: B256::from_slice(digest),
+                prefix: prefix.to_vec(),
+                address_hash,
+            });
+        }
+    }
 }

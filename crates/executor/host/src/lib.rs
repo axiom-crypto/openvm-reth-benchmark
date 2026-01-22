@@ -1,11 +1,12 @@
 use std::collections::BTreeSet;
 
 use alloy_consensus::{TxEnvelope, TxReceipt};
-use alloy_primitives::Bloom;
+use alloy_primitives::{Address, Bloom};
 use alloy_provider::{network::Ethereum, Provider};
 use eyre::{eyre, Ok};
 use openvm_client_executor::io::ClientExecutorInput;
 use openvm_mpt::from_proof::transition_proofs_to_tries;
+use openvm_mpt::StateUpdateResult;
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
 use reth_chainspec::MAINNET;
@@ -16,8 +17,9 @@ use reth_evm_ethereum::EthEvmConfig;
 use reth_execution_types::ExecutionOutcome;
 use reth_primitives::Block;
 use reth_primitives_traits::block::Block as _;
+use reth_trie::AccountProof;
 use revm::database::CacheDB;
-use revm_primitives::B256;
+use revm_primitives::{keccak256, HashMap, B256};
 
 /// An executor that fetches data from a [Provider] to execute blocks in the [ClientExecutor].
 #[derive(Debug, Clone)]
@@ -33,6 +35,9 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
     }
 
     /// Executes the block with the given block number.
+    /// Uses the Zeth-style orphan resolution: builds state, applies bundle state
+    /// with orphan tracking, and resolves any orphans found during the actual
+    /// trie operations.
     pub async fn execute(&self, block_number: u64) -> eyre::Result<ClientExecutorInput> {
         // Fetch the current block and the previous block from the provider.
         tracing::info!("fetching the current block and the previous block");
@@ -144,11 +149,76 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
             after_storage_proofs.push(eip1186_proof_to_account_proof(storage_proof));
         }
 
-        let state = transition_proofs_to_tries(
-            previous_block.state_root,
-            &before_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
-            &after_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
-        )?;
+        // Build state tries with Zeth-style orphan resolution.
+        // Instead of scanning for all unresolved digests upfront, we apply the bundle state
+        // and only resolve orphans that actually block delete operations.
+        let mut before_proofs: HashMap<Address, AccountProof> =
+            before_storage_proofs.iter().map(|p| (p.address, p.clone())).collect();
+        let mut after_proofs: HashMap<Address, AccountProof> =
+            after_storage_proofs.iter().map(|p| (p.address, p.clone())).collect();
+
+        // Orphan resolution loop: apply bundle state, resolve blocking orphans, repeat
+        const MAX_ORPHAN_ITERATIONS: usize = 10;
+        let mut iteration = 0;
+
+        let state = loop {
+            iteration += 1;
+            if iteration > MAX_ORPHAN_ITERATIONS {
+                return Err(eyre!(
+                    "failed to resolve orphans after {} iterations",
+                    MAX_ORPHAN_ITERATIONS
+                ));
+            }
+
+            // Build the state tries from proofs
+            let mut state = transition_proofs_to_tries(
+                previous_block.state_root,
+                &before_proofs,
+                &after_proofs,
+            )?;
+
+            // Try to apply the bundle state and collect any orphans that block progress
+            let bundle_state = executor_outcome.state();
+            let orphan_result = state.update_from_bundle_state_with_orphans(bundle_state)?;
+
+            let total_orphans = orphan_result.state_orphans.len()
+                + orphan_result.storage_orphans.values().map(|v| v.len()).sum::<usize>();
+
+            if total_orphans == 0 {
+                // No orphans blocking - we're done!
+                eprintln!("[orphan] no blocking orphans found (iteration {})", iteration);
+                break state;
+            }
+
+            eprintln!(
+                "[orphan] iteration {}: found {} blocking orphans ({} state, {} storage accounts)",
+                iteration,
+                total_orphans,
+                orphan_result.state_orphans.len(),
+                orphan_result.storage_orphans.len()
+            );
+
+            // Resolve the blocking orphans by fetching additional proofs
+            let resolved = self
+                .resolve_orphans_from_result(
+                    &orphan_result,
+                    block_number,
+                    current_block.hash_slow(),
+                    &state_requests,
+                    &mut before_proofs,
+                    &mut after_proofs,
+                )
+                .await?;
+
+            if resolved == 0 {
+                return Err(eyre!(
+                    "failed to resolve any orphans - {} remain unresolvable",
+                    total_orphans
+                ));
+            }
+
+            eprintln!("[orphan] resolved {} orphans, rebuilding state...", resolved);
+        };
 
         // Skip state root verification for now.
         // It works with Alchemy but for some reason not with Quicknode.
@@ -199,6 +269,162 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
         tracing::info!("successfully generated client input");
 
         Ok(client_input)
+    }
+
+    /// Resolve orphans from a StateUpdateResult by fetching additional proofs.
+    /// Returns the number of orphans successfully resolved.
+    async fn resolve_orphans_from_result(
+        &self,
+        orphan_result: &StateUpdateResult,
+        block_number: u64,
+        block_hash: B256,
+        state_requests: &HashMap<Address, Vec<revm_primitives::U256>>,
+        before_proofs: &mut HashMap<Address, AccountProof>,
+        after_proofs: &mut HashMap<Address, AccountProof>,
+    ) -> eyre::Result<usize> {
+        let rpc_db = RpcDb::new(self.provider.clone(), block_number - 1);
+        // Match zeth: query pre-state for the given block hash with txIndex=0.
+        let tx_index = 0usize;
+        let mut resolved_count = 0;
+
+        // Resolve storage orphans
+        for (hashed_address, orphans) in &orphan_result.storage_orphans {
+            // Find the actual address from the hashed address
+            let address = match state_requests
+                .keys()
+                .find(|addr| keccak256(addr) == *hashed_address)
+            {
+                Some(addr) => *addr,
+                None => {
+                    eprintln!("[orphan] SKIP: no address for hash {}", hashed_address);
+                    continue;
+                }
+            };
+
+            // Debug: show what proofs we have for this account
+            if let Some(before_proof) = before_proofs.get(&address) {
+                eprintln!(
+                    "[orphan-debug] address {} has {} before storage proofs",
+                    address,
+                    before_proof.storage_proofs.len()
+                );
+                for sp in &before_proof.storage_proofs {
+                    let hashed_key = keccak256(sp.key.0);
+                    eprintln!(
+                        "[orphan-debug]   before key={}, hashed={}, value={}",
+                        sp.key, hashed_key, sp.value
+                    );
+                }
+            }
+            if let Some(after_proof) = after_proofs.get(&address) {
+                eprintln!(
+                    "[orphan-debug] address {} has {} after storage proofs",
+                    address,
+                    after_proof.storage_proofs.len()
+                );
+                for sp in &after_proof.storage_proofs {
+                    let hashed_key = keccak256(sp.key.0);
+                    eprintln!(
+                        "[orphan-debug]   after key={}, hashed={}, value={}",
+                        sp.key, hashed_key, sp.value
+                    );
+                }
+            }
+
+            for orphan in orphans {
+                eprintln!(
+                    "[orphan] resolving storage orphan for address {}: prefix={:?}, digest={}",
+                    address, orphan.prefix, orphan.digest
+                );
+
+                // Use debug_storageRangeAt to find the actual storage key
+                let storage_key = rpc_db
+                    .get_storage_key_by_hash_prefix(block_hash, address, &orphan.prefix, tx_index)
+                    .await?;
+
+                eprintln!(
+                    "[orphan] SUCCESS: found storage key {} for prefix {:?}",
+                    storage_key, orphan.prefix
+                );
+
+                // Fetch additional proofs for the discovered key
+                let before_proof = self
+                    .provider
+                    .get_proof(address, vec![storage_key])
+                    .block_id((block_number - 1).into())
+                    .await?;
+
+                if let Some(existing) = before_proofs.get_mut(&address) {
+                    existing
+                        .storage_proofs
+                        .extend(eip1186_proof_to_account_proof(before_proof).storage_proofs);
+                }
+
+                let after_proof = self
+                    .provider
+                    .get_proof(address, vec![storage_key])
+                    .block_id(block_number.into())
+                    .await?;
+
+                if let Some(existing) = after_proofs.get_mut(&address) {
+                    existing
+                        .storage_proofs
+                        .extend(eip1186_proof_to_account_proof(after_proof).storage_proofs);
+                }
+
+                resolved_count += 1;
+            }
+        }
+
+        // Resolve state trie orphans
+        for orphan in &orphan_result.state_orphans {
+            eprintln!(
+                "[orphan] resolving state trie orphan: prefix={:?}, digest={}",
+                orphan.prefix, orphan.digest
+            );
+
+            let address = match rpc_db
+                .get_account_address_by_hash_prefix(block_hash, &orphan.prefix, tx_index)
+                .await?
+            {
+                Some(addr) => addr,
+                None => {
+                    tracing::warn!(
+                        "could not find account for state trie orphan prefix {:?}, digest={} - skipping",
+                        orphan.prefix,
+                        orphan.digest
+                    );
+                    continue;
+                }
+            };
+
+            tracing::info!("found address {} for state trie orphan", address);
+
+            // Fetch account proofs
+            let before_proof = self
+                .provider
+                .get_proof(address, vec![])
+                .block_id((block_number - 1).into())
+                .await?;
+
+            before_proofs
+                .entry(address)
+                .or_insert_with(|| eip1186_proof_to_account_proof(before_proof));
+
+            let after_proof = self
+                .provider
+                .get_proof(address, vec![])
+                .block_id(block_number.into())
+                .await?;
+
+            after_proofs
+                .entry(address)
+                .or_insert_with(|| eip1186_proof_to_account_proof(after_proof));
+
+            resolved_count += 1;
+        }
+
+        Ok(resolved_count)
     }
 }
 

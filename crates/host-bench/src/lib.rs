@@ -186,9 +186,18 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                 // Setup the host executor.
                 let host_executor = HostExecutor::new(provider);
 
-                // Execute the host.
-                let client_input =
-                    host_executor.execute(args.block_number).await.expect("failed to execute host");
+                // Execute the host. The host executor now handles orphan resolution internally
+                // using Zeth-style approach where blocking orphans are resolved during state updates.
+                let client_input = host_executor
+                    .execute(args.block_number)
+                    .await
+                    .expect("failed to execute host");
+
+                // Validate by running client execution
+                let executor = openvm_client_executor::ClientExecutor;
+                executor
+                    .execute(openvm_client_executor::ChainVariant::Mainnet, client_input.clone())
+                    .expect("client execution failed after host execution");
 
                 if let Some(cache_dir) = args.cache_dir {
                     let input_folder =
