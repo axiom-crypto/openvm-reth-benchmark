@@ -85,6 +85,7 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
             &spec,
             &executor_output.receipts,
             &executor_output.requests,
+            None,
         )?;
 
         // Accumulate the logs bloom.

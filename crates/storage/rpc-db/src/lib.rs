@@ -77,6 +77,7 @@ impl<P: Provider<Ethereum> + Clone> RpcDb<P> {
             balance: proof.balance,
             code_hash: bytecode.hash_slow(),
             code: Some(bytecode.clone()),
+            account_id: None,
         };
 
         // Record the account info to the state.

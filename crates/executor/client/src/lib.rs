@@ -90,6 +90,7 @@ impl ClientExecutor {
             &spec,
             &executor_output.receipts,
             &executor_output.requests,
+            None,
         )
         .map_err(ClientExecutionError::InvalidBlockPostExecution)?;
 
