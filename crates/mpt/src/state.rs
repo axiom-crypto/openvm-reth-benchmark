@@ -150,7 +150,20 @@ impl EthereumState {
                             }
                         }
                     } else {
-                        storage_trie.insert_rlp(hashed_slot.as_slice(), value.present_value)?;
+                        match storage_trie.insert_rlp_with_orphan_info(
+                            hashed_slot.as_slice(),
+                            value.present_value,
+                        ) {
+                            Ok(_) => {}
+                            Err(Error::UnresolvableOrphan { digest, prefix }) => {
+                                result
+                                    .storage_orphans
+                                    .entry(hashed_address)
+                                    .or_default()
+                                    .push(OrphanInfo { digest, prefix });
+                            }
+                            Err(err) => return Err(err),
+                        }
                     }
                 }
                 let storage_root = storage_trie.hash();
@@ -160,7 +173,16 @@ impl EthereumState {
                     storage_root,
                     code_hash: info.code_hash,
                 };
-                self.state_trie.insert_rlp(hashed_address.as_slice(), state_account)?;
+                match self
+                    .state_trie
+                    .insert_rlp_with_orphan_info(hashed_address.as_slice(), state_account)
+                {
+                    Ok(_) => {}
+                    Err(Error::UnresolvableOrphan { digest, prefix }) => {
+                        result.state_orphans.push(OrphanInfo { digest, prefix });
+                    }
+                    Err(err) => return Err(err),
+                }
             } else {
                 // Account deletion - use resolve_orphan to collect orphan info
                 match self.state_trie.resolve_orphan(hashed_address.as_slice()) {
