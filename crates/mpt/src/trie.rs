@@ -547,6 +547,20 @@ impl<'a> Mpt<'a> {
         self.insert_internal(self.root_id, key_nibs, value)
     }
 
+    /// Inserts a key-value pair into the trie and returns orphan prefix info if blocked by a
+    /// digest node. This is the host-only variant used for targeted orphan resolution.
+    #[cfg(feature = "host")]
+    #[inline]
+    pub fn insert_with_orphan_info(
+        &mut self,
+        key: &[u8],
+        value: &'a [u8],
+    ) -> Result<bool, Error> {
+        let key_nibs = &to_nibs(key);
+        let mut prefix: Vec<u8> = Vec::with_capacity(64);
+        self.insert_internal_with_prefix(self.root_id, key_nibs, value, &mut prefix)
+    }
+
     /// Inserts an RLP-encoded value into the trie.
     #[inline]
     pub fn insert_rlp(
@@ -557,6 +571,20 @@ impl<'a> Mpt<'a> {
         let mut rlp_bytes = BumpBytesMut::with_capacity_in(VALUE_RLP_BUFFER_CAPACITY, self.bump);
         value.encode(&mut rlp_bytes);
         self.insert(key, rlp_bytes.into_inner().into_bump_slice())
+    }
+
+    /// Inserts an RLP-encoded value into the trie and returns orphan prefix info if blocked by a
+    /// digest node. Host-only variant used for targeted orphan resolution.
+    #[cfg(feature = "host")]
+    #[inline]
+    pub fn insert_rlp_with_orphan_info(
+        &mut self,
+        key: &[u8],
+        value: impl alloy_rlp::Encodable,
+    ) -> Result<bool, Error> {
+        let mut rlp_bytes = BumpBytesMut::with_capacity_in(VALUE_RLP_BUFFER_CAPACITY, self.bump);
+        value.encode(&mut rlp_bytes);
+        self.insert_with_orphan_info(key, rlp_bytes.into_inner().into_bump_slice())
     }
 
     /// Removes a key from the trie.
@@ -754,6 +782,144 @@ impl<'a> Mpt<'a> {
             self.invalidate_ref_cache(node_id);
         }
 
+        Ok(updated)
+    }
+
+    /// Internal insert that tracks the accumulated nibble prefix for orphan resolution.
+    #[cfg(feature = "host")]
+    fn insert_internal_with_prefix(
+        &mut self,
+        node_id: NodeId,
+        key_nibs: &[u8],
+        value: &'a [u8],
+        prefix: &mut Vec<u8>,
+    ) -> Result<bool, Error> {
+        let updated = match self.nodes[node_id as usize] {
+            NodeData::Null => {
+                let path = to_encoded_path_with_bump(self.bump, key_nibs, true);
+                self.nodes[node_id as usize] = NodeData::Leaf(path, value);
+                true
+            }
+            NodeData::Branch(mut children) => {
+                if let Some((i, tail)) = key_nibs.split_first() {
+                    prefix.push(*i);
+                    match children[*i as usize] {
+                        Some(id) => {
+                            let updated =
+                                self.insert_internal_with_prefix(id, tail, value, prefix)?;
+                            prefix.pop();
+                            updated
+                        }
+                        None => {
+                            let path = to_encoded_path_with_bump(self.bump, tail, true);
+                            let new_leaf_id = self.add_node(NodeData::Leaf(path, value), None);
+                            children[*i as usize] = Some(new_leaf_id);
+                            self.nodes[node_id as usize] = NodeData::Branch(children);
+                            prefix.pop();
+                            true
+                        }
+                    }
+                } else {
+                    return Err(Error::ValueInBranch);
+                }
+            }
+            NodeData::Leaf(prefix_bytes, old_value) => {
+                let self_nibs = prefix_to_nibs(prefix_bytes);
+                let common_len = lcp(&self_nibs, key_nibs);
+
+                if common_len == self_nibs.len() && common_len == key_nibs.len() {
+                    if old_value == value {
+                        return Ok(false);
+                    }
+                    self.nodes[node_id as usize] = NodeData::Leaf(prefix_bytes, value);
+                    true
+                } else if common_len == self_nibs.len() || common_len == key_nibs.len() {
+                    return Err(Error::ValueInBranch);
+                } else {
+                    let split_point = common_len + 1;
+                    let mut children: [Option<NodeId>; 16] = Default::default();
+
+                    let leaf1_path =
+                        to_encoded_path_with_bump(self.bump, &self_nibs[split_point..], true);
+                    let leaf1_id = self.add_node(NodeData::Leaf(leaf1_path, old_value), None);
+
+                    let leaf2_path =
+                        to_encoded_path_with_bump(self.bump, &key_nibs[split_point..], true);
+                    let leaf2_id = self.add_node(NodeData::Leaf(leaf2_path, value), None);
+
+                    children[self_nibs[common_len] as usize] = Some(leaf1_id);
+                    children[key_nibs[common_len] as usize] = Some(leaf2_id);
+
+                    let new_node_data = if common_len > 0 {
+                        let branch_id = self.add_node(NodeData::Branch(children), None);
+                        let ext_path_slice =
+                            to_encoded_path_with_bump(self.bump, &self_nibs[..common_len], false);
+                        NodeData::Extension(ext_path_slice, branch_id)
+                    } else {
+                        NodeData::Branch(children)
+                    };
+                    self.nodes[node_id as usize] = new_node_data;
+                    true
+                }
+            }
+            NodeData::Extension(prefix_bytes, child_id) => {
+                let self_nibs = prefix_to_nibs(prefix_bytes);
+                let common_len = lcp(&self_nibs, key_nibs);
+
+                if common_len == self_nibs.len() {
+                    prefix.extend_from_slice(&self_nibs);
+                    let updated = self.insert_internal_with_prefix(
+                        child_id,
+                        &key_nibs[common_len..],
+                        value,
+                        prefix,
+                    )?;
+                    prefix.truncate(prefix.len() - self_nibs.len());
+                    updated
+                } else if common_len == key_nibs.len() {
+                    return Err(Error::ValueInBranch);
+                } else {
+                    let split_point = common_len + 1;
+                    let mut children: [Option<NodeId>; 16] = Default::default();
+
+                    if split_point < self_nibs.len() {
+                        let ext_path =
+                            to_encoded_path_with_bump(self.bump, &self_nibs[split_point..], false);
+                        let ext_id = self.add_node(NodeData::Extension(ext_path, child_id), None);
+                        children[self_nibs[common_len] as usize] = Some(ext_id);
+                    } else {
+                        children[self_nibs[common_len] as usize] = Some(child_id);
+                    }
+
+                    let leaf_path =
+                        to_encoded_path_with_bump(self.bump, &key_nibs[split_point..], true);
+                    let leaf_id = self.add_node(NodeData::Leaf(leaf_path, value), None);
+                    children[key_nibs[common_len] as usize] = Some(leaf_id);
+
+                    let new_node_data = if common_len > 0 {
+                        let branch_id = self.add_node(NodeData::Branch(children), None);
+                        let parent_ext_path_slice =
+                            to_encoded_path_with_bump(self.bump, &self_nibs[..common_len], false);
+                        NodeData::Extension(parent_ext_path_slice, branch_id)
+                    } else {
+                        NodeData::Branch(children)
+                    };
+                    self.nodes[node_id as usize] = new_node_data;
+                    true
+                }
+            }
+            NodeData::Digest(digest) => {
+                let orphan_prefix = prefix.clone();
+                return Err(Error::UnresolvableOrphan {
+                    digest: B256::from_slice(digest),
+                    prefix: orphan_prefix,
+                });
+            }
+        };
+
+        if updated {
+            self.invalidate_ref_cache(node_id);
+        }
         Ok(updated)
     }
 
