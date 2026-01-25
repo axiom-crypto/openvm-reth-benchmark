@@ -528,10 +528,39 @@ impl<'a> Mpt<'a> {
         self.get_internal(self.root_id, &to_nibs(key))
     }
 
+    /// Retrieves the value associated with a given key in the trie, returning orphan prefix info
+    /// if the lookup is blocked by a digest node.
+    #[cfg(feature = "host")]
+    #[inline]
+    pub fn get_with_orphan_info<'s>(
+        &'s self,
+        key: &[u8],
+    ) -> Result<Option<&'a [u8]>, Error> {
+        let mut prefix: Vec<u8> = Vec::with_capacity(64);
+        self.get_internal_with_prefix(self.root_id, &to_nibs(key), &mut prefix)
+    }
+
     /// Retrieves the RLP-decoded value corresponding to the key.
     #[inline]
     pub fn get_rlp<T: alloy_rlp::Decodable>(&self, key: &[u8]) -> Result<Option<T>, Error> {
         match self.get(key)? {
+            Some(bytes) => {
+                let mut slice = bytes;
+                Ok(Some(T::decode(&mut slice)?))
+            }
+            None => Ok(None),
+        }
+    }
+
+    /// Retrieves the RLP-decoded value corresponding to the key, returning orphan prefix info
+    /// if the lookup is blocked by a digest node.
+    #[cfg(feature = "host")]
+    #[inline]
+    pub fn get_rlp_with_orphan_info<T: alloy_rlp::Decodable>(
+        &self,
+        key: &[u8],
+    ) -> Result<Option<T>, Error> {
+        match self.get_with_orphan_info(key)? {
             Some(bytes) => {
                 let mut slice = bytes;
                 Ok(Some(T::decode(&mut slice)?))
@@ -662,6 +691,55 @@ impl<'a> Mpt<'a> {
                 }
             }
             NodeData::Digest(digest) => Err(Error::NodeNotResolved(B256::from_slice(digest))),
+        }
+    }
+
+    #[cfg(feature = "host")]
+    fn get_internal_with_prefix(
+        &self,
+        node_id: NodeId,
+        key_nibs: &[u8],
+        prefix: &mut Vec<u8>,
+    ) -> Result<Option<&'a [u8]>, Error> {
+        match &self.nodes[node_id as usize] {
+            NodeData::Null => Ok(None),
+            NodeData::Branch(nodes) => {
+                if let Some((i, tail)) = key_nibs.split_first() {
+                    match nodes[*i as usize] {
+                        Some(id) => {
+                            prefix.push(*i);
+                            let res = self.get_internal_with_prefix(id, tail, prefix);
+                            prefix.pop();
+                            res
+                        }
+                        None => Ok(None),
+                    }
+                } else {
+                    Ok(None)
+                }
+            }
+            NodeData::Leaf(path_bytes, value) => {
+                if encoded_path_eq_nibs(path_bytes, key_nibs) {
+                    Ok(Some(value))
+                } else {
+                    Ok(None)
+                }
+            }
+            NodeData::Extension(path_bytes, child_id) => {
+                if let Some(tail) = encoded_path_strip_prefix(path_bytes, key_nibs) {
+                    let ext_nibs = prefix_to_nibs(path_bytes);
+                    prefix.extend_from_slice(&ext_nibs);
+                    let res = self.get_internal_with_prefix(*child_id, tail, prefix);
+                    prefix.truncate(prefix.len() - ext_nibs.len());
+                    res
+                } else {
+                    Ok(None)
+                }
+            }
+            NodeData::Digest(digest) => Err(Error::UnresolvableOrphan {
+                digest: B256::from_slice(digest),
+                prefix: prefix.clone(),
+            }),
         }
     }
 

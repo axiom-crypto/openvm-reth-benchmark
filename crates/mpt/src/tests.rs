@@ -53,6 +53,56 @@ fn test_branch_value() {
 }
 
 #[test]
+#[cfg(feature = "host")]
+fn test_insert_with_orphan_info_returns_prefix() {
+    let bump = bumpalo::Bump::new();
+    let mut trie = Mpt::new(&bump);
+
+    let fake_digest = [0x11; 32];
+    let digest_id = trie.add_node(NodeData::Digest(&fake_digest), None);
+
+    let mut children: [Option<u32>; 16] = Default::default();
+    children[1] = Some(digest_id);
+    let branch_id = trie.add_node(NodeData::Branch(children), None);
+    trie.set_root_id(branch_id);
+
+    let result = trie.insert_with_orphan_info(&[0x10], b"value");
+    match result {
+        Err(Error::UnresolvableOrphan { digest, prefix }) => {
+            assert_eq!(digest, B256::from_slice(&fake_digest));
+            assert_eq!(prefix, vec![1]);
+        }
+        Ok(_) => panic!("Expected UnresolvableOrphan error, but insert succeeded"),
+        Err(e) => panic!("Expected UnresolvableOrphan error, got: {e:?}"),
+    }
+}
+
+#[test]
+#[cfg(feature = "host")]
+fn test_get_with_orphan_info_returns_prefix() {
+    let bump = bumpalo::Bump::new();
+    let mut trie = Mpt::new(&bump);
+
+    let fake_digest = [0x22; 32];
+    let digest_id = trie.add_node(NodeData::Digest(&fake_digest), None);
+
+    let mut children: [Option<u32>; 16] = Default::default();
+    children[2] = Some(digest_id);
+    let branch_id = trie.add_node(NodeData::Branch(children), None);
+    trie.set_root_id(branch_id);
+
+    let result = trie.get_with_orphan_info(&[0x20]);
+    match result {
+        Err(Error::UnresolvableOrphan { digest, prefix }) => {
+            assert_eq!(digest, B256::from_slice(&fake_digest));
+            assert_eq!(prefix, vec![2]);
+        }
+        Ok(_) => panic!("Expected UnresolvableOrphan error, but get succeeded"),
+        Err(e) => panic!("Expected UnresolvableOrphan error, got: {e:?}"),
+    }
+}
+
+#[test]
 fn test_insert() -> Result<(), Error> {
     let bump = bumpalo::Bump::new();
     let mut trie = Mpt::new(&bump);
