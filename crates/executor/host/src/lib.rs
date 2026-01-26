@@ -288,7 +288,7 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
         let tx_index = 0usize;
         let mut resolved_count = 0;
 
-        // Resolve storage orphans
+        // Resolve storage orphans - collect all keys per address, then batch into single proofs
         for (hashed_address, orphans) in &orphan_result.storage_orphans {
             // Find the actual address from the hashed address
             let address =
@@ -330,48 +330,62 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
                 }
             }
 
+            // Collect all discovered storage keys for this address across all orphans
+            let mut all_storage_keys = Vec::new();
+
             for orphan in orphans {
                 eprintln!(
                     "[orphan] resolving storage orphan for address {}: prefix={:?}, digest={}",
                     address, orphan.prefix, orphan.digest
                 );
 
-                // Use debug_storageRangeAt to find the actual storage key
-                let storage_key = rpc_db
+                // Use debug_storageRangeAt to find matching storage keys (may return multiple)
+                let storage_keys = rpc_db
                     .get_storage_key_by_hash_prefix(block_hash, address, &orphan.prefix, tx_index)
                     .await?;
 
                 eprintln!(
-                    "[orphan] SUCCESS: found storage key {} for prefix {:?}",
-                    storage_key, orphan.prefix
+                    "[orphan] SUCCESS: found {} storage key(s) for prefix {:?}: {:?}",
+                    storage_keys.len(),
+                    orphan.prefix,
+                    storage_keys
                 );
 
-                // Fetch additional proofs for the discovered key
-                let before_proof = self
-                    .provider
-                    .get_proof(address, vec![storage_key])
-                    .block_id((block_number - 1).into())
-                    .await?;
-
-                if let Some(existing) = before_proofs.get_mut(&address) {
-                    existing
-                        .storage_proofs
-                        .extend(eip1186_proof_to_account_proof(before_proof).storage_proofs);
-                }
-
-                let after_proof = self
-                    .provider
-                    .get_proof(address, vec![storage_key])
-                    .block_id(block_number.into())
-                    .await?;
-
-                if let Some(existing) = after_proofs.get_mut(&address) {
-                    existing
-                        .storage_proofs
-                        .extend(eip1186_proof_to_account_proof(after_proof).storage_proofs);
-                }
-
+                all_storage_keys.extend(storage_keys);
                 resolved_count += 1;
+            }
+
+            if all_storage_keys.is_empty() {
+                continue;
+            }
+
+            // Deduplicate keys
+            all_storage_keys.sort();
+            all_storage_keys.dedup();
+
+            // Batch all discovered keys into a single eth_getProof call per address
+            let before_proof = self
+                .provider
+                .get_proof(address, all_storage_keys.clone())
+                .block_id((block_number - 1).into())
+                .await?;
+
+            if let Some(existing) = before_proofs.get_mut(&address) {
+                existing
+                    .storage_proofs
+                    .extend(eip1186_proof_to_account_proof(before_proof).storage_proofs);
+            }
+
+            let after_proof = self
+                .provider
+                .get_proof(address, all_storage_keys)
+                .block_id(block_number.into())
+                .await?;
+
+            if let Some(existing) = after_proofs.get_mut(&address) {
+                existing
+                    .storage_proofs
+                    .extend(eip1186_proof_to_account_proof(after_proof).storage_proofs);
             }
         }
 

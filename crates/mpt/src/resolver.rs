@@ -25,6 +25,11 @@ impl MptResolver {
         MptResolver { node_store }
     }
 
+    /// Add additional nodes to the resolver's store.
+    pub fn add_nodes(&mut self, nodes: impl IntoIterator<Item = (B256, Bytes)>) {
+        self.node_store.extend(nodes);
+    }
+
     /// Resolves an MPT from the mapping stored in [`MptResolver`] given its `root` hash.
     pub fn resolve(&self, root: &B256) -> Result<Mpt<'static>, Error> {
         let mut mpt = MptOwned::default();

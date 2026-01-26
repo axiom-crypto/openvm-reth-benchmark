@@ -238,11 +238,14 @@ impl<P: Provider<Ethereum> + Clone> RpcDb<P> {
             .collect::<Vec<_>>()
     }
 
-    /// Find a storage key whose keccak256 hash starts with the given nibble prefix.
-    /// Uses debug_storageRangeAt RPC method.
+    /// Find all storage keys whose keccak256 hash starts with the given nibble prefix.
+    /// Uses debug_storageRangeAt RPC method with pagination.
     ///
     /// This is used for orphan resolution when `eth_getProof` doesn't include
     /// all necessary nodes for MPT branch collapse operations.
+    ///
+    /// Returns all matching keys found across up to 5 pages of 256 results each.
+    /// This handles providers that iterate by raw key order instead of hash order.
     ///
     /// `tx_index` should be 0 to query the pre-state for the given block hash,
     /// which matches the zeth debug_storageRangeAt usage.
@@ -252,7 +255,7 @@ impl<P: Provider<Ethereum> + Clone> RpcDb<P> {
         address: Address,
         prefix_nibbles: &[u8],
         tx_index: usize,
-    ) -> Result<B256, RpcDbError> {
+    ) -> Result<Vec<B256>, RpcDbError> {
         tracing::info!(
             "fetching storage key by hash prefix: address={}, prefix={:?}, tx_index={}",
             address,
@@ -261,38 +264,53 @@ impl<P: Provider<Ethereum> + Clone> RpcDb<P> {
         );
 
         // Convert nibbles to start key (right-padded with zeros), matching zeth.
-        let start_key = nibbles_to_hash(prefix_nibbles);
-        eprintln!(
-            "[orphan] debug_storageRangeAt: start_key={} (from nibbles {:?}), txIndex={}",
-            start_key, prefix_nibbles, tx_index
-        );
+        let mut start_key = nibbles_to_hash(prefix_nibbles);
+        let mut matched_keys = Vec::new();
 
-        // Call debug_storageRangeAt with limit=1, like zeth.
-        let result: StorageRangeResult = self
-            .provider
-            .raw_request(
-                Cow::Borrowed("debug_storageRangeAt"),
-                (block_hash, tx_index, address, start_key, 1u64),
-            )
-            .await
-            .map_err(|e| RpcDbError::RpcError(e.to_string()))?;
+        for page in 0..5 {
+            eprintln!(
+                "[orphan] debug_storageRangeAt: page={}, start_key={} (from nibbles {:?}), txIndex={}",
+                page, start_key, prefix_nibbles, tx_index
+            );
 
-        let (hashed_key, entry) = result
-            .storage
-            .into_iter()
-            .next()
-            .ok_or(RpcDbError::PreimageNotFound)?;
-        let storage_key = entry.key.ok_or(RpcDbError::PreimageNotFound)?;
+            let result: StorageRangeResult = self
+                .provider
+                .raw_request(
+                    Cow::Borrowed("debug_storageRangeAt"),
+                    (block_hash, tx_index, address, start_key, 256u64),
+                )
+                .await
+                .map_err(|e| RpcDbError::RpcError(e.to_string()))?;
 
-        let storage_hash = keccak256(storage_key);
-        if !hash_matches_prefix(&storage_hash, prefix_nibbles) {
-            return Err(RpcDbError::RpcError(format!(
-                "Invalid debug_storageRangeAt response: prefix={:?}, hashed_key={}, key={}, key_hash={}",
-                prefix_nibbles, hashed_key, storage_key, storage_hash
-            )));
+            for (_hashed_key, entry) in &result.storage {
+                if let Some(storage_key) = entry.key {
+                    let storage_hash = keccak256(storage_key);
+                    if hash_matches_prefix(&storage_hash, prefix_nibbles) {
+                        matched_keys.push(storage_key);
+                    }
+                }
+            }
+
+            // If we found matches or there's no next page, stop
+            if !matched_keys.is_empty() || result.next_key.is_none() {
+                break;
+            }
+
+            // Paginate using next_key
+            start_key = result.next_key.unwrap();
         }
 
-        Ok(storage_key)
+        if matched_keys.is_empty() {
+            return Err(RpcDbError::PreimageNotFound);
+        }
+
+        eprintln!(
+            "[orphan] found {} storage keys matching prefix {:?}",
+            matched_keys.len(),
+            prefix_nibbles
+        );
+
+        Ok(matched_keys)
     }
 
     /// Find an account address whose keccak256 hash starts with the given nibble prefix.
