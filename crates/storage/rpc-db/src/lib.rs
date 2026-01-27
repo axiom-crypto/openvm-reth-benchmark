@@ -331,7 +331,8 @@ impl<P: Provider<Ethereum> + Clone> RpcDb<P> {
     ) -> Result<Option<Address>, RpcDbError> {
         tracing::debug!("fetching account address by hash prefix: prefix={:?}", prefix_nibbles);
 
-        // Try debug_accountRange - on geth it might iterate by hash, on Quicknode it iterates by address
+        // Try debug_accountRange - on geth it might iterate by hash, on Quicknode it iterates by
+        // address
         let target_hash = nibbles_to_hash(prefix_nibbles);
 
         // Try a few pages of results in case we get lucky

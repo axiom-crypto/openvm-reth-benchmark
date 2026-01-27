@@ -66,10 +66,7 @@ pub enum ResolveOrphanResult {
     /// Key was not present in the trie
     NotPresent,
     /// Sibling Digest blocks collapse - prefix tells us what to fetch
-    Unresolvable {
-        digest: B256,
-        prefix: Vec<u8>,
-    },
+    Unresolvable { digest: B256, prefix: Vec<u8> },
 }
 
 /// Arena-based implementation that stores all nodes in a flat vector and uses indices for better
@@ -532,10 +529,7 @@ impl<'a> Mpt<'a> {
     /// if the lookup is blocked by a digest node.
     #[cfg(feature = "host")]
     #[inline]
-    pub fn get_with_orphan_info<'s>(
-        &'s self,
-        key: &[u8],
-    ) -> Result<Option<&'a [u8]>, Error> {
+    pub fn get_with_orphan_info<'s>(&'s self, key: &[u8]) -> Result<Option<&'a [u8]>, Error> {
         let mut prefix: Vec<u8> = Vec::with_capacity(64);
         self.get_internal_with_prefix(self.root_id, &to_nibs(key), &mut prefix)
     }
@@ -580,11 +574,7 @@ impl<'a> Mpt<'a> {
     /// digest node. This is the host-only variant used for targeted orphan resolution.
     #[cfg(feature = "host")]
     #[inline]
-    pub fn insert_with_orphan_info(
-        &mut self,
-        key: &[u8],
-        value: &'a [u8],
-    ) -> Result<bool, Error> {
+    pub fn insert_with_orphan_info(&mut self, key: &[u8], value: &'a [u8]) -> Result<bool, Error> {
         let key_nibs = &to_nibs(key);
         let mut prefix: Vec<u8> = Vec::with_capacity(64);
         self.insert_internal_with_prefix(self.root_id, key_nibs, value, &mut prefix)

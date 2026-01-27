@@ -3,9 +3,9 @@ use reth_trie::TrieAccount;
 use revm::database::BundleState;
 use revm_primitives::{keccak256, map::DefaultHashBuilder, HashMap, B256};
 
-use crate::{Error, Mpt};
 #[cfg(feature = "host")]
 use crate::trie::ResolveOrphanResult;
+use crate::{Error, Mpt};
 
 /// Serialized Ethereum state.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -31,6 +31,9 @@ pub struct StateUpdateResult {
     pub state_orphans: Vec<OrphanInfo>,
     /// Storage orphans keyed by hashed_address
     pub storage_orphans: HashMap<B256, Vec<OrphanInfo>>,
+    /// Counts for debugging - how many orphans came from inserts vs deletes
+    pub insert_orphan_count: usize,
+    pub delete_orphan_count: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -127,6 +130,7 @@ impl EthereumState {
                         match storage_trie.resolve_orphan(hashed_slot.as_slice()) {
                             ResolveOrphanResult::Resolved | ResolveOrphanResult::NotPresent => {}
                             ResolveOrphanResult::Unresolvable { digest, prefix } => {
+                                result.delete_orphan_count += 1;
                                 result
                                     .storage_orphans
                                     .entry(hashed_address)
@@ -141,6 +145,7 @@ impl EthereumState {
                         ) {
                             Ok(_) => {}
                             Err(Error::UnresolvableOrphan { digest, prefix }) => {
+                                result.insert_orphan_count += 1;
                                 result
                                     .storage_orphans
                                     .entry(hashed_address)

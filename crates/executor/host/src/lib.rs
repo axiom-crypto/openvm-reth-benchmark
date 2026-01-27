@@ -5,8 +5,7 @@ use alloy_primitives::{Address, Bloom};
 use alloy_provider::{network::Ethereum, Provider};
 use eyre::{eyre, Ok};
 use openvm_client_executor::io::ClientExecutorInput;
-use openvm_mpt::from_proof::transition_proofs_to_tries;
-use openvm_mpt::StateUpdateResult;
+use openvm_mpt::{from_proof::transition_proofs_to_tries, StateUpdateResult};
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
 use reth_chainspec::MAINNET;
@@ -183,8 +182,8 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
             let bundle_state = executor_outcome.state();
             let orphan_result = state.update_from_bundle_state_with_orphans(bundle_state)?;
 
-            let total_orphans = orphan_result.state_orphans.len()
-                + orphan_result.storage_orphans.values().map(|v| v.len()).sum::<usize>();
+            let total_orphans = orphan_result.state_orphans.len() +
+                orphan_result.storage_orphans.values().map(|v| v.len()).sum::<usize>();
 
             if total_orphans == 0 {
                 // No orphans blocking - we're done!
@@ -292,16 +291,14 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
         // Resolve storage orphans - collect all keys per address, then batch into single proofs
         for (hashed_address, orphans) in &orphan_result.storage_orphans {
             // Find the actual address from the hashed address
-            let address = match state_requests
-                .keys()
-                .find(|addr| keccak256(addr) == *hashed_address)
-            {
-                Some(addr) => *addr,
-                None => {
-                    eprintln!("[orphan] SKIP: no address for hash {}", hashed_address);
-                    continue;
-                }
-            };
+            let address =
+                match state_requests.keys().find(|addr| keccak256(addr) == *hashed_address) {
+                    Some(addr) => *addr,
+                    None => {
+                        eprintln!("[orphan] SKIP: no address for hash {}", hashed_address);
+                        continue;
+                    }
+                };
 
             // Debug: show what proofs we have for this account
             if let Some(before_proof) = before_proofs.get(&address) {
@@ -427,11 +424,8 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
                 .entry(address)
                 .or_insert_with(|| eip1186_proof_to_account_proof(before_proof));
 
-            let after_proof = self
-                .provider
-                .get_proof(address, vec![])
-                .block_id(block_number.into())
-                .await?;
+            let after_proof =
+                self.provider.get_proof(address, vec![]).block_id(block_number.into()).await?;
 
             after_proofs
                 .entry(address)
