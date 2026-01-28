@@ -41,3 +41,7 @@ metrics.json
 **/profile.json*
 
 .idea/
+
+# criterion outputs
+bench-results/
+bench-results-large/
