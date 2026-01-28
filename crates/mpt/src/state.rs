@@ -68,6 +68,8 @@ impl EthereumState {
                 }
             }
 
+            // storage removals also must happen last, otherwise unresolved orphans might still
+            // exist
             for removed_slot in removed_slots {
                 storage_trie.delete(removed_slot.as_slice())?;
             }
