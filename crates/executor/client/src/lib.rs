@@ -4,7 +4,7 @@ pub mod io;
 
 use std::{fmt::Debug, sync::Arc};
 
-use alloy_consensus::TxReceipt;
+use alloy_consensus::{proofs::calculate_receipt_root, TxReceipt};
 use alloy_primitives::Bloom;
 use openvm_primitives::chain_spec::{dev, mainnet};
 use reth_consensus::{Consensus, HeaderValidator};
@@ -84,20 +84,22 @@ impl ClientExecutor {
         let block_executor = BasicBlockExecutor::new(EthEvmConfig::new(spec.clone()), cache_db);
         let executor_output = block_executor.execute(&current_block)?;
 
+        // Pre-compute receipts root and logs bloom to avoid duplicate computation in validation.
+        let receipts_with_bloom =
+            executor_output.receipts.iter().map(TxReceipt::with_bloom_ref).collect::<Vec<_>>();
+        let receipts_root = calculate_receipt_root(&receipts_with_bloom);
+        let logs_bloom =
+            receipts_with_bloom.iter().fold(Bloom::ZERO, |bloom, r| bloom | r.bloom_ref());
+
         // Validate the block post execution.
         validate_block_post_execution(
             &current_block,
             &spec,
             &executor_output.receipts,
             &executor_output.requests,
+            Some((receipts_root, logs_bloom)),
         )
         .map_err(ClientExecutionError::InvalidBlockPostExecution)?;
-
-        // Accumulate the logs bloom.
-        let mut logs_bloom = Bloom::default();
-        executor_output.receipts.iter().for_each(|r| {
-            logs_bloom.accrue_bloom(&r.bloom());
-        });
 
         // Convert the output to an execution outcome.
         let executor_outcome = ExecutionOutcome::new(

@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use alloy_consensus::{TxEnvelope, TxReceipt};
+use alloy_consensus::{proofs::calculate_receipt_root, TxEnvelope, TxReceipt};
 use alloy_primitives::Bloom;
 use alloy_provider::{network::Ethereum, Provider};
 use eyre::{eyre, Ok};
@@ -78,6 +78,14 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
 
         let executor_output = block_executor.execute(&block)?;
 
+        // Pre-compute receipts root and logs bloom to avoid duplicate computation in validation.
+        tracing::info!("computing receipts root and logs bloom");
+        let receipts_with_bloom =
+            executor_output.receipts.iter().map(TxReceipt::with_bloom_ref).collect::<Vec<_>>();
+        let receipts_root = calculate_receipt_root(&receipts_with_bloom);
+        let logs_bloom =
+            receipts_with_bloom.iter().fold(Bloom::ZERO, |bloom, r| bloom | r.bloom_ref());
+
         // Validate the block post execution.
         tracing::info!("validating the block post execution");
         validate_block_post_execution(
@@ -85,14 +93,8 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
             &spec,
             &executor_output.receipts,
             &executor_output.requests,
+            Some((receipts_root, logs_bloom)),
         )?;
-
-        // Accumulate the logs bloom.
-        tracing::info!("accumulating the logs bloom");
-        let mut logs_bloom = Bloom::default();
-        executor_output.receipts.iter().for_each(|r| {
-            logs_bloom.accrue_bloom(&r.bloom());
-        });
 
         // Convert the output to an execution outcome.
         let executor_outcome = ExecutionOutcome::new(
