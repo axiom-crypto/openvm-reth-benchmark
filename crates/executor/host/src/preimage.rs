@@ -2,8 +2,37 @@ use revm::database::BundleState;
 use revm_primitives::{keccak256, Address, B256, U256};
 use std::collections::HashMap;
 
-/// Dictionary mapping hashed keys back to their preimages.
-/// Built from existing host data (state_requests + BundleState) with zero additional RPC calls.
+/// Dictionary mapping hashed keys back to their preimages, used to resolve MPT orphan nodes.
+///
+/// Built from existing host data (`state_requests` + `BundleState`) with zero additional RPC
+/// calls. The dictionary contains every account address and storage slot that was read or
+/// written by any transaction in the block.
+///
+/// # Orphan resolution
+///
+/// When `eth_getProof` returns a proof for key K, the proof includes all trie nodes along
+/// the path from the root to K. Sibling nodes not on this path appear as opaque `Digest`
+/// references. If a later trie mutation (insert/delete) collapses a branch whose sibling is
+/// such a `Digest`, the operation fails with `NodeNotResolved`.
+///
+/// To resolve the orphan, we need to find a key whose proof path traverses the orphaned
+/// node. We locate the orphan's nibble prefix in the trie, then scan this dictionary for a
+/// key whose keccak256 hash starts with that prefix. Fetching `eth_getProof` for that key
+/// provides the missing node data.
+///
+/// # Cold sibling limitation
+///
+/// This dictionary only contains keys that were accessed during block execution. If the
+/// orphaned sibling's subtree contains only keys that no transaction in the block touched
+/// (a "cold sibling"), no matching preimage exists in the dictionary and resolution fails.
+///
+/// No standard Ethereum RPC endpoint exposes a preimage database (mapping keccak256 hashes
+/// back to their inputs). The `debug_dbGet` endpoint exists in some node implementations
+/// but is not available on any hosted RPC provider. As a result, the cold sibling case is
+/// an inherent limitation of proof-based state reconstruction over standard RPC.
+///
+/// In practice, cold siblings are rare: the orphan's neighbor in the trie is usually a key
+/// that was accessed by the same transaction or a related one in the block.
 pub(crate) struct PreimageDictionary {
     /// keccak256(address) -> address
     account_keys: HashMap<B256, Address>,

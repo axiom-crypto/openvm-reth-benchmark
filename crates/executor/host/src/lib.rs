@@ -153,9 +153,34 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
         }
 
         // Build preimage dictionary from state requests and bundle state for orphan resolution.
+        // This uses only data we already have (zero extra RPC calls). See `PreimageDictionary`
+        // for details on what this covers and the cold sibling limitation.
         let dict = PreimageDictionary::build(&state_requests, executor_outcome.state());
 
-        // Resolution loop: build tries, attempt update, resolve orphans if needed.
+        // Orphan resolution loop.
+        //
+        // Some RPC backends (notably Erigon without a preimage database) return `eth_getProof`
+        // responses where sibling nodes outside the requested key's path appear as unresolved
+        // `Digest` references. When `update_from_bundle_state` modifies the trie (e.g. deleting
+        // a key causes a branch collapse), it may encounter such a `Digest` and fail with
+        // `NodeNotResolved`.
+        //
+        // To resolve this, we:
+        //   1. Clone the pre-state and attempt `update_from_bundle_state` on the clone.
+        //   2. On `NodeNotResolved(digest)`: locate the orphan's nibble prefix in the
+        //      original (unmodified) trie, find a key in the preimage dictionary whose
+        //      hash matches that prefix, fetch additional `eth_getProof` for that key,
+        //      merge the new proofs, and rebuild from scratch.
+        //   3. Repeat until the update succeeds or we hit the iteration limit.
+        //
+        // Each iteration makes 2 additional `eth_getProof` calls (before + after state).
+        // Only standard RPC endpoints are required; no `debug_*` or `trace_*` methods.
+        //
+        // Limitation: if the orphaned node's subtree contains only keys not accessed by any
+        // transaction in the block ("cold sibling"), the preimage dictionary won't have a
+        // matching key and resolution fails with an error. No standard RPC endpoint exposes
+        // a preimage database, so this case cannot be resolved without access to the node's
+        // internal database.
         const MAX_ORPHAN_ITERATIONS: usize = 10;
         let mut iterations = 0;
         let state = loop {
