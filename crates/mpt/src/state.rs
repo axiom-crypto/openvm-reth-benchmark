@@ -41,37 +41,50 @@ impl EthereumState {
     }
 
     pub fn update_from_bundle_state(&mut self, bundle_state: &BundleState) -> Result<(), Error> {
+        // removals must happen last, otherwise unresolved orphans might still exist
+        let mut removed_accounts = vec![];
         for (address, account) in &bundle_state.state {
             let hashed_address = keccak256(address);
 
-            if let Some(info) = &account.info {
-                let storage_trie =
-                    self.storage_tries.entry(hashed_address).or_insert(Mpt::new(self.bump));
+            let Some(info) = &account.info else {
+                removed_accounts.push(hashed_address);
+                continue;
+            };
 
-                if account.status.was_destroyed() {
-                    *storage_trie = Mpt::new(self.bump);
-                }
+            let storage_trie =
+                self.storage_tries.entry(hashed_address).or_insert(Mpt::new(self.bump));
 
-                for (slot, value) in &account.storage {
-                    let hashed_slot = keccak256(slot.to_be_bytes::<32>());
-                    if value.present_value.is_zero() {
-                        storage_trie.delete(hashed_slot.as_slice())?;
-                    } else {
-                        storage_trie.insert_rlp(hashed_slot.as_slice(), value.present_value)?;
-                    }
-                }
-                let storage_root = storage_trie.hash();
-                let state_account = TrieAccount {
-                    nonce: info.nonce,
-                    balance: info.balance,
-                    storage_root,
-                    code_hash: info.code_hash,
-                };
-                self.state_trie.insert_rlp(hashed_address.as_slice(), state_account)?;
-            } else {
-                self.state_trie.delete(hashed_address.as_slice()).unwrap();
-                self.storage_tries.remove(&hashed_address);
+            if account.status.was_destroyed() {
+                *storage_trie = Mpt::new(self.bump);
             }
+
+            let mut removed_slots = vec![];
+            for (slot, value) in &account.storage {
+                let hashed_slot = keccak256(slot.to_be_bytes::<32>());
+                if !value.present_value.is_zero() {
+                    storage_trie.insert_rlp(hashed_slot.as_slice(), value.present_value)?;
+                } else {
+                    removed_slots.push(hashed_slot);
+                }
+            }
+
+            for removed_slot in removed_slots {
+                storage_trie.delete(removed_slot.as_slice())?;
+            }
+
+            let storage_root = storage_trie.hash();
+            let state_account = TrieAccount {
+                nonce: info.nonce,
+                balance: info.balance,
+                storage_root,
+                code_hash: info.code_hash,
+            };
+            self.state_trie.insert_rlp(hashed_address.as_slice(), state_account)?;
+        }
+
+        for removed_account in removed_accounts {
+            self.state_trie.delete(removed_account.as_slice())?;
+            self.storage_tries.remove(&removed_account);
         }
 
         Ok(())
