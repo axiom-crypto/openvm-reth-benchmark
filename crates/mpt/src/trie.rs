@@ -140,29 +140,26 @@ impl<'a> Mpt<'a> {
     }
 
     /// Decodes the given `bytes` into and creates an `MptTrie`.
+    ///
+    /// - `num_nodes`: Number of nodes in the serialized trie (for validation)
+    /// - `capacity`: Capacity to allocate for the node vector. If provided, this should be the
+    ///   final node count after block execution to avoid reallocations. If 0, uses a 1.5x growth
+    ///   factor as fallback.
     pub fn decode_trie(
         bump: &'a Bump,
         bytes: &mut &'a [u8],
         num_nodes: usize,
+        capacity: usize,
     ) -> Result<Self, Error> {
         if bytes == &[alloy_rlp::EMPTY_STRING_CODE, 0, 0, 0] {
             return Ok(Self::new(bump));
         }
 
-        // A growth factor applied to the node vector's capacity during deserialization.
-        // This is a pragmatic optimization to pre-allocate a buffer for nodes that will be
-        // added during the `update` phase. It prevents a "reallocation storm" where the
-        // main trie and dozens of storage tries all try to reallocate their full node
-        // vectors on the first update.
-        // TODO: this is imperfect solution and the constant is somewhat arbitrary (although
-        // reasonable)
-        //
-        // Simple improvement: run benchmark on a set of blocks (e.g. 100
-        // blocks) and select the best constant.
-        //
-        // More advanced improvement: either pre-execute block at guest to know exact allocations in
-        // advance, or allocate a separate arena specifically for updates.
-        let capacity = num_nodes + (num_nodes / 2);
+        // Use provided capacity if non-zero, otherwise fall back to 1.5x growth factor.
+        // The 1.5x factor is a pragmatic fallback when final node counts aren't available.
+        // Always ensure capacity >= num_nodes to avoid reallocation during decode.
+        let capacity =
+            if capacity > 0 { capacity.max(num_nodes) } else { num_nodes + (num_nodes / 2) };
         let mut trie = Self::with_capacity(bump, capacity);
 
         // construct the expected root reference

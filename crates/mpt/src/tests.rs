@@ -191,7 +191,8 @@ fn test_serde_index_trie() -> Result<(), Error> {
 
     let encoded = trie.encode_trie();
 
-    let recovered_trie = Mpt::decode_trie(&bump, &mut encoded.as_slice(), trie.num_nodes())?;
+    // Pass 0 for capacity to use fallback 1.5x growth factor
+    let recovered_trie = Mpt::decode_trie(&bump, &mut encoded.as_slice(), trie.num_nodes(), 0)?;
     assert_eq!(recovered_trie.hash(), root_hash);
 
     for i in 0..N {
@@ -218,7 +219,8 @@ fn test_serde_keccak_trie() -> Result<(), Error> {
 
     let encoded = trie.encode_trie();
 
-    let recovered_trie = Mpt::decode_trie(&bump, &mut encoded.as_slice(), trie.num_nodes())?;
+    // Pass 0 for capacity to use fallback 1.5x growth factor
+    let recovered_trie = Mpt::decode_trie(&bump, &mut encoded.as_slice(), trie.num_nodes(), 0)?;
     assert_eq!(recovered_trie.hash(), root_hash);
 
     for i in 0..N {

@@ -51,8 +51,14 @@ impl ClientExecutorInputWithState {
         let bump = Box::leak(Box::new(Bump::with_capacity(BUMP_AREA_SIZE)));
 
         let state = {
-            let (state_num_nodes, state_bytes) = &input.parent_state_bytes.state_trie;
-            let state_trie = Mpt::decode_trie(bump, &mut state_bytes.as_ref(), *state_num_nodes)?;
+            let (state_num_nodes, final_state_num_nodes, state_bytes) =
+                &input.parent_state_bytes.state_trie;
+            let state_trie = Mpt::decode_trie(
+                bump,
+                &mut state_bytes.as_ref(),
+                *state_num_nodes,
+                *final_state_num_nodes,
+            )?;
             if state_trie.hash() != input.ancestor_headers[0].state_root {
                 return Err(ClientExecutionError::ParentStateRootMismatch {
                     actual: state_trie.hash(),
@@ -64,7 +70,7 @@ impl ClientExecutorInputWithState {
                 input.parent_state_bytes.storage_tries.len(),
                 DefaultHashBuilder::default(),
             );
-            for (hashed_address, num_nodes, storage_trie_bytes) in
+            for (hashed_address, num_nodes, final_num_nodes, storage_trie_bytes) in
                 &input.parent_state_bytes.storage_tries
             {
                 let account_in_trie =
@@ -72,8 +78,12 @@ impl ClientExecutorInputWithState {
                 let expected_storage_root =
                     account_in_trie.map_or(reth_trie::EMPTY_ROOT_HASH, |a| a.storage_root);
 
-                let storage_trie =
-                    Mpt::decode_trie(bump, &mut storage_trie_bytes.as_ref(), *num_nodes)?;
+                let storage_trie = Mpt::decode_trie(
+                    bump,
+                    &mut storage_trie_bytes.as_ref(),
+                    *num_nodes,
+                    *final_num_nodes,
+                )?;
                 if storage_trie.hash() != expected_storage_root {
                     return Err(ClientExecutionError::ParentStorageRootMismatch {
                         hashed_account: *hashed_address,
