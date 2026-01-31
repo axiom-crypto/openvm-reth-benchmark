@@ -3,9 +3,10 @@
 # Usage: ./run.sh [OPTIONS]
 #
 # Options:
-#   --mode <MODE>   Set the proving mode (default: prove-app)
-#                   Valid modes: prove-app, prove-stark
-#   --cuda          Force CUDA acceleration (auto-detected if nvidia-smi available)
+#   --mode <MODE>       Set the proving mode (default: prove-app)
+#                       Valid modes: prove-app, prove-stark
+#   --block <N>         Set the block number to prove (default: 23992138)
+#   --cuda              Force CUDA acceleration (auto-detected if nvidia-smi available)
 #
 # Examples:
 #   ./run.sh                          # Run with defaults
@@ -96,6 +97,8 @@ fi
 
 # Parse command-line arguments
 MODE_OVERRIDE=""
+PROFILE_OVERRIDE=""
+BLOCK_NUMBER_OVERRIDE=""
 USE_CUDA=false
 CUDA_REASON=""
 
@@ -103,6 +106,14 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --mode)
             MODE_OVERRIDE="$2"
+            shift 2
+            ;;
+        --profile)
+            PROFILE_OVERRIDE="$2"
+            shift 2
+            ;;
+        --block)
+            BLOCK_NUMBER_OVERRIDE="$2"
             shift 2
             ;;
         --cuda)
@@ -149,9 +160,19 @@ if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
 fi
 cd "$WORKDIR"
 
-PROFILE="release"
+# Map profile aliases and set target directory
+case "${PROFILE_OVERRIDE:-release}" in
+    dev|debug)
+        PROFILE="dev"
+        TARGET_DIR="debug"
+        ;;
+    *)
+        PROFILE="${PROFILE_OVERRIDE:-release}"
+        TARGET_DIR="$PROFILE"
+        ;;
+esac
 FEATURES="metrics,jemalloc,unprotected"
-BLOCK_NUMBER=23992138
+BLOCK_NUMBER="${BLOCK_NUMBER_OVERRIDE:-23992138}"
 # switch to +nightly-2025-08-19 if using tco
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
 BIN_NAME="openvm-reth-benchmark-bin"

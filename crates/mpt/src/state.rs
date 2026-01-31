@@ -110,6 +110,38 @@ impl EthereumState {
     }
 }
 
+#[cfg(feature = "host")]
+#[derive(Debug)]
+pub struct OrphanLocation {
+    /// `None` = orphan is in the state trie.
+    /// `Some(hashed_address)` = orphan is in the storage trie for this hashed address.
+    pub hashed_address: Option<B256>,
+    /// The nibble prefix (trie path) leading to the orphan Digest node.
+    pub nibble_prefix: Vec<u8>,
+}
+
+#[cfg(feature = "host")]
+impl EthereumState {
+    /// Search all tries for a `Digest` node matching the given digest.
+    /// Returns the location (state vs storage trie) and nibble prefix path to the orphan.
+    pub fn find_orphan_location(&self, digest: &B256) -> Option<OrphanLocation> {
+        // Search state trie first
+        if let Some(nibble_prefix) = self.state_trie.find_digest_prefix(digest) {
+            return Some(OrphanLocation { hashed_address: None, nibble_prefix });
+        }
+        // Search each storage trie
+        for (hashed_addr, storage_trie) in &self.storage_tries {
+            if let Some(nibble_prefix) = storage_trie.find_digest_prefix(digest) {
+                return Some(OrphanLocation {
+                    hashed_address: Some(*hashed_addr),
+                    nibble_prefix,
+                });
+            }
+        }
+        None
+    }
+}
+
 impl Default for EthereumState {
     fn default() -> Self {
         Self::new()

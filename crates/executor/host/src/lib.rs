@@ -1,3 +1,5 @@
+mod preimage;
+
 use std::collections::BTreeSet;
 
 use alloy_consensus::{proofs::calculate_receipt_root, TxEnvelope, TxReceipt};
@@ -8,6 +10,7 @@ use openvm_client_executor::io::ClientExecutorInput;
 use openvm_mpt::from_proof::transition_proofs_to_tries;
 use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
 use openvm_rpc_db::RpcDb;
+use preimage::PreimageDictionary;
 use reth_chainspec::MAINNET;
 use reth_consensus::{Consensus, HeaderValidator};
 use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus};
@@ -16,8 +19,9 @@ use reth_evm_ethereum::EthEvmConfig;
 use reth_execution_types::ExecutionOutcome;
 use reth_primitives::Block;
 use reth_primitives_traits::block::Block as _;
+use reth_trie::AccountProof;
 use revm::database::CacheDB;
-use revm_primitives::B256;
+use revm_primitives::{Address, B256};
 
 /// An executor that fetches data from a [Provider] to execute blocks in the [ClientExecutor].
 #[derive(Debug, Clone)]
@@ -108,8 +112,8 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
 
         // For every account we touched, fetch the storage proofs for all the slots we touched.
         tracing::info!("fetching storage proofs");
-        let mut before_storage_proofs = Vec::new();
-        let mut after_storage_proofs = Vec::new();
+        let mut before_proofs = revm_primitives::HashMap::default();
+        let mut after_proofs = revm_primitives::HashMap::default();
 
         for (address, used_keys) in state_requests.iter() {
             let modified_keys = executor_outcome
@@ -136,21 +140,108 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
                 .get_proof(*address, keys.clone())
                 .block_id((block_number - 1).into())
                 .await?;
-            before_storage_proofs.push(eip1186_proof_to_account_proof(storage_proof));
+            let before_proof = eip1186_proof_to_account_proof(storage_proof);
+            before_proofs.insert(before_proof.address, before_proof);
 
             let storage_proof = self
                 .provider
                 .get_proof(*address, modified_keys)
                 .block_id((block_number).into())
                 .await?;
-            after_storage_proofs.push(eip1186_proof_to_account_proof(storage_proof));
+            let after_proof = eip1186_proof_to_account_proof(storage_proof);
+            after_proofs.insert(after_proof.address, after_proof);
         }
 
-        let state = transition_proofs_to_tries(
-            previous_block.state_root,
-            &before_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
-            &after_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
-        )?;
+        // Build preimage dictionary from state requests and bundle state for orphan resolution.
+        let dict = PreimageDictionary::build(&state_requests, executor_outcome.state());
+
+        // Resolution loop: build tries, attempt update, resolve orphans if needed.
+        const MAX_ORPHAN_ITERATIONS: usize = 10;
+        let mut iterations = 0;
+        let state = loop {
+            let state = transition_proofs_to_tries(
+                previous_block.state_root,
+                &before_proofs,
+                &after_proofs,
+            )?;
+
+            let mut state_clone = state.clone();
+            match state_clone.update_from_bundle_state(executor_outcome.state()) {
+                std::result::Result::Ok(()) => break state,
+                Err(openvm_mpt::Error::NodeNotResolved(digest)) => {
+                    iterations += 1;
+                    if iterations > MAX_ORPHAN_ITERATIONS {
+                        return Err(eyre!(
+                            "exceeded max orphan resolution iterations ({})",
+                            MAX_ORPHAN_ITERATIONS
+                        ));
+                    }
+
+                    let location = state
+                        .find_orphan_location(&digest)
+                        .ok_or_else(|| eyre!("cannot locate orphan digest {digest:#} in trie"))?;
+
+                    if let Some(hashed_addr) = location.hashed_address {
+                        // Storage trie orphan
+                        let address = dict.find_account_by_hash(&hashed_addr).ok_or_else(|| {
+                            eyre!("cannot find address for hashed address {hashed_addr:#}")
+                        })?;
+                        let slot = dict
+                            .find_storage_key_by_prefix(&address, &location.nibble_prefix)
+                            .ok_or_else(|| {
+                                eyre!(
+                                    "cannot find storage key matching nibble prefix for \
+                                     address {address} (cold sibling)"
+                                )
+                            })?;
+
+                        tracing::info!(
+                            "resolving storage orphan (iteration {}): address={}, slot={:#}",
+                            iterations,
+                            address,
+                            slot
+                        );
+
+                        let slot_b256 = B256::from(slot);
+                        fetch_and_merge_proofs(
+                            &self.provider,
+                            address,
+                            vec![slot_b256],
+                            block_number,
+                            &mut before_proofs,
+                            &mut after_proofs,
+                        )
+                        .await?;
+                    } else {
+                        // State trie orphan
+                        let address = dict
+                            .find_account_key_by_prefix(&location.nibble_prefix)
+                            .ok_or_else(|| {
+                                eyre!(
+                                    "cannot find account matching nibble prefix (cold sibling)"
+                                )
+                            })?;
+
+                        tracing::info!(
+                            "resolving state trie orphan (iteration {}): address={}",
+                            iterations,
+                            address
+                        );
+
+                        fetch_and_merge_proofs(
+                            &self.provider,
+                            address,
+                            vec![],
+                            block_number,
+                            &mut before_proofs,
+                            &mut after_proofs,
+                        )
+                        .await?;
+                    }
+                }
+                Err(e) => return Err(e.into()),
+            }
+        };
 
         // Skip state root verification for now.
         // It works with Alchemy but for some reason not with Quicknode.
@@ -207,4 +298,47 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
 fn into_primitive_block(block: alloy_rpc_types::Block) -> Block {
     let block = block.map_transactions(|tx| TxEnvelope::from(tx).into());
     block.into_consensus()
+}
+
+/// Fetch before and after proofs for the given address/keys and merge them into the proof maps.
+async fn fetch_and_merge_proofs(
+    provider: &(impl Provider<Ethereum> + Clone),
+    address: Address,
+    keys: Vec<B256>,
+    block_number: u64,
+    before_proofs: &mut revm_primitives::HashMap<Address, AccountProof>,
+    after_proofs: &mut revm_primitives::HashMap<Address, AccountProof>,
+) -> eyre::Result<()> {
+    let before = provider
+        .get_proof(address, keys.clone())
+        .block_id((block_number - 1).into())
+        .await?;
+    let before = eip1186_proof_to_account_proof(before);
+    merge_account_proof(before_proofs, before);
+
+    let after = provider.get_proof(address, keys).block_id(block_number.into()).await?;
+    let after = eip1186_proof_to_account_proof(after);
+    merge_account_proof(after_proofs, after);
+
+    eyre::Ok(())
+}
+
+/// Merge a new account proof into the proof map.
+/// If the address already exists, merge storage proofs (deduplicate by key).
+/// If the address is new, insert the whole proof.
+fn merge_account_proof(
+    proofs: &mut revm_primitives::HashMap<Address, AccountProof>,
+    new_proof: AccountProof,
+) {
+    if let Some(existing) = proofs.get_mut(&new_proof.address) {
+        let existing_keys: BTreeSet<_> =
+            existing.storage_proofs.iter().map(|sp| sp.key).collect();
+        for sp in new_proof.storage_proofs {
+            if !existing_keys.contains(&sp.key) {
+                existing.storage_proofs.push(sp);
+            }
+        }
+    } else {
+        proofs.insert(new_proof.address, new_proof);
+    }
 }

@@ -940,6 +940,57 @@ impl<'a> Mpt<'a> {
     }
 }
 
+#[cfg(feature = "host")]
+impl Mpt<'_> {
+    /// Search for a `Digest` node matching `target_digest` and return the nibble prefix
+    /// (trie path) leading to it. Returns `None` if no matching digest is found.
+    pub fn find_digest_prefix(&self, target_digest: &B256) -> Option<Vec<u8>> {
+        self.find_digest_prefix_internal(self.root_id, target_digest)
+    }
+
+    fn find_digest_prefix_internal(
+        &self,
+        node_id: NodeId,
+        target_digest: &B256,
+    ) -> Option<Vec<u8>> {
+        match &self.nodes[node_id as usize] {
+            NodeData::Null | NodeData::Leaf(..) => None,
+            NodeData::Digest(d) => {
+                if B256::from_slice(d) == *target_digest {
+                    Some(Vec::new())
+                } else {
+                    None
+                }
+            }
+            NodeData::Branch(children) => {
+                for (i, child) in children.iter().enumerate() {
+                    if let Some(child_id) = child {
+                        if let Some(mut prefix) =
+                            self.find_digest_prefix_internal(*child_id, target_digest)
+                        {
+                            prefix.insert(0, i as u8);
+                            return Some(prefix);
+                        }
+                    }
+                }
+                None
+            }
+            NodeData::Extension(path, child_id) => {
+                if let Some(suffix) =
+                    self.find_digest_prefix_internal(*child_id, target_digest)
+                {
+                    let nibs = crate::hp::prefix_to_nibs(path);
+                    let mut full_prefix = nibs.to_vec();
+                    full_prefix.extend(suffix);
+                    Some(full_prefix)
+                } else {
+                    None
+                }
+            }
+        }
+    }
+}
+
 impl Mpt<'_> {
     pub fn print_trie(&self) {
         self.print_trie_internal(self.root_id, 0);

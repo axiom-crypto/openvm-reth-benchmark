@@ -229,6 +229,80 @@ fn test_serde_keccak_trie() -> Result<(), Error> {
     Ok(())
 }
 
+/// Test find_digest_prefix: Digest node directly in a Branch.
+#[cfg(feature = "host")]
+#[test]
+fn test_find_digest_prefix() {
+    use crate::hp::to_encoded_path_with_bump;
+
+    let bump = bumpalo::Bump::new();
+    let mut trie = Mpt::new(&bump);
+
+    // Create a fake 32-byte digest
+    let fake_digest: &[u8] = bump.alloc_slice_copy(&[0xABu8; 32]);
+    let digest_hash = B256::from_slice(fake_digest);
+
+    // Build: Branch -> [Leaf at 0, Digest at 1]
+    let leaf_path = to_encoded_path_with_bump(&bump, &[0], true);
+    let leaf_id = trie.add_node(NodeData::Leaf(leaf_path, b"value"), None);
+    let digest_id = trie.add_node(NodeData::Digest(fake_digest), None);
+
+    let mut children: [Option<u32>; 16] = Default::default();
+    children[0] = Some(leaf_id);
+    children[1] = Some(digest_id);
+    let branch_id = trie.add_node(NodeData::Branch(children), None);
+    trie.set_root_id(branch_id);
+
+    // The digest is at nibble index 1 in the branch
+    let result = trie.find_digest_prefix(&digest_hash);
+    assert_eq!(result, Some(vec![1]));
+}
+
+/// Test find_digest_prefix: Digest node behind an Extension node.
+#[cfg(feature = "host")]
+#[test]
+fn test_find_digest_prefix_nested() {
+    use crate::hp::to_encoded_path_with_bump;
+
+    let bump = bumpalo::Bump::new();
+    let mut trie = Mpt::new(&bump);
+
+    // Build: Extension([3, 4]) -> Branch -> [Digest at 2, Leaf at 5]
+    let fake_digest: &[u8] = bump.alloc_slice_copy(&[0xCDu8; 32]);
+    let digest_hash = B256::from_slice(fake_digest);
+
+    let digest_id = trie.add_node(NodeData::Digest(fake_digest), None);
+    let leaf_path = to_encoded_path_with_bump(&bump, &[7], true);
+    let leaf_id = trie.add_node(NodeData::Leaf(leaf_path, b"data"), None);
+
+    let mut children: [Option<u32>; 16] = Default::default();
+    children[2] = Some(digest_id);
+    children[5] = Some(leaf_id);
+    let branch_id = trie.add_node(NodeData::Branch(children), None);
+
+    let ext_path = to_encoded_path_with_bump(&bump, &[3, 4], false);
+    let ext_id = trie.add_node(NodeData::Extension(ext_path, branch_id), None);
+    trie.set_root_id(ext_id);
+
+    // Path: extension [3,4] -> branch [2] -> digest => prefix = [3, 4, 2]
+    let result = trie.find_digest_prefix(&digest_hash);
+    assert_eq!(result, Some(vec![3, 4, 2]));
+}
+
+/// Test find_digest_prefix: non-existent digest returns None.
+#[cfg(feature = "host")]
+#[test]
+fn test_find_digest_prefix_not_found() {
+    let bump = bumpalo::Bump::new();
+    let mut trie = Mpt::new(&bump);
+
+    // Build a simple trie with a leaf, no digests
+    trie.insert(b"hello", b"world").unwrap();
+
+    let nonexistent = B256::from_slice(&[0xFF; 32]);
+    assert_eq!(trie.find_digest_prefix(&nonexistent), None);
+}
+
 /// Test that deleting a key that would cause branch collapse fails if sibling is unresolved Digest.
 /// This tests the soundness fix: we must not assume an unresolved Digest is a Branch node.
 #[test]
