@@ -4,12 +4,33 @@ use revm::database::BundleState;
 use revm_primitives::{keccak256, map::DefaultHashBuilder, HashMap, B256};
 
 use crate::{Error, Mpt};
+#[cfg(feature = "host")]
+use crate::trie::ResolveOrphanResult;
 
 /// Serialized Ethereum state.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct EthereumStateBytes {
     pub state_trie: (usize, bytes::Bytes),
     pub storage_tries: Vec<(B256, usize, bytes::Bytes)>,
+}
+
+/// Information about an orphan node that couldn't be resolved during state update.
+/// Contains the digest hash and the nibble prefix needed to fetch additional proofs.
+#[cfg(feature = "host")]
+#[derive(Debug, Clone)]
+pub struct OrphanInfo {
+    pub digest: B256,
+    pub prefix: Vec<u8>,
+}
+
+/// Result of attempting to update state with orphan tracking.
+/// Contains lists of orphans found in both the state trie and storage tries.
+#[cfg(feature = "host")]
+#[derive(Debug, Default)]
+pub struct StateUpdateResult {
+    pub state_orphans: Vec<OrphanInfo>,
+    /// Storage orphans keyed by hashed_address
+    pub storage_orphans: HashMap<B256, Vec<OrphanInfo>>,
 }
 
 #[derive(Debug, Clone)]
@@ -90,6 +111,68 @@ impl EthereumState {
         }
 
         Ok(())
+    }
+
+    /// Update state and collect orphan prefixes for resolution.
+    /// This is the Zeth-style approach where the trie operation itself returns
+    /// information about what's blocking progress, enabling single-pass collection
+    /// of all unresolvable prefixes.
+    #[cfg(feature = "host")]
+    pub fn update_from_bundle_state_with_orphans(
+        &mut self,
+        bundle_state: &BundleState,
+    ) -> Result<StateUpdateResult, Error> {
+        let mut result = StateUpdateResult::default();
+
+        for (address, account) in &bundle_state.state {
+            let hashed_address = keccak256(address);
+
+            if let Some(info) = &account.info {
+                let storage_trie =
+                    self.storage_tries.entry(hashed_address).or_insert(Mpt::new(self.bump));
+
+                if account.status.was_destroyed() {
+                    *storage_trie = Mpt::new(self.bump);
+                }
+
+                for (slot, value) in &account.storage {
+                    let hashed_slot = keccak256(slot.to_be_bytes::<32>());
+                    if value.present_value.is_zero() {
+                        // Use resolve_orphan instead of delete to collect orphan info
+                        match storage_trie.resolve_orphan(hashed_slot.as_slice()) {
+                            ResolveOrphanResult::Resolved | ResolveOrphanResult::NotPresent => {}
+                            ResolveOrphanResult::Unresolvable { digest, prefix } => {
+                                result
+                                    .storage_orphans
+                                    .entry(hashed_address)
+                                    .or_default()
+                                    .push(OrphanInfo { digest, prefix });
+                            }
+                        }
+                    } else {
+                        storage_trie.insert_rlp(hashed_slot.as_slice(), value.present_value)?;
+                    }
+                }
+                let storage_root = storage_trie.hash();
+                let state_account = TrieAccount {
+                    nonce: info.nonce,
+                    balance: info.balance,
+                    storage_root,
+                    code_hash: info.code_hash,
+                };
+                self.state_trie.insert_rlp(hashed_address.as_slice(), state_account)?;
+            } else {
+                // Account deletion - use resolve_orphan to collect orphan info
+                match self.state_trie.resolve_orphan(hashed_address.as_slice()) {
+                    ResolveOrphanResult::Unresolvable { digest, prefix } => {
+                        result.state_orphans.push(OrphanInfo { digest, prefix });
+                    }
+                    _ => {}
+                }
+                self.storage_tries.remove(&hashed_address);
+            }
+        }
+        Ok(result)
     }
 
     #[cfg(feature = "host")]

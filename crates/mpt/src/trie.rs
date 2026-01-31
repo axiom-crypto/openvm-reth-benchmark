@@ -38,12 +38,38 @@ pub enum Error {
     /// value provides details about the unresolved node.
     #[error("reached an unresolved node: {0:#}")]
     NodeNotResolved(B256),
+    /// Specific error for orphan resolution with prefix info.
+    /// Returned when a delete operation cannot collapse a branch because the sibling
+    /// is an unresolved Digest node. The prefix contains the nibble path to the orphan,
+    /// which can be used to fetch the missing proof.
+    #[error("unresolvable orphan at prefix {prefix:?}: digest={digest:#}")]
+    UnresolvableOrphan {
+        digest: B256,
+        prefix: Vec<u8>, // Nibble path to the orphan
+    },
     /// Represents errors related to the RLP encoding and decoding.
     #[error("rlp decode error: {0}")]
     RlpError(#[from] alloy_rlp::Error),
     /// Occurs when a value is unexpectedly found in a branch node.
     #[error("branch node with value")]
     ValueInBranch,
+}
+
+/// Result of attempting to resolve an orphan during deletion.
+/// Used by the Zeth-style orphan resolution approach where the trie operation
+/// itself returns information about what's blocking progress.
+#[cfg(feature = "host")]
+#[derive(Debug, Clone)]
+pub enum ResolveOrphanResult {
+    /// Key deleted successfully
+    Resolved,
+    /// Key was not present in the trie
+    NotPresent,
+    /// Sibling Digest blocks collapse - prefix tells us what to fetch
+    Unresolvable {
+        digest: B256,
+        prefix: Vec<u8>,
+    },
 }
 
 /// Arena-based implementation that stores all nodes in a flat vector and uses indices for better
@@ -482,6 +508,20 @@ impl<'a> Mpt<'a> {
         }
     }
 
+    /// Returns the root node ID. Host-only.
+    #[cfg(feature = "host")]
+    #[inline]
+    pub fn root_id(&self) -> NodeId {
+        self.root_id
+    }
+
+    /// Returns a reference to the node data at the given index. Host-only.
+    #[cfg(feature = "host")]
+    #[inline]
+    pub(crate) fn get_node(&self, node_id: NodeId) -> Option<&NodeData<'a>> {
+        self.nodes.get(node_id as usize)
+    }
+
     /// Retrieves the value associated with a given key in the trie.
     #[inline]
     pub fn get<'s>(&'s self, key: &[u8]) -> Result<Option<&'a [u8]>, Error> {
@@ -850,6 +890,199 @@ impl<'a> Mpt<'a> {
             self.invalidate_ref_cache(node_id);
         }
         Ok(updated)
+    }
+
+    /// Attempts deletion and returns orphan prefix info if sibling is unresolved.
+    /// This variant of delete tracks the nibble path during descent, enabling
+    /// the caller to know exactly which prefix to fetch additional proofs for.
+    #[cfg(feature = "host")]
+    pub fn delete_with_orphan_info(&mut self, key: &[u8]) -> Result<bool, Error> {
+        let key_nibs = &to_nibs(key);
+        let mut prefix: Vec<u8> = Vec::with_capacity(64);
+        self.delete_internal_with_prefix(self.root_id, key_nibs, &mut prefix)
+    }
+
+    /// Internal delete that tracks the accumulated nibble prefix for orphan resolution.
+    #[cfg(feature = "host")]
+    fn delete_internal_with_prefix(
+        &mut self,
+        node_id: NodeId,
+        key_nibs: &[u8],
+        prefix: &mut Vec<u8>,
+    ) -> Result<bool, Error> {
+        let updated = match self.nodes[node_id as usize] {
+            NodeData::Null => false,
+            NodeData::Branch(mut children) => {
+                if let Some((i, tail)) = key_nibs.split_first() {
+                    let child_id = children[*i as usize];
+                    match child_id {
+                        Some(id) => {
+                            // Track the branch index in the prefix
+                            prefix.push(*i);
+                            if !self.delete_internal_with_prefix(id, tail, prefix)? {
+                                prefix.pop();
+                                return Ok(false);
+                            }
+
+                            // if the node is now empty, remove it
+                            if matches!(self.nodes[id as usize], NodeData::Null) {
+                                children[*i as usize] = None;
+                            }
+                            prefix.pop();
+                        }
+                        None => return Ok(false),
+                    }
+                } else {
+                    return Err(Error::ValueInBranch);
+                }
+
+                let mut remaining_iter = children.iter().enumerate().filter(|(_, n)| n.is_some());
+
+                // there will always be at least one remaining node
+                let (index, child_id) = remaining_iter.next().unwrap();
+                let child_id = child_id.unwrap();
+
+                // if there is only exactly one node left, we need to convert the branch
+                if remaining_iter.next().is_none() {
+                    let child_node_data = self.nodes[child_id as usize].clone();
+
+                    let new_node_data = match child_node_data {
+                        NodeData::Leaf(leaf_prefix, value) => {
+                            let leaf_nibs = prefix_to_nibs(leaf_prefix);
+                            let mut new_nibs: SmallVec<[u8; 64]> =
+                                SmallVec::with_capacity(1 + leaf_nibs.len());
+                            new_nibs.push(index as u8);
+                            new_nibs.extend_from_slice(&leaf_nibs);
+                            let new_path = to_encoded_path_with_bump(self.bump, &new_nibs, true);
+                            NodeData::Leaf(new_path, value)
+                        }
+                        NodeData::Extension(ext_prefix, child_child_id) => {
+                            let ext_nibs = prefix_to_nibs(ext_prefix);
+                            let mut new_nibs: SmallVec<[u8; 64]> =
+                                SmallVec::with_capacity(1 + ext_nibs.len());
+                            new_nibs.push(index as u8);
+                            new_nibs.extend_from_slice(&ext_nibs);
+                            let new_path = to_encoded_path_with_bump(self.bump, &new_nibs, false);
+                            NodeData::Extension(new_path, child_child_id)
+                        }
+                        NodeData::Branch(_) => {
+                            let ext_nibs: SmallVec<[u8; 1]> = SmallVec::from_slice(&[index as u8]);
+                            let new_path = to_encoded_path_with_bump(self.bump, &ext_nibs, false);
+                            NodeData::Extension(new_path, child_id)
+                        }
+                        NodeData::Digest(digest) => {
+                            // Build the orphan prefix: current prefix + the sibling's branch index
+                            let mut orphan_prefix = prefix.clone();
+                            orphan_prefix.push(index as u8);
+                            return Err(Error::UnresolvableOrphan {
+                                digest: B256::from_slice(digest),
+                                prefix: orphan_prefix,
+                            });
+                        }
+                        NodeData::Null => unreachable!(),
+                    };
+                    self.nodes[node_id as usize] = new_node_data;
+                } else {
+                    self.nodes[node_id as usize] = NodeData::Branch(children);
+                }
+
+                true
+            }
+            NodeData::Leaf(leaf_prefix, _) => {
+                let leaf_nibs = prefix_to_nibs(leaf_prefix);
+                if leaf_nibs.as_slice() != key_nibs {
+                    return Ok(false);
+                }
+                self.nodes[node_id as usize] = NodeData::Null;
+                true
+            }
+            NodeData::Extension(ext_prefix, child_id) => {
+                let self_nibs = prefix_to_nibs(ext_prefix);
+                if let Some(tail) = key_nibs.strip_prefix(self_nibs.as_slice()) {
+                    // Track the extension path in the prefix
+                    prefix.extend_from_slice(&self_nibs);
+                    if !self.delete_internal_with_prefix(child_id, tail, prefix)? {
+                        // Remove the extension path from prefix on failure
+                        prefix.truncate(prefix.len() - self_nibs.len());
+                        return Ok(false);
+                    }
+                    // Remove the extension path after recursive call
+                    prefix.truncate(prefix.len() - self_nibs.len());
+                } else {
+                    return Ok(false);
+                };
+
+                // an extension can only point to a branch or a digest; since it's sub trie was
+                // modified, we need to make sure that this property still holds
+                let child_node_data = &self.nodes[child_id as usize];
+                let new_node_data = match child_node_data {
+                    // if the child is empty, remove the extension
+                    NodeData::Null => NodeData::Null,
+                    // for a leaf, replace the extension with the extended leaf
+                    NodeData::Leaf(child_path_bytes, value) => {
+                        let child_path_nibs = prefix_to_nibs(child_path_bytes);
+                        let mut combined_nibs: SmallVec<[u8; 64]> =
+                            SmallVec::with_capacity(self_nibs.len() + child_path_nibs.len());
+                        combined_nibs.extend_from_slice(&self_nibs);
+                        combined_nibs.extend_from_slice(&child_path_nibs);
+                        let new_path = to_encoded_path_with_bump(self.bump, &combined_nibs, true);
+                        NodeData::Leaf(new_path, value)
+                    }
+                    // for an extension, replace the extension with the extended extension
+                    NodeData::Extension(child_path_bytes, grandchild_id) => {
+                        let child_path_nibs = prefix_to_nibs(child_path_bytes);
+                        let mut combined_nibs: SmallVec<[u8; 64]> =
+                            SmallVec::with_capacity(self_nibs.len() + child_path_nibs.len());
+                        combined_nibs.extend_from_slice(&self_nibs);
+                        combined_nibs.extend_from_slice(&child_path_nibs);
+                        let new_path = to_encoded_path_with_bump(self.bump, &combined_nibs, false);
+                        NodeData::Extension(new_path, *grandchild_id)
+                    }
+                    // for a branch, the extension is still correct
+                    NodeData::Branch(_) => NodeData::Extension(ext_prefix, child_id),
+                    // for a digest, return UnresolvableOrphan with the full path
+                    NodeData::Digest(digest) => {
+                        // The orphan is at current prefix + extension path
+                        let mut orphan_prefix = prefix.clone();
+                        orphan_prefix.extend_from_slice(&self_nibs);
+                        return Err(Error::UnresolvableOrphan {
+                            digest: B256::from_slice(digest),
+                            prefix: orphan_prefix,
+                        });
+                    }
+                };
+                self.nodes[node_id as usize] = new_node_data;
+                true
+            }
+            NodeData::Digest(digest) => {
+                // Trying to delete from an unresolved digest
+                let orphan_prefix = prefix.clone();
+                return Err(Error::UnresolvableOrphan {
+                    digest: B256::from_slice(digest),
+                    prefix: orphan_prefix,
+                });
+            }
+        };
+
+        if updated {
+            self.invalidate_ref_cache(node_id);
+        }
+        Ok(updated)
+    }
+
+    /// Zeth-style orphan resolution: attempt delete and return prefix if blocked.
+    /// This wraps `delete_with_orphan_info` and converts errors to a result enum,
+    /// making it easier for callers to collect orphan information without exception handling.
+    #[cfg(feature = "host")]
+    pub fn resolve_orphan(&mut self, key: &[u8]) -> ResolveOrphanResult {
+        match self.delete_with_orphan_info(key) {
+            Ok(true) => ResolveOrphanResult::Resolved,
+            Ok(false) => ResolveOrphanResult::NotPresent,
+            Err(Error::UnresolvableOrphan { digest, prefix }) => {
+                ResolveOrphanResult::Unresolvable { digest, prefix }
+            }
+            Err(_) => ResolveOrphanResult::NotPresent,
+        }
     }
 }
 

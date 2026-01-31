@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     cell::RefCell,
     collections::{BTreeMap, BTreeSet},
 };
@@ -6,11 +7,12 @@ use std::{
 use alloy_provider::{network::Ethereum, Provider};
 use alloy_rpc_types::BlockId;
 use reth_revm::{
-    primitives::{Address, HashMap, B256, U256},
+    primitives::{keccak256, Address, HashMap, B256, U256},
     state::{AccountInfo, Bytecode},
     DatabaseRef,
 };
 use reth_storage_errors::{db::DatabaseError, provider::ProviderError};
+use serde::Deserialize;
 
 /// A database that fetches data from a [Provider].
 #[derive(Debug, Clone)]
@@ -36,6 +38,79 @@ pub enum RpcDbError {
     BlockNotFound,
     #[error("failed to find trie node preimage")]
     PreimageNotFound,
+}
+
+/// Response from debug_storageRangeAt RPC method.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StorageRangeResult {
+    pub storage: HashMap<B256, StorageEntry>,
+    pub next_key: Option<B256>,
+}
+
+/// Individual storage entry from debug_storageRangeAt.
+#[derive(Debug, Deserialize)]
+pub struct StorageEntry {
+    pub key: Option<B256>,
+    pub value: U256,
+}
+
+/// Response from debug_accountRange RPC method.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountRangeResult {
+    /// Map from address to account info. The key is the actual address, not hashed.
+    pub accounts: HashMap<Address, AccountRangeEntry>,
+    /// Next key for pagination (base64 encoded, we don't need to parse it).
+    #[serde(default)]
+    pub next: Option<serde_json::Value>,
+}
+
+/// Individual account entry from debug_accountRange.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountRangeEntry {
+    /// Balance as a decimal string or hex.
+    #[serde(deserialize_with = "deserialize_balance")]
+    pub balance: U256,
+    pub nonce: u64,
+    pub root: B256,
+    pub code_hash: B256,
+}
+
+/// Deserialize balance which can be either decimal string or hex string.
+fn deserialize_balance<'de, D>(deserializer: D) -> Result<U256, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s: String = serde::Deserialize::deserialize(deserializer)?;
+    if s.starts_with("0x") {
+        U256::from_str_radix(&s[2..], 16).map_err(serde::de::Error::custom)
+    } else {
+        U256::from_str_radix(&s, 10).map_err(serde::de::Error::custom)
+    }
+}
+
+/// Convert nibble prefix to B256 hash (right-padded with zeros).
+/// nibbles: [0xa, 0xb, 0xc] → 0xabc00000...
+pub fn nibbles_to_hash(nibbles: &[u8]) -> B256 {
+    let mut bytes = [0u8; 32];
+    for (i, chunk) in nibbles.chunks(2).enumerate() {
+        if i >= 32 {
+            break;
+        }
+        bytes[i] = (chunk[0] << 4) | chunk.get(1).copied().unwrap_or(0);
+    }
+    B256::from(bytes)
+}
+
+/// Check if a hash starts with the given nibble prefix.
+pub fn hash_matches_prefix(hash: &B256, nibbles: &[u8]) -> bool {
+    let bytes = hash.as_slice();
+    nibbles.iter().enumerate().all(|(i, &nib)| {
+        let actual = if i % 2 == 0 { bytes[i / 2] >> 4 } else { bytes[i / 2] & 0x0f };
+        actual == nib
+    })
 }
 
 impl<P: Provider<Ethereum> + Clone> RpcDb<P> {
@@ -161,6 +236,136 @@ impl<P: Provider<Ethereum> + Clone> RpcDb<P> {
             .collect::<BTreeMap<_, _>>()
             .into_values()
             .collect::<Vec<_>>()
+    }
+
+    /// Find a storage key whose keccak256 hash starts with the given nibble prefix.
+    /// Uses debug_storageRangeAt RPC method.
+    ///
+    /// This is used for orphan resolution when `eth_getProof` doesn't include
+    /// all necessary nodes for MPT branch collapse operations.
+    ///
+    /// `tx_index` should be 0 to query the pre-state for the given block hash,
+    /// which matches the zeth debug_storageRangeAt usage.
+    pub async fn get_storage_key_by_hash_prefix(
+        &self,
+        block_hash: B256,
+        address: Address,
+        prefix_nibbles: &[u8],
+        tx_index: usize,
+    ) -> Result<B256, RpcDbError> {
+        tracing::info!(
+            "fetching storage key by hash prefix: address={}, prefix={:?}, tx_index={}",
+            address,
+            prefix_nibbles,
+            tx_index
+        );
+
+        // Convert nibbles to start key (right-padded with zeros), matching zeth.
+        let start_key = nibbles_to_hash(prefix_nibbles);
+        eprintln!(
+            "[orphan] debug_storageRangeAt: start_key={} (from nibbles {:?}), txIndex={}",
+            start_key, prefix_nibbles, tx_index
+        );
+
+        // Call debug_storageRangeAt with limit=1, like zeth.
+        let result: StorageRangeResult = self
+            .provider
+            .raw_request(
+                Cow::Borrowed("debug_storageRangeAt"),
+                (block_hash, tx_index, address, start_key, 1u64),
+            )
+            .await
+            .map_err(|e| RpcDbError::RpcError(e.to_string()))?;
+
+        let (hashed_key, entry) = result
+            .storage
+            .into_iter()
+            .next()
+            .ok_or(RpcDbError::PreimageNotFound)?;
+        let storage_key = entry.key.ok_or(RpcDbError::PreimageNotFound)?;
+
+        let storage_hash = keccak256(storage_key);
+        if !hash_matches_prefix(&storage_hash, prefix_nibbles) {
+            return Err(RpcDbError::RpcError(format!(
+                "Invalid debug_storageRangeAt response: prefix={:?}, hashed_key={}, key={}, key_hash={}",
+                prefix_nibbles, hashed_key, storage_key, storage_hash
+            )));
+        }
+
+        Ok(storage_key)
+    }
+
+    /// Find an account address whose keccak256 hash starts with the given nibble prefix.
+    ///
+    /// This is challenging because debug_accountRange (on most providers) iterates by
+    /// address order, not by hash order. We try debug_accountRange but it may not find
+    /// the account efficiently.
+    ///
+    /// Note: `tx_index` is accepted for API consistency but is not used because
+    /// debug_accountRange doesn't support txIndex like debug_storageRangeAt does.
+    /// It queries the state at the given block hash.
+    #[allow(unused_variables)]
+    pub async fn get_account_address_by_hash_prefix(
+        &self,
+        block_hash: B256,
+        prefix_nibbles: &[u8],
+        tx_index: usize,
+    ) -> Result<Option<Address>, RpcDbError> {
+        tracing::debug!("fetching account address by hash prefix: prefix={:?}", prefix_nibbles);
+
+        // Try debug_accountRange - on geth it might iterate by hash, on Quicknode it iterates by address
+        let target_hash = nibbles_to_hash(prefix_nibbles);
+
+        // Try a few pages of results in case we get lucky
+        let mut start = target_hash;
+        for page in 0..5 {
+            let result = match self
+                .provider
+                .raw_request::<_, AccountRangeResult>(
+                    Cow::Borrowed("debug_accountRange"),
+                    (block_hash, start, 256u64, true, true, false),
+                )
+                .await
+            {
+                Ok(r) => r,
+                Err(e) => {
+                    tracing::debug!("debug_accountRange failed: {}", e);
+                    break;
+                }
+            };
+
+            for (address, _entry) in &result.accounts {
+                let address_hash = keccak256(address);
+                if hash_matches_prefix(&address_hash, prefix_nibbles) {
+                    tracing::info!(
+                        "found via debug_accountRange (page {}): {} with hash {}",
+                        page,
+                        address,
+                        address_hash
+                    );
+                    return Ok(Some(*address));
+                }
+            }
+
+            // Move to next page if available
+            match result.next {
+                Some(_) if !result.accounts.is_empty() => {
+                    // Use the last address as the next start point
+                    if let Some(last_addr) = result.accounts.keys().max() {
+                        start = keccak256(last_addr);
+                    } else {
+                        break;
+                    }
+                }
+                _ => break,
+            }
+        }
+
+        tracing::debug!(
+            "could not find account with hash prefix {:?} via debug_accountRange",
+            prefix_nibbles
+        );
+        Ok(None)
     }
 }
 
