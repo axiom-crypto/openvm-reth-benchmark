@@ -208,6 +208,13 @@ impl<'a> WitnessDb<'a> {
     }
 }
 
+fn trie_error_to_provider_error(trie_error: openvm_mpt::Error) -> ProviderError {
+    match trie_error {
+        openvm_mpt::Error::RlpError(error) => ProviderError::Rlp(error),
+        _ => ProviderError::TrieWitnessError(trie_error.to_string()),
+    }
+}
+
 impl DatabaseRef for WitnessDb<'_> {
     /// The database error type.
     type Error = ProviderError;
@@ -216,8 +223,11 @@ impl DatabaseRef for WitnessDb<'_> {
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
         let hashed_address = keccak256(address);
 
-        let account_in_trie =
-            self.inner.state_trie.get_rlp::<TrieAccount>(hashed_address.as_slice()).unwrap();
+        let account_in_trie = self
+            .inner
+            .state_trie
+            .get_rlp::<TrieAccount>(hashed_address.as_slice())
+            .map_err(trie_error_to_provider_error)?;
 
         let account = account_in_trie.map(|account_in_trie| AccountInfo {
             balance: account_in_trie.balance,
@@ -233,31 +243,31 @@ impl DatabaseRef for WitnessDb<'_> {
     /// Get account code by its hash.
     fn code_by_hash_ref(&self, hash: B256) -> Result<Bytecode, Self::Error> {
         // Cloning here is fine as `Bytes` is cheap to clone.
-        Ok(self.bytecode_by_hash.get(&hash).map(|code| (*code).clone()).unwrap())
+        self.bytecode_by_hash.get(&hash).map(|code| (*code).clone()).ok_or_else(|| {
+            ProviderError::TrieWitnessError(format!("bytecode for {hash} not found"))
+        })
     }
 
     /// Get storage value of address at index.
+    ///
+    /// Returns `U256::ZERO` if the slot is not found in the trie.
     fn storage_ref(&self, address: Address, index: U256) -> Result<U256, Self::Error> {
         let hashed_address = keccak256(address);
 
-        let storage_trie = self
-            .inner
-            .storage_tries
-            .get(&hashed_address)
-            .expect("A storage trie must be provided for each account");
+        let storage_trie = self.inner.storage_tries.get(&hashed_address).ok_or_else(|| {
+            ProviderError::TrieWitnessError(format!("storage trie for {address} not found"))
+        })?;
 
         let hashed_slot = keccak256(index.to_be_bytes::<32>());
-        Ok(storage_trie
+        let storage_value = storage_trie
             .get_rlp::<U256>(hashed_slot.as_slice())
-            .expect("Can get from MPT")
-            .unwrap_or_default())
+            .map_err(trie_error_to_provider_error)?
+            .unwrap_or_default();
+        Ok(storage_value)
     }
 
     /// Get block hash by block number.
     fn block_hash_ref(&self, number: u64) -> Result<B256, Self::Error> {
-        Ok(*self
-            .block_hashes
-            .get(&number)
-            .expect("A block hash must be provided for each block number"))
+        self.block_hashes.get(&number).copied().ok_or(ProviderError::StateForNumberNotFound(number))
     }
 }
