@@ -1,4 +1,7 @@
 // The initial version of this crate is forked from Zeth <https://github.com/boundless-xyz/zeth/tree/main/crates/rpc-proxy> at tag v0.3.0.
+// Changes:
+// - Switch from `anyhow` to `eyre`
+// - Populate `keys` field in `execution_witness` response
 
 //! This crate provides a proxy for the `debug_executionWitness` endpoint by using standard RPC
 //! providers in environments without direct access to a Reth node. This crate is intended for usage

@@ -115,7 +115,7 @@ where
     Ok(ExecutionWitness {
         state: state.into_iter().collect(),
         codes: db.contracts().values().cloned().collect(),
-        keys: vec![],
+        keys: storage_tries.keys().map(|addr| Bytes::copy_from_slice(addr.as_slice())).collect(),
         headers,
     })
 }
