@@ -16,7 +16,6 @@ tokio.workspace = true
 tracing.workspace = true
 
 # workspace
-openvm-rpc-db.workspace = true
 openvm-client-executor.workspace = true
 openvm-primitives.workspace = true
 openvm-mpt = { workspace = true, features = ["host"] }
@@ -45,4 +44,4 @@ bincode = { workspace = true, features = ["serde", "std"] }
 [dev-dependencies]
 dotenv = "0.15.0"
 alloy-primitives.workspace = true
-tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
