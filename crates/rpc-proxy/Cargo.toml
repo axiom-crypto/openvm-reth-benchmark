@@ -1,0 +1,34 @@
+[package]
+name = "openvm-rpc-proxy"
+description = "OpenVM RPC Proxy for Execution Witness"
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+actix-web = "4"
+alloy = { workspace = true }
+alloy-chains = { workspace = true }
+alloy-primitives = { workspace = true }
+alloy-trie = { workspace = true }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+blst = { workspace = true }
+clap = { workspace = true, features = ["derive", "env"] }
+itertools = { workspace = true }
+rayon.workspace = true
+reqwest = { version = "0.12.20", features = ["json"] }
+reth-chainspec = { workspace = true }
+reth-evm = { workspace = true }
+reth-evm-ethereum = { workspace = true }
+reth-primitives-traits = { workspace = true }
+reth-stateless = { workspace = true }
+revm = { workspace = true, features = ["c-kzg"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-actix-web = "0.7"
+tracing-subscriber = { workspace = true }

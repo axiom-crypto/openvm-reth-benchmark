@@ -5,7 +5,7 @@ members = [
     "crates/executor/host",
     "crates/mpt-tools",
     "crates/primitives",
-    "crates/storage/rpc-db",
+    "crates/rpc-proxy",
     "crates/host-bench",
     "crates/mpt",
     "crates/revm-crypto",
@@ -51,15 +51,17 @@ bumpalo = "3.19.0"
 bytes = "1"
 bitcode = { version = "0.6.5", default-features = false, features = ["serde"] }
 itertools = "0.14"
+actix-web = "4"
 
 # workspace
-openvm-rpc-db = { path = "./crates/storage/rpc-db" }
 openvm-client-executor = { path = "./crates/executor/client" }
-openvm-host-executor = { path = "./crates/executor/host" }
 openvm-primitives = { path = "./crates/primitives" }
 openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
 openvm-mpt = { path = "./crates/mpt" }
 openvm-revm-crypto = { path = "./crates/revm-crypto" }
+# workspace (host only)
+openvm-rpc-proxy = { path = "./crates/rpc-proxy" }
+openvm-host-executor = { path = "./crates/executor/host" }
 
 # reth
 reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2", default-features = false }
