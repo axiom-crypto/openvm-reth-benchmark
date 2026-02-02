@@ -1,29 +1,15 @@
-// Copyright 2025 RISC Zero, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 use alloy::{
-    network::{BlockResponse, Network, primitives::HeaderResponse},
+    network::{primitives::HeaderResponse, BlockResponse, Network},
     providers::Provider,
     rpc::types::EIP1186AccountProofResponse,
     transports::TransportError,
 };
-use alloy_primitives::{Address, B256, BlockHash, StorageKey, U256, map::B256HashMap};
+use alloy_primitives::{map::B256HashMap, Address, BlockHash, StorageKey, B256, U256};
 use revm::{
-    Database as RevmDatabase,
     database::DBErrorMarker,
     primitives::KECCAK_EMPTY,
     state::{AccountInfo, Bytecode},
+    Database as RevmDatabase,
 };
 use std::{future::IntoFuture, marker::PhantomData};
 use tokio::runtime::Handle;
@@ -211,6 +197,7 @@ impl<N: Network, P: Provider<N>> RevmDatabase for ProviderDb<N, P> {
             balance,
             code_hash,
             code: None, // will be queried later using code_by_hash
+            account_id: None,
         }))
     }
 

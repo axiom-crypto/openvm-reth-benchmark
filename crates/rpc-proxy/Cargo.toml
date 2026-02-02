@@ -7,17 +7,19 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
-alloy-chains = { workspace = true }
-alloy-primitives = { workspace = true }
-alloy-trie = { workspace = true }
+alloy = { workspace = true, features = ["full"] }
+alloy-chains.workspace = true
+alloy-primitives.workspace = true
+alloy-trie.workspace = true
+alloy-rpc-types-debug.workspace = true
 
-reth-chainspec = { workspace = true }
-reth-evm = { workspace = true }
-reth-evm-ethereum = { workspace = true }
-reth-primitives-traits = { workspace = true }
-# reth-stateless = { workspace = true }
+reth-chainspec.workspace = true
+reth-evm.workspace = true
+reth-evm-ethereum.workspace = true
+reth-primitives-traits.workspace = true
 
 revm = { workspace = true, features = ["c-kzg", "blst"] }
+risc0-ethereum-trie = { git = "https://github.com/risc0/risc0-ethereum.git", tag = "v3.0.1", features = ["orphan"] }
 
 async-trait = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }

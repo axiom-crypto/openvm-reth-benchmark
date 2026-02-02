@@ -23,6 +23,7 @@ serde_json.workspace = true
 # workspace
 openvm-host-executor.workspace = true
 openvm-client-executor.workspace = true
+openvm-rpc-proxy.workspace = true
 
 # alloy
 alloy-primitives.workspace = true

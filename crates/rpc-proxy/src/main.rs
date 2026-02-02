@@ -1,18 +1,4 @@
-// Copyright 2025 RISC Zero, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-use actix_web::{App, HttpResponse, HttpServer, Responder, web};
+use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use alloy::{
     eips::BlockNumberOrTag,
     providers::{DynProvider, Provider, ProviderBuilder},
@@ -20,16 +6,16 @@ use alloy::{
     transports::layers::RetryBackoffLayer,
 };
 use alloy_chains::NamedChain;
-use anyhow::{Context, bail};
 use clap::Parser;
+use eyre::{bail, Context};
+use openvm_rpc_proxy::{execution_witness, PreimageLookup, DEFAULT_PREIMAGE_CACHE_NIBBLES};
 use reqwest::Client;
 use reth_chainspec::{HOLESKY, HOODI, MAINNET, SEPOLIA};
 use reth_evm_ethereum::EthEvmConfig;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::sync::Arc;
 use tracing::{debug, error, field, info, instrument};
 use tracing_actix_web::TracingLogger;
-use zeth_rpc_proxy::{PreimageLookup, execution_witness};
 
 /// This struct holds the application state that we want to share across all handlers.
 struct AppState {
@@ -61,7 +47,7 @@ struct Args {
 
     /// The number of nibbles to precompute for the preimage lookup table.
     /// Higher values increase startup time but reduce RPC calls for missing storage keys.
-    #[clap(long, default_value_t = 5, value_parser = clap::value_parser!(u8).range(..=8))]
+    #[clap(long, default_value_t = DEFAULT_PREIMAGE_CACHE_NIBBLES, value_parser = clap::value_parser!(u8).range(..=8))]
     pub preimage_cache_nibbles: u8,
 }
 
@@ -202,7 +188,7 @@ async fn handle_debug_execution_witness(
 }
 
 #[actix_web::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> eyre::Result<()> {
     tracing_subscriber::fmt::init();
 
     let args = Args::parse();
@@ -212,7 +198,7 @@ async fn main() -> anyhow::Result<()> {
 
     let provider = ProviderBuilder::new().connect_client(client);
     let chain_id = provider.get_chain_id().await.context("eth_chainId failed")?;
-    let chain: NamedChain = chain_id.try_into().context("Invalid chain_id")?;
+    let chain: NamedChain = chain_id.try_into().map_err(|_| eyre::eyre!("Invalid chain_id"))?;
     let evm_config = match chain {
         NamedChain::Mainnet => Arc::new(EthEvmConfig::ethereum(MAINNET.clone())),
         NamedChain::Holesky => Arc::new(EthEvmConfig::ethereum(HOLESKY.clone())),

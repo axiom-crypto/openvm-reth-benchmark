@@ -11,5 +11,5 @@ mod rpc;
 mod trie;
 mod witness;
 
-pub use lookup::PreimageLookup;
+pub use lookup::{PreimageLookup, DEFAULT_PREIMAGE_CACHE_NIBBLES};
 pub use witness::execution_witness;

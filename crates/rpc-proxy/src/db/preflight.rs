@@ -1,18 +1,4 @@
-// Copyright 2025 RISC Zero, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-use crate::db::{ProviderDb, provider};
+use crate::db::{provider, ProviderDb};
 use alloy::{
     consensus::BlockHeader,
     eips::eip2930::{AccessList, AccessListItem},
@@ -22,18 +8,19 @@ use alloy::{
     rpc::types::EIP1186AccountProofResponse,
 };
 use alloy_primitives::{
-    Address, B256, BlockNumber, Bytes, KECCAK256_EMPTY, StorageKey, StorageValue, U256, keccak256,
+    keccak256,
     map::{
-        AddressHashMap, AddressMap, B256HashMap, B256HashSet, B256Map, HashMap, HashSet, hash_map,
+        hash_map, AddressHashMap, AddressMap, B256HashMap, B256HashSet, B256Map, HashMap, HashSet,
     },
+    Address, BlockNumber, Bytes, StorageKey, StorageValue, B256, KECCAK256_EMPTY, U256,
 };
-use alloy_trie::{EMPTY_ROOT_HASH, TrieAccount as StateAccount};
-use anyhow::{Context, Result, ensure};
+use alloy_trie::{TrieAccount as StateAccount, EMPTY_ROOT_HASH};
+use eyre::{ensure, Context, ContextCompat, Result};
 use itertools::Itertools;
 use revm::{
-    Database as RevmDatabase,
     context::DBErrorMarker,
     state::{AccountInfo, Bytecode},
+    Database as RevmDatabase,
 };
 use risc0_ethereum_trie::{Trie as MerkleTrie, Trie};
 use std::{
@@ -226,7 +213,7 @@ pub enum DbError {
     #[error("provider error")]
     Provider(#[from] provider::Error),
     #[error(transparent)]
-    Other(#[from] anyhow::Error),
+    Other(#[from] eyre::Error),
 }
 
 impl DBErrorMarker for DbError {}
@@ -254,6 +241,7 @@ impl<N: Network, P: Provider<N>> RevmDatabase for PreflightDb<ProviderDb<N, P>> 
             nonce: acc.nonce,
             code_hash: acc.code_hash,
             code: None, // will be queried later using code_by_hash
+            account_id: None,
         }))
     }
 
@@ -307,8 +295,8 @@ impl AccountProofs {
             hash_map::Entry::Occupied(mut entry) => {
                 let account_proof = entry.get_mut();
                 ensure!(
-                    account_proof.account == account
-                        && account_proof.account_proof == proof_response.account_proof,
+                    account_proof.account == account &&
+                        account_proof.account_proof == proof_response.account_proof,
                     "inconsistent account proof"
                 );
                 account_proof.storage_proofs = merge_checked_maps(
@@ -346,7 +334,11 @@ impl AccountProofs {
         let missing_keys: Vec<_> = keys.into_iter().filter(new_key).cloned().unique().collect();
 
         // we only need to request additional proofs if some keys are missing
-        if missing_keys.is_empty() { None } else { Some(missing_keys) }
+        if missing_keys.is_empty() {
+            None
+        } else {
+            Some(missing_keys)
+        }
     }
 }
 

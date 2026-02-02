@@ -22,7 +22,7 @@ bincode = { workspace = true, features = ["serde", "std"] }
 
 # Memory profiling
 dhat = "0.3"
-criterion = { version = "0.6", features = ["html_reports"] }
+criterion = { version = "0.8", features = ["html_reports"] }
 
 # workspace
 openvm-host-executor.workspace = true
