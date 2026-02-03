@@ -23,9 +23,6 @@ openvm-revm-crypto = { workspace = true, optional = true }
 
 # reth
 reth-consensus.workspace = true
-reth-ethereum-primitives = { workspace = true, features = [
-    "serde-bincode-compat",
-] }
 reth-ethereum-consensus.workspace = true
 reth-execution-types.workspace = true
 reth-primitives = { workspace = true }

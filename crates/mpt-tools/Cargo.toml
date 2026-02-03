@@ -11,11 +11,8 @@ workspace = true
 
 [dependencies]
 eyre.workspace = true
-serde_json.workspace = true
 url.workspace = true
-serde.workspace = true
 tokio.workspace = true
-tracing.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 dotenv = "0.15.0"
 bincode = { workspace = true, features = ["serde", "std"] }
@@ -37,12 +34,9 @@ reth-evm-ethereum.workspace = true
 reth-execution-types.workspace = true
 reth-primitives-traits.workspace = true
 reth-revm.workspace = true
-reth-chainspec.workspace = true
 
 # alloy
-alloy-primitives.workspace = true
 alloy-provider.workspace = true
-alloy-transport.workspace = true
 
 [features]
 default = []

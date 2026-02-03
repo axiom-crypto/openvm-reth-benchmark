@@ -12,7 +12,6 @@ workspace = true
 [dependencies]
 # revm
 revm.workspace = true
-revm-primitives.workspace = true
 
 # alloy
 alloy-primitives = { workspace = true, features = ["map-foldhash"] }
@@ -25,11 +24,7 @@ openvm-pairing = { workspace = true, features = ["bn254", "bls12_381"] }
 openvm-k256 = { workspace = true }
 openvm-p256 = { workspace = true }
 openvm-kzg = { workspace = true, features = ["use-intrinsics"] }
-openvm = { workspace = true, features = ["std"] }
-openvm-algebra-guest = { workspace = true }
 openvm-keccak256 = { workspace = true }
-
-revm-precompile = { workspace = true }
 
 [target.'cfg(target_os = "zkvm")'.dependencies]
 revm-primitives = { workspace = true, features = ["hashbrown"] }

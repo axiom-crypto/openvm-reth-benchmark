@@ -19,23 +19,19 @@ tracing.workspace = true
 dotenv = "0.15.0"
 clap = { version = "4.5.7", features = ["derive", "env"] }
 clap_builder = "4.5.34"
-serde.workspace = true
 bincode = { workspace = true, features = ["std"] }
 bitcode.workspace = true
-metrics.workspace = true
 hex = "0.4.3"
 serde_json.workspace = true
 eyre.workspace = true
 tokio.workspace = true
 
 # workspace
-openvm-mpt.workspace = true
 openvm-stateless-executor.workspace = true
 openvm-stateless-witness.workspace = true
 openvm-rpc-proxy.workspace = true
 
 # alloy
-alloy-rlp.workspace = true
 alloy-primitives.workspace = true
 alloy-consensus.workspace = true
 alloy-provider.workspace = true
@@ -46,35 +42,23 @@ alloy-transport.workspace = true
 # reth
 reth-primitives.workspace = true
 reth-chainspec.workspace = true
-reth-evm.workspace = true
 reth-evm-ethereum.workspace = true
-reth-ethereum = { workspace = true, features = ["full"] }
-reth-ethereum-consensus.workspace = true
-reth-consensus.workspace = true
-
-revm-primitives.workspace = true
 
 # openvm
 openvm = { workspace = true }
-openvm-build = { workspace = true }
 openvm-transpiler = { workspace = true }
-openvm-rv32im-circuit = { workspace = true }
-openvm-algebra-circuit = { workspace = true }
-openvm-bigint-circuit = { workspace = true }
-openvm-ecc-circuit = { workspace = true }
-openvm-pairing-circuit = { workspace = true }
 openvm-circuit = { workspace = true }
 openvm-native-circuit = { workspace = true }
-openvm-native-recursion = { workspace = true }
-openvm-native-compiler = { workspace = true }
 openvm-benchmarks-prove = { workspace = true, features = ["parallel"] }
 openvm-stark-sdk = { workspace = true }
 openvm-sdk = { workspace = true }
-derive_more.workspace = true
 toml.workspace = true
 
 # halo2
 halo2-axiom = { version = "0.5.0", default-features = false, optional = true }
+
+[package.metadata.cargo-machete]
+ignored = ["halo2-axiom"]
 
 [features]
 default = ["jemalloc", "metrics"]
