@@ -1,203 +1,86 @@
-use std::collections::BTreeSet;
+// Stub crate to be deleted
+use std::sync::Arc;
 
-use alloy_consensus::{proofs::calculate_receipt_root, TxEnvelope, TxReceipt};
-use alloy_primitives::Bloom;
+use alloy_consensus::{Header, TxEnvelope};
 use alloy_provider::{network::Ethereum, Provider};
-use eyre::{eyre, Ok};
+use alloy_rpc_types::BlockNumberOrTag;
+use eyre::{eyre, Ok, OptionExt};
 use openvm_client_executor::io::ClientExecutorInput;
-use openvm_mpt::from_proof::transition_proofs_to_tries;
-use openvm_primitives::account_proof::eip1186_proof_to_account_proof;
-use openvm_rpc_db::RpcDb;
+use openvm_mpt::{resolver::MptResolver, EthereumState};
+use openvm_rpc_proxy::{execution_witness, PreimageLookup};
 use reth_chainspec::MAINNET;
-use reth_consensus::{Consensus, HeaderValidator};
-use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus};
-use reth_evm::execute::{BasicBlockExecutor, Executor};
+use reth_ethereum::trie::{TrieAccount, EMPTY_ROOT_HASH};
 use reth_evm_ethereum::EthEvmConfig;
-use reth_execution_types::ExecutionOutcome;
 use reth_primitives::Block;
-use reth_primitives_traits::block::Block as _;
-use revm::database::CacheDB;
-use revm_primitives::B256;
+use revm_primitives::{keccak256, Bytes, HashMap, B256};
 
 /// An executor that fetches data from a [Provider] to execute blocks in the [ClientExecutor].
-#[derive(Debug, Clone)]
+#[derive(Clone)]
+#[allow(missing_debug_implementations)]
 pub struct HostExecutor<P: Provider<Ethereum> + Clone> {
     /// The provider which fetches data.
-    pub provider: P,
+    provider: P,
+    evm_config: Arc<EthEvmConfig>,
+    lookup: Arc<PreimageLookup>,
 }
 
-impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
+impl<P> HostExecutor<P>
+where
+    P: Provider<Ethereum> + Clone + 'static,
+{
     /// Create a new [`HostExecutor`] with a specific [Provider] and [Transport].
-    pub fn new(provider: P) -> Self {
-        Self { provider }
+    pub fn new(provider: P, preimage_cache_nibbles: u8) -> Self {
+        let evm_config = Arc::new(EthEvmConfig::ethereum(MAINNET.clone()));
+        // Initialize the preimage lookup table
+        let lookup = Arc::new(PreimageLookup::new(preimage_cache_nibbles));
+        Self { provider, evm_config, lookup }
     }
 
     /// Executes the block with the given block number.
     pub async fn execute(&self, block_number: u64) -> eyre::Result<ClientExecutorInput> {
-        // Fetch the current block and the previous block from the provider.
-        tracing::info!("fetching the current block and the previous block");
+        let block_id = BlockNumberOrTag::Number(block_number);
+        let witness =
+            execution_witness(self.evm_config.clone(), &self.provider, block_id, &self.lookup)
+                .await?;
+        // TODO(refactor): use generate_block_input_from_witness instead
+        let parent_block_number = block_number - 1;
+        let parent_block = self
+            .provider
+            .get_block_by_number(parent_block_number.into())
+            .await?
+            .ok_or_eyre("parent block not found")?;
         let current_block = self
             .provider
-            .get_block_by_number(block_number.into())
+            .get_block_by_number(block_id)
             .full()
             .await?
             .map(into_primitive_block)
             .ok_or(eyre!("couldn't fetch block: {}", block_number))?;
-        let previous_block = self
-            .provider
-            .get_block_by_number((block_number - 1).into())
-            .full()
-            .await?
-            .map(into_primitive_block)
-            .ok_or(eyre!("couldn't fetch block: {}", block_number))?;
+        let ethereum_state =
+            resolve_ethereum_state(parent_block.header.state_root, witness.state, witness.keys)?;
 
-        // Setup the spec for the block executor.
-        tracing::info!("setting up the spec for the block executor");
-        let spec = MAINNET.clone();
+        let bytecodes = {
+            let codes = witness.codes;
+            let mut bytecodes = Vec::with_capacity(codes.len());
+            for code in codes {
+                bytecodes.push(revm::state::Bytecode::new_raw(code));
+            }
+            bytecodes
+        };
 
-        // Setup the database for the block executor.
-        tracing::info!("setting up the database for the block executor");
-        let rpc_db = RpcDb::new(self.provider.clone(), block_number - 1);
-        let cache_db = CacheDB::new(&rpc_db);
-
-        // Execute the block and fetch all the necessary data along the way.
-        tracing::info!(
-            "executing the block and with rpc db: block_number={}, transaction_count={}",
-            block_number,
-            current_block.body.transactions.len()
-        );
-
-        let block = current_block.clone().try_into_recovered()?;
-
-        tracing::info!("validate_block_consensus");
-        let consensus = EthBeaconConsensus::new(spec.clone());
-        consensus.validate_header(block.sealed_header())?;
-        consensus.validate_block_pre_execution(&block)?;
-
-        let block_executor = BasicBlockExecutor::new(EthEvmConfig::new(spec.clone()), cache_db);
-
-        let executor_output = block_executor.execute(&block)?;
-
-        // Pre-compute receipts root and logs bloom to avoid duplicate computation in validation.
-        tracing::info!("computing receipts root and logs bloom");
-        let receipts_with_bloom =
-            executor_output.receipts.iter().map(TxReceipt::with_bloom_ref).collect::<Vec<_>>();
-        let receipts_root = calculate_receipt_root(&receipts_with_bloom);
-        let logs_bloom =
-            receipts_with_bloom.iter().fold(Bloom::ZERO, |bloom, r| bloom | r.bloom_ref());
-
-        // Validate the block post execution.
-        tracing::info!("validating the block post execution");
-        validate_block_post_execution(
-            &block,
-            &spec,
-            &executor_output.receipts,
-            &executor_output.requests,
-            Some((receipts_root, logs_bloom)),
-        )?;
-
-        // Convert the output to an execution outcome.
-        let executor_outcome = ExecutionOutcome::new(
-            executor_output.state,
-            vec![executor_output.result.receipts],
-            current_block.header.number,
-            vec![executor_output.result.requests],
-        );
-
-        let state_requests = rpc_db.get_state_requests();
-
-        // For every account we touched, fetch the storage proofs for all the slots we touched.
-        tracing::info!("fetching storage proofs");
-        let mut before_storage_proofs = Vec::new();
-        let mut after_storage_proofs = Vec::new();
-
-        for (address, used_keys) in state_requests.iter() {
-            let modified_keys = executor_outcome
-                .state()
-                .state
-                .get(address)
-                .map(|account| {
-                    account.storage.keys().map(|key| B256::from(*key)).collect::<BTreeSet<_>>()
-                })
-                .unwrap_or_default()
-                .into_iter()
-                .collect::<Vec<_>>();
-
-            let keys = used_keys
-                .iter()
-                .map(|key| B256::from(*key))
-                .chain(modified_keys.clone().into_iter())
-                .collect::<BTreeSet<_>>()
-                .into_iter()
-                .collect::<Vec<_>>();
-
-            let storage_proof = self
-                .provider
-                .get_proof(*address, keys.clone())
-                .block_id((block_number - 1).into())
-                .await?;
-            before_storage_proofs.push(eip1186_proof_to_account_proof(storage_proof));
-
-            let storage_proof = self
-                .provider
-                .get_proof(*address, modified_keys)
-                .block_id((block_number).into())
-                .await?;
-            after_storage_proofs.push(eip1186_proof_to_account_proof(storage_proof));
+        let parent_state_bytes = ethereum_state.encode_to_state_bytes();
+        let headers = witness.headers;
+        let mut ancestor_headers = Vec::with_capacity(headers.len());
+        for header_bytes in headers {
+            let sealed = Header::decode_sealed(&mut &header_bytes[..])?;
+            ancestor_headers.push(sealed.into_inner());
         }
-
-        let state = transition_proofs_to_tries(
-            previous_block.state_root,
-            &before_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
-            &after_storage_proofs.iter().map(|item| (item.address, item.clone())).collect(),
-        )?;
-
-        // Skip state root verification for now.
-        // It works with Alchemy but for some reason not with Quicknode.
-        // It is checked on the client (guest) side and works with all providers.
-
-        // Derive the block header.
-        //
-        // Note: the receipts root and gas used are verified by `validate_block_post_execution`.
-        let mut header = current_block.header.clone();
-        header.parent_hash = previous_block.hash_slow();
-        header.ommers_hash = current_block.body.calculate_ommers_root();
-        header.state_root = current_block.state_root;
-        header.transactions_root = current_block.transactions_root;
-        header.receipts_root = current_block.header.receipts_root;
-        header.withdrawals_root = current_block.body.calculate_withdrawals_root();
-        header.logs_bloom = logs_bloom;
-        header.requests_hash = current_block.requests_hash;
-
-        // Assert the derived header is correct.
-        assert_eq!(header.hash_slow(), current_block.header.hash_slow(), "header mismatch");
-
-        // Log the result.
-        tracing::info!(
-            "successfully executed block: block_number={}, block_hash={}, state_root={}",
-            current_block.header.number,
-            header.hash_slow(),
-            current_block.state_root
-        );
-
-        // Fetch the parent headers needed to constrain the BLOCKHASH opcode.
-        let oldest_ancestor = *rpc_db.oldest_ancestor.borrow();
-        let mut ancestor_headers = vec![];
-        tracing::info!("fetching {} ancestor headers", block_number - oldest_ancestor);
-        for height in (oldest_ancestor..=(block_number - 1)).rev() {
-            let block = self.provider.get_block_by_number(height.into()).await?.unwrap();
-            ancestor_headers.push(block.header.into());
-        }
-
-        let state_bytes = state.encode_to_state_bytes();
+        // Ancestor headers start from most recent
+        ancestor_headers.reverse();
 
         // Create the client input.
-        let client_input = ClientExecutorInput {
-            current_block,
-            ancestor_headers,
-            parent_state_bytes: state_bytes,
-            bytecodes: rpc_db.get_bytecodes(),
-        };
+        let client_input =
+            ClientExecutorInput { current_block, ancestor_headers, parent_state_bytes, bytecodes };
         tracing::info!("successfully generated client input");
 
         Ok(client_input)
@@ -207,4 +90,42 @@ impl<P: Provider<Ethereum> + Clone + std::fmt::Debug> HostExecutor<P> {
 fn into_primitive_block(block: alloy_rpc_types::Block) -> Block {
     let block = block.map_transactions(|tx| TxEnvelope::from(tx).into());
     block.into_consensus()
+}
+
+fn resolve_ethereum_state(
+    state_root: B256,
+    reth_state: Vec<Bytes>,
+    keys: Vec<Bytes>,
+) -> eyre::Result<EthereumState> {
+    let mut node_store = Vec::with_capacity(reth_state.len());
+    for node in reth_state {
+        node_store.push((keccak256(&node), node));
+    }
+    let mpt_resolver = MptResolver::from_iter(node_store);
+
+    let state_trie = mpt_resolver.resolve(&state_root)?;
+    assert_eq!(state_trie.hash(), state_root);
+    tracing::debug!(state_root=%state_root, num_nodes=state_trie.num_nodes(), "resolved state trie");
+
+    let mut storage_tries = HashMap::new();
+
+    // Filter accounts
+    for key in keys.iter().filter(|k| k.len() == 20) {
+        let hashed_address = keccak256(key);
+        let storage_root = state_trie
+            .get_rlp::<TrieAccount>(hashed_address.as_slice())?
+            .map_or(EMPTY_ROOT_HASH, |a| a.storage_root);
+
+        let storage_trie = mpt_resolver.resolve(&storage_root)?;
+        assert_eq!(storage_trie.hash(), storage_root);
+        tracing::debug!(
+            account=%key,
+            storage_root=%storage_root,
+            num_nodes=storage_trie.num_nodes(),
+            "resolved storage trie"
+        );
+
+        storage_tries.insert(hashed_address, storage_trie);
+    }
+    Ok(EthereumState::from_tries(state_trie, storage_tries))
 }

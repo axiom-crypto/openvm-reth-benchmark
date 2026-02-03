@@ -16,19 +16,20 @@ url.workspace = true
 serde.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
 dotenv = "0.15.0"
 bincode = { workspace = true, features = ["serde", "std"] }
 
 # Memory profiling
 dhat = "0.3"
-criterion = { version = "0.6", features = ["html_reports"] }
+criterion = { version = "0.8", features = ["html_reports"] }
 
 # workspace
 openvm-host-executor.workspace = true
 openvm-client-executor.workspace = true
 openvm-primitives.workspace = true
 openvm-mpt = { workspace = true }
+openvm-rpc-proxy.workspace = true
 
 # reth dependencies for benchmarking and profiling
 reth-evm.workspace = true

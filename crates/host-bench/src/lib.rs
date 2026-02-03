@@ -18,6 +18,7 @@ use openvm_client_executor::{
 use openvm_host_executor::HostExecutor;
 pub use openvm_native_circuit::NativeConfig;
 
+use openvm_rpc_proxy::DEFAULT_PREIMAGE_CACHE_NIBBLES;
 use openvm_sdk::{
     config::{AppConfig, SdkVmBuilder, SdkVmConfig},
     fs::read_object_from_file,
@@ -124,6 +125,11 @@ pub struct HostArgs {
 
     #[arg(long, default_value_t = false)]
     pub skip_comparison: bool,
+
+    /// The number of nibbles to precompute for the preimage lookup table.
+    /// Higher values increase startup time but reduce RPC calls for missing storage keys.
+    #[clap(long, default_value_t = DEFAULT_PREIMAGE_CACHE_NIBBLES, value_parser = clap::value_parser!(u8).range(..=8))]
+    pub preimage_cache_nibbles: u8,
 }
 
 pub fn reth_vm_config(app_log_blowup: usize) -> SdkVmConfig {
@@ -184,7 +190,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                 let provider = RootProvider::new(client);
 
                 // Setup the host executor.
-                let host_executor = HostExecutor::new(provider);
+                let host_executor = HostExecutor::new(provider, args.preimage_cache_nibbles);
 
                 // Execute the host.
                 let client_input =

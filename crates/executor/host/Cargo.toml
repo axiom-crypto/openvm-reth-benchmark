@@ -16,10 +16,10 @@ tokio.workspace = true
 tracing.workspace = true
 
 # workspace
-openvm-rpc-db.workspace = true
 openvm-client-executor.workspace = true
 openvm-primitives.workspace = true
 openvm-mpt = { workspace = true, features = ["host"] }
+openvm-rpc-proxy.workspace = true
 
 # reth
 reth-primitives = { workspace = true, features = ["secp256k1"] }
@@ -28,6 +28,7 @@ reth-execution-types.workspace = true
 reth-chainspec.workspace = true
 reth-evm.workspace = true
 reth-evm-ethereum.workspace = true
+reth-ethereum = { workspace = true, features = ["full"] }
 reth-ethereum-consensus.workspace = true
 reth-consensus.workspace = true
 
@@ -36,6 +37,7 @@ revm.workspace = true
 revm-primitives.workspace = true
 
 # alloy
+alloy-rlp.workspace = true
 alloy-consensus.workspace = true
 alloy-primitives.workspace = true
 alloy-provider.workspace = true
@@ -45,4 +47,4 @@ bincode = { workspace = true, features = ["serde", "std"] }
 [dev-dependencies]
 dotenv = "0.15.0"
 alloy-primitives.workspace = true
-tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }

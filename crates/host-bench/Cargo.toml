@@ -9,7 +9,7 @@ path = "src/lib.rs"
 [dependencies]
 eyre.workspace = true
 url.workspace = true
-tracing-subscriber = "0.3.18"
+tracing-subscriber.workspace = true
 tracing.workspace = true
 dotenv = "0.15.0"
 clap = { version = "4.5.7", features = ["derive", "env"] }
@@ -23,6 +23,7 @@ serde_json.workspace = true
 # workspace
 openvm-host-executor.workspace = true
 openvm-client-executor.workspace = true
+openvm-rpc-proxy.workspace = true
 
 # alloy
 alloy-primitives.workspace = true
