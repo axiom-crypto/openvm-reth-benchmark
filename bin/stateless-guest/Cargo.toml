@@ -13,6 +13,15 @@ openvm-stateless-executor = { path = "../../crates/stateless-executor", features
 openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "main", features = [
     "std",
 ] }
+openvm-algebra-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main" }
+
+# Enable std feature for host builds (provides critical-section implementation)
+[target.'cfg(not(target_os = "zkvm"))'.dependencies]
+openvm-stateless-executor = { path = "../../crates/stateless-executor", features = ["openvm", "std"] }
+
+[package.metadata.cargo-machete]
+ignored = ["openvm-algebra-guest", "openvm-ecc-guest"]
 
 [features]
 default = []

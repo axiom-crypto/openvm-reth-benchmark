@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "bin/reth-benchmark",
-    "bin/verifier-bench",
     "crates/mpt",
     "crates/revm-crypto",
     "crates/stateless-executor",
@@ -77,15 +76,14 @@ reth-trie = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2", defa
 reth-chainspec = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2", default-features = false }
 reth-execution-types = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2", default-features = false }
 reth-ethereum-consensus = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2", default-features = false }
+reth-ethereum-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2", default-features = false }
 reth-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2", default-features = false }
 reth-node-api = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2", default-features = false }
 reth-provider = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2", default-features = false }
 
 # revm
 revm = { version = "34.0.0", features = ["serde"], default-features = false }
-revm-primitives = { version = "22.0.0", features = [
-    "serde",
-], default-features = false }
+revm-primitives = { version = "22.0.0", default-features = false }
 
 # alloy
 alloy-chains = { version = "0.2.5", default-features = false }
@@ -94,41 +92,18 @@ alloy-primitives = { version = "1.5.0", default-features = false }
 alloy-rlp = { version = "0.3.10", default-features = false }
 alloy-trie = { version = "0.9.1", default-features = false }
 
-alloy-hardforks = "0.4.5"
+alloy-hardforks = { version = "0.4.5", default-features = false }
 
 alloy = { version = "1.4.3", default-features = false }
 alloy-eips = { version = "1.4.3", default-features = false }
-alloy-consensus = { version = "1.4.3", default-features = false, features = [
-    "serde",
-    "serde-bincode-compat",
-] }
-alloy-provider = { version = "1.4.3", default-features = false, features = [
-    "reqwest",
-    "reqwest-rustls-tls",
-] }
-alloy-rpc-client = { version = "1.4.3", default-features = false, features = [
-    "reqwest",
-] }
-alloy-rpc-types = { version = "1.4.3", default-features = false, features = [
-    "eth",
-] }
+alloy-consensus = { version = "1.4.3", default-features = false }
+alloy-provider = { version = "1.4.3", default-features = false }
+alloy-rpc-client = { version = "1.4.3", default-features = false }
+alloy-rpc-types = { version = "1.4.3", default-features = false }
 alloy-rpc-types-debug = { version = "1.4.3", default-features = false }
-alloy-transport = { version = "1.4.3" }
+alloy-transport = { version = "1.4.3", default-features = false }
 
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.3.0-rc.0", default-features = false }
-
-# Note: the openvm-sdk commit does not need to be exactly the same as the `openvm` commit used in the guest program: as long as
-# the openvm-sdk commit doesn't change any guest libraries, they are compatible
-# This allows us to not update revm and openvm-kzg each time we change openvm-sdk
-# Using main from 10/13/2025 for now
 openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-native-recursion = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-keccak256 = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false, features = [
@@ -136,11 +111,10 @@ openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", branch = "m
     "bls12_381",
 ] }
 openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-
-openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", branch = "openvm-main", default-features = false }
-
 openvm-k256 = { git = "https://github.com/openvm-org/openvm.git", package = "k256", branch = "main" }
 openvm-p256 = { git = "https://github.com/openvm-org/openvm.git", package = "p256", branch = "main" }
+
+openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", branch = "openvm-main", default-features = false }
 
 [workspace.lints]
 rust.missing_debug_implementations = "warn"

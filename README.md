@@ -24,7 +24,6 @@ openvm-eth/
 ├── bin/
 │   ├── reth-benchmark/      # Host-side bare metal benchmark 
 │   ├── stateless-guest/     # zkVM guest program
-│   └── verifier-bench/      # Recursion-specific benchmarks
 └── crates/
     ├── chainspec/           # Chain configuration (mainnet, dev)
     ├── mpt/                 # Merkle Patricia Trie implementation
@@ -51,10 +50,6 @@ Handles RPC interaction, witness caching, guest program loading, and metrics col
 ### `bin/stateless-guest`
 
 The RISC-V guest program that runs inside OpenVM. It receives serialized block data, executes all transactions using the stateless executor, verifies state root correctness, and outputs the block hash as proof of correct execution.
-
-### `bin/verifier-bench`
-
-Benchmarking tool for measuring proof recursion performance, including leaf verifier, internal verifier, and aggregation stages.
 
 ## Library Crates
 

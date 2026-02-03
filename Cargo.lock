@@ -3090,7 +3090,6 @@ dependencies = [
  "lock_api",
  "once_cell",
  "parking_lot_core",
- "rayon",
 ]
 
 [[package]]
@@ -7970,20 +7969,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-reth-verifier-bench"
-version = "0.4.0"
-dependencies = [
- "bitcode",
- "clap",
- "openvm-circuit",
- "openvm-continuations",
- "openvm-native-circuit",
- "openvm-native-recursion",
- "openvm-sdk",
- "openvm-stark-sdk",
-]
-
-[[package]]
 name = "openvm-revm-crypto"
 version = "0.4.0"
 dependencies = [
@@ -8255,7 +8240,6 @@ dependencies = [
  "p3-matrix",
  "p3-maybe-rayon",
  "p3-util",
- "rayon",
  "rustc-hash 2.1.1",
  "serde",
  "serde_json",
@@ -8315,6 +8299,7 @@ dependencies = [
  "openvm-revm-crypto",
  "reth-consensus",
  "reth-ethereum-consensus",
+ "reth-ethereum-primitives",
  "reth-evm",
  "reth-evm-ethereum",
  "reth-execution-types",
@@ -8638,9 +8623,6 @@ name = "p3-maybe-rayon"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0db6a290f867061aed54593d48f0dfd7ff2d0f706a603d03209fd0eac79518f3"
-dependencies = [
- "rayon",
-]
 
 [[package]]
 name = "p3-mds"
