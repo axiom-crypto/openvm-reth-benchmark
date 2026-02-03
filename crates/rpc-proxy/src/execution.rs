@@ -4,28 +4,29 @@ use alloy_consensus::TxEnvelope;
 use alloy_provider::{network::Ethereum, Provider};
 use alloy_rpc_types::BlockNumberOrTag;
 use eyre::{eyre, Ok, OptionExt};
-use openvm_rpc_proxy::{execution_witness, PreimageLookup};
 use openvm_stateless_executor::io::StatelessExecutorInput;
 use openvm_stateless_witness::{generate_block_input_from_witness, BlockExecutionWitness};
 use reth_chainspec::MAINNET;
 use reth_evm_ethereum::EthEvmConfig;
 use reth_primitives::Block;
 
+use crate::{execution_witness, PreimageLookup};
+
 /// An executor that fetches data from a [Provider] to execute blocks in the [StatelessExecutor].
 #[derive(Clone)]
 #[allow(missing_debug_implementations)]
-pub struct HostExecutor<P: Provider<Ethereum> + Clone> {
+pub struct RpcExecutor<P: Provider<Ethereum> + Clone> {
     /// The provider which fetches data.
     provider: P,
     evm_config: Arc<EthEvmConfig>,
     lookup: Arc<PreimageLookup>,
 }
 
-impl<P> HostExecutor<P>
+impl<P> RpcExecutor<P>
 where
     P: Provider<Ethereum> + Clone + 'static,
 {
-    /// Create a new [`HostExecutor`] with a specific [Provider] and [Transport].
+    /// Create a new [`RpcExecutor`] with a specific [Provider] and `preimage_cache_nibbles`.
     pub fn new(provider: P, preimage_cache_nibbles: u8) -> Self {
         let evm_config = Arc::new(EthEvmConfig::ethereum(MAINNET.clone()));
         // Initialize the preimage lookup table

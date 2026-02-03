@@ -28,21 +28,16 @@ tokio.workspace = true
 
 # workspace
 openvm-stateless-executor.workspace = true
-openvm-stateless-witness.workspace = true
 openvm-rpc-proxy.workspace = true
 
 # alloy
 alloy-primitives.workspace = true
-alloy-consensus.workspace = true
 alloy-provider.workspace = true
-alloy-rpc-types.workspace = true
 alloy-rpc-client.workspace = true
 alloy-transport.workspace = true
 
 # reth
 reth-primitives.workspace = true
-reth-chainspec.workspace = true
-reth-evm-ethereum.workspace = true
 
 # openvm
 openvm = { workspace = true }

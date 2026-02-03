@@ -1,7 +1,6 @@
 use alloy_provider::RootProvider;
 use bincode::config::standard;
-use openvm_reth_benchmark::HostExecutor;
-use openvm_rpc_proxy::DEFAULT_PREIMAGE_CACHE_NIBBLES;
+use openvm_rpc_proxy::{RpcExecutor, DEFAULT_PREIMAGE_CACHE_NIBBLES};
 use openvm_stateless_executor::{io::StatelessExecutorInput, ChainVariant, StatelessExecutor};
 use tracing_subscriber::{
     filter::EnvFilter, fmt, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
@@ -28,7 +27,7 @@ async fn test_e2e_ethereum() {
     let provider = RootProvider::new_http(rpc_url);
 
     // Setup the host executor.
-    let host_executor = HostExecutor::new(provider, DEFAULT_PREIMAGE_CACHE_NIBBLES);
+    let host_executor = RpcExecutor::new(provider, DEFAULT_PREIMAGE_CACHE_NIBBLES);
 
     // Execute the host.
     let client_input = host_executor.execute(block_number).await.expect("failed to execute host");

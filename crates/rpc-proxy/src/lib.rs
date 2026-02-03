@@ -24,11 +24,13 @@
 //! full computation of the witness.
 
 mod db;
+mod execution;
 mod lookup;
 mod transport;
 mod trie;
 mod witness;
 
+pub use execution::RpcExecutor;
 pub use lookup::{PreimageLookup, DEFAULT_PREIMAGE_CACHE_NIBBLES};
 pub use transport::LogOnErrorLayer;
 pub use witness::execution_witness;

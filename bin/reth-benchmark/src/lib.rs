@@ -17,7 +17,7 @@ use openvm_stateless_executor::{
     io::StatelessExecutorInput, ChainVariant, StatelessExecutor, CHAIN_ID_ETH_MAINNET,
 };
 
-use openvm_rpc_proxy::DEFAULT_PREIMAGE_CACHE_NIBBLES;
+use openvm_rpc_proxy::{RpcExecutor, DEFAULT_PREIMAGE_CACHE_NIBBLES};
 use openvm_sdk::{
     config::{AppConfig, SdkVmBuilder, SdkVmConfig},
     fs::read_object_from_file,
@@ -34,10 +34,8 @@ use std::{fs, path::PathBuf};
 use tracing::{info, info_span};
 
 mod cli;
-mod execution;
 
 use cli::ProviderArgs;
-pub use execution::HostExecutor;
 
 /// Enum representing the execution mode of the host executable.
 #[derive(Debug, Clone, clap::ValueEnum)]
@@ -187,7 +185,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                 let provider = RootProvider::new(client);
 
                 // Setup the host executor.
-                let host_executor = HostExecutor::new(provider, args.preimage_cache_nibbles);
+                let host_executor = RpcExecutor::new(provider, args.preimage_cache_nibbles);
 
                 // Execute the host.
                 let client_input =

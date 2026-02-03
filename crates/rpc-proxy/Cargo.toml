@@ -7,17 +7,24 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+openvm-stateless-executor.workspace = true
+openvm-stateless-witness.workspace = true
+
 alloy = { workspace = true, features = ["full"] }
 alloy-chains.workspace = true
 alloy-json-rpc.workspace = true
 alloy-primitives.workspace = true
+alloy-consensus.workspace = true
+alloy-provider.workspace = true
 alloy-trie.workspace = true
+alloy-rpc-types.workspace = true
 alloy-rpc-types-debug.workspace = true
 tower.workspace = true
 
 reth-chainspec.workspace = true
 reth-evm.workspace = true
 reth-evm-ethereum.workspace = true
+reth-primitives.workspace = true
 reth-primitives-traits.workspace = true
 
 revm = { workspace = true, features = ["c-kzg", "blst"] }
