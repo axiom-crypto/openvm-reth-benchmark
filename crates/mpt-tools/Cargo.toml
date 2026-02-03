@@ -26,7 +26,7 @@ criterion = { version = "0.8", features = ["html_reports"] }
 
 # workspace
 openvm-host-executor.workspace = true
-openvm-client-executor.workspace = true
+openvm-stateless-executor.workspace = true
 openvm-primitives.workspace = true
 openvm-mpt = { workspace = true }
 openvm-rpc-proxy.workspace = true

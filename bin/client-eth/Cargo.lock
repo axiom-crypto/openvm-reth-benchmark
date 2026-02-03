@@ -2260,13 +2260,13 @@ dependencies = [
  "log",
  "openvm",
  "openvm-algebra-guest",
- "openvm-client-executor",
+ "openvm-stateless-executor",
  "openvm-ecc-guest",
  "tracing",
 ]
 
 [[package]]
-name = "openvm-client-executor"
+name = "openvm-stateless-executor"
 version = "0.3.0"
 dependencies = [
  "alloy-consensus",

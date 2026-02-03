@@ -1,7 +1,7 @@
 use bincode::config::standard;
 use criterion::{criterion_group, criterion_main, Criterion};
-use openvm_client_executor::io::{ClientExecutorInput, ClientExecutorInputWithState};
 use openvm_primitives::chain_spec::mainnet;
+use openvm_stateless_executor::io::{StatelessExecutorInput, StatelessExecutorInputWithState};
 use reth_evm::execute::{BasicBlockExecutor, Executor};
 use reth_evm_ethereum::EthEvmConfig;
 use reth_execution_types::ExecutionOutcome;
@@ -24,9 +24,9 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
     let bincode_config = standard();
 
     // Pre-compute the post-state once for the MPT benchmarks (not timed)
-    let (pre_input, _): (ClientExecutorInput, _) =
+    let (pre_input, _): (StatelessExecutorInput, _) =
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
-    let client_input = ClientExecutorInputWithState::build(pre_input.clone()).unwrap();
+    let client_input = StatelessExecutorInputWithState::build(pre_input.clone()).unwrap();
     let witness_db = client_input.witness_db().unwrap();
     let cache_db = CacheDB::new(&witness_db);
     let spec = Arc::new(mainnet());
@@ -45,10 +45,11 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
     c.bench_function("end_to_end_without_execution", |b| {
         b.iter(|| {
             // Deserialize (this happens in production)
-            let (pre_input, _): (ClientExecutorInput, _) =
+            let (pre_input, _): (StatelessExecutorInput, _) =
                 bincode::serde::decode_from_slice(black_box(&buffer), bincode_config).unwrap();
 
-            let mut client_input = ClientExecutorInputWithState::build(pre_input.clone()).unwrap();
+            let mut client_input =
+                StatelessExecutorInputWithState::build(pre_input.clone()).unwrap();
 
             // Create witness DB (this happens in production)
             let _witness_db = client_input.witness_db().unwrap();
@@ -64,7 +65,7 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
 
     c.bench_function("deserialize only", |b| {
         b.iter(|| {
-            let (pre_input, _): (ClientExecutorInput, _) =
+            let (pre_input, _): (StatelessExecutorInput, _) =
                 bincode::serde::decode_from_slice(black_box(&buffer), bincode_config).unwrap();
             black_box(pre_input)
         })
@@ -72,7 +73,7 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
 
     c.bench_function("resolve only", |b| {
         b.iter(|| {
-            let client_input = ClientExecutorInputWithState::build(pre_input.clone());
+            let client_input = StatelessExecutorInputWithState::build(pre_input.clone());
             black_box(client_input)
         })
     });

@@ -1,6 +1,6 @@
 [package]
-name = "openvm-client-executor"
-description = "OpenVM Ethereum Executor Guest Library"
+name = "openvm-stateless-executor"
+description = "OpenVM Ethereum Stateless Executor Library"
 version.workspace = true
 edition.workspace = true
 homepage.workspace = true

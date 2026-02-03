@@ -7380,34 +7380,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-client-executor"
-version = "0.3.0"
-dependencies = [
- "alloy-consensus",
- "alloy-primitives",
- "bumpalo",
- "itertools 0.14.0",
- "openvm-mpt",
- "openvm-primitives",
- "openvm-revm-crypto",
- "reth-consensus",
- "reth-ethereum-consensus",
- "reth-ethereum-primitives",
- "reth-evm",
- "reth-evm-ethereum",
- "reth-execution-types",
- "reth-primitives",
- "reth-primitives-traits",
- "reth-revm",
- "reth-trie",
- "revm 34.0.0",
- "revm-primitives 22.0.0",
- "serde",
- "serde_with",
- "thiserror 2.0.12",
-]
-
-[[package]]
 name = "openvm-continuations"
 version = "1.5.0-rc.0"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#2fc9805d5e839ab7c3b372e34a7d235b5e72c6d0"
@@ -7576,10 +7548,10 @@ dependencies = [
  "bincode 2.0.1",
  "dotenv",
  "eyre",
- "openvm-client-executor",
  "openvm-mpt",
  "openvm-primitives",
  "openvm-rpc-proxy",
+ "openvm-stateless-executor",
  "reth-chainspec",
  "reth-consensus",
  "reth-ethereum",
@@ -7756,11 +7728,11 @@ dependencies = [
  "dhat",
  "dotenv",
  "eyre",
- "openvm-client-executor",
  "openvm-host-executor",
  "openvm-mpt",
  "openvm-primitives",
  "openvm-rpc-proxy",
+ "openvm-stateless-executor",
  "reth-chainspec",
  "reth-evm",
  "reth-evm-ethereum",
@@ -8036,7 +8008,6 @@ dependencies = [
  "openvm-bigint-circuit",
  "openvm-build",
  "openvm-circuit",
- "openvm-client-executor",
  "openvm-ecc-circuit",
  "openvm-host-executor",
  "openvm-native-circuit",
@@ -8047,6 +8018,7 @@ dependencies = [
  "openvm-rv32im-circuit",
  "openvm-sdk",
  "openvm-stark-sdk",
+ "openvm-stateless-executor",
  "openvm-transpiler",
  "reth-primitives",
  "serde",
@@ -8399,6 +8371,34 @@ dependencies = [
  "tracing-forest",
  "tracing-subscriber 0.3.22",
  "zkhash",
+]
+
+[[package]]
+name = "openvm-stateless-executor"
+version = "0.3.0"
+dependencies = [
+ "alloy-consensus",
+ "alloy-primitives",
+ "bumpalo",
+ "itertools 0.14.0",
+ "openvm-mpt",
+ "openvm-primitives",
+ "openvm-revm-crypto",
+ "reth-consensus",
+ "reth-ethereum-consensus",
+ "reth-ethereum-primitives",
+ "reth-evm",
+ "reth-evm-ethereum",
+ "reth-execution-types",
+ "reth-primitives",
+ "reth-primitives-traits",
+ "reth-revm",
+ "reth-trie",
+ "revm 34.0.0",
+ "revm-primitives 22.0.0",
+ "serde",
+ "serde_with",
+ "thiserror 2.0.12",
 ]
 
 [[package]]

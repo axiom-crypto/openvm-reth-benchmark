@@ -17,8 +17,8 @@ use reth_primitives_traits::block::Block as _;
 use reth_revm::db::CacheDB;
 
 use crate::{
-    error::ClientExecutionError,
-    io::{ClientExecutorInput, ClientExecutorInputWithState},
+    error::StatelessExecutorError,
+    io::{StatelessExecutorInput, StatelessExecutorInputWithState},
 };
 
 /// Chain ID for Ethereum Mainnet.
@@ -26,7 +26,7 @@ pub const CHAIN_ID_ETH_MAINNET: u64 = 0x1;
 
 /// An executor that executes a block inside a zkVM.
 #[derive(Debug, Clone, Default)]
-pub struct ClientExecutor;
+pub struct StatelessExecutor;
 
 /// EVM chain variants that implement different execution/validation rules.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -35,13 +35,13 @@ pub enum ChainVariant {
     Dev,
 }
 
-impl ClientExecutor {
+impl StatelessExecutor {
     pub fn execute(
         &self,
         chain_variant: ChainVariant,
-        pre_input: ClientExecutorInput,
-    ) -> Result<Header, ClientExecutionError> {
-        let mut input = ClientExecutorInputWithState::build(pre_input)?;
+        pre_input: StatelessExecutorInput,
+    ) -> Result<Header, StatelessExecutorError> {
+        let mut input = StatelessExecutorInputWithState::build(pre_input)?;
 
         // Install OpenVM crypto optimizations
         #[cfg(feature = "openvm")]
@@ -66,7 +66,7 @@ impl ClientExecutor {
             .current_block
             .clone()
             .try_into_recovered()
-            .map_err(|err| ClientExecutionError::BlockSenderRecoveryError(err.into()))?;
+            .map_err(|err| StatelessExecutorError::BlockSenderRecoveryError(err.into()))?;
 
         // validate the block pre-execution
         {
@@ -74,11 +74,11 @@ impl ClientExecutor {
 
             consensus
                 .validate_header(current_block.sealed_header())
-                .map_err(ClientExecutionError::InvalidHeader)?;
+                .map_err(StatelessExecutorError::InvalidHeader)?;
 
             consensus
                 .validate_block_pre_execution(&current_block)
-                .map_err(ClientExecutionError::InvalidBlockPreExecution)?;
+                .map_err(StatelessExecutorError::InvalidBlockPreExecution)?;
         };
 
         let block_executor = BasicBlockExecutor::new(EthEvmConfig::new(spec.clone()), cache_db);
@@ -99,7 +99,7 @@ impl ClientExecutor {
             &executor_output.requests,
             Some((receipts_root, logs_bloom)),
         )
-        .map_err(ClientExecutionError::InvalidBlockPostExecution)?;
+        .map_err(StatelessExecutorError::InvalidBlockPostExecution)?;
 
         // Convert the output to an execution outcome.
         let executor_outcome = ExecutionOutcome::new(
@@ -118,7 +118,7 @@ impl ClientExecutor {
         };
 
         if state_root != input.input.current_block.state_root {
-            return Err(ClientExecutionError::StateRootMismatch {
+            return Err(StatelessExecutorError::StateRootMismatch {
                 actual: state_root,
                 expected: input.input.current_block.state_root,
             });

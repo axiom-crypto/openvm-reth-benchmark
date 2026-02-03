@@ -1,8 +1,8 @@
 use alloy_provider::RootProvider;
 use bincode::config::standard;
-use openvm_client_executor::{io::ClientExecutorInput, ChainVariant, ClientExecutor};
 use openvm_host_executor::HostExecutor;
 use openvm_rpc_proxy::DEFAULT_PREIMAGE_CACHE_NIBBLES;
+use openvm_stateless_executor::{io::StatelessExecutorInput, ChainVariant, StatelessExecutor};
 use tracing_subscriber::{
     filter::EnvFilter, fmt, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
 };
@@ -34,12 +34,12 @@ async fn test_e2e_ethereum() {
     let client_input = host_executor.execute(block_number).await.expect("failed to execute host");
 
     // Setup the client executor.
-    let client_executor = ClientExecutor;
+    let client_executor = StatelessExecutor;
 
     // Test serialization/deserialization round-trip
     let bincode_config = standard();
     let buffer = bincode::serde::encode_to_vec(&client_input, bincode_config).unwrap();
-    let (deserialized_input, _): (ClientExecutorInput, _) =
+    let (deserialized_input, _): (StatelessExecutorInput, _) =
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
 
     // Execute the client with the original input

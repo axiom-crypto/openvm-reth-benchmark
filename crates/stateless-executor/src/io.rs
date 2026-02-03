@@ -1,6 +1,6 @@
 use std::iter::once;
 
-use crate::error::ClientExecutionError;
+use crate::error::StatelessExecutorError;
 use bumpalo::Bump;
 use itertools::Itertools;
 use openvm_mpt::{EthereumState, EthereumStateBytes, Mpt};
@@ -22,7 +22,7 @@ const BUMP_AREA_SIZE: usize = 1000 * 1000;
 /// function).
 #[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ClientExecutorInput {
+pub struct StatelessExecutorInput {
     /// The current block (which will be executed inside the client).
     #[serde_as(
         as = "reth_primitives_traits::serde_bincode_compat::Block<'_, TransactionSigned, Header>"
@@ -39,14 +39,14 @@ pub struct ClientExecutorInput {
 }
 
 #[derive(Debug, Clone)]
-pub struct ClientExecutorInputWithState {
-    pub input: &'static ClientExecutorInput,
+pub struct StatelessExecutorInputWithState {
+    pub input: &'static StatelessExecutorInput,
     pub state: EthereumState,
 }
 
-impl ClientExecutorInputWithState {
+impl StatelessExecutorInputWithState {
     /// Parses `input.parent_state_bytes` into `EthereumState` and verifies state and storage roots.
-    pub fn build(input: ClientExecutorInput) -> Result<Self, ClientExecutionError> {
+    pub fn build(input: StatelessExecutorInput) -> Result<Self, StatelessExecutorError> {
         let input = Box::leak(Box::new(input));
         let bump = Box::leak(Box::new(Bump::with_capacity(BUMP_AREA_SIZE)));
 
@@ -54,7 +54,7 @@ impl ClientExecutorInputWithState {
             let (state_num_nodes, state_bytes) = &input.parent_state_bytes.state_trie;
             let state_trie = Mpt::decode_trie(bump, &mut state_bytes.as_ref(), *state_num_nodes)?;
             if state_trie.hash() != input.ancestor_headers[0].state_root {
-                return Err(ClientExecutionError::ParentStateRootMismatch {
+                return Err(StatelessExecutorError::ParentStateRootMismatch {
                     actual: state_trie.hash(),
                     expected: input.ancestor_headers[0].state_root,
                 });
@@ -75,7 +75,7 @@ impl ClientExecutorInputWithState {
                 let storage_trie =
                     Mpt::decode_trie(bump, &mut storage_trie_bytes.as_ref(), *num_nodes)?;
                 if storage_trie.hash() != expected_storage_root {
-                    return Err(ClientExecutionError::ParentStorageRootMismatch {
+                    return Err(StatelessExecutorError::ParentStorageRootMismatch {
                         hashed_account: *hashed_address,
                         actual: storage_trie.hash(),
                         expected: expected_storage_root,
@@ -92,7 +92,7 @@ impl ClientExecutorInputWithState {
     }
 }
 
-impl ClientExecutorInputWithState {
+impl StatelessExecutorInputWithState {
     /// Gets the immediate parent block's header.
     #[inline(always)]
     pub fn parent_header(&self) -> &Header {
@@ -100,12 +100,12 @@ impl ClientExecutorInputWithState {
     }
 
     /// Creates a [`WitnessDb`].
-    pub fn witness_db(&self) -> Result<WitnessDb<'_>, ClientExecutionError> {
+    pub fn witness_db(&self) -> Result<WitnessDb<'_>, StatelessExecutorError> {
         <Self as WitnessInput>::witness_db(self)
     }
 }
 
-impl WitnessInput for ClientExecutorInputWithState {
+impl WitnessInput for StatelessExecutorInputWithState {
     #[inline(always)]
     fn state(&self) -> &EthereumState {
         &self.state
@@ -159,7 +159,7 @@ pub trait WitnessInput {
     /// implementing this trait causes a zkVM run to cost over 5M cycles more. To avoid this, define
     /// a method inside the type that calls this trait method instead.
     #[inline(always)]
-    fn witness_db(&self) -> Result<WitnessDb<'_>, ClientExecutionError> {
+    fn witness_db(&self) -> Result<WitnessDb<'_>, StatelessExecutorError> {
         let state = self.state();
 
         let bytecode_by_hash =
@@ -170,14 +170,14 @@ pub trait WitnessInput {
             HashMap::with_capacity_and_hasher(self.headers_len(), DefaultHashBuilder::default());
         for (child_header, parent_header) in self.headers().tuple_windows() {
             if parent_header.number != child_header.number - 1 {
-                return Err(ClientExecutionError::NonConsecutiveBlockHeaders {
+                return Err(StatelessExecutorError::NonConsecutiveBlockHeaders {
                     parent_block_number: parent_header.number,
                     child_block_number: child_header.number,
                 });
             }
 
             if parent_header.hash_slow() != child_header.parent_hash {
-                return Err(ClientExecutionError::ParentBlockHashMismatch {
+                return Err(StatelessExecutorError::ParentBlockHashMismatch {
                     parent_block_number: parent_header.number,
                     expected: parent_header.hash_slow(),
                     actual: child_header.parent_hash,

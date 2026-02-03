@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "bin/host",
-    "crates/executor/client",
+    "crates/stateless-executor",
     "crates/executor/host",
     "crates/mpt-tools",
     "crates/primitives",
@@ -60,7 +60,7 @@ clap = "4.5.54"
 tower = "0.5"
 
 # workspace
-openvm-client-executor = { path = "./crates/executor/client" }
+openvm-stateless-executor = { path = "./crates/stateless-executor" }
 openvm-primitives = { path = "./crates/primitives" }
 openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
 openvm-mpt = { path = "./crates/mpt" }

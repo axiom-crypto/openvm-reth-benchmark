@@ -12,11 +12,11 @@ use openvm_circuit::{
         bench::run_with_metric_collection, openvm_stark_backend::p3_field::PrimeField32,
     },
 };
-use openvm_client_executor::{
-    io::ClientExecutorInput, ChainVariant, ClientExecutor, CHAIN_ID_ETH_MAINNET,
-};
 use openvm_host_executor::HostExecutor;
 pub use openvm_native_circuit::NativeConfig;
+use openvm_stateless_executor::{
+    io::StatelessExecutorInput, ChainVariant, StatelessExecutor, CHAIN_ID_ETH_MAINNET,
+};
 
 use openvm_rpc_proxy::DEFAULT_PREIMAGE_CACHE_NIBBLES;
 use openvm_sdk::{
@@ -285,7 +285,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                 if !args.skip_comparison {
                     let block_hash = info_span!("host.execute", group = program_name).in_scope(
                         || -> eyre::Result<_> {
-                            let executor = ClientExecutor;
+                            let executor = StatelessExecutor;
                             // Create a child span to get the group label propagated
                             let header = info_span!("client.execute").in_scope(|| {
                                 executor.execute(ChainVariant::Mainnet, client_input.clone())
@@ -407,14 +407,14 @@ fn try_load_input_from_cache(
     cache_dir: Option<&PathBuf>,
     chain_id: u64,
     block_number: u64,
-) -> eyre::Result<Option<ClientExecutorInput>> {
+) -> eyre::Result<Option<StatelessExecutorInput>> {
     Ok(if let Some(cache_dir) = cache_dir {
         let cache_path = cache_dir.join(format!("input/{chain_id}/{block_number}.bin"));
 
         if cache_path.exists() {
             // TODO: prune the cache if invalid instead
             let mut cache_file = std::fs::File::open(cache_path)?;
-            let client_input: ClientExecutorInput =
+            let client_input: StatelessExecutorInput =
                 bincode::serde::decode_from_std_read(&mut cache_file, bincode::config::standard())?;
 
             Some(client_input)
@@ -426,7 +426,7 @@ fn try_load_input_from_cache(
     })
 }
 
-fn try_load_input_from_path(path: &PathBuf) -> eyre::Result<ClientExecutorInput> {
+fn try_load_input_from_path(path: &PathBuf) -> eyre::Result<StatelessExecutorInput> {
     let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("");
     if ext.eq_ignore_ascii_case("json") {
         let s = std::fs::read_to_string(path)?;
@@ -447,12 +447,12 @@ fn try_load_input_from_path(path: &PathBuf) -> eyre::Result<ClientExecutorInput>
         if bytes.len() % 4 != 0 {
             eyre::bail!("input bytes length must be multiple of 4");
         }
-        let input: ClientExecutorInput = openvm::serde::from_slice(&bytes)
+        let input: StatelessExecutorInput = openvm::serde::from_slice(&bytes)
             .map_err(|e| eyre::eyre!("failed to decode input words using openvm::serde: {e:?}"))?;
         Ok(input)
     } else {
         let mut file = std::fs::File::open(path)?;
-        let client_input: ClientExecutorInput =
+        let client_input: StatelessExecutorInput =
             bincode::serde::decode_from_std_read(&mut file, bincode::config::standard())?;
         Ok(client_input)
     }

@@ -16,7 +16,7 @@ tokio.workspace = true
 tracing.workspace = true
 
 # workspace
-openvm-client-executor.workspace = true
+openvm-stateless-executor.workspace = true
 openvm-primitives.workspace = true
 openvm-mpt = { workspace = true, features = ["host"] }
 openvm-rpc-proxy.workspace = true

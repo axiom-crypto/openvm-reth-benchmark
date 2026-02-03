@@ -5,7 +5,7 @@ use reth_evm::block::BlockExecutionError;
 use revm_primitives::B256;
 
 #[derive(thiserror::Error, Debug)]
-pub enum ClientExecutionError {
+pub enum StatelessExecutorError {
     #[error("parent state root mismatch: got {actual}, expected {expected}")]
     ParentStateRootMismatch { actual: B256, expected: B256 },
 

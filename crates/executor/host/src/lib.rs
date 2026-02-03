@@ -5,16 +5,16 @@ use alloy_consensus::{Header, TxEnvelope};
 use alloy_provider::{network::Ethereum, Provider};
 use alloy_rpc_types::BlockNumberOrTag;
 use eyre::{eyre, Ok, OptionExt};
-use openvm_client_executor::io::ClientExecutorInput;
 use openvm_mpt::{resolver::MptResolver, EthereumState};
 use openvm_rpc_proxy::{execution_witness, PreimageLookup};
+use openvm_stateless_executor::io::StatelessExecutorInput;
 use reth_chainspec::MAINNET;
 use reth_ethereum::trie::{TrieAccount, EMPTY_ROOT_HASH};
 use reth_evm_ethereum::EthEvmConfig;
 use reth_primitives::Block;
 use revm_primitives::{keccak256, Bytes, HashMap, B256};
 
-/// An executor that fetches data from a [Provider] to execute blocks in the [ClientExecutor].
+/// An executor that fetches data from a [Provider] to execute blocks in the [StatelessExecutor].
 #[derive(Clone)]
 #[allow(missing_debug_implementations)]
 pub struct HostExecutor<P: Provider<Ethereum> + Clone> {
@@ -37,7 +37,7 @@ where
     }
 
     /// Executes the block with the given block number.
-    pub async fn execute(&self, block_number: u64) -> eyre::Result<ClientExecutorInput> {
+    pub async fn execute(&self, block_number: u64) -> eyre::Result<StatelessExecutorInput> {
         let block_id = BlockNumberOrTag::Number(block_number);
         let witness =
             execution_witness(self.evm_config.clone(), &self.provider, block_id, &self.lookup)
@@ -79,8 +79,12 @@ where
         ancestor_headers.reverse();
 
         // Create the client input.
-        let client_input =
-            ClientExecutorInput { current_block, ancestor_headers, parent_state_bytes, bytecodes };
+        let client_input = StatelessExecutorInput {
+            current_block,
+            ancestor_headers,
+            parent_state_bytes,
+            bytecodes,
+        };
         tracing::info!("successfully generated client input");
 
         Ok(client_input)

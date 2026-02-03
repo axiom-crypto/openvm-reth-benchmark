@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 # workspace
-openvm-client-executor = { path = "../../crates/executor/client", features = ["openvm"] }
+openvm-stateless-executor = { path = "../../crates/executor/client", features = ["openvm"] }
 
 # openvm
 openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "main", features = [
