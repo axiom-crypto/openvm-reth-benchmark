@@ -121,7 +121,7 @@ while [[ $# -gt 0 ]]; do
             CUDA_REASON="requested via script argument"
             shift
             ;;
-        --preimage_cache_nibbles)
+        --preimage-cache-nibbles)
             PREIMAGE_CACHE_NIBBLES="$2"
             shift 2
             ;;
