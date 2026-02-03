@@ -1,0 +1,36 @@
+[package]
+name = "openvm-stateless-witness"
+version.workspace = true
+repository.workspace = true
+homepage.workspace = true
+edition.workspace = true
+exclude.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+openvm-mpt = { workspace = true, features = ["host"] }
+openvm-stateless-executor = { workspace = true }
+
+reth-ethereum = { workspace = true, features = ["full"] }
+reth-chainspec = { workspace = true }
+reth-execution-errors = { workspace = true }
+reth-execution-types = { workspace = true }
+reth-evm = { workspace = true }
+reth-node-api = { workspace = true }
+reth-node-ethereum = { workspace = true }
+reth-primitives = { workspace = true }
+reth-primitives-traits = { workspace = true }
+reth-provider = { workspace = true }
+reth-storage-errors = { workspace = true }
+reth-revm = { workspace = true }
+
+alloy-rpc-types-debug.workspace = true
+alloy-rlp.workspace = true
+
+tracing.workspace = true
+metrics.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_with.workspace = true

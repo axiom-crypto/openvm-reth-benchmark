@@ -8392,6 +8392,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm-stateless-witness"
+version = "0.3.0"
+dependencies = [
+ "alloy-rlp",
+ "alloy-rpc-types-debug",
+ "metrics 0.23.1",
+ "openvm-mpt",
+ "openvm-stateless-executor",
+ "reth-chainspec",
+ "reth-ethereum",
+ "reth-evm",
+ "reth-execution-errors",
+ "reth-execution-types",
+ "reth-node-api",
+ "reth-node-ethereum",
+ "reth-primitives",
+ "reth-primitives-traits",
+ "reth-provider",
+ "reth-revm",
+ "reth-storage-errors",
+ "serde",
+ "serde_with",
+ "thiserror 2.0.12",
+ "tracing",
+]
+
+[[package]]
 name = "openvm-transpiler"
 version = "1.5.0-rc.0"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#2fc9805d5e839ab7c3b372e34a7d235b5e72c6d0"

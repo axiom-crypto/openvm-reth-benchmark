@@ -6,6 +6,7 @@ members = [
     "crates/revm-crypto",
     "crates/stateless-executor",
     "crates/chainspec",
+    "crates/stateless-witness",
     "crates/executor/host",
     "crates/mpt-tools",
     "crates/rpc-proxy",
@@ -58,6 +59,7 @@ tracing-actix-web = "0.7"
 async-trait = "0.1.89"
 clap = "4.5.54"
 tower = "0.5"
+metrics = "0.24"
 
 # workspace
 openvm-mpt = { path = "./crates/mpt" }
@@ -65,6 +67,7 @@ openvm-revm-crypto = { path = "./crates/revm-crypto" }
 openvm-stateless-executor = { path = "./crates/stateless-executor" }
 openvm-chainspec = { path = "./crates/chainspec" }
 # workspace (host only)
+openvm-stateless-witness = { path = "./crates/stateless-witness", default-features = false }
 openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
 openvm-rpc-proxy = { path = "./crates/rpc-proxy" }
 openvm-host-executor = { path = "./crates/executor/host" }
@@ -92,6 +95,8 @@ reth-ethereum-primitives = { git = "https://github.com/paradigmxyz/reth", tag = 
     "serde-bincode-compat",
 ] }
 reth-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2", default-features = false }
+reth-node-api = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2", default-features = false }
+reth-provider = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2", default-features = false }
 
 # revm
 revm = { version = "34.0.0", features = ["serde"], default-features = false }
