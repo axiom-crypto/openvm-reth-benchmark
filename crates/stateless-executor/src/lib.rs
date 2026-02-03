@@ -6,7 +6,7 @@ use std::{fmt::Debug, sync::Arc};
 
 use alloy_consensus::{proofs::calculate_receipt_root, TxReceipt};
 use alloy_primitives::Bloom;
-use openvm_primitives::chain_spec::{dev, mainnet};
+use openvm_chainspec::{dev, mainnet};
 use reth_consensus::{Consensus, HeaderValidator};
 use reth_ethereum_consensus::{validate_block_post_execution, EthBeaconConsensus};
 use reth_evm::execute::{BasicBlockExecutor, Executor};

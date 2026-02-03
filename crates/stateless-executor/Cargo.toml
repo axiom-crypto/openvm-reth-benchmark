@@ -17,7 +17,7 @@ bumpalo.workspace = true
 itertools.workspace = true
 
 # workspace
-openvm-primitives.workspace = true
+openvm-chainspec.workspace = true
 openvm-mpt.workspace = true
 openvm-revm-crypto = { workspace = true, optional = true }
 

@@ -1,15 +1,15 @@
 [workspace]
 members = [
     "bin/host",
-    "crates/stateless-executor",
-    "crates/executor/host",
-    "crates/mpt-tools",
-    "crates/primitives",
-    "crates/rpc-proxy",
-    "crates/host-bench",
+    "bin/verifier-bench",
     "crates/mpt",
     "crates/revm-crypto",
-    "bin/verifier-bench"
+    "crates/stateless-executor",
+    "crates/chainspec",
+    "crates/executor/host",
+    "crates/mpt-tools",
+    "crates/rpc-proxy",
+    "crates/host-bench",
 ]
 exclude = []
 resolver = "3"
@@ -60,12 +60,12 @@ clap = "4.5.54"
 tower = "0.5"
 
 # workspace
-openvm-stateless-executor = { path = "./crates/stateless-executor" }
-openvm-primitives = { path = "./crates/primitives" }
-openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
 openvm-mpt = { path = "./crates/mpt" }
 openvm-revm-crypto = { path = "./crates/revm-crypto" }
+openvm-stateless-executor = { path = "./crates/stateless-executor" }
+openvm-chainspec = { path = "./crates/chainspec" }
 # workspace (host only)
+openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
 openvm-rpc-proxy = { path = "./crates/rpc-proxy" }
 openvm-host-executor = { path = "./crates/executor/host" }
 

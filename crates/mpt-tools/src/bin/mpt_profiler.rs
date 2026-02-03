@@ -3,8 +3,8 @@ static ALLOC: dhat::Alloc = dhat::Alloc;
 
 use bincode::config::standard;
 use dhat::Profiler;
+use openvm_chainspec::mainnet;
 use openvm_mpt::EthereumState;
-use openvm_primitives::chain_spec::mainnet;
 use openvm_stateless_executor::io::{StatelessExecutorInput, StatelessExecutorInputWithState};
 use reth_evm::execute::{BasicBlockExecutor, Executor};
 use reth_evm_ethereum::EthEvmConfig;

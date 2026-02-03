@@ -17,7 +17,7 @@ tracing.workspace = true
 
 # workspace
 openvm-stateless-executor.workspace = true
-openvm-primitives.workspace = true
+openvm-chainspec.workspace = true
 openvm-mpt = { workspace = true, features = ["host"] }
 openvm-rpc-proxy.workspace = true
 

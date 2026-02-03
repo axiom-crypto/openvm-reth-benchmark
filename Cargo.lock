@@ -7298,6 +7298,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm-chainspec"
+version = "0.3.0"
+dependencies = [
+ "alloy-eips",
+ "alloy-hardforks",
+ "reth-chainspec",
+ "revm-primitives 22.0.0",
+]
+
+[[package]]
 name = "openvm-circuit"
 version = "1.5.0-rc.0"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#2fc9805d5e839ab7c3b372e34a7d235b5e72c6d0"
@@ -7548,8 +7558,8 @@ dependencies = [
  "bincode 2.0.1",
  "dotenv",
  "eyre",
+ "openvm-chainspec",
  "openvm-mpt",
- "openvm-primitives",
  "openvm-rpc-proxy",
  "openvm-stateless-executor",
  "reth-chainspec",
@@ -7728,9 +7738,9 @@ dependencies = [
  "dhat",
  "dotenv",
  "eyre",
+ "openvm-chainspec",
  "openvm-host-executor",
  "openvm-mpt",
- "openvm-primitives",
  "openvm-rpc-proxy",
  "openvm-stateless-executor",
  "reth-chainspec",
@@ -7963,26 +7973,6 @@ dependencies = [
  "p3-symmetric",
  "rand 0.9.2",
  "zkhash",
-]
-
-[[package]]
-name = "openvm-primitives"
-version = "0.3.0"
-dependencies = [
- "alloy-eips",
- "alloy-hardforks",
- "alloy-rpc-types",
- "eyre",
- "reth-chainspec",
- "reth-primitives",
- "reth-revm",
- "reth-trie",
- "revm-interpreter 32.0.0",
- "revm-precompile 32.0.0",
- "revm-primitives 22.0.0",
- "serde",
- "serde_json",
- "tracing",
 ]
 
 [[package]]
@@ -8381,8 +8371,8 @@ dependencies = [
  "alloy-primitives",
  "bumpalo",
  "itertools 0.14.0",
+ "openvm-chainspec",
  "openvm-mpt",
- "openvm-primitives",
  "openvm-revm-crypto",
  "reth-consensus",
  "reth-ethereum-consensus",
