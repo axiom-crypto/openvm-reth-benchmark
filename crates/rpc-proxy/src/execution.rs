@@ -13,6 +13,8 @@ use reth_primitives::Block;
 use crate::{execution_witness, PreimageLookup};
 
 /// An executor that fetches data from a [Provider] to execute blocks in the [StatelessExecutor].
+/// This executor has an "embedded RPC proxy" and uses the RPC provider directly. It does not
+/// require starting the proxy service separately.
 #[derive(Clone)]
 #[allow(missing_debug_implementations)]
 pub struct RpcExecutor<P: Provider<Ethereum> + Clone> {
@@ -40,13 +42,14 @@ where
         let execution_witness =
             execution_witness(self.evm_config.clone(), &self.provider, block_id, &self.lookup)
                 .await?;
-        // TODO(refactor): have execution_witness return BlockExecutionWitness
         let parent_block_number = block_number - 1;
         let parent_block = self
             .provider
             .get_block_by_number(parent_block_number.into())
             .await?
             .ok_or_eyre("parent block not found")?;
+        // TODO[jpw]: this call is redundant with what's done in `execution_witness`, but it
+        // requires some conversion of different `Block` types
         let current_block = self
             .provider
             .get_block_by_number(block_id)
