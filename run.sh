@@ -224,7 +224,7 @@ RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics.json" VPMM_PAGES=$VPMM_PAGES VPMM_
 --block-number $BLOCK_NUMBER \
 --rpc-url $RPC_1 \
 --cache-dir rpc-cache \
---preimage-cache-nibbles ${PREIMAGE_CACHE_NIBBLES:-5} \
+--preimage-cache-nibbles ${PREIMAGE_CACHE_NIBBLES:-7} \
 --app-log-blowup 1 \
 --leaf-log-blowup 1 \
 --internal-log-blowup 2 \

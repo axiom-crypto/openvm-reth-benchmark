@@ -57,6 +57,7 @@ reqwest = "0.12.20"
 tracing-actix-web = "0.7"
 async-trait = "0.1.89"
 clap = "4.5.54"
+tower = "0.5"
 
 # workspace
 openvm-client-executor = { path = "./crates/executor/client" }
@@ -102,6 +103,7 @@ revm-precompile = { version = "32.0.0", default-features = false }
 
 # alloy
 alloy-chains = { version = "0.2.5", default-features = false }
+alloy-json-rpc = { version = "1.4.3", default-features = false }
 alloy-primitives = { version = "1.5.0", default-features = false }
 alloy-rlp = { version = "0.3.10", default-features = false }
 alloy-trie = { version = "0.9.1", default-features = false }

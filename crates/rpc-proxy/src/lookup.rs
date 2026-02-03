@@ -63,6 +63,11 @@ impl PreimageLookup {
 
         Some(B256::from(U256::from(nonce)))
     }
+
+    /// Returns the number of nibbles this lookup table covers.
+    pub fn nibbles(&self) -> usize {
+        self.nibbles
+    }
 }
 
 fn get_index_from_hash(hash: B256, prefix_length: usize) -> usize {

@@ -9,9 +9,11 @@ repository.workspace = true
 [dependencies]
 alloy = { workspace = true, features = ["full"] }
 alloy-chains.workspace = true
+alloy-json-rpc.workspace = true
 alloy-primitives.workspace = true
 alloy-trie.workspace = true
 alloy-rpc-types-debug.workspace = true
+tower.workspace = true
 
 reth-chainspec.workspace = true
 reth-evm.workspace = true

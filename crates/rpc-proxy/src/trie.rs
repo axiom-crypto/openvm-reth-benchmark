@@ -1,14 +1,14 @@
-use crate::{lookup::PreimageLookup, rpc::DebugApi};
+use crate::lookup::PreimageLookup;
 use alloy::{
     network::Network,
     primitives::{keccak256, map::B256Set, Address, B256},
     providers::Provider,
 };
-use eyre::{bail, Context, Result};
+use eyre::{bail, Context, ContextCompat, Result};
 use revm::database::StorageWithOriginalValues;
 use risc0_ethereum_trie::{orphan, Nibbles, Trie};
 use std::collections::HashSet;
-use tracing::{debug, trace};
+use tracing::trace;
 
 pub(crate) async fn handle_removed_account<P, N>(
     provider: &P,
@@ -105,14 +105,16 @@ where
     }
 
     let mut missing_storage_keys = B256Set::default();
-    for prefix in unresolvable {
-        let storage_key = match lookup.find(&prefix) {
-            Some(preimage) => preimage,
-            None => {
-                debug!(%address, ?prefix, "Using debug_storageRangeAt to find preimage");
-                provider.get_next_storage_key(block_hash, address, prefix).await?
-            }
-        };
+    for prefix in &unresolvable {
+        let storage_key = lookup.find(prefix).with_context(|| {
+            format!(
+                "Cannot find storage key preimage for prefix {:?} at address {}. \
+                 Consider increasing --preimage-cache-nibbles (current lookup covers {} nibbles).",
+                prefix,
+                address,
+                lookup.nibbles()
+            )
+        })?;
         missing_storage_keys.insert(storage_key);
     }
 
