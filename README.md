@@ -60,7 +60,7 @@ Before running the benchmark, you must first compile the guest program using `ca
 cd bin/client-eth
 cargo openvm build --no-transpile
 mkdir -p ../host/elf
-cp target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth ../host/elf/
+cp target/riscv32im-risc0-zkvm-elf/release/openvm-stateless-guest ../host/elf/
 cd ../..
 ```
 

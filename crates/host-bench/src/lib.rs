@@ -134,7 +134,7 @@ pub struct HostArgs {
 
 pub fn reth_vm_config(app_log_blowup: usize) -> SdkVmConfig {
     let mut config = toml::from_str::<AppConfig<SdkVmConfig>>(include_str!(
-        "../../../bin/client-eth/openvm.toml"
+        "../../../bin/stateless-guest/openvm.toml"
     ))
     .unwrap()
     .app_vm_config;

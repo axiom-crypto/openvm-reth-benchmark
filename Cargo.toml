@@ -16,7 +16,7 @@ exclude = []
 resolver = "3"
 
 [workspace.package]
-version = "0.3.0"
+version = "0.4.0"
 repository = "https://github.com/axiom-crypto/openvm-reth-benchmark"
 homepage = "https://github.com/axiom-crypto/openvm-reth-benchmark"
 edition = "2024"

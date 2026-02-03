@@ -156,8 +156,8 @@ source .env
 cd "$WORKDIR/bin/client-eth"
 cargo openvm build
 mkdir -p ../host/elf
-SRC="target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth"
-DEST="../host/elf/openvm-client-eth"
+SRC="target/riscv32im-risc0-zkvm-elf/release/openvm-stateless-guest"
+DEST="../host/elf/openvm-stateless-guest"
 
 if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
     cp "$SRC" "$DEST"

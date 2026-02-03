@@ -2254,7 +2254,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-client-eth"
+name = "openvm-stateless-guest"
 version = "0.3.0"
 dependencies = [
  "log",

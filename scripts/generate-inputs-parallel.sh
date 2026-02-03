@@ -54,7 +54,7 @@ fi
 cd bin/host
 # The binary has a static include_bytes! but doesn't really need this ELF for proof input generation:
 mkdir -p elf
-touch elf/openvm-client-eth
+touch elf/openvm-stateless-guest
 cargo build --bin openvm-reth-benchmark-bin --release
 cd ../..
 

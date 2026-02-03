@@ -358,7 +358,7 @@ jobs:
         id: cache-guest-elf-restore
         uses: runs-on/cache/restore@v4
         with:
-          path: bin/host/elf/openvm-client-eth
+          path: bin/host/elf/openvm-stateless-guest
           key: ${{ steps.set-cache-keys.outputs.elf_cache_key }}
 
       - name: Restore cargo-openvm from cache
@@ -386,13 +386,13 @@ jobs:
           GUEST_PROFILE=${{ steps.set-build-profiles.outputs.guest_profile }}
           RUSTFLAGS="" cargo openvm build --no-transpile --profile=$GUEST_PROFILE
           mkdir -p ../host/elf
-          cp target/riscv32im-risc0-zkvm-elf/$GUEST_PROFILE/openvm-client-eth ../host/elf/
+          cp target/riscv32im-risc0-zkvm-elf/$GUEST_PROFILE/openvm-stateless-guest ../host/elf/
 
       - name: Save Guest ELF to cache
         if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
         uses: runs-on/cache/save@v4
         with:
-          path: bin/host/elf/openvm-client-eth
+          path: bin/host/elf/openvm-stateless-guest
           key: ${{ steps.cache-guest-elf-restore.outputs.cache-primary-key }}
 
       - name: Restore Host Binary from cache

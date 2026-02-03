@@ -1,13 +1,13 @@
 [workspace]
 [package]
-name = "openvm-client-eth"
-description = "OpenVM Reth Guest Program"
-version = "0.3.0"
+name = "openvm-stateless-guest"
+description = "OpenVM Reth Stateless Guest Program"
+version = "0.4.0"
 edition = "2021"
 
 [dependencies]
 # workspace
-openvm-stateless-executor = { path = "../../crates/executor/client", features = ["openvm"] }
+openvm-stateless-executor = { path = "../../crates/stateless-executor", features = ["openvm"] }
 
 # openvm
 openvm = { git = "https://github.com/openvm-org/openvm.git", branch = "main", features = [

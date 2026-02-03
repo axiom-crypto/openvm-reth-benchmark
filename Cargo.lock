@@ -7299,7 +7299,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-chainspec"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "alloy-eips",
  "alloy-hardforks",
@@ -7548,7 +7548,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-host-executor"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -7712,7 +7712,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-mpt"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "alloy-rlp",
  "bumpalo",
@@ -7728,7 +7728,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-mpt-tools"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "alloy-primitives",
  "alloy-provider",
@@ -8021,7 +8021,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-reth-benchmark-bin"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "clap_builder",
  "eyre",
@@ -8033,7 +8033,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-reth-verifier-bench"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "bitcode",
  "clap",
@@ -8047,7 +8047,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-revm-crypto"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -8067,7 +8067,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-rpc-proxy"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "actix-web",
  "alloy",
@@ -8365,7 +8365,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-stateless-executor"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -8393,11 +8393,11 @@ dependencies = [
 
 [[package]]
 name = "openvm-stateless-witness"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "alloy-rlp",
  "alloy-rpc-types-debug",
- "metrics 0.23.1",
+ "metrics 0.24.3",
  "openvm-mpt",
  "openvm-stateless-executor",
  "reth-chainspec",
