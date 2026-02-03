@@ -103,6 +103,9 @@ where
     for storage_trie in storage_tries.values() {
         state.extend(storage_trie.rlp_nodes());
     }
+    // Include the empty trie node (RLP empty string = 0x80). Its Keccak is the well-known
+    // `EMPTY_ROOT_HASH` and it is not returned by `rlp_nodes()` for empty tries.
+    state.insert(Bytes::copy_from_slice(&[0x80]));
 
     let mut headers = Vec::new();
     for header in ancestors {
