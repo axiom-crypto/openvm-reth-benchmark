@@ -1,38 +1,58 @@
 [package]
-version = "0.1.0"
 name = "openvm-reth-benchmark"
-edition = "2021"
+edition.workspace = true
+repository.workspace = true
+homepage.workspace = true
+exclude.workspace = true
+version.workspace = true
 
 [lib]
 path = "src/lib.rs"
 
+[lints]
+workspace = true
+
 [dependencies]
-eyre.workspace = true
 url.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
 dotenv = "0.15.0"
 clap = { version = "4.5.7", features = ["derive", "env"] }
+clap_builder = "4.5.34"
 serde.workspace = true
 bincode = { workspace = true, features = ["std"] }
 bitcode.workspace = true
-metrics = "0.23.0"
+metrics.workspace = true
 hex = "0.4.3"
 serde_json.workspace = true
+eyre.workspace = true
+tokio.workspace = true
 
 # workspace
-openvm-host-executor.workspace = true
+openvm-mpt.workspace = true
 openvm-stateless-executor.workspace = true
+openvm-stateless-witness.workspace = true
 openvm-rpc-proxy.workspace = true
 
 # alloy
+alloy-rlp.workspace = true
 alloy-primitives.workspace = true
+alloy-consensus.workspace = true
 alloy-provider.workspace = true
+alloy-rpc-types.workspace = true
 alloy-rpc-client.workspace = true
 alloy-transport.workspace = true
 
 # reth
 reth-primitives.workspace = true
+reth-chainspec.workspace = true
+reth-evm.workspace = true
+reth-evm-ethereum.workspace = true
+reth-ethereum = { workspace = true, features = ["full"] }
+reth-ethereum-consensus.workspace = true
+reth-consensus.workspace = true
+
+revm-primitives.workspace = true
 
 # openvm
 openvm = { workspace = true }
@@ -57,7 +77,7 @@ toml.workspace = true
 halo2-axiom = { version = "0.5.0", default-features = false, optional = true }
 
 [features]
-default = ["mimalloc", "metrics"]
+default = ["jemalloc", "metrics"]
 metrics = ["openvm-benchmarks-prove/metrics"]
 tco = ["openvm-sdk/tco"]
 aot = ["openvm-sdk/aot"]

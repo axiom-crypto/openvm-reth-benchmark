@@ -179,7 +179,7 @@ FEATURES="metrics,jemalloc,unprotected"
 BLOCK_NUMBER="${BLOCK_NUMBER_OVERRIDE:-23992138}"
 # switch to +nightly-2025-08-19 if using tco
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
-BIN_NAME="openvm-reth-benchmark-bin"
+BIN_NAME="openvm-reth-benchmark"
 MAX_SEGMENT_LENGTH=$((1 << 22))
 SEGMENT_MAX_CELLS=1200000000
 VPMM_PAGE_SIZE=$((4 << 20))

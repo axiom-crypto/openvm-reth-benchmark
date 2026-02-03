@@ -7547,39 +7547,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-host-executor"
-version = "0.4.0"
-dependencies = [
- "alloy-consensus",
- "alloy-primitives",
- "alloy-provider",
- "alloy-rlp",
- "alloy-rpc-types",
- "bincode 2.0.1",
- "dotenv",
- "eyre",
- "openvm-chainspec",
- "openvm-mpt",
- "openvm-rpc-proxy",
- "openvm-stateless-executor",
- "reth-chainspec",
- "reth-consensus",
- "reth-ethereum",
- "reth-ethereum-consensus",
- "reth-evm",
- "reth-evm-ethereum",
- "reth-execution-types",
- "reth-primitives",
- "reth-primitives-traits",
- "revm 34.0.0",
- "revm-primitives 22.0.0",
- "tokio",
- "tracing",
- "tracing-subscriber 0.3.22",
- "url",
-]
-
-[[package]]
 name = "openvm-instructions"
 version = "1.5.0-rc.0"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#2fc9805d5e839ab7c3b372e34a7d235b5e72c6d0"
@@ -7739,8 +7706,8 @@ dependencies = [
  "dotenv",
  "eyre",
  "openvm-chainspec",
- "openvm-host-executor",
  "openvm-mpt",
+ "openvm-reth-benchmark",
  "openvm-rpc-proxy",
  "openvm-stateless-executor",
  "reth-chainspec",
@@ -7977,21 +7944,25 @@ dependencies = [
 
 [[package]]
 name = "openvm-reth-benchmark"
-version = "0.1.0"
+version = "0.4.0"
 dependencies = [
+ "alloy-consensus",
  "alloy-primitives",
  "alloy-provider",
+ "alloy-rlp",
  "alloy-rpc-client",
+ "alloy-rpc-types",
  "alloy-transport",
  "bincode 2.0.1",
  "bitcode",
  "clap",
+ "clap_builder",
  "derive_more 1.0.0",
  "dotenv",
  "eyre",
  "halo2-axiom",
  "hex",
- "metrics 0.23.1",
+ "metrics 0.24.3",
  "openvm",
  "openvm-algebra-circuit",
  "openvm-benchmarks-prove",
@@ -7999,7 +7970,7 @@ dependencies = [
  "openvm-build",
  "openvm-circuit",
  "openvm-ecc-circuit",
- "openvm-host-executor",
+ "openvm-mpt",
  "openvm-native-circuit",
  "openvm-native-compiler",
  "openvm-native-recursion",
@@ -8009,26 +7980,23 @@ dependencies = [
  "openvm-sdk",
  "openvm-stark-sdk",
  "openvm-stateless-executor",
+ "openvm-stateless-witness",
  "openvm-transpiler",
+ "reth-chainspec",
+ "reth-consensus",
+ "reth-ethereum",
+ "reth-ethereum-consensus",
+ "reth-evm",
+ "reth-evm-ethereum",
  "reth-primitives",
+ "revm-primitives 22.0.0",
  "serde",
  "serde_json",
+ "tokio",
  "toml 0.9.5",
  "tracing",
  "tracing-subscriber 0.3.22",
  "url",
-]
-
-[[package]]
-name = "openvm-reth-benchmark-bin"
-version = "0.4.0"
-dependencies = [
- "clap_builder",
- "eyre",
- "openvm-cuda-backend",
- "openvm-reth-benchmark",
- "openvm-stark-sdk",
- "tokio",
 ]
 
 [[package]]

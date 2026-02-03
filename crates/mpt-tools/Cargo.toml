@@ -25,11 +25,11 @@ dhat = "0.3"
 criterion = { version = "0.8", features = ["html_reports"] }
 
 # workspace
-openvm-host-executor.workspace = true
 openvm-stateless-executor.workspace = true
 openvm-chainspec.workspace = true
 openvm-mpt = { workspace = true }
 openvm-rpc-proxy.workspace = true
+openvm-reth-benchmark.workspace = true
 
 # reth dependencies for benchmarking and profiling
 reth-evm.workspace = true

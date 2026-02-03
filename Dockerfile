@@ -42,7 +42,7 @@ ENV JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_t
 ARG FEATURES="metrics,jemalloc,tco,unprotected,cuda"
 ARG PROFILE="release"
 ENV CUDA_ARCH="89"
-RUN cargo +nightly-2025-08-19 build --bin openvm-reth-benchmark-bin --profile=${PROFILE} --no-default-features --features=${FEATURES}
+RUN cargo +nightly-2025-08-19 build --bin openvm-reth-benchmark --profile=${PROFILE} --no-default-features --features=${FEATURES}
 
 # Runtime image
 FROM nvidia/cuda:12.8.1-runtime-ubuntu24.04 AS runtime
@@ -56,8 +56,8 @@ RUN S5CMD_VER=$(curl -s https://api.github.com/repos/peak/s5cmd/releases/latest 
     rm /tmp/s5cmd.tar.gz
 
 WORKDIR /app
-COPY --from=builder /app/target/release/openvm-reth-benchmark-bin /usr/local/bin/openvm-reth-benchmark-bin
-COPY --from=builder /app/bin/host/elf/openvm-stateless-guest /app/bin/host/elf/openvm-stateless-guest
+COPY --from=builder /app/target/release/openvm-reth-benchmark /usr/local/bin/openvm-reth-benchmark
+COPY --from=builder /app/bin/openvm-reth-benchmark/elf/openvm-stateless-guest /app/bin/openvm-reth-benchmark/elf/openvm-stateless-guest
 COPY server /app/server
 
 RUN python3 -m venv /opt/venv \
@@ -73,7 +73,7 @@ ENV RUST_LOG="info,p3_=warn" \
 VOLUME ["/app/rpc-cache", "/root/.openvm/params"]
 
 ENV PATH="/opt/venv/bin:${PATH}" \
-    OVM_BIN="/usr/local/bin/openvm-reth-benchmark-bin"
+    OVM_BIN="/usr/local/bin/openvm-reth-benchmark"
 
 EXPOSE 8000
 ENTRYPOINT ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8000"]

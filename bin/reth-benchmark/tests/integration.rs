@@ -1,6 +1,6 @@
 use alloy_provider::RootProvider;
 use bincode::config::standard;
-use openvm_host_executor::HostExecutor;
+use openvm_reth_benchmark::HostExecutor;
 use openvm_rpc_proxy::DEFAULT_PREIMAGE_CACHE_NIBBLES;
 use openvm_stateless_executor::{io::StatelessExecutorInput, ChainVariant, StatelessExecutor};
 use tracing_subscriber::{

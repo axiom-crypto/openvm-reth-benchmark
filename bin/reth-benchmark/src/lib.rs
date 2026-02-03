@@ -12,7 +12,6 @@ use openvm_circuit::{
         bench::run_with_metric_collection, openvm_stark_backend::p3_field::PrimeField32,
     },
 };
-use openvm_host_executor::HostExecutor;
 pub use openvm_native_circuit::NativeConfig;
 use openvm_stateless_executor::{
     io::StatelessExecutorInput, ChainVariant, StatelessExecutor, CHAIN_ID_ETH_MAINNET,
@@ -35,7 +34,10 @@ use std::{fs, path::PathBuf};
 use tracing::{info, info_span};
 
 mod cli;
+mod execution;
+
 use cli::ProviderArgs;
+pub use execution::HostExecutor;
 
 /// Enum representing the execution mode of the host executable.
 #[derive(Debug, Clone, clap::ValueEnum)]
@@ -133,11 +135,10 @@ pub struct HostArgs {
 }
 
 pub fn reth_vm_config(app_log_blowup: usize) -> SdkVmConfig {
-    let mut config = toml::from_str::<AppConfig<SdkVmConfig>>(include_str!(
-        "../../../bin/stateless-guest/openvm.toml"
-    ))
-    .unwrap()
-    .app_vm_config;
+    let mut config =
+        toml::from_str::<AppConfig<SdkVmConfig>>(include_str!("../../stateless-guest/openvm.toml"))
+            .unwrap()
+            .app_vm_config;
     config.system.config = config
         .system
         .config
@@ -152,10 +153,6 @@ pub const RETH_DEFAULT_LEAF_LOG_BLOWUP: usize = 1;
 pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) -> eyre::Result<()> {
     // Initialize the environment variables.
     dotenv::dotenv().ok();
-
-    if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "info");
-    }
 
     // Parse the command line arguments.
     let mut args = args;

@@ -1,16 +1,14 @@
 [workspace]
 members = [
-    "bin/host",
+    "bin/reth-benchmark",
     "bin/verifier-bench",
     "crates/mpt",
     "crates/revm-crypto",
     "crates/stateless-executor",
     "crates/chainspec",
     "crates/stateless-witness",
-    "crates/executor/host",
     "crates/mpt-tools",
-    "crates/rpc-proxy",
-    "crates/host-bench",
+    "crates/rpc-proxy"
 ]
 exclude = []
 resolver = "3"
@@ -68,9 +66,8 @@ openvm-stateless-executor = { path = "./crates/stateless-executor" }
 openvm-chainspec = { path = "./crates/chainspec" }
 # workspace (host only)
 openvm-stateless-witness = { path = "./crates/stateless-witness", default-features = false }
-openvm-reth-benchmark = { path = "./crates/host-bench", default-features = false }
 openvm-rpc-proxy = { path = "./crates/rpc-proxy" }
-openvm-host-executor = { path = "./crates/executor/host" }
+openvm-reth-benchmark = { path = "./bin/reth-benchmark", default-features = false }
 
 # reth
 reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.2", default-features = false }

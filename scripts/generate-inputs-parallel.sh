@@ -51,14 +51,14 @@ else
     exit 1
 fi
 
-cd bin/host
+cd bin/openvm-reth-benchmark
 # The binary has a static include_bytes! but doesn't really need this ELF for proof input generation:
 mkdir -p elf
 touch elf/openvm-stateless-guest
-cargo build --bin openvm-reth-benchmark-bin --release
+cargo build --bin openvm-reth-benchmark --release
 cd ../..
 
-BIN_PATH="$(pwd)/target/release/openvm-reth-benchmark-bin"
+BIN_PATH="$(pwd)/target/release/openvm-reth-benchmark"
 # cur dir is openvm-reth-benchmark
 
 OUTPUT_DIR="$(pwd)/inputs"
