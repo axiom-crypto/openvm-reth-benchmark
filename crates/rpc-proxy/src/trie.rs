@@ -1,10 +1,10 @@
-use crate::{lookup::PreimageLookup, rpc::DebugApi};
+use crate::lookup::PreimageLookup;
 use alloy::{
     network::Network,
     primitives::{keccak256, map::B256Set, Address, B256},
     providers::Provider,
 };
-use eyre::{bail, Context, Result};
+use eyre::{bail, Context, ContextCompat, Result};
 use revm::database::StorageWithOriginalValues;
 use risc0_ethereum_trie::{orphan, Nibbles, Trie};
 use std::collections::HashSet;
@@ -60,6 +60,7 @@ pub(crate) async fn handle_modified_account<P, N>(
     storage: &StorageWithOriginalValues,
     storage_trie: &mut Trie,
     lookup: &PreimageLookup,
+    accessed_keys: &B256Set,
 ) -> Result<()>
 where
     P: Provider<N>,
@@ -105,14 +106,20 @@ where
     }
 
     let mut missing_storage_keys = B256Set::default();
-    for prefix in unresolvable {
-        let storage_key = match lookup.find(&prefix) {
-            Some(preimage) => preimage,
-            None => {
-                debug!(%address, ?prefix, "Using debug_storageRangeAt to find preimage");
-                provider.get_next_storage_key(block_hash, address, prefix).await?
-            }
-        };
+    for prefix in &unresolvable {
+        // First, try to find the preimage in the accessed storage keys
+        let storage_key = find_preimage_in_accessed_keys(accessed_keys, prefix)
+            // Then try the static preimage lookup table
+            .or_else(|| lookup.find(prefix))
+            // If not found, return an error
+            .with_context(|| {
+                format!(
+                    "Cannot find storage key preimage for prefix {:?} at address {}. \
+                     The preimage is not in the accessed keys or the static lookup table. \
+                     Consider increasing --preimage-cache-nibbles (current lookup covers {} nibbles).",
+                    prefix, address, lookup.nibbles()
+                )
+            })?;
         missing_storage_keys.insert(storage_key);
     }
 
@@ -128,4 +135,16 @@ where
     }
 
     Ok(())
+}
+
+/// Searches through accessed storage keys to find one whose keccak256 hash starts with the given prefix.
+fn find_preimage_in_accessed_keys(accessed_keys: &B256Set, prefix: &Nibbles) -> Option<B256> {
+    for key in accessed_keys {
+        let hash_nibbles = Nibbles::unpack(keccak256(key));
+        if hash_nibbles.starts_with(prefix) {
+            debug!(?prefix, %key, "Found preimage in accessed storage keys");
+            return Some(*key);
+        }
+    }
+    None
 }

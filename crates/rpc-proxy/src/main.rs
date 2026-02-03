@@ -8,7 +8,9 @@ use alloy::{
 use alloy_chains::NamedChain;
 use clap::Parser;
 use eyre::{bail, Context};
-use openvm_rpc_proxy::{execution_witness, PreimageLookup, DEFAULT_PREIMAGE_CACHE_NIBBLES};
+use openvm_rpc_proxy::{
+    execution_witness, LogOnErrorLayer, PreimageLookup, DEFAULT_PREIMAGE_CACHE_NIBBLES,
+};
 use reqwest::Client;
 use reth_chainspec::{HOLESKY, HOODI, MAINNET, SEPOLIA};
 use reth_evm_ethereum::EthEvmConfig;
@@ -194,7 +196,9 @@ async fn main() -> eyre::Result<()> {
     let args = Args::parse();
 
     let retry = RetryBackoffLayer::new(10, args.rpc_retry_backoff, args.rpc_retry_cu);
-    let client = RpcClient::builder().layer(retry).connect(&args.rpc_url).await?;
+    let log_on_error = LogOnErrorLayer;
+    let client =
+        RpcClient::builder().layer(retry).layer(log_on_error).connect(&args.rpc_url).await?;
 
     let provider = ProviderBuilder::new().connect_client(client);
     let chain_id = provider.get_chain_id().await.context("eth_chainId failed")?;

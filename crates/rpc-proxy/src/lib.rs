@@ -25,9 +25,10 @@
 
 mod db;
 mod lookup;
-mod rpc;
+mod transport;
 mod trie;
 mod witness;
 
 pub use lookup::{PreimageLookup, DEFAULT_PREIMAGE_CACHE_NIBBLES};
+pub use transport::LogOnErrorLayer;
 pub use witness::execution_witness;

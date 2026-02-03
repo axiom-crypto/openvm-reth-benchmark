@@ -91,6 +91,11 @@ impl<D> PreflightDb<D> {
     pub(crate) fn contracts(&self) -> &B256HashMap<Bytes> {
         &self.contracts
     }
+
+    /// Returns the storage keys accessed for a given address.
+    pub(crate) fn accessed_storage_keys(&self, address: &Address) -> B256HashSet {
+        self.accounts.get(address).cloned().unwrap_or_default()
+    }
 }
 
 impl<N: Network, P: Provider<N>> PreflightDb<ProviderDb<N, P>> {
