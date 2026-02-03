@@ -90,17 +90,8 @@ where
             (true, true) => {
                 let storage = &account.storage;
                 let storage_trie = storage_tries.get_mut(&addr).unwrap();
-                let accessed_keys = db.accessed_storage_keys(&addr);
-                handle_modified_account(
-                    provider,
-                    block_hash,
-                    addr,
-                    storage,
-                    storage_trie,
-                    lookup,
-                    &accessed_keys,
-                )
-                .await?;
+                handle_modified_account(provider, block_hash, addr, storage, storage_trie, lookup)
+                    .await?;
             }
             _ => {}
         }
