@@ -57,6 +57,7 @@ reqwest = "0.12.20"
 tracing-actix-web = "0.7"
 async-trait = "0.1.89"
 clap = "4.5.54"
+tower = "0.5"
 
 # workspace
 openvm-client-executor = { path = "./crates/executor/client" }
@@ -127,9 +128,6 @@ alloy-rpc-types = { version = "1.4.3", default-features = false, features = [
 ] }
 alloy-rpc-types-debug = { version = "1.4.3", default-features = false }
 alloy-transport = { version = "1.4.3" }
-
-# tower
-tower = "0.5"
 
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.3.0-rc.0", default-features = false }
 openvm-cuda-backend = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.3.0-rc.0", default-features = false }
