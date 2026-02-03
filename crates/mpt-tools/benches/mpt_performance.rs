@@ -1,6 +1,6 @@
 use bincode::config::standard;
 use criterion::{criterion_group, criterion_main, Criterion};
-use openvm_primitives::chain_spec::mainnet;
+use openvm_chainspec::mainnet;
 use openvm_stateless_executor::io::{StatelessExecutorInput, StatelessExecutorInputWithState};
 use reth_evm::execute::{BasicBlockExecutor, Executor};
 use reth_evm_ethereum::EthEvmConfig;
