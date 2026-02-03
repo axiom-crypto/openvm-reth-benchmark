@@ -13,7 +13,7 @@ use revm::{
 };
 use std::{future::IntoFuture, marker::PhantomData};
 use tokio::runtime::Handle;
-use tracing::trace;
+use tracing::{error, trace};
 
 /// Errors returned by the [ProviderDb].
 #[derive(Debug, thiserror::Error)]
@@ -123,23 +123,44 @@ impl<N: Network, P: Provider<N>> ProviderDb<N, P> {
 
         let mut iter = keys.chunks(self.provider_config.eip1186_proof_chunk_size);
         // always make at least one call even if the keys are empty
+        let chunk_keys = iter.next().unwrap_or_default();
         let mut account_proof = self
             .provider()
-            .get_proof(address, iter.next().unwrap_or_default().into())
+            .get_proof(address, chunk_keys.into())
             .hash(block)
             .await
-            .map_err(|err| Error::Rpc("eth_getProof", err))?;
+            .map_err(|err| {
+                error!(
+                    %err,
+                    %address,
+                    %block,
+                    keys = ?chunk_keys,
+                    "eth_getProof failed. Request: {{\"method\": \"eth_getProof\", \"params\": [\"{}\", {:?}, \"{}\"]}}",
+                    address, chunk_keys, block
+                );
+                Error::Rpc("eth_getProof", err)
+            })?;
         if account_proof.address != address {
             return Err(Error::InconsistentResponse("response does not match request"));
         }
 
-        for keys in iter {
+        for chunk_keys in iter {
             let proof = self
                 .provider()
-                .get_proof(address, keys.into())
+                .get_proof(address, chunk_keys.into())
                 .hash(block)
                 .await
-                .map_err(|err| Error::Rpc("eth_getProof", err))?;
+                .map_err(|err| {
+                    error!(
+                        %err,
+                        %address,
+                        %block,
+                        keys = ?chunk_keys,
+                        "eth_getProof failed. Request: {{\"method\": \"eth_getProof\", \"params\": [\"{}\", {:?}, \"{}\"]}}",
+                        address, chunk_keys, block
+                    );
+                    Error::Rpc("eth_getProof", err)
+                })?;
             // only the keys have changed, the account proof should not change
             if proof.account_proof != account_proof.account_proof {
                 return Err(Error::InconsistentResponse(
