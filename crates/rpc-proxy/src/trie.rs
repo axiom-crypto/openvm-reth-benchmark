@@ -110,7 +110,9 @@ where
             format!(
                 "Cannot find storage key preimage for prefix {:?} at address {}. \
                  Consider increasing --preimage-cache-nibbles (current lookup covers {} nibbles).",
-                prefix, address, lookup.nibbles()
+                prefix,
+                address,
+                lookup.nibbles()
             )
         })?;
         missing_storage_keys.insert(storage_key);

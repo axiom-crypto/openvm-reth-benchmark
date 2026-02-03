@@ -68,7 +68,7 @@ where
                 );
             } else if let Ok(ResponsePacket::Single(ref response)) = result {
                 // Also log if the RPC returned an error response
-                if let Some(ref rpc_error) = response.payload.as_error() {
+                if let Some(rpc_error) = response.payload.as_error() {
                     error!(
                         rpc_error_code = rpc_error.code,
                         rpc_error_message = %rpc_error.message,
@@ -76,14 +76,15 @@ where
                         "RPC returned error response. Full request payload logged for debugging."
                     );
                     // Convert to transport error so the caller knows it failed
-                    return Err(TransportError::from(TransportErrorKind::custom_str(
-                        &format!("RPC error {}: {}", rpc_error.code, rpc_error.message),
-                    )));
+                    return Err(TransportError::from(TransportErrorKind::custom_str(&format!(
+                        "RPC error {}: {}",
+                        rpc_error.code, rpc_error.message
+                    ))));
                 }
             } else if let Ok(ResponsePacket::Batch(ref responses)) = result {
                 // Check batch responses for errors
                 for response in responses {
-                    if let Some(ref rpc_error) = response.payload.as_error() {
+                    if let Some(rpc_error) = response.payload.as_error() {
                         error!(
                             rpc_error_code = rpc_error.code,
                             rpc_error_message = %rpc_error.message,
