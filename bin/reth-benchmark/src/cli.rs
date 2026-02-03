@@ -4,7 +4,7 @@ use url::Url;
 
 /// The arguments for configuring the chain data provider.
 #[derive(Debug, Clone, Parser)]
-pub struct ProviderArgs {
+pub(super) struct ProviderArgs {
     /// The rpc url used to fetch data about the block. If not provided, will use the
     /// RPC_{chain_id} env var.
     #[clap(long)]
@@ -14,13 +14,13 @@ pub struct ProviderArgs {
     chain_id: Option<u64>,
 }
 
-pub struct ProviderConfig {
+pub(super) struct ProviderConfig {
     pub rpc_url: Option<Url>,
     pub chain_id: u64,
 }
 
 impl ProviderArgs {
-    pub async fn into_provider(self) -> eyre::Result<ProviderConfig> {
+    pub(super) async fn into_provider(self) -> eyre::Result<ProviderConfig> {
         // We don't need RPC when using cache with known chain ID, so we leave it as `Option<Url>`
         // here and decide on whether to panic later.
         //

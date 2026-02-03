@@ -5,7 +5,7 @@ use alloy_provider::{network::Ethereum, Provider};
 use alloy_rpc_types::BlockNumberOrTag;
 use eyre::{eyre, Ok, OptionExt};
 use openvm_stateless_executor::io::StatelessExecutorInput;
-use openvm_stateless_witness::{generate_block_input_from_witness, BlockExecutionWitness};
+use openvm_stateless_witness::{generate_stateless_input_from_witness, BlockExecutionWitness};
 use reth_chainspec::MAINNET;
 use reth_evm_ethereum::EthEvmConfig;
 use reth_primitives::Block;
@@ -58,12 +58,12 @@ where
             .map(into_primitive_block)
             .ok_or(eyre!("couldn't fetch block: {}", block_number))?;
 
-        let input = generate_block_input_from_witness(BlockExecutionWitness {
+        let input = generate_stateless_input_from_witness(BlockExecutionWitness {
             execution_witness,
             parent_state_root: parent_block.header.state_root,
             current_block,
         })?;
-        tracing::info!("successfully generated client input");
+        tracing::info!("successfully generated stateless input");
 
         Ok(input)
     }

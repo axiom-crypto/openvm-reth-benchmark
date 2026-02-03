@@ -27,25 +27,27 @@ async fn test_e2e_ethereum() {
     let provider = RootProvider::new_http(rpc_url);
 
     // Setup the host executor.
-    let host_executor = RpcExecutor::new(provider, DEFAULT_PREIMAGE_CACHE_NIBBLES);
+    let rpc_executor = RpcExecutor::new(provider, DEFAULT_PREIMAGE_CACHE_NIBBLES);
 
     // Execute the host.
-    let client_input = host_executor.execute(block_number).await.expect("failed to execute host");
+    let stateless_input = rpc_executor.execute(block_number).await.expect("failed to execute host");
 
-    // Setup the client executor.
-    let client_executor = StatelessExecutor;
+    // Setup the stateless executor.
+    let stateless_executor = StatelessExecutor;
 
     // Test serialization/deserialization round-trip
     let bincode_config = standard();
-    let buffer = bincode::serde::encode_to_vec(&client_input, bincode_config).unwrap();
+    let buffer = bincode::serde::encode_to_vec(&stateless_input, bincode_config).unwrap();
     let (deserialized_input, _): (StatelessExecutorInput, _) =
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
 
-    // Execute the client with the original input
-    client_executor.execute(ChainVariant::Mainnet, client_input).expect("failed to execute client");
+    // Execute with the stateless input
+    stateless_executor
+        .execute(ChainVariant::Mainnet, stateless_input)
+        .expect("failed to execute client");
 
     // Execute the client with the deserialized input to test round-trip
-    client_executor
+    stateless_executor
         .execute(ChainVariant::Mainnet, deserialized_input)
         .expect("failed to execute client with deserialized input");
 }

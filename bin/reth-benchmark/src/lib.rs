@@ -88,7 +88,7 @@ pub struct HostArgs {
     #[clap(long, value_enum)]
     mode: BenchMode,
 
-    /// Optional path to the directory containing cached client input. A new cache file will be
+    /// Optional path to the directory containing cached stateless input. A new cache file will be
     /// created from RPC data if it doesn't already exist.
     #[clap(long)]
     cache_dir: Option<PathBuf>,
@@ -155,11 +155,11 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     // Parse the command line arguments.
     let mut args = args;
 
-    let client_input_from_path =
+    let stateless_input_from_path =
         args.input_path.as_ref().map(|path| try_load_input_from_path(path).unwrap());
 
-    let client_input = if let Some(client_input_from_path) = client_input_from_path {
-        client_input_from_path
+    let stateless_input = if let Some(stateless_input_from_path) = stateless_input_from_path {
+        stateless_input_from_path
     } else {
         let provider_config = args.provider.into_provider().await?;
         match provider_config.chain_id {
@@ -169,14 +169,14 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                 eyre::bail!("unknown chain ID: {}", provider_config.chain_id);
             }
         };
-        let client_input_from_cache = try_load_input_from_cache(
+        let stateless_input_from_cache = try_load_input_from_cache(
             args.cache_dir.as_ref(),
             provider_config.chain_id,
             args.block_number,
         )?;
 
-        match (client_input_from_cache, provider_config.rpc_url) {
-            (Some(client_input_from_cache), _) => client_input_from_cache,
+        match (stateless_input_from_cache, provider_config.rpc_url) {
+            (Some(stateless_input_from_cache), _) => stateless_input_from_cache,
             (None, Some(rpc_url)) => {
                 // Cache not found but we have RPC
                 // Setup the provider.
@@ -185,11 +185,11 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                 let provider = RootProvider::new(client);
 
                 // Setup the host executor.
-                let host_executor = RpcExecutor::new(provider, args.preimage_cache_nibbles);
+                let rpc_executor = RpcExecutor::new(provider, args.preimage_cache_nibbles);
 
                 // Execute the host.
-                let client_input =
-                    host_executor.execute(args.block_number).await.expect("failed to execute host");
+                let stateless_input =
+                    rpc_executor.execute(args.block_number).await.expect("failed to execute host");
 
                 if let Some(cache_dir) = args.cache_dir {
                     let input_folder =
@@ -202,13 +202,13 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                     let mut cache_file = std::fs::File::create(input_path)?;
 
                     bincode::serde::encode_into_std_write(
-                        &client_input,
+                        &stateless_input,
                         &mut cache_file,
                         bincode::config::standard(),
                     )?;
                 }
 
-                client_input
+                stateless_input
             }
             (None, None) => {
                 eyre::bail!("cache not found and RPC URL not provided")
@@ -217,11 +217,11 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
     };
 
     let mut stdin = StdIn::default();
-    stdin.write(&client_input);
+    stdin.write(&stateless_input);
     info!("input loaded");
 
     if matches!(args.mode, BenchMode::MakeInput) {
-        let words: Vec<u32> = openvm::serde::to_vec(&client_input).unwrap();
+        let words: Vec<u32> = openvm::serde::to_vec(&stateless_input).unwrap();
         let bytes: Vec<u8> = words.into_iter().flat_map(|w| w.to_le_bytes()).collect();
         let hex_bytes = String::from("0x01") + &hex::encode(&bytes);
         let input = json!({
@@ -283,7 +283,7 @@ pub async fn run_reth_benchmark(args: HostArgs, openvm_client_eth_elf: &[u8]) ->
                             let executor = StatelessExecutor;
                             // Create a child span to get the group label propagated
                             let header = info_span!("client.execute").in_scope(|| {
-                                executor.execute(ChainVariant::Mainnet, client_input.clone())
+                                executor.execute(ChainVariant::Mainnet, stateless_input.clone())
                             })?;
                             let block_hash =
                                 info_span!("header.hash_slow").in_scope(|| header.hash_slow());
@@ -409,10 +409,10 @@ fn try_load_input_from_cache(
         if cache_path.exists() {
             // TODO: prune the cache if invalid instead
             let mut cache_file = std::fs::File::open(cache_path)?;
-            let client_input: StatelessExecutorInput =
+            let stateless_input: StatelessExecutorInput =
                 bincode::serde::decode_from_std_read(&mut cache_file, bincode::config::standard())?;
 
-            Some(client_input)
+            Some(stateless_input)
         } else {
             None
         }
@@ -447,8 +447,8 @@ fn try_load_input_from_path(path: &PathBuf) -> eyre::Result<StatelessExecutorInp
         Ok(input)
     } else {
         let mut file = std::fs::File::open(path)?;
-        let client_input: StatelessExecutorInput =
+        let stateless_input: StatelessExecutorInput =
             bincode::serde::decode_from_std_read(&mut file, bincode::config::standard())?;
-        Ok(client_input)
+        Ok(stateless_input)
     }
 }

@@ -47,7 +47,7 @@ pub struct BlockExecutionWitness {
 }
 
 #[instrument(skip_all)]
-pub fn generate_block_input_from_witness(
+pub fn generate_stateless_input_from_witness(
     witness: BlockExecutionWitness,
 ) -> WitnessResult<StatelessExecutorInput> {
     let ExecutionWitness { state: reth_state, codes, keys, headers } = witness.execution_witness;

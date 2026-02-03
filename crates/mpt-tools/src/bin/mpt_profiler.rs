@@ -50,17 +50,17 @@ fn main() {
     // Pre-compute the post-state once
     let (pre_input, _): (StatelessExecutorInput, _) =
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
-    let client_input = StatelessExecutorInputWithState::build(pre_input.clone()).unwrap();
-    let witness_db = client_input.witness_db().unwrap();
+    let stateless_input = StatelessExecutorInputWithState::build(pre_input.clone()).unwrap();
+    let witness_db = stateless_input.witness_db().unwrap();
     let cache_db = CacheDB::new(&witness_db);
     let spec = Arc::new(mainnet());
-    let current_block = client_input.input.current_block.clone().try_into_recovered().unwrap();
+    let current_block = stateless_input.input.current_block.clone().try_into_recovered().unwrap();
     let block_executor = BasicBlockExecutor::new(EthEvmConfig::new(spec), cache_db);
     let executor_output = block_executor.execute(&current_block).unwrap();
     let executor_outcome = ExecutionOutcome::new(
         executor_output.state,
         vec![executor_output.result.receipts],
-        client_input.input.current_block.header.number,
+        stateless_input.input.current_block.header.number,
         vec![executor_output.result.requests],
     );
 
@@ -81,11 +81,11 @@ fn main() {
         }
         "update" => {
             println!("Profiling: MPT update only");
-            profile_update(client_input.state, &executor_outcome);
+            profile_update(stateless_input.state, &executor_outcome);
         }
         "state-root" => {
             println!("Profiling: Update and state root computation only");
-            profile_state_root(client_input.state, &executor_outcome);
+            profile_state_root(stateless_input.state, &executor_outcome);
         }
         _ => {
             println!("Unknown operation: {}", operation);
@@ -105,28 +105,28 @@ fn profile_end_to_end(buffer: &[u8], executor_outcome: &ExecutionOutcome) {
     let (pre_input, _): (StatelessExecutorInput, _) =
         bincode::serde::decode_from_slice(buffer, bincode_config).unwrap();
 
-    let mut client_input = StatelessExecutorInputWithState::build(pre_input).unwrap();
+    let mut stateless_input = StatelessExecutorInputWithState::build(pre_input).unwrap();
 
     // Create witness DB
-    let _witness_db = client_input.witness_db().unwrap();
+    let _witness_db = stateless_input.witness_db().unwrap();
 
     // Update MPT with pre-computed post-state
-    client_input.state.update_from_bundle_state(&executor_outcome.bundle).unwrap();
-    let _state_root = client_input.state.state_trie.hash();
+    stateless_input.state.update_from_bundle_state(&executor_outcome.bundle).unwrap();
+    let _state_root = stateless_input.state.state_trie.hash();
 }
 
 fn profile_deserialize(buffer: &[u8]) {
     let _profiler = Profiler::new_heap();
     let bincode_config = standard();
 
-    let (_client_input, _): (StatelessExecutorInput, _) =
+    let (_stateless_input, _): (StatelessExecutorInput, _) =
         bincode::serde::decode_from_slice(buffer, bincode_config).unwrap();
 }
 
-fn profile_witness_db(client_input: StatelessExecutorInput) {
+fn profile_witness_db(stateless_input: StatelessExecutorInput) {
     let _profiler = Profiler::new_heap();
 
-    let input = StatelessExecutorInputWithState::build(client_input).unwrap();
+    let input = StatelessExecutorInputWithState::build(stateless_input).unwrap();
 
     let _witness_db = input.witness_db().unwrap();
 }
