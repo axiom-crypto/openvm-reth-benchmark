@@ -7,7 +7,7 @@ on:
         type: string
         required: false
         description: Runner instance family (GPU recommended)
-        default: g6e.8xlarge
+        default: g6e.2xlarge
       push:
         type: boolean
         required: false
@@ -91,5 +91,3 @@ jobs:
           echo "- Image: ${{ steps.meta.outputs.image }}" >> $GITHUB_STEP_SUMMARY
           echo "- Tag: ${{ steps.meta.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
           echo "- Pushed: ${{ inputs.push }}" >> $GITHUB_STEP_SUMMARY
-
-
