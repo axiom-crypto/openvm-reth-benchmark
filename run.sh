@@ -121,6 +121,10 @@ while [[ $# -gt 0 ]]; do
             CUDA_REASON="requested via script argument"
             shift
             ;;
+        --preimage_cache_nibbles)
+            PREIMAGE_CACHE_NIBBLES="$2"
+            shift 2
+            ;;
         *)
             echo "Unknown argument: $1"
             exit 1
@@ -220,6 +224,7 @@ RUST_LOG="info,p3_=warn" OUTPUT_PATH="metrics.json" VPMM_PAGES=$VPMM_PAGES VPMM_
 --block-number $BLOCK_NUMBER \
 --rpc-url $RPC_1 \
 --cache-dir rpc-cache \
+--preimage-cache-nibbles ${PREIMAGE_CACHE_NIBBLES:-5} \
 --app-log-blowup 1 \
 --leaf-log-blowup 1 \
 --internal-log-blowup 2 \
