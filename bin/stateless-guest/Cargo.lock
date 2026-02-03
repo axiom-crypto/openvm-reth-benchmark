@@ -260,18 +260,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "alloy-rpc-types"
-version = "1.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0622d8bcac2f16727590aa33f4c3f05ea98130e7e4b4924bce8be85da5ad0dae"
-dependencies = [
- "alloy-primitives",
- "alloy-rpc-types-eth",
- "alloy-serde",
- "serde",
-]
-
-[[package]]
 name = "alloy-rpc-types-engine"
 version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -302,7 +290,6 @@ dependencies = [
  "itertools 0.13.0",
  "serde",
  "serde_json",
- "serde_with",
  "thiserror",
 ]
 
@@ -1341,16 +1328,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "eyre"
-version = "0.6.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7cd915d99f24784cdc19fd37ef22b97e3ff0ae756c7e492e9fbfe897d61e2aec"
-dependencies = [
- "indenter",
- "once_cell",
-]
-
-[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1795,12 +1772,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "indenter"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "964de6e86d545b246d84badc0fef527924ace5134f30641c203ef52ba83f58d5"
-
-[[package]]
 name = "indexmap"
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2196,7 +2167,6 @@ dependencies = [
  "alloy-serde",
  "derive_more",
  "serde",
- "serde_with",
  "thiserror",
 ]
 
@@ -2254,43 +2224,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-stateless-guest"
-version = "0.3.0"
+name = "openvm-chainspec"
+version = "0.4.0"
 dependencies = [
- "log",
- "openvm",
- "openvm-algebra-guest",
- "openvm-stateless-executor",
- "openvm-ecc-guest",
- "tracing",
-]
-
-[[package]]
-name = "openvm-stateless-executor"
-version = "0.3.0"
-dependencies = [
- "alloy-consensus",
- "alloy-primitives",
- "bumpalo",
- "itertools 0.14.0",
- "openvm-mpt",
- "openvm-primitives",
- "openvm-revm-crypto",
- "reth-consensus",
- "reth-ethereum-consensus",
- "reth-ethereum-primitives",
- "reth-evm",
- "reth-evm-ethereum",
- "reth-execution-types",
- "reth-primitives",
- "reth-primitives-traits",
- "reth-revm",
- "reth-trie",
- "revm",
+ "alloy-eips",
+ "alloy-hardforks",
+ "reth-chainspec",
  "revm-primitives",
- "serde",
- "serde_with",
- "thiserror",
 ]
 
 [[package]]
@@ -2375,7 +2315,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-mpt"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "alloy-rlp",
  "bumpalo",
@@ -2443,34 +2383,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-primitives"
-version = "0.3.0"
-dependencies = [
- "alloy-eips",
- "alloy-hardforks",
- "alloy-rpc-types",
- "eyre",
- "reth-chainspec",
- "reth-primitives",
- "reth-revm",
- "reth-trie",
- "revm-interpreter",
- "revm-precompile",
- "revm-primitives",
- "serde",
- "serde_json",
- "tracing",
-]
-
-[[package]]
 name = "openvm-revm-crypto"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
  "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "openvm",
- "openvm-algebra-guest",
  "openvm-ecc-guest",
  "openvm-keccak256",
  "openvm-kzg",
@@ -2478,7 +2396,6 @@ dependencies = [
  "openvm-sha2",
  "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
  "revm",
- "revm-precompile",
  "revm-primitives",
 ]
 
@@ -2507,6 +2424,41 @@ version = "1.5.0-rc.0"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#2fc9805d5e839ab7c3b372e34a7d235b5e72c6d0"
 dependencies = [
  "openvm-platform",
+]
+
+[[package]]
+name = "openvm-stateless-executor"
+version = "0.4.0"
+dependencies = [
+ "alloy-consensus",
+ "alloy-primitives",
+ "bumpalo",
+ "itertools 0.14.0",
+ "openvm-chainspec",
+ "openvm-mpt",
+ "openvm-revm-crypto",
+ "reth-consensus",
+ "reth-ethereum-consensus",
+ "reth-evm",
+ "reth-evm-ethereum",
+ "reth-execution-types",
+ "reth-primitives",
+ "reth-primitives-traits",
+ "reth-revm",
+ "reth-trie",
+ "revm",
+ "revm-primitives",
+ "serde",
+ "serde_with",
+ "thiserror",
+]
+
+[[package]]
+name = "openvm-stateless-guest"
+version = "0.4.0"
+dependencies = [
+ "openvm",
+ "openvm-stateless-executor",
 ]
 
 [[package]]
@@ -3102,7 +3054,6 @@ dependencies = [
  "reth-codecs",
  "reth-primitives-traits",
  "serde",
- "serde_with",
 ]
 
 [[package]]
@@ -3223,7 +3174,6 @@ dependencies = [
  "revm-state",
  "secp256k1",
  "serde",
- "serde_with",
  "thiserror",
 ]
 

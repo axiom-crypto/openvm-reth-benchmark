@@ -358,7 +358,7 @@ jobs:
         id: cache-guest-elf-restore
         uses: runs-on/cache/restore@v4
         with:
-          path: bin/openvm-reth-benchmark/elf/openvm-stateless-guest
+          path: bin/reth-benchmark/elf/openvm-stateless-guest
           key: ${{ steps.set-cache-keys.outputs.elf_cache_key }}
 
       - name: Restore cargo-openvm from cache
@@ -381,18 +381,18 @@ jobs:
           key: ${{ steps.cache-cargo-openvm-restore.outputs.cache-primary-key }}
       - name: Build Guest ELF
         if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
-        working-directory: bin/client-eth
+        working-directory: bin/stateless-guest
         run: |
           GUEST_PROFILE=${{ steps.set-build-profiles.outputs.guest_profile }}
           RUSTFLAGS="" cargo openvm build --no-transpile --profile=$GUEST_PROFILE
-          mkdir -p ../host/elf
-          cp target/riscv32im-risc0-zkvm-elf/$GUEST_PROFILE/openvm-stateless-guest ../host/elf/
+          mkdir -p ../reth-benchmark/elf
+          cp target/riscv32im-risc0-zkvm-elf/$GUEST_PROFILE/openvm-stateless-guest ../reth-benchmark/elf/
 
       - name: Save Guest ELF to cache
         if: steps.cache-guest-elf-restore.outputs.cache-hit != 'true'
         uses: runs-on/cache/save@v4
         with:
-          path: bin/openvm-reth-benchmark/elf/openvm-stateless-guest
+          path: bin/reth-benchmark/elf/openvm-stateless-guest
           key: ${{ steps.cache-guest-elf-restore.outputs.cache-primary-key }}
 
       - name: Restore Host Binary from cache

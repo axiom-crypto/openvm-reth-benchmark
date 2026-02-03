@@ -3,10 +3,6 @@
 Benchmarks of running [Reth](https://github.com/paradigmxyz/reth) on the [OpenVM](https://github.com/openvm-org/openvm)
 framework to generate zero-knowledge proofs of EVM block execution on Ethereum Mainnet.
 
-> [!CAUTION]
->
-> This repository is still an active work-in-progress and is not audited or meant for production usage.
-
 ## Getting Started
 
 To run these benchmarks locally, you must first have [Rust](https://www.rust-lang.org/tools/install) installed. Then follow the rest of the instructions below.
@@ -48,59 +44,87 @@ Note that even when utilizing a cached input, the host still needs access to the
 
 ## Running Benchmarks
 
-### Helper Script
+### Helper Script (Recommended)
 
-We describe the different steps and commands needed to run the benchmark in subsequent sections, but to ease the process, we provide a helper script in [`run.sh`](./run.sh) that you can run directly. You only need to edit the `$MODE` variable in the script depending on your usage.
+The easiest way to run the benchmark is using the [`run.sh`](../../run.sh) helper script at the repository root. The script automatically:
+- Compiles the guest program
+- Detects and enables CUDA acceleration if available
+- Monitors GPU memory usage
+- Runs the benchmark with optimal settings
 
-### Compiling the Guest Program
+```bash
+# Run with default settings (execute mode)
+./run.sh
+
+# Run with a specific mode
+./run.sh --mode prove-app
+
+# Run with a specific block number
+./run.sh --block 21345144
+
+# Force CUDA acceleration
+./run.sh --cuda --mode prove-app
+```
+
+**Available modes:**
+- `execute-host` - Execute on the host (no VM)
+- `execute` - Execute the guest program in the OpenVM runtime (default)
+- `execute-metered` - Execute with detailed cycle metering
+- `prove-app` - Generate app proofs for all segments
+- `prove-stark` - Generate STARK aggregation proofs
+- `prove-evm` - Generate final proof for on-chain EVM verification
+
+### Manual Setup
+
+If you prefer to run the benchmark manually, follow the steps below.
+
+#### Compiling the Guest Program
 
 Before running the benchmark, you must first compile the guest program using `cargo-openvm`. Starting from the root of the repository, run:
 
 ```bash
-cd bin/client-eth
-cargo openvm build --no-transpile
-mkdir -p ../host/elf
-cp target/riscv32im-risc0-zkvm-elf/release/openvm-stateless-guest ../host/elf/
+cd bin/stateless-guest
+cargo openvm build
+mkdir -p ../reth-benchmark/elf
+cp target/riscv32im-risc0-zkvm-elf/release/openvm-stateless-guest ../reth-benchmark/elf/
 cd ../..
 ```
-
-This process must currently be done manually, but will soon be automated with build scripts.
 
 If this is your first time using `cargo-openvm`, cargo may prompt you to install the `rust-src` component for a nightly toolchain. This will look like:
 
 ```bash
-rustup component add rust-src --toolchain nightly-2024-10-30-$arch-unknown-linux-gnu
+rustup component add rust-src --toolchain nightly-2025-08-05-$arch-unknown-linux-gnu
 ```
 
 where `$arch` is the architecture of your machine (e.g. `x86_64` or `aarch64`).
 
-### Executing the Runtime
+#### Executing the Runtime
 
 To execute the guest program for only the OpenVM runtime (without proving), for example to collect metrics such as cycle counts, run:
 
 ```bash
 RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info OUTPUT_PATH="metrics.json" \
 cargo run --bin openvm-reth-benchmark --release -- \
---execute --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
+--mode execute --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
 ```
 
 By default a minimal set of metrics will be collected and output to a `metrics.json` file.
 
-### Generating App Proofs
+#### Generating App Proofs
 
-The overall program for executing an Ethereum block may be long depending on how many transactions on in the block. The OpenVM framework uses continuations to prove unbounded program execution by splitting the program into multiple segments and proving segments separately.
+The overall program for executing an Ethereum block may be long depending on how many transactions are in the block. The OpenVM framework uses continuations to prove unbounded program execution by splitting the program into multiple segments and proving segments separately.
 
 To prove all segments of the block execution program (without aggregation, see next section for that), run:
 
 ```bash
 RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info OUTPUT_PATH="metrics.json" \
 cargo run --bin openvm-reth-benchmark --release -- \
---prove --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
+--mode prove-app --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
 ```
 
 This will generate proofs locally on your machine. Given how large these programs are, it might take a while for the proof to generate.
 
-### Generating Proof for On-Chain Verification
+#### Generating Proof for On-Chain Verification
 
 In order to have a single proof of small size for on-chain verification in the EVM, the OpenVM framework uses proof aggregation and STARK-to-SNARK recursion to generate a final proof for verification in a smart contract.
 
@@ -116,8 +140,7 @@ do
     # s5cmd --no-sign-request cp --concurrency 10 "s3://axiom-crypto/challenge_0085/${pkey_file}" .
 done
 
-mv *.srs params/
-export PARAMS_DIR="$HOME/.openvm/params/"
+mv *.srs ~/.openvm/params/
 ```
 
 To run the full end-to-end benchmark for EVM verification, run:
@@ -130,33 +153,30 @@ cargo run --bin openvm-reth-benchmark --release -- \
 
 ### Summarizing Benchmark Results
 
-After running an [end-to-end benchmark](#generating-proof-for-on-chain-verification), there will be a `metrics.json` with collected metrics. We have a python script that will parse the JSON into a markdown summary. Run it by installing `python3` and running:
+After running a benchmark, there will be a `metrics.json` with collected metrics. This can be converted to markdown using [openvm-prof](https://github.com/openvm-org/openvm/blob/main/docs/crates/benchmarks.md#markdown-output).
 
 ```bash
-python3 ci/summarize.py metrics.json --print
+openvm-prof --json-paths metrics.json
 ```
 
 ### Advanced Configuration
 
 The benchmark command accepts additional arguments that can be used to configure the benchmark. **These are low-level and require knowledge of the proof system.** They include:
 
-- `--app-log-blowup`: Set the blowup factor for the App VM proofs (default: 2)
-- `--agg-log-blowup`: Set the blowup factor for the leaf aggregation proofs (default: 2)
+- `--app-log-blowup`: Set the blowup factor for the App VM proofs (default: 1)
+- `--leaf-log-blowup`: Set the blowup factor for the leaf aggregation proofs (default: 1)
 - `--internal-log-blowup`: Set the blowup factor for the internal non-leaf aggregation proofs (default: 2)
 - `--root-log-blowup`: Set the blowup factor for the root STARK aggregation proof (default: 3)
-- `--max-segment-length`: Set the threshold number of cycles before the execution should segment (default: `2 ** 23 - 100`)
+- `--max-segment-length`: Set the threshold number of cycles before the execution should segment (default: `2 ** 22`)
+- `--segment-max-cells`: Set the maximum number of cells per segment
+- `--num-children-leaf`: Set the number of children for leaf aggregation (default: 1)
+- `--num-children-internal`: Set the number of children for internal aggregation (default: 3)
+- `--preimage-cache-nibbles`: Set the preimage cache nibbles (default: 7)
 
 ### Github Workflow
 
-A github actions workflow for running the benchmark via workflow dispatch is available [here](.github/workflows/reth-benchmark.yml).
+A github actions workflow for running the benchmark via workflow dispatch is available [here](../../.github/workflows/reth-benchmark.yml).
 
 ### What are good testing blocks
 
 A good small block to test on for Ethereum mainnet is: `21345144`, which has only 8 transactions.
-
-## Acknowledgements
-
-- The zkVM framework uses [OpenVM](https://github.com/openvm-org/openvm).
-- The underlying Rust libraries make heavy use of [Reth](https://github.com/paradigmxyz/reth) and [Revm](https://github.com/bluealloy/revm/).
-- This repo was forked from [RSP](https://github.com/succinctlabs/rsp/tree/main)
-- The RSP repo builds on work from [Zeth](https://github.com/risc0/zeth)

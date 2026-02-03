@@ -153,11 +153,11 @@ echo "Benchmark Mode: $MODE"
 mkdir -p rpc-cache
 source .env
 
-cd "$WORKDIR/bin/client-eth"
+cd "$WORKDIR/bin/stateless-guest"
 cargo openvm build
-mkdir -p ../host/elf
+mkdir -p ../reth-benchmark/elf
 SRC="target/riscv32im-risc0-zkvm-elf/release/openvm-stateless-guest"
-DEST="../host/elf/openvm-stateless-guest"
+DEST="../reth-benchmark/elf/openvm-stateless-guest"
 
 if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
     cp "$SRC" "$DEST"
