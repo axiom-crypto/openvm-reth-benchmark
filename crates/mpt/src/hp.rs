@@ -173,8 +173,8 @@ pub(crate) fn to_encoded_path_with_bump<'a>(
     is_leaf: bool,
 ) -> &'a [u8] {
     let is_odd = !nibs.len().is_multiple_of(2);
-    // Max path is 64 nibs (32 bytes) + 1 prefix byte = 33 bytes.
-    let mut encoded = bumpalo::collections::Vec::with_capacity_in(33, bump);
+    let encoded_len = 1 + (nibs.len() / 2);
+    let mut encoded = bumpalo::collections::Vec::with_capacity_in(encoded_len, bump);
 
     let mut prefix = if is_leaf { 0x20 } else { 0x00 };
     if is_odd {
@@ -198,8 +198,8 @@ pub(crate) fn to_encoded_path_with_bump<'a>(
 #[inline]
 pub(crate) fn to_encoded_path(nibs: &[u8], is_leaf: bool) -> Vec<u8> {
     let is_odd = !nibs.len().is_multiple_of(2);
-    // Max path is 64 nibs (32 bytes) + 1 prefix byte = 33 bytes.
-    let mut encoded = Vec::with_capacity(33);
+    let encoded_len = 1 + (nibs.len() / 2);
+    let mut encoded = Vec::with_capacity(encoded_len);
 
     let mut prefix = if is_leaf { 0x20 } else { 0x00 };
     if is_odd {
