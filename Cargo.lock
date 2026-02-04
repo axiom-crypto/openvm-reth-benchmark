@@ -7298,6 +7298,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm-chainspec"
+version = "0.4.0"
+dependencies = [
+ "alloy-eips",
+ "alloy-hardforks",
+ "reth-chainspec",
+ "revm-primitives 22.0.0",
+]
+
+[[package]]
 name = "openvm-circuit"
 version = "1.5.0-rc.0"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#2fc9805d5e839ab7c3b372e34a7d235b5e72c6d0"
@@ -7377,34 +7387,6 @@ dependencies = [
  "itertools 0.14.0",
  "quote",
  "syn 2.0.102",
-]
-
-[[package]]
-name = "openvm-client-executor"
-version = "0.3.0"
-dependencies = [
- "alloy-consensus",
- "alloy-primitives",
- "bumpalo",
- "itertools 0.14.0",
- "openvm-mpt",
- "openvm-primitives",
- "openvm-revm-crypto",
- "reth-consensus",
- "reth-ethereum-consensus",
- "reth-ethereum-primitives",
- "reth-evm",
- "reth-evm-ethereum",
- "reth-execution-types",
- "reth-primitives",
- "reth-primitives-traits",
- "reth-revm",
- "reth-trie",
- "revm 34.0.0",
- "revm-primitives 22.0.0",
- "serde",
- "serde_with",
- "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -7565,39 +7547,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-host-executor"
-version = "0.3.0"
-dependencies = [
- "alloy-consensus",
- "alloy-primitives",
- "alloy-provider",
- "alloy-rlp",
- "alloy-rpc-types",
- "bincode 2.0.1",
- "dotenv",
- "eyre",
- "openvm-client-executor",
- "openvm-mpt",
- "openvm-primitives",
- "openvm-rpc-proxy",
- "reth-chainspec",
- "reth-consensus",
- "reth-ethereum",
- "reth-ethereum-consensus",
- "reth-evm",
- "reth-evm-ethereum",
- "reth-execution-types",
- "reth-primitives",
- "reth-primitives-traits",
- "revm 34.0.0",
- "revm-primitives 22.0.0",
- "tokio",
- "tracing",
- "tracing-subscriber 0.3.22",
- "url",
-]
-
-[[package]]
 name = "openvm-instructions"
 version = "1.5.0-rc.0"
 source = "git+https://github.com/openvm-org/openvm.git?branch=main#2fc9805d5e839ab7c3b372e34a7d235b5e72c6d0"
@@ -7730,7 +7679,7 @@ dependencies = [
 
 [[package]]
 name = "openvm-mpt"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "alloy-rlp",
  "bumpalo",
@@ -7746,31 +7695,24 @@ dependencies = [
 
 [[package]]
 name = "openvm-mpt-tools"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
- "alloy-primitives",
  "alloy-provider",
- "alloy-transport",
  "bincode 2.0.1",
  "criterion",
  "dhat",
  "dotenv",
  "eyre",
- "openvm-client-executor",
- "openvm-host-executor",
+ "openvm-chainspec",
  "openvm-mpt",
- "openvm-primitives",
  "openvm-rpc-proxy",
- "reth-chainspec",
+ "openvm-stateless-executor",
  "reth-evm",
  "reth-evm-ethereum",
  "reth-execution-types",
  "reth-primitives-traits",
  "reth-revm",
- "serde",
- "serde_json",
  "tokio",
- "tracing",
  "tracing-subscriber 0.3.22",
  "url",
 ]
@@ -7994,28 +7936,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-primitives"
-version = "0.3.0"
-dependencies = [
- "alloy-eips",
- "alloy-hardforks",
- "alloy-rpc-types",
- "eyre",
- "reth-chainspec",
- "reth-primitives",
- "reth-revm",
- "reth-trie",
- "revm-interpreter 32.0.0",
- "revm-precompile 32.0.0",
- "revm-primitives 22.0.0",
- "serde",
- "serde_json",
- "tracing",
-]
-
-[[package]]
 name = "openvm-reth-benchmark"
-version = "0.1.0"
+version = "0.4.0"
 dependencies = [
  "alloy-primitives",
  "alloy-provider",
@@ -8024,33 +7946,23 @@ dependencies = [
  "bincode 2.0.1",
  "bitcode",
  "clap",
- "derive_more 1.0.0",
+ "clap_builder",
  "dotenv",
  "eyre",
  "halo2-axiom",
  "hex",
- "metrics 0.23.1",
  "openvm",
- "openvm-algebra-circuit",
  "openvm-benchmarks-prove",
- "openvm-bigint-circuit",
- "openvm-build",
  "openvm-circuit",
- "openvm-client-executor",
- "openvm-ecc-circuit",
- "openvm-host-executor",
  "openvm-native-circuit",
- "openvm-native-compiler",
- "openvm-native-recursion",
- "openvm-pairing-circuit",
  "openvm-rpc-proxy",
- "openvm-rv32im-circuit",
  "openvm-sdk",
  "openvm-stark-sdk",
+ "openvm-stateless-executor",
  "openvm-transpiler",
  "reth-primitives",
- "serde",
  "serde_json",
+ "tokio",
  "toml 0.9.5",
  "tracing",
  "tracing-subscriber 0.3.22",
@@ -8058,40 +7970,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-reth-benchmark-bin"
-version = "0.3.0"
-dependencies = [
- "clap_builder",
- "eyre",
- "openvm-cuda-backend",
- "openvm-reth-benchmark",
- "openvm-stark-sdk",
- "tokio",
-]
-
-[[package]]
-name = "openvm-reth-verifier-bench"
-version = "0.3.0"
-dependencies = [
- "bitcode",
- "clap",
- "openvm-circuit",
- "openvm-continuations",
- "openvm-native-circuit",
- "openvm-native-recursion",
- "openvm-sdk",
- "openvm-stark-sdk",
-]
-
-[[package]]
 name = "openvm-revm-crypto"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
  "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?branch=main)",
- "openvm",
- "openvm-algebra-guest",
  "openvm-ecc-guest",
  "openvm-keccak256",
  "openvm-kzg",
@@ -8099,34 +7983,37 @@ dependencies = [
  "openvm-sha2",
  "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?branch=main)",
  "revm 34.0.0",
- "revm-precompile 32.0.0",
  "revm-primitives 22.0.0",
 ]
 
 [[package]]
 name = "openvm-rpc-proxy"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "actix-web",
  "alloy",
  "alloy-chains",
+ "alloy-consensus",
  "alloy-json-rpc",
  "alloy-primitives",
+ "alloy-provider",
+ "alloy-rpc-types",
  "alloy-rpc-types-debug",
  "alloy-trie 0.9.3",
- "async-trait",
  "clap",
  "eyre",
  "itertools 0.14.0",
+ "openvm-stateless-executor",
+ "openvm-stateless-witness",
  "rayon",
  "reqwest",
  "reth-chainspec",
  "reth-evm",
  "reth-evm-ethereum",
+ "reth-primitives",
  "reth-primitives-traits",
  "revm 34.0.0",
  "risc0-ethereum-trie",
- "serde",
  "serde_json",
  "thiserror 2.0.12",
  "tokio",
@@ -8399,6 +8286,57 @@ dependencies = [
  "tracing-forest",
  "tracing-subscriber 0.3.22",
  "zkhash",
+]
+
+[[package]]
+name = "openvm-stateless-executor"
+version = "0.4.0"
+dependencies = [
+ "alloy-consensus",
+ "alloy-primitives",
+ "bumpalo",
+ "itertools 0.14.0",
+ "openvm-chainspec",
+ "openvm-mpt",
+ "openvm-revm-crypto",
+ "reth-consensus",
+ "reth-ethereum-consensus",
+ "reth-ethereum-primitives",
+ "reth-evm",
+ "reth-evm-ethereum",
+ "reth-execution-types",
+ "reth-primitives",
+ "reth-primitives-traits",
+ "reth-revm",
+ "reth-trie",
+ "revm 34.0.0",
+ "revm-primitives 22.0.0",
+ "serde",
+ "serde_with",
+ "thiserror 2.0.12",
+]
+
+[[package]]
+name = "openvm-stateless-witness"
+version = "0.4.0"
+dependencies = [
+ "alloy-rlp",
+ "alloy-rpc-types-debug",
+ "metrics 0.24.3",
+ "openvm-mpt",
+ "openvm-stateless-executor",
+ "reth-ethereum",
+ "reth-evm",
+ "reth-node-api",
+ "reth-primitives",
+ "reth-primitives-traits",
+ "reth-provider",
+ "reth-revm",
+ "reth-storage-errors",
+ "serde",
+ "serde_with",
+ "thiserror 2.0.12",
+ "tracing",
 ]
 
 [[package]]

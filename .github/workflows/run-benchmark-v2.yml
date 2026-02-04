@@ -29,7 +29,7 @@ on:
         description: "Cleanup after benchmark"
         required: false
         type: boolean
-        default: "true"
+        default: true
 
 jobs:
   benchmark:
@@ -62,11 +62,11 @@ jobs:
             RPC_1=${{ secrets.RPC_URL_1 }}
 
             # Build client binary
-            cd bin/client-eth
+            cd bin/stateless-guest
             cargo openvm build
-            mkdir -p ../host/elf
-            SRC="target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth"
-            DEST="../host/elf/openvm-client-eth"
+            mkdir -p ../reth-benchmark/elf
+            SRC="target/riscv32im-risc0-zkvm-elf/release/openvm-stateless-guest"
+            DEST="../reth-benchmark/elf/openvm-stateless-guest"
 
             if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
                 cp "$SRC" "$DEST"
@@ -79,11 +79,11 @@ jobs:
 
             # Build the benchmark binary
             export JEMALLOC_SYS_WITH_MALLOC_CONF="retain:true,background_thread:true,metadata_thp:always,thp:always,dirty_decay_ms:10000,muzzy_decay_ms:10000,abort_conf:true"
-            cargo build --bin openvm-reth-benchmark-bin --profile=release --no-default-features --features="bench-metrics,jemalloc,evm-verify"
+            cargo build --bin openvm-reth-benchmark --profile=release --no-default-features --features="bench-metrics,jemalloc,evm-verify"
 
             # Generate input data
             echo "Generating input for block $block_number..."
-            ./target/release/openvm-reth-benchmark-bin \
+            ./target/release/openvm-reth-benchmark \
               --kzg-params-dir params \
               --mode make-input \
               --block-number $block_number \

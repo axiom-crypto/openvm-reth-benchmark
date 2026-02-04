@@ -7,7 +7,7 @@ S3_PREFIX="${S3_PREFIX:-proofs/testing}"
 # Wrapper around the OpenVM benchmark binary to allow post-processing
 # after proving completes. All arguments are forwarded to the binary.
 
-BIN_PATH="${OVM_BIN:-/usr/local/bin/openvm-reth-benchmark-bin}"
+BIN_PATH="${OVM_BIN:-/usr/local/bin/openvm-reth-benchmark}"
 JOBS_DIR="${JOBS_DIR:-/app/jobs}"
 MODE="${MODE:-prove-stark}"
 APP_LOG_BLOWUP="${APP_LOG_BLOWUP:-1}"
@@ -110,5 +110,3 @@ else
 fi
 
 exit $status
-
-

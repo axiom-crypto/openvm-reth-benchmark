@@ -1,162 +1,117 @@
-# OpenVM Reth Benchmark
+# openvm-eth
 
-Benchmarks of running [Reth](https://github.com/paradigmxyz/reth) on the [OpenVM](https://github.com/openvm-org/openvm)
-framework to generate zero-knowledge proofs of EVM block execution on Ethereum Mainnet.
+A framework for generating zero-knowledge proofs of Ethereum block execution using [OpenVM](https://github.com/openvm-org/openvm) and [Reth](https://github.com/paradigmxyz/reth).
 
 > [!CAUTION]
 >
 > This repository is still an active work-in-progress and is not audited or meant for production usage.
 
+## Overview
+
+This project provides a complete pipeline for:
+
+1. **Fetching block data** from Ethereum JSON-RPC providers
+2. **Stateless execution** of Ethereum blocks without full node state
+3. **Proof generation** using OpenVM's RISC-V zkVM
+4. **On-chain verification** via aggregated SNARK proofs
+
+The system uses Merkle Patricia Trie (MPT) proofs to verify state without requiring a full node, making it suitable for trustless block verification and ZK rollup applications.
+
+## Workspace Structure
+
+```
+openvm-eth/
+├── bin/
+│   ├── reth-benchmark/      # Host-side bare metal benchmark 
+│   ├── stateless-guest/     # zkVM guest program
+└── crates/
+    ├── chainspec/           # Chain configuration (mainnet, dev)
+    ├── mpt/                 # Merkle Patricia Trie implementation
+    ├── mpt-tools/           # MPT profiling and benchmarking
+    ├── revm-crypto/         # Crypto provider using OpenVM intrinsics
+    ├── rpc-proxy/           # RPC proxy for witness generation
+    ├── stateless-executor/  # Core block execution library
+    └── stateless-witness/   # Witness generation from Reth
+```
+
+## Binary Crates
+
+### `bin/reth-benchmark`
+
+The main CLI tool for single machine bare metal benchmarks. Supports multiple benchmarking modes:
+
+- **Execute**: Run block execution in the VM without generating proofs
+- **ProveApp**: Generate individual segment proofs
+- **ProveStark**: Generate full STARK proofs with aggregation
+- **ProveEvm**: Generate final SNARK proofs for on-chain EVM verification
+
+Handles RPC interaction, witness caching, guest program loading, and metrics collection. Supports Nvidia GPU acceleration.
+
+### `bin/stateless-guest`
+
+The RISC-V guest program that runs inside OpenVM. It receives serialized block data, executes all transactions using the stateless executor, verifies state root correctness, and outputs the block hash as proof of correct execution.
+
+## Library Crates
+
+### `crates/stateless-executor`
+
+Core library implementing stateless Ethereum block execution. Executes blocks against witnessed state (storage proofs + bytecode), validates pre/post-execution conditions, and verifies state roots using MPT proofs. Integrates with Reth's EVM infrastructure.
+
+**Features:**
+- `openvm` - Enables OpenVM `CryptoProvider` for zkVM execution via `revm`
+
+### `crates/stateless-witness`
+
+Generates execution witnesses using Reth node API, designed for compatibility with the Reth ExEx framework. 
+Provides utility functions for conversion from Reth's `ExecutionWitness` format to `StatelessExecutorInput`, handling storage proof resolution, bytecode collection, and state serialization.
+
+### `crates/mpt`
+
+Merkle Patricia Trie implementation for state and storage tree operations. Provides efficient state root computation and verification, optimized for both host and zkVM execution.
+
+**Features:**
+- `host` - Enables additional host-only functionality (resolver)
+
+### `crates/revm-crypto`
+
+OpenVM-optimized cryptographic operations for Revm and Alloy. Provides efficient implementations of:
+
+- ECDSA signature recovery (secp256k1)
+- SHA-256 and Keccak-256 hashing
+- BN254 and BLS12-381 pairing operations
+- KZG commitments
+
+Uses OpenVM's ECC guest libraries when running in the zkVM, falling back to standard implementations on the host.
+
+### `crates/chainspec`
+
+Chain configuration for Ethereum mainnet and dev networks. Provides optimized chainspec loading suitable for zkVM execution (avoids expensive cloning operations).
+
+### `crates/rpc-proxy`
+
+HTTP proxy server that provides `debug_executionWitness` RPC endpoint using standard JSON-RPC providers. Useful for development and testing without direct Reth node access.
+
+**Note:** Not recommended for production use due to RPC provider limitations.
+
+### `crates/mpt-tools`
+
+Development tools for MPT profiling and benchmarking. Includes memory profiling (via dhat) and performance benchmarks (via Criterion).
+
 ## Getting Started
 
-To run these benchmarks locally, you must first have [Rust](https://www.rust-lang.org/tools/install) installed. Then follow the rest of the instructions below.
+### Prerequisites
 
-### Installing the `cargo-openvm` CLI
+- Rust toolchain (see `rust-toolchain.toml`)
+- Access to either Reth node or an archive Ethereum RPC node
+- KZG trusted setup (for EVM proof generation)
 
-Install the OpenVM command line interface by building from source via:
+### Running Benchmarks
 
-```bash
-cargo install --git 'http://github.com/openvm-org/openvm.git' cargo-openvm
-```
-
-### RPC Node Requirement
-
-RSP fetches block and state data from a JSON-RPC node. You must use an archive node which preserves historical intermediate trie nodes needed for fetching storage proofs. Common RPC providers such as Alchemy and QuickNode offer endpoints that provide these storage proofs.
-
-You can pass the RPC URL into the CLI by either using the `--rpc-url` argument
-
-```bash
-cargo run --bin openvm-reth-benchmark --release -- --block-number 18884864 --rpc-url <RPC>
-```
-
-or by providing the `RPC_1` variable in the `.env` file and specifying the chain id in the CLI command like this:
-
-```bash
-cargo run --bin openvm-reth-benchmark --release -- --block-number 18884864 --chain-id 1
-```
-
-#### Using cached client input
-
-The client input (witness) generated by executing against RPC can be cached to speed up iteration of the client program by supplying the `--cache-dir` option:
-
-```bash
-mkdir -p rpc-cache
-cargo run --bin openvm-reth-benchmark --release -- --block-number 18884864 --chain-id 1 --cache-dir rpc-cache
-```
-
-Note that even when utilizing a cached input, the host still needs access to the chain ID to identify the network type, either through `--rpc-url` or `--chain-id`.
-
-## Running Benchmarks
-
-### Helper Script
-
-We describe the different steps and commands needed to run the benchmark in subsequent sections, but to ease the process, we provide a helper script in [`run.sh`](./run.sh) that you can run directly. You only need to edit the `$MODE` variable in the script depending on your usage.
-
-### Compiling the Guest Program
-
-Before running the benchmark, you must first compile the guest program using `cargo-openvm`. Starting from the root of the repository, run:
-
-```bash
-cd bin/client-eth
-cargo openvm build --no-transpile
-mkdir -p ../host/elf
-cp target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth ../host/elf/
-cd ../..
-```
-
-This process must currently be done manually, but will soon be automated with build scripts.
-
-If this is your first time using `cargo-openvm`, cargo may prompt you to install the `rust-src` component for a nightly toolchain. This will look like:
-
-```bash
-rustup component add rust-src --toolchain nightly-2024-10-30-$arch-unknown-linux-gnu
-```
-
-where `$arch` is the architecture of your machine (e.g. `x86_64` or `aarch64`).
-
-### Executing the Runtime
-
-To execute the guest program for only the OpenVM runtime (without proving), for example to collect metrics such as cycle counts, run:
-
-```bash
-RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info OUTPUT_PATH="metrics.json" \
-cargo run --bin openvm-reth-benchmark --release -- \
---execute --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
-```
-
-By default a minimal set of metrics will be collected and output to a `metrics.json` file.
-
-### Generating App Proofs
-
-The overall program for executing an Ethereum block may be long depending on how many transactions on in the block. The OpenVM framework uses continuations to prove unbounded program execution by splitting the program into multiple segments and proving segments separately.
-
-To prove all segments of the block execution program (without aggregation, see next section for that), run:
-
-```bash
-RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info OUTPUT_PATH="metrics.json" \
-cargo run --bin openvm-reth-benchmark --release -- \
---prove --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
-```
-
-This will generate proofs locally on your machine. Given how large these programs are, it might take a while for the proof to generate.
-
-### Generating Proof for On-Chain Verification
-
-In order to have a single proof of small size for on-chain verification in the EVM, the OpenVM framework uses proof aggregation and STARK-to-SNARK recursion to generate a final proof for verification in a smart contract.
-
-Before running the benchmark, you will need to download a KZG trusted setup necessary for generating the Halo2 SNARK proofs:
-
-```bash
-#!/bin/bash
-
-for k in {5..24}
-do
-    wget "https://axiom-crypto.s3.amazonaws.com/challenge_0085/kzg_bn254_${k}.srs"
-    # for faster download, install s5cmd and use:
-    # s5cmd --no-sign-request cp --concurrency 10 "s3://axiom-crypto/challenge_0085/${pkey_file}" .
-done
-
-mv *.srs params/
-export PARAMS_DIR="$HOME/.openvm/params/"
-```
-
-To run the full end-to-end benchmark for EVM verification, run:
-
-```bash
-RUSTFLAGS="-Ctarget-cpu=native" RUST_LOG=info OUTPUT_PATH="metrics.json" \
-cargo run --bin openvm-reth-benchmark --release -- \
---mode prove-evm --block-number 21345144 --rpc-url $RPC_1 --cache-dir rpc-cache
-```
-
-### Summarizing Benchmark Results
-
-After running an [end-to-end benchmark](#generating-proof-for-on-chain-verification), there will be a `metrics.json` with collected metrics. We have a python script that will parse the JSON into a markdown summary. Run it by installing `python3` and running:
-
-```bash
-python3 ci/summarize.py metrics.json --print
-```
-
-### Advanced Configuration
-
-The benchmark command accepts additional arguments that can be used to configure the benchmark. **These are low-level and require knowledge of the proof system.** They include:
-
-- `--app-log-blowup`: Set the blowup factor for the App VM proofs (default: 2)
-- `--agg-log-blowup`: Set the blowup factor for the leaf aggregation proofs (default: 2)
-- `--internal-log-blowup`: Set the blowup factor for the internal non-leaf aggregation proofs (default: 2)
-- `--root-log-blowup`: Set the blowup factor for the root STARK aggregation proof (default: 3)
-- `--max-segment-length`: Set the threshold number of cycles before the execution should segment (default: `2 ** 23 - 100`)
-
-### Github Workflow
-
-A github actions workflow for running the benchmark via workflow dispatch is available [here](.github/workflows/reth-benchmark.yml).
-
-### What are good testing blocks
-
-A good small block to test on for Ethereum mainnet is: `21345144`, which has only 8 transactions.
+See [Benchmark README](./bin/reth-benchmark/README.md).
 
 ## Acknowledgements
 
 - The zkVM framework uses [OpenVM](https://github.com/openvm-org/openvm).
 - The underlying Rust libraries make heavy use of [Reth](https://github.com/paradigmxyz/reth) and [Revm](https://github.com/bluealloy/revm/).
 - This repo was forked from [RSP](https://github.com/succinctlabs/rsp/tree/main)
-- The RSP repo builds on work from [Zeth](https://github.com/risc0/zeth)
+- The RSP repo builds on work from [Zeth](https://github.com/risc0/zeth) and we also forked Zeth's `rpc-proxy` crate.

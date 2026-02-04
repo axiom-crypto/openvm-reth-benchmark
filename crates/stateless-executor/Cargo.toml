@@ -1,0 +1,50 @@
+[package]
+name = "openvm-stateless-executor"
+description = "OpenVM Ethereum Stateless Executor Library"
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+thiserror.workspace = true
+serde.workspace = true
+serde_with.workspace = true
+bumpalo.workspace = true
+itertools.workspace = true
+
+# workspace
+openvm-chainspec.workspace = true
+openvm-mpt.workspace = true
+openvm-revm-crypto = { workspace = true, optional = true }
+
+# reth
+reth-consensus.workspace = true
+reth-ethereum-consensus.workspace = true
+reth-ethereum-primitives = { workspace = true, features = ["serde", "serde-bincode-compat"] }
+reth-execution-types.workspace = true
+reth-primitives = { workspace = true }
+reth-primitives-traits = { workspace = true, features = ["serde-bincode-compat"] }
+reth-trie.workspace = true
+reth-evm.workspace = true
+reth-evm-ethereum.workspace = true
+reth-revm.workspace = true
+
+# revm
+revm.workspace = true
+revm-primitives.workspace = true
+
+# alloy
+alloy-primitives = { workspace = true, features = ["rayon", "map-foldhash"] }
+alloy-consensus = { workspace = true, features = ["crypto-backend", "serde-bincode-compat"] }
+
+[package.metadata.cargo-machete]
+ignored = ["reth-ethereum-primitives"]
+
+[features]
+default = []
+std = ["openvm-chainspec/std"]
+openvm = ["dep:openvm-revm-crypto"]

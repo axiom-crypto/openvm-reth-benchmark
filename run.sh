@@ -153,11 +153,11 @@ echo "Benchmark Mode: $MODE"
 mkdir -p rpc-cache
 source .env
 
-cd "$WORKDIR/bin/client-eth"
+cd "$WORKDIR/bin/stateless-guest"
 cargo openvm build
-mkdir -p ../host/elf
-SRC="target/riscv32im-risc0-zkvm-elf/release/openvm-client-eth"
-DEST="../host/elf/openvm-client-eth"
+mkdir -p ../reth-benchmark/elf
+SRC="target/riscv32im-risc0-zkvm-elf/release/openvm-stateless-guest"
+DEST="../reth-benchmark/elf/openvm-stateless-guest"
 
 if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
     cp "$SRC" "$DEST"
@@ -179,7 +179,7 @@ FEATURES="metrics,jemalloc,unprotected"
 BLOCK_NUMBER="${BLOCK_NUMBER_OVERRIDE:-23992138}"
 # switch to +nightly-2025-08-19 if using tco
 TOOLCHAIN="+nightly-2025-08-19" # "+stable"
-BIN_NAME="openvm-reth-benchmark-bin"
+BIN_NAME="openvm-reth-benchmark"
 MAX_SEGMENT_LENGTH=$((1 << 22))
 SEGMENT_MAX_CELLS=1200000000
 VPMM_PAGE_SIZE=$((4 << 20))

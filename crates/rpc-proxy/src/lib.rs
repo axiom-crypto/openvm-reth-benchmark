@@ -3,6 +3,7 @@
 // - Switch from `anyhow` to `eyre`
 // - Populate `keys` field in `execution_witness` response
 // - Include empty trie root in witness state
+// - Added `RpcExecutor`
 
 //! This crate provides a proxy for the `debug_executionWitness` endpoint by using standard RPC
 //! providers in environments without direct access to a Reth node. This crate is intended for usage
@@ -24,11 +25,13 @@
 //! full computation of the witness.
 
 mod db;
+mod execution;
 mod lookup;
 mod transport;
 mod trie;
 mod witness;
 
+pub use execution::RpcExecutor;
 pub use lookup::{PreimageLookup, DEFAULT_PREIMAGE_CACHE_NIBBLES};
 pub use transport::LogOnErrorLayer;
 pub use witness::execution_witness;

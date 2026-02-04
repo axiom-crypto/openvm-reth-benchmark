@@ -1,7 +1,7 @@
 use bincode::config::standard;
 use criterion::{criterion_group, criterion_main, Criterion};
-use openvm_client_executor::io::{ClientExecutorInput, ClientExecutorInputWithState};
-use openvm_primitives::chain_spec::mainnet;
+use openvm_chainspec::mainnet;
+use openvm_stateless_executor::io::{StatelessExecutorInput, StatelessExecutorInputWithState};
 use reth_evm::execute::{BasicBlockExecutor, Executor};
 use reth_evm_ethereum::EthEvmConfig;
 use reth_execution_types::ExecutionOutcome;
@@ -24,19 +24,19 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
     let bincode_config = standard();
 
     // Pre-compute the post-state once for the MPT benchmarks (not timed)
-    let (pre_input, _): (ClientExecutorInput, _) =
+    let (pre_input, _): (StatelessExecutorInput, _) =
         bincode::serde::decode_from_slice(&buffer, bincode_config).unwrap();
-    let client_input = ClientExecutorInputWithState::build(pre_input.clone()).unwrap();
-    let witness_db = client_input.witness_db().unwrap();
+    let stateless_input = StatelessExecutorInputWithState::build(pre_input.clone()).unwrap();
+    let witness_db = stateless_input.witness_db().unwrap();
     let cache_db = CacheDB::new(&witness_db);
     let spec = Arc::new(mainnet());
-    let current_block = client_input.input.current_block.clone().try_into_recovered().unwrap();
+    let current_block = stateless_input.input.current_block.clone().try_into_recovered().unwrap();
     let block_executor = BasicBlockExecutor::new(EthEvmConfig::new(spec), cache_db);
     let executor_output = block_executor.execute(&current_block).unwrap();
     let executor_outcome = ExecutionOutcome::new(
         executor_output.state,
         vec![executor_output.result.receipts],
-        client_input.input.current_block.header.number,
+        stateless_input.input.current_block.header.number,
         vec![executor_output.result.requests],
     );
 
@@ -45,26 +45,27 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
     c.bench_function("end_to_end_without_execution", |b| {
         b.iter(|| {
             // Deserialize (this happens in production)
-            let (pre_input, _): (ClientExecutorInput, _) =
+            let (pre_input, _): (StatelessExecutorInput, _) =
                 bincode::serde::decode_from_slice(black_box(&buffer), bincode_config).unwrap();
 
-            let mut client_input = ClientExecutorInputWithState::build(pre_input.clone()).unwrap();
+            let mut stateless_input =
+                StatelessExecutorInputWithState::build(pre_input.clone()).unwrap();
 
             // Create witness DB (this happens in production)
-            let _witness_db = client_input.witness_db().unwrap();
+            let _witness_db = stateless_input.witness_db().unwrap();
 
             // Update MPT with pre-computed post-state (this happens in production)
             // Note: In production, the post-state comes from block execution, but we're
             // using pre-computed data to exclude execution time from the benchmark
-            client_input.state.update_from_bundle_state(&executor_outcome.bundle).unwrap();
-            let state_root = client_input.state.state_trie.hash();
+            stateless_input.state.update_from_bundle_state(&executor_outcome.bundle).unwrap();
+            let state_root = stateless_input.state.state_trie.hash();
             black_box(state_root)
         })
     });
 
     c.bench_function("deserialize only", |b| {
         b.iter(|| {
-            let (pre_input, _): (ClientExecutorInput, _) =
+            let (pre_input, _): (StatelessExecutorInput, _) =
                 bincode::serde::decode_from_slice(black_box(&buffer), bincode_config).unwrap();
             black_box(pre_input)
         })
@@ -72,14 +73,14 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
 
     c.bench_function("resolve only", |b| {
         b.iter(|| {
-            let client_input = ClientExecutorInputWithState::build(pre_input.clone());
-            black_box(client_input)
+            let stateless_input = StatelessExecutorInputWithState::build(pre_input.clone());
+            black_box(stateless_input)
         })
     });
 
     c.bench_function("witness db only", |b| {
         b.iter(|| {
-            let witness_db = client_input.witness_db().unwrap();
+            let witness_db = stateless_input.witness_db().unwrap();
             black_box(witness_db)
         })
     });
@@ -88,7 +89,7 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
         b.iter_with_setup(
             || {
                 // Setup: This part is NOT timed
-                client_input.state.clone()
+                stateless_input.state.clone()
             },
             |mut parent_state| {
                 // Routine: This part IS timed
@@ -101,7 +102,7 @@ fn benchmark_mpt_operations(c: &mut Criterion) {
         b.iter_with_setup(
             || {
                 // Setup: This part is NOT timed
-                let mut parent_state = client_input.state.clone();
+                let mut parent_state = stateless_input.state.clone();
                 parent_state.update_from_bundle_state(&executor_outcome.bundle).unwrap();
                 parent_state
             },

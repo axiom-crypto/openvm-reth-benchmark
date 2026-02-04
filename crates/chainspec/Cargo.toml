@@ -1,0 +1,22 @@
+[package]
+name = "openvm-chainspec"
+description = ""
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+# reth
+reth-chainspec.workspace = true
+
+# revm
+revm-primitives.workspace = true
+
+# alloy
+alloy-eips.workspace = true
+alloy-hardforks.workspace = true
+
+[features]
+default = []
+std = ["reth-chainspec/std"]

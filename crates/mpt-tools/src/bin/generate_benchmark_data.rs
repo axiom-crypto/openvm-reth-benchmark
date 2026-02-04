@@ -1,7 +1,6 @@
 use alloy_provider::RootProvider;
 use bincode::config::standard;
-use openvm_host_executor::HostExecutor;
-use openvm_rpc_proxy::DEFAULT_PREIMAGE_CACHE_NIBBLES;
+use openvm_rpc_proxy::{RpcExecutor, DEFAULT_PREIMAGE_CACHE_NIBBLES};
 use std::env;
 use tracing_subscriber::{
     filter::EnvFilter, fmt, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
@@ -59,16 +58,16 @@ async fn main() -> eyre::Result<()> {
     let provider = RootProvider::new_http(rpc_url);
 
     // Setup the host executor.
-    let host_executor = HostExecutor::new(provider, DEFAULT_PREIMAGE_CACHE_NIBBLES);
+    let rpc_executor = RpcExecutor::new(provider, DEFAULT_PREIMAGE_CACHE_NIBBLES);
 
     println!("Fetching block data from RPC...");
     // Execute the host.
-    let client_input = host_executor.execute(block_number).await?;
+    let stateless_input = rpc_executor.execute(block_number).await?;
 
-    println!("Serializing client input...");
-    // Save the client input to a buffer.
+    println!("Serializing stateless input...");
+    // Save the input to a buffer.
     let bincode_config = standard();
-    let buffer = bincode::serde::encode_to_vec(&client_input, bincode_config)?;
+    let buffer = bincode::serde::encode_to_vec(&stateless_input, bincode_config)?;
 
     // Save the buffer to a file for benchmarking
     std::fs::write(&output_file, &buffer)?;

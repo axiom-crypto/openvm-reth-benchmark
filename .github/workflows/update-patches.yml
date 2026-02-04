@@ -33,7 +33,7 @@ on:
         description: "Instance family to use for benchmark"
         type: string
         required: false
-        default: g6e.8xlarge
+        default: g6e.2xlarge
       benchmark_block_number:
         description: "Block number to run the benchmark on"
         type: number
@@ -150,8 +150,8 @@ jobs:
           sed "s|\$OPENVM_REV|${OPENVM_REV}|g" .cargo/config.tmp.toml > .cargo/config.toml
           rm .cargo/config.tmp.toml
 
-          # Update bin/client-eth/Cargo.toml patches
-          cd bin/client-eth
+          # Update bin/stateless-guest/Cargo.toml patches
+          cd bin/stateless-guest
           # Create a temporary file with the replacements
           sed -e "/^\[patch\.crates-io\]/,/^\[/ {
             s|^k256 = { git = \"https://github.com/openvm-org/openvm.git\", branch = \"main\" }$|k256 = { git = \"ssh://git@github.com/openvm-org/openvm.git\", rev = \"${OPENVM_REV}\" }|
@@ -172,7 +172,7 @@ jobs:
           cargo tree
 
       - name: Update guest Cargo.lock
-        working-directory: bin/client-eth
+        working-directory: bin/stateless-guest
         run: |
           cargo update -p openvm
           cargo update -p revm
@@ -202,9 +202,9 @@ jobs:
 
           git add -f .cargo/config.toml
           git add -f Cargo.lock
-          git add -f bin/client-eth/Cargo.toml
-          git add -f bin/client-eth/Cargo.lock
-          git commit -m "Patch openvm commits in .cargo/config.toml and bin/client-eth/Cargo.toml"
+          git add -f bin/stateless-guest/Cargo.toml
+          git add -f bin/stateless-guest/Cargo.lock
+          git commit -m "Patch openvm commits in .cargo/config.toml and bin/stateless-guest/Cargo.toml"
           git push -f origin "$BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "${{ github.event_name }}"
@@ -228,7 +228,7 @@ jobs:
     uses: ./.github/workflows/reth-benchmark.yml
     with:
       mode: ${{ inputs.benchmark_mode || github.event.inputs.benchmark_mode || 'prove-stark' }}
-      instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'g6e.8xlarge' }}
+      instance_family: ${{ inputs.instance_family || github.event.inputs.instance_family || 'g6e.2xlarge' }}
       ref: ${{ needs.patch.outputs.branch_name }}
       tag: ${{ needs.patch.outputs.tag }}
       block_number: ${{ fromJSON(inputs.benchmark_block_number || github.event.inputs.benchmark_block_number || '23992138') }}
