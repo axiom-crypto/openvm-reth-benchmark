@@ -31,10 +31,10 @@ COPY bin/ ./bin/
 COPY rustfmt.toml ./
 
 # Build guest ELF and place where host expects it
-WORKDIR /app/bin/client-eth
+WORKDIR /app/bin/stateless-guest
 RUN cargo openvm build --no-transpile --profile=release \
-    && mkdir -p ../host/elf \
-    && cp target/riscv32im-risc0-zkvm-elf/release/openvm-stateless-guest ../host/elf/
+    && mkdir -p ../reth-benchmark/elf \
+    && cp target/riscv32im-risc0-zkvm-elf/release/openvm-stateless-guest ../reth-benchmark/elf/
 
 # Build host binary
 WORKDIR /app
