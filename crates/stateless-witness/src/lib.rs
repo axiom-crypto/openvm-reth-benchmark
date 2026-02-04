@@ -159,7 +159,7 @@ where
 }
 
 #[instrument(skip(reth_state, keys))]
-fn resolve_ethereum_state(
+pub fn resolve_ethereum_state(
     state_root: B256,
     reth_state: Vec<Bytes>,
     keys: Vec<Bytes>,
