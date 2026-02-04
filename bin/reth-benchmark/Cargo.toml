@@ -48,7 +48,7 @@ openvm = { workspace = true }
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.3.0-rc.0", default-features = false }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
-openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
+openvm-benchmarks-prove = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false, features = ["parallel"] }
 openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 openvm-native-circuit = { git = "https://github.com/openvm-org/openvm.git", branch = "main", default-features = false }
 toml.workspace = true
