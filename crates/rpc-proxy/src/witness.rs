@@ -112,6 +112,9 @@ where
         let header: <E::Primitives as NodePrimitives>::BlockHeader = header.try_into()?;
         headers.push(alloy::rlp::encode(header).into());
     }
+    // Reverse to oldest-first order, matching the ExecutionWitness convention
+    // generate_stateless_input_from_witness will reverse again to get most-recent-first.
+    headers.reverse();
 
     debug!("Preflight check completed successfully");
 
