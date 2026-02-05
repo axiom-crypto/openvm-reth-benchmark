@@ -4,6 +4,7 @@
 // - Populate `keys` field in `execution_witness` response
 // - Include empty trie root in witness state
 // - Added `RpcExecutor`
+// - Fix: `execution_witness` should return header in oldest first ordering
 
 //! This crate provides a proxy for the `debug_executionWitness` endpoint by using standard RPC
 //! providers in environments without direct access to a Reth node. This crate is intended for usage
